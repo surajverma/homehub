@@ -1,109 +1,51 @@
 
-# HomeHub
+# 🏡 HomeHub: Your All-In-One Family Dashboard
 
-A lightweight, self-hosted family utility hub for your home network. Includes notes, shopping list, chores, Who is Home, recipes, expiry tracker, URL shortener, QR generator, media downloader, PDF compressor, and expense tracker—all in a simple responsive web UI.
+Ever wanted a simple, private spot on your home network for your family's daily stuff? That's HomeHub. It's a lightweight, self-hosted web app that turns any computer (even a Raspberry Pi!) into a central hub for shared notes, shopping lists, chores, a media downloader, and even a family expense tracker.
 
-## Features
+It’s designed to be easy to use for everyone in the family, with a clean interface that works great on any device.
 
-- Dashboard with Notice Board and Calendar/Reminders
-- Live user switcher, admin/owner controls
-- Notes, file uploads, shopping list, chores
-- Who is Home status board on welcome screen/dashboard
-- Recipe book, expiry tracker, URL shortener
-- QR code generator
-- Media downloader (mp3/mp4)
-- PDF compressor
-- Expense tracker with recurring rules (for recurring payments like milk/newspaper/utility bills etc.)
+## What Can It Do?
 
-## Setup
+HomeHub is packed with useful tools to make family life a little more organized:
 
-### 1. Configure
-Edit `config.yml`:
+* **📝 Shared Notes**: A simple place to jot down quick notes for everyone to see.
+* **☁️ Shared Cloud**: Easily upload and share files across your home network.
+* **🛒 Shopping List**: A collaborative list so you never forget the milk again. Comes with suggestions based on your history!
+* **✅ Chore Tracker**: A simple to-do list for household tasks.
+* **🗓️ Calendar & Reminders**: A shared calendar to keep track of important dates.
+* **👋 Who's Home?**: See at a glance who is currently home.
+* **💰 Expense Tracker**: A powerful tool to track family spending, with support for recurring bills like newspapers, milk, or subscriptions.
+* **🎬 Media Downloader**: Save videos or music from popular sites directly to your server.
+* ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, and **QR Code Generator**!
 
-```yaml
-instance_name: "My Home Hub"
-password: "" # leave blank for no login; set a password to require login
-admin_name: "Administrator"
-feature_toggles:
-  shopping_list: true
-  media_downloader: true
-  pdf_compressor: true
-  qr_generator: true
-  notes: true
-  file_uploader: true
-  who_is_home: true
-  chores: true
-  recipes: true
-  expiry_tracker: true
-  url_shortener: true
-  expense_tracker: true
-family_members:
-  - Mom
-  - Dad
-  - Dipanshu
-  - Vivek
-  - India
-```
+## Getting Started is Easy
 
-### 2. Run with Docker Compose
+The best way to run HomeHub is with Docker. It's quick and keeps everything tidy.
 
-```yaml
-# docker-compose.yml
-services:
-  homehub:
-    container_name: homehub
-    image: ghcr.io/surajverma/homehub:latest
-    ports:
-      - "5000:5000" #app listens internally on port 5000
-    environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to random if not provided
-    volumes:
-      - ./uploads:/app/uploads
-      - ./media:/app/media
-      - ./pdfs:/app/pdfs
-      - ./data:/app/data
-      - ./config.yml:/app/config.yml:ro
-```
+**1. Create your `config.yml`**
 
-Start:
-```powershell
+First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub and add family members. You can also set an optional password to protect the whole site.
+
+**2. Run with Docker Compose**
+
+Use the provided `compose.yml` file to get started in seconds:
+
+```bash
 docker compose up -d
 ```
-Open [http://localhost:5000](http://localhost:5000)
+That's it! Open your browser and head to [http://localhost:5000](http://localhost:5000)
 
-### 3. Local Development
+## Our Philosophy
 
-Python 3.12 required. To run without Docker:
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python run.py
-```
-
-### Security notes
-
-- App authentication is optional, controlled via `config.yml > password`. If you set a password, it’s hashed on startup and the plain value is removed from memory.
-- Set a strong `SECRET_KEY` in production. With Docker, create a `.env` file next to your compose file:
-
-```env
-SECRET_KEY=generate-a-long-random-string-here
-```
-
-Compose picks it up automatically. If unset, the app generates a random key at runtime (sessions will invalidate when the container restarts).
-
-## Usage
-
-- Use the sidebar to access each tool.
-- Switch users with the dropdown (top right); admin user can edit the Notice Board and delete any entry.
-- “Who is Home” lets each member update their status.
-- Expense Tracker supports recurring rules, categories, and monthly summaries.
-- All config changes (in `config.yml`) are hot-reloaded—no restart needed.
+* **Private & Self-Hosted**: All your data stays on your network. No cloud, no tracking.
+* **Simple & Lightweight**: Runs smoothly on minimal hardware like a Raspberry Pi.
+* **Family-Focused**: Designed to be intuitive for users of all technical skill levels.
+* **Customizable**: Toggle features on or off and even change the color theme right from the `config.yml` file.
 
 ## Theming
 
-HomeHub follows your system dark/light mode automatically (using `prefers-color-scheme`) and updates live without refresh. You can customize colors via `config.yml > theme`. No rebuild is needed; changes hot-reload on the next request.
+HomeHub follows your system dark/light mode. You can customize colors via `config.yml > theme`.
 
 Configurable keys:
 
@@ -112,12 +54,10 @@ theme:
   # Accent colors
   primary_color: "#1d4ed8"
   secondary_color: "#a0aec0"
-
   # Surfaces & text
   background_color: "#f7fafc"
   card_background_color: "#ffffff"
   text_color: "#333333"
-
   # Sidebar palette
   sidebar_background_color: "#2563eb"
   sidebar_text_color: "#ffffff"                # text color used for the sidebar title and labels
@@ -132,18 +72,6 @@ Tips:
 
 Advanced: You can further adjust styles in `static/custom.css`. Those styles read the same CSS variables emitted from `config.yml`.
 
-## Storage
-
-- SQLite DB: `data/app.db`
-- User files: `uploads/`, `media/`, `pdfs/`
-
-Back up `data/` regularly if the instance holds important data.
-
-## Troubleshooting
-
-- If you see missing Python packages, run `pip install -r requirements.txt` in your venv.
-- For Docker issues, check container logs: `docker compose logs homehub`
-- To reset, stop containers and delete `data/app.db` (removes all data).
 
 ## License
 
@@ -153,5 +81,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 Contributions are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request.
 
-## Thank You
-If you like my work, you can [buy me a coffee ☕](https://ko-fi.com/skv)
+
+## Have Fun!
+
+This project was built to be a practical tool for my own family, and I hope it's useful for yours too. If you have ideas or find bugs, feel free to open an issue on GitHub. Contributions are always welcome!
+
+If you find HomeHub useful, you can [buy me a coffee ☕](https://ko-fi.com/skv).
