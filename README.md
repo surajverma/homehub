@@ -54,7 +54,7 @@ services:
     container_name: homehub
     image: ghcr.io/surajverma/homehub:latest
     ports:
-      - "5005:5005"
+      - "5000:5000" #app listens internally on port 5000
     environment:
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to random if not provided
@@ -70,7 +70,7 @@ Start:
 ```powershell
 docker compose up -d
 ```
-Open [http://localhost:5005](http://localhost:5005)
+Open [http://localhost:5000](http://localhost:5000)
 
 ### 3. Local Development
 
