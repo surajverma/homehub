@@ -74,7 +74,7 @@ Open [http://localhost:5005](http://localhost:5005)
 
 ### 3. Local Development
 
-Python 3.11 required. To run without Docker:
+Python 3.12 required. To run without Docker:
 ```powershell
 python -m venv .venv
 .venv\Scripts\activate
