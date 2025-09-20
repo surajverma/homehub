@@ -1,0 +1,10 @@
+flask
+flask_sqlalchemy
+pyyaml
+werkzeug
+qrcode
+yt-dlp
+Pillow
+gunicorn
+Flask-WTF
+bleach

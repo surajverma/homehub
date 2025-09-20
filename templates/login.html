@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow">
+    <h2 class="text-2xl font-bold mb-4">Sign in</h2>
+    <p class="text-sm text-gray-600 mb-4">This instance requires a password to access.</p>
+    <form method="POST" class="space-y-3">
+        <input type="password" name="password" class="w-full p-2 border rounded" placeholder="Enter password" required>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded">Continue</button>
+    </form>
+</div>
+{% endblock %}

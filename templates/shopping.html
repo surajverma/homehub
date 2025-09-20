@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mx-auto">
+    <h2 class="text-xl font-bold mb-4">Shopping List</h2>
+    <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+        <input type="text" name="item" class="md:col-span-9 w-full p-2 border rounded" placeholder="Add item..." required>
+        <input type="hidden" name="creator" id="creator">
+        <button type="submit" class="md:col-span-3 bg-blue-600 text-white px-4 py-2 rounded">Add</button>
+    </form>
+    {% if suggestions %}
+    <div class="mb-4">
+        <h3 class="font-semibold mb-2">Suggestions</h3>
+        <div class="flex flex-wrap gap-2">
+            {% for s in suggestions %}
+            <form method="POST" class="inline">
+                <input type="hidden" name="item" value="{{ s }}">
+                <input type="hidden" name="creator" value="">
+                <button class="px-2 py-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200" type="submit">+ {{ s }}</button>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    <ul>
+        {% for item in items %}
+        <li class="bg-white p-4 mb-2 rounded shadow flex flex-wrap gap-2 items-center">
+            <form method="POST" action="/shopping/check/{{ item.id }}">
+                <button type="submit" class="mr-2 px-2 py-1 rounded {{ 'bg-green-100 text-green-800' if item.checked else 'bg-gray-100 text-gray-800' }}">
+                    {{ 'Purchased' if item.checked else 'Mark Purchased' }}
+                </button>
+            </form>
+            <span class="flex-1 {% if item.checked %}line-through text-gray-400{% endif %}">{{ item.item }}</span>
+            <div class="text-xs text-gray-500">By {{ item.creator }} at {{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+            <form method="POST" action="/shopping/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}">
+                <input type="hidden" name="user">
+                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+<script>
+document.getElementById('creator').value = localStorage.getItem('username');
+document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
+// Hide delete for non-owners
+(function(){
+    const adminName='{{ config.admin_name }}';
+    const current=localStorage.getItem('username');
+    document.querySelectorAll('.delete-form').forEach(f=>{
+        const c=f.getAttribute('data-creator');
+        if(!(current===c||current===adminName||current==='Administrator'||current==='admin')) f.style.display='none';
+    });
+})();
+// Attach current user to suggestion buttons
+(function(){
+    const current = localStorage.getItem('username') || '';
+    document.querySelectorAll('form.inline input[name="creator"]').forEach(i=>{ i.value = current; });
+})();
+</script>
+{% endblock %}

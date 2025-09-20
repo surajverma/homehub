@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mx-auto">
+    <h2 class="text-xl font-bold mb-4">QR Code Generator</h2>
+    <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+        <input type="text" name="qrtext" class="md:col-span-9 w-full p-2 border rounded" placeholder="Text to encode..." required>
+        <input type="hidden" name="creator" id="creator">
+        <button type="submit" class="md:col-span-3 bg-blue-600 text-white px-4 py-2 rounded">Generate QR</button>
+    </form>
+    {% if qr_img %}
+    <div class="mt-4">
+        <img src="data:image/png;base64,{{ qr_img }}" alt="QR Code" class="mx-auto">
+    </div>
+    {% endif %}
+    <h3 class="text-lg font-bold mt-6 mb-2">History</h3>
+    <ul>
+        {% for q in history %}
+        <li class="bg-white p-4 mb-2 rounded shadow flex flex-wrap gap-2 items-center">
+            <span class="flex-1 truncate">{{ q.text }}</span>
+            <a class="px-2 py-1 rounded bg-gray-100 text-gray-800" href="/static/{{ q.filename }}" target="_blank">View</a>
+            <a class="px-2 py-1 rounded bg-gray-100 text-gray-800" href="/static/{{ q.filename }}" download>Download</a>
+            <span class="text-xs text-gray-500">By {{ q.creator }} at {{ q.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+            <form method="POST" action="/qr/delete/{{ q.id }}" class="delete-form" data-creator="{{ q.creator }}">
+                <input type="hidden" name="user">
+                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+<script>
+document.getElementById('creator').value = localStorage.getItem('username');
+document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
+// Hide delete for non-owners
+(function(){
+    const adminName='{{ config.admin_name }}';
+    const current=localStorage.getItem('username');
+    document.querySelectorAll('.delete-form').forEach(f=>{
+        const c=f.getAttribute('data-creator');
+        if(!(current===c||current===adminName||current==='Administrator'||current==='admin')) f.style.display='none';
+    });
+})();
+</script>
+{% endblock %}

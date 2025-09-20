@@ -1,0 +1,16 @@
+# Database files
+data/app.db
+database.db
+
+# User-uploaded files
+uploads/
+media/
+pdfs/
+
+# Python cache files
+*.pyc
+__pycache__/
+
+# Environment variables
+.env
+config.yml

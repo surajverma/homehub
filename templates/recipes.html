@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mx-auto">
+    <h2 class="text-xl font-bold mb-4">Recipe Book</h2>
+    <form method="POST" class="mb-4">
+        <input type="text" name="title" value="{{ form_title if form_title is defined else '' }}" class="w-full p-2 border rounded mb-2" placeholder="Recipe title..." required>
+        <input type="url" name="link" value="{{ form_link if form_link is defined else '' }}" class="w-full p-2 border rounded mb-2" placeholder="Link (optional)">
+        <textarea name="ingredients" class="w-full p-2 border rounded mb-2" placeholder="Ingredients...">{{ form_ingredients if form_ingredients is defined else '' }}</textarea>
+        <textarea name="instructions" class="w-full p-2 border rounded mb-2" placeholder="Instructions...">{{ form_instructions if form_instructions is defined else '' }}</textarea>
+        <input type="hidden" name="creator" id="creator">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Add Recipe</button>
+    </form>
+    <ul>
+        {% for recipe in recipes %}
+        <li class="bg-white p-4 mb-2 rounded shadow">
+            <div class="font-semibold text-lg">{{ recipe.title }}</div>
+            {% if recipe.link %}<a href="{{ recipe.link }}" class="text-blue-600 underline">Link</a>{% endif %}
+            <div class="text-xs text-gray-500">By {{ recipe.creator }} at {{ recipe.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+            <div class="mt-2"><strong>Ingredients:</strong> {{ recipe.ingredients }}</div>
+            <div class="mt-2"><strong>Instructions:</strong> {{ recipe.instructions }}</div>
+            <form method="POST" action="/recipes/delete/{{ recipe.id }}" class="mt-2 delete-form" data-creator="{{ recipe.creator }}">
+                <input type="hidden" name="user">
+                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+<script>
+document.getElementById('creator').value = localStorage.getItem('username');
+document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
+// Client-side validation: require ingredients or instructions
+(function(){
+    const form = document.querySelector('form[method="POST"]');
+    form.addEventListener('submit', function(e){
+        const ing = (form.querySelector('textarea[name="ingredients"]').value||'').trim();
+        const ins = (form.querySelector('textarea[name="instructions"]').value||'').trim();
+        if(!ing && !ins){
+            e.preventDefault();
+            alert('Please add ingredients or instructions (or both).');
+        }
+    });
+})();
+// Hide delete for non-owners
+(function(){
+    const adminName='{{ config.admin_name }}';
+    const current=localStorage.getItem('username');
+    document.querySelectorAll('.delete-form').forEach(f=>{
+        const c=f.getAttribute('data-creator');
+        if(!(current===c||current===adminName||current==='Administrator'||current==='admin')) f.style.display='none';
+    });
+})();
+</script>
+{% endblock %}

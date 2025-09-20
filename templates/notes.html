@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mx-auto">
+    <h2 class="text-xl font-bold mb-4">Shared Notes</h2>
+    <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-start" id="noteForm">
+        <textarea name="content" class="md:col-span-9 w-full p-2 border rounded" placeholder="Write a note..." required></textarea>
+        <div class="md:col-span-3 flex gap-2">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded flex-1">Save</button>
+            <button type="button" id="cancelEdit" class="px-4 py-2 rounded bg-gray-100 text-gray-800 hidden">Cancel</button>
+        </div>
+        <input type="hidden" name="note_id" value="">
+        <input type="hidden" name="creator" id="creator">
+    </form>
+    <ul>
+        {% for note in notes %}
+        <li class="bg-white p-4 mb-2 rounded shadow flex justify-between items-center">
+            <div class="pr-2">
+                <div class="font-semibold break-words">{{ note.content }}</div>
+                <div class="text-xs text-gray-500">By {{ note.creator }} at {{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" class="px-2 py-1 rounded bg-gray-100 text-gray-800 edit-btn" data-id="{{ note.id }}" data-content="{{ note.content|e }}" data-creator="{{ note.creator }}">Edit</button>
+                <form method="POST" action="/notes/delete/{{ note.id }}" class="delete-form" data-creator="{{ note.creator }}">
+                    <input type="hidden" name="user">
+                    <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                </form>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+<script>
+document.getElementById('creator').value = localStorage.getItem('username');
+document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
+// Hide delete/edit for non-owners
+(function(){
+    const adminName='{{ config.admin_name }}';
+    const current=localStorage.getItem('username');
+    document.querySelectorAll('.delete-form').forEach(f=>{
+        const c=f.getAttribute('data-creator');
+        if(!(current===c||current===adminName||current==='Administrator'||current==='admin')) f.style.display='none';
+    });
+    document.querySelectorAll('.edit-btn').forEach(b=>{
+        const c=b.getAttribute('data-creator');
+        if(!(current===c||current===adminName||current==='Administrator'||current==='admin')) b.style.display='none';
+    });
+})();
+// Edit flow
+(function(){
+    const form=document.getElementById('noteForm');
+    const textarea=form.querySelector('textarea[name="content"]');
+    const noteId=form.querySelector('input[name="note_id"]');
+    const cancel=document.getElementById('cancelEdit');
+    document.querySelectorAll('.edit-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            textarea.value=btn.getAttribute('data-content');
+            noteId.value=btn.getAttribute('data-id');
+            cancel.classList.remove('hidden');
+            textarea.focus();
+        });
+    });
+    cancel.addEventListener('click',()=>{
+        textarea.value='';
+        noteId.value='';
+        cancel.classList.add('hidden');
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,624 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .modal { transition: opacity 0.2s ease; }
+  .modal-content { transition: transform 0.2s ease; max-height: 80vh; overflow-y: auto; }
+  .monthly-summary-container { display:flex; flex-direction:column; height:80vh; }
+  .calendar-cell { min-height: 5rem; }
+  .no-scrollbar::-webkit-scrollbar { display:none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
+<!-- Bootstrap data for the month -->
+<script id="expensesData" type="application/json">{{ expenses_json | safe }}</script>
+
+<div class="max-w-screen-2xl mx-auto space-y-6">
+  <h1 class="text-3xl font-bold text-gray-800">Expense Tracker</h1>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="summary-cards">
+    <div class="bg-white p-4 rounded-lg shadow flex items-center">
+      <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><i class="fas fa-wallet"></i></div>
+      <div class="ml-4">
+        <p class="text-gray-500 text-sm">Total This Month</p>
+        <p class="text-2xl font-bold text-gray-800" id="total-this-month">₹0.00</p>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow flex items-center">
+      <div class="bg-green-100 text-green-600 p-3 rounded-full"><i class="fas fa-user-circle"></i></div>
+      <div class="ml-4">
+        <p class="text-gray-500 text-sm">My Spending</p>
+        <p class="text-2xl font-bold text-gray-800" id="my-spending">₹0.00</p>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow flex items-center">
+      <div class="bg-purple-100 text-purple-600 p-3 rounded-full"><i class="fas fa-chart-pie"></i></div>
+      <div class="ml-4">
+        <p class="text-gray-500 text-sm">Top Category</p>
+        <p class="text-2xl font-bold text-gray-800" id="top-category">-</p>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow flex items-center justify-center">
+      <button id="manage-recurring-btn" class="w-full h-full bg-gray-100 text-gray-800 py-2 rounded-md hover:bg-gray-200 font-semibold"><i class="fas fa-cog mr-2"></i>Recurring rules & config</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Calendar -->
+  <div class="lg:col-span-5 bg-white p-4 rounded-lg shadow relative z-0">
+      <div class="flex items-center justify-between mb-3">
+        <button id="prev-month" class="p-2 rounded-full hover:bg-gray-100" title="Prev"><i class="fas fa-chevron-left"></i></button>
+        <h2 class="text-xl font-bold" id="calendar-header"></h2>
+        <button id="next-month" class="p-2 rounded-full hover:bg-gray-100" title="Next"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    <div class="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-1">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
+    </div>
+
+    <!-- Side Panel -->
+    <div id="side-panel" class="lg:col-span-3 bg-white p-4 rounded-lg shadow relative z-0">
+      <div id="panel-content"></div>
+    </div>
+
+    <!-- Monthly Summary Sidebar -->
+    <div class="lg:col-span-4 bg-white p-4 rounded-lg shadow monthly-summary-container relative z-0">
+      <div class="flex-shrink-0"><h3 class="text-lg font-bold mb-3">Entries This Month</h3></div>
+      <form id="bulk-delete-form" method="POST" action="/expenses/bulk-delete" class="flex-grow overflow-y-auto pr-2 no-scrollbar">
+        <input type="hidden" name="user" id="bulk-user">
+        <div id="monthly-entries-list"></div>
+      </form>
+      <div id="monthly-total-footer" class="flex-shrink-0 border-t pt-3 mt-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <button id="bulk-delete-btn" class="px-3 py-2 bg-red-600 text-white rounded disabled:opacity-50" disabled>Delete Selected</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">Month Total:</span>
+          <span id="monthly-total-amount" class="text-lg font-bold">₹0.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Removed inline recurring/config section in favor of modal -->
+</div>
+
+<!-- Add/Edit Expense Modal -->
+<div id="expense-modal" class="modal fixed inset-0 z-50 bg-black bg-opacity-50 items-center justify-center p-4 hidden">
+  <div class="modal-content bg-white w-full max-w-md p-6 rounded-lg shadow-xl transform scale-95">
+    <h2 class="text-2xl font-bold mb-4" id="modal-title">Add Expense</h2>
+    <form id="expense-form" method="POST" action="/expenses">
+      <input type="hidden" name="form_type" value="single">
+      <input type="hidden" name="user" id="expense-user">
+      <div class="space-y-3">
+        <div>
+          <label class="text-sm text-gray-600">Date</label>
+          <input type="date" id="expense-date" name="date" class="mt-1 block w-full border rounded p-2" required>
+        </div>
+        <div>
+          <label class="text-sm text-gray-600">Title</label>
+          <input type="text" id="expense-title" name="title" class="mt-1 block w-full border rounded p-2" required>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm text-gray-600">Category</label>
+            <input type="text" id="expense-category" name="category" class="mt-1 block w-full border rounded p-2" placeholder="e.g., Groceries">
+            <div id="modal-category-chips" class="mt-2 flex flex-wrap gap-2"></div>
+          </div>
+          <div>
+            <label class="text-sm text-gray-600">Quantity</label>
+            <input type="number" step="0.01" id="expense-quantity" name="quantity" class="mt-1 block w-full border rounded p-2" placeholder="optional">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm text-gray-600">Unit Price</label>
+            <input type="number" step="0.01" id="expense-unit-price" name="unit_price" class="mt-1 block w-full border rounded p-2" placeholder="optional">
+          </div>
+          <div>
+            <label class="text-sm text-gray-600">Total Amount</label>
+            <input type="number" step="0.01" id="expense-amount" name="amount" class="mt-1 block w-full border rounded p-2" required>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-600">Payer</label>
+          <input type="text" id="expense-payer" name="payer" class="mt-1 block w-full border rounded p-2" required>
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" id="cancel-expense" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save Expense</button>
+      </div>
+    </form>
+  </div>
+  </div>
+
+<!-- Recurring rules & Config Modal (tabbed) -->
+<div id="recurring-modal" class="modal fixed inset-0 z-40 bg-black bg-opacity-50 items-center justify-center p-4 hidden">
+  <div class="modal-content bg-white w-full max-w-3xl p-6 rounded-lg shadow-xl transform scale-95">
+    <h2 class="text-2xl font-bold mb-4">Expense Settings</h2>
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-4">
+      <nav class="-mb-px flex space-x-6" id="settings-tabs">
+        <button class="tab-button py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 active" data-tab="recurring-rules">Recurring Rules</button>
+        <button class="tab-button py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="general-settings">General Settings</button>
+      </nav>
+    </div>
+    <!-- Tab Content -->
+    <div id="settings-tab-content">
+      <div id="recurring-rules-content" class="tab-content">
+        <h3 class="font-semibold mb-2">Active Rules</h3>
+  <div class="space-y-3 pr-2">
+          {% for r in rules %}
+          <details class="border rounded p-3">
+            <summary class="cursor-pointer flex items-center justify-between">
+              <div>
+                <div class="font-medium">{{ r.title }} — {{ r.frequency }}{% if r.frequency=='monthly' %} ({{ r.monthly_mode or 'day_of_month' }}){% endif %}</div>
+                <div class="text-xs text-gray-500">{{ r.default_quantity }} × {{ '%.2f'|format(r.unit_price or 0) }} • {{ r.start_date }}{% if r.end_date %} → {{ r.end_date }}{% endif %} • by {{ r.creator }}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="px-2 py-1 rounded bg-blue-100 text-blue-800" onclick="this.closest('details').open=true">Edit</button>
+                <form method="POST" action="/expenses/recurring/delete/{{ r.id }}" class="delete-form" data-creator="{{ r.creator }}">
+                  <input type="hidden" name="user">
+                  <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                </form>
+              </div>
+            </summary>
+            <form method="POST" action="/expenses/recurring/edit/{{ r.id }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+              <input type="hidden" name="user" value="">
+              <div>
+                <label class="text-sm text-gray-600">Title</label>
+                <input type="text" name="title" class="w-full border rounded p-2" value="{{ r.title }}">
+              </div>
+              <div>
+                <label class="text-sm text-gray-600">Category</label>
+                <input type="text" name="category" class="w-full border rounded p-2" value="{{ r.category or '' }}">
+                <div class="edit-category-chips mt-2 flex flex-wrap gap-2"></div>
+              </div>
+              <div>
+                <label class="text-sm text-gray-600">Unit Price</label>
+                <input type="number" step="0.01" name="unit_price" class="w-full border rounded p-2" value="{{ '%.2f'|format(r.unit_price or 0) }}">
+              </div>
+              <div>
+                <label class="text-sm text-gray-600">Default Qty</label>
+                <input type="number" step="0.01" name="default_quantity" class="w-full border rounded p-2" value="{{ r.default_quantity }}">
+              </div>
+              <div>
+                <label class="text-sm text-gray-600">Frequency</label>
+                <select name="frequency" class="w-full border rounded p-2">
+                  <option value="daily" {% if r.frequency=='daily' %}selected{% endif %}>Daily</option>
+                  <option value="weekly" {% if r.frequency=='weekly' %}selected{% endif %}>Weekly</option>
+                  <option value="monthly" {% if r.frequency=='monthly' %}selected{% endif %}>Monthly</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-sm text-gray-600">Monthly Mode</label>
+                <select name="monthly_mode" class="w-full border rounded p-2">
+                  <option value="day_of_month" {% if (r.monthly_mode or 'day_of_month')=='day_of_month' %}selected{% endif %}>Same day-of-month</option>
+                  <option value="calendar" {% if (r.monthly_mode or 'day_of_month')=='calendar' %}selected{% endif %}>Calendar boundary</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-sm text-gray-600">Start Date</label>
+                <input type="date" name="start_date" class="w-full border rounded p-2" value="{{ r.start_date }}">
+              </div>
+              <div>
+                <label class="text-sm text-gray-600">End Date</label>
+                <input type="date" name="end_date" class="w-full border rounded p-2" value="{{ r.end_date or '' }}">
+              </div>
+              <div class="md:col-span-3 flex justify-end">
+                <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Save</button>
+              </div>
+            </form>
+          </details>
+          {% else %}
+          <div class="text-gray-500">No recurring expenses yet.</div>
+          {% endfor %}
+        </div>
+        <h3 class="font-semibold mb-2 border-t pt-4">Add New Rule</h3>
+        <form id="recurring-form" method="POST" action="/expenses" class="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+          <input type="hidden" name="form_type" value="recurring">
+          <input type="text" name="title" class="md:col-span-4 p-2 border rounded" placeholder="Title (e.g., Milk)" required>
+          <div class="md:col-span-4">
+            <!-- Category quick-pick chips above the Category input for cleaner alignment -->
+            <div id="recurring-category-chips" class="mb-1 flex flex-wrap gap-2"></div>
+            <input type="text" name="category" class="w-full p-2 border rounded" placeholder="Category (opt)">
+          </div>
+          <input type="number" step="0.01" name="unit_price" class="md:col-span-4 p-2 border rounded" placeholder="Unit price" required>
+          <input type="number" step="0.01" name="default_quantity" class="md:col-span-4 p-2 border rounded" placeholder="Default qty" required>
+          <select name="frequency" class="md:col-span-4 p-2 border rounded">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <select name="monthly_mode" class="md:col-span-4 p-2 border rounded">
+            <option value="day_of_month">Monthly mode: Same day-of-month</option>
+            <option value="calendar">Monthly mode: Calendar boundary</option>
+          </select>
+          <input type="date" name="start_date" class="md:col-span-6 p-2 border rounded" placeholder="Start">
+          <input type="date" name="end_date" class="md:col-span-6 p-2 border rounded" placeholder="End (optional)">
+          <input type="hidden" name="creator" id="recCreator">
+          <div class="md:col-span-12 flex justify-end">
+            <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Add Recurring</button>
+          </div>
+        </form>
+      </div>
+      <div id="general-settings-content" class="tab-content hidden">
+        <form method="POST" action="/expenses/settings" class="space-y-3">
+          <input type="hidden" name="user" id="settings-user">
+          <div>
+            <label class="text-sm text-gray-600">Currency symbol</label>
+            <input type="text" name="currency" id="currency-input" class="w-full border rounded p-2" placeholder="₹">
+          </div>
+          <div>
+            <label class="text-sm text-gray-600">Categories (comma separated)</label>
+            <input type="text" name="categories" id="categories-input" class="w-full border rounded p-2" placeholder="Groceries, Utilities, Housing">
+            <div id="category-chips" class="mt-2 flex flex-wrap gap-2"></div>
+          </div>
+          <div class="flex justify-end">
+            <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Save Settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="mt-6 flex justify-end space-x-3">
+      <button type="button" id="close-recurring" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const adminName = '{{ config.admin_name }}';
+  const currentUser = () => localStorage.getItem('username') || '';
+
+  // Modal helpers
+  const expenseModal = document.getElementById('expense-modal');
+  const recurringModal = document.getElementById('recurring-modal');
+  const settingsTabs = document.getElementById('settings-tabs');
+  function openModal(m){ m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(()=> m.querySelector('.modal-content').classList.add('scale-100'), 10); }
+  function closeModal(m){ const c=m.querySelector('.modal-content'); c.classList.remove('scale-100'); setTimeout(()=>{ m.classList.add('hidden'); m.classList.remove('flex'); }, 200); }
+
+  // State
+  let payload = {};
+  try { payload = JSON.parse(document.getElementById('expensesData').textContent || '{}'); } catch(e){ payload = {}; }
+  let year = payload.year || new Date().getFullYear();
+  let month = payload.month || (new Date().getMonth()+1);
+  let byDate = payload.by_date || {};
+  let summary = payload.summary || { total_this_month: 0, per_payer: {}, per_category: {}, top_category: null };
+  let selectedDate = null;
+  // If server provided a selected date via query param embedding, try to pick it from location
+  try {
+    const url = new URL(window.location.href);
+    const sel = url.searchParams.get('sel');
+    if (sel) selectedDate = new Date(sel);
+  } catch(err) { /* no-op */ }
+
+  // Elements
+  const grid = document.getElementById('calendar-grid');
+  const calHeader = document.getElementById('calendar-header');
+  const panelContent = document.getElementById('panel-content');
+  const monthlyList = document.getElementById('monthly-entries-list');
+  const bulkForm = document.getElementById('bulk-delete-form');
+  const bulkBtn = document.getElementById('bulk-delete-btn');
+  const monthlyTotalAmount = document.getElementById('monthly-total-amount');
+
+  // Settings bootstrap
+  let settings = (payload.settings||{currency:'₹', categories:[]});
+  function fmt(amount){ return (settings.currency||'₹') + (Number(amount)||0).toFixed(2); }
+
+  function updateSummaryCards(){
+    document.getElementById('total-this-month').textContent = fmt(summary.total_this_month||0);
+    // my spending
+    const me = currentUser();
+    const p = summary.per_payer || {}; const mine = p[me] || 0;
+    document.getElementById('my-spending').textContent = fmt(mine);
+    document.getElementById('top-category').textContent = summary.top_category || '-';
+    monthlyTotalAmount.textContent = fmt(summary.total_this_month||0);
+  }
+
+  function monthDays(y, m){ return new Date(y, m, 0).getDate(); }
+  function firstWeekday(y, m){ return new Date(y, m-1, 1).getDay(); }
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function isoLocalFromParts(y, m, d){ return `${y}-${pad(m)}-${pad(d)}`; }
+  function isoLocalFromDate(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+  function dateFromYmd(ymd){ const [y,m,d]=ymd.split('-').map(Number); return new Date(y, m-1, d); }
+
+  function renderCalendar(){
+    grid.innerHTML = '';
+    const d = new Date(year, month-1, 1);
+    calHeader.textContent = d.toLocaleString('default', { month: 'long' }) + ' ' + year;
+    const pad = firstWeekday(year, month);
+    for(let i=0;i<pad;i++){ grid.insertAdjacentHTML('beforeend', '<div></div>'); }
+    const days = monthDays(year, month);
+    const todayIso = isoLocalFromDate(new Date());
+    for(let day=1; day<=days; day++){
+      const cur = new Date(year, month-1, day);
+      const ds = isoLocalFromDate(cur);
+      const data = byDate[ds];
+      const isToday = (ds===todayIso);
+      const isSelected = selectedDate && (isoLocalFromDate(selectedDate)===ds);
+      let cls = 'calendar-cell p-2 border rounded-md cursor-pointer flex flex-col text-left';
+      if (isSelected) cls += ' bg-blue-500 text-white';
+      else if (isToday) cls += ' bg-blue-100';
+      grid.insertAdjacentHTML('beforeend', `
+        <button class="${cls}" data-date="${ds}">
+          <div class="font-semibold">${day}</div>
+          ${data && data.total ? `<div class="text-xs mt-1 ${isSelected? 'text-white' : 'text-gray-600'}">${fmt(data.total)}</div>` : ''}
+        </button>
+      `);
+    }
+  }
+
+  function renderMonthlySidebar(){
+    const items = [];
+    Object.keys(byDate).sort().forEach(ds=>{
+      (byDate[ds].entries||[]).forEach(e=> items.push({date: ds, ...e}));
+    });
+    items.sort((a,b)=> a.date.localeCompare(b.date));
+    if(items.length===0){
+      monthlyList.innerHTML = '<div class="text-gray-500">No entries this month.</div>';
+      return;
+    }
+    monthlyList.innerHTML = items.map(e=> `
+      <label class="flex items-center justify-between p-2 border-b gap-2">
+        <input type="checkbox" class="entry-select" name="ids" value="${e.id}">
+        <div>
+          <div class="font-medium">${e.title}${e.quantity? ` (${e.quantity})` : ''}</div>
+          <div class="text-xs text-gray-500">${dateFromYmd(e.date).toLocaleDateString()} — ${e.category || ''} ${e.payer? `• by ${e.payer}`:''}</div>
+        </div>
+        <div class="font-semibold">${fmt(e.amount)}</div>
+      </label>
+    `).join('');
+    // Hookup selection change
+    bulkForm.querySelectorAll('input.entry-select').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const any = [...bulkForm.querySelectorAll('input.entry-select')].some(x=> x.checked);
+        bulkBtn.disabled = !any;
+      });
+    });
+  }
+
+  function renderSidePanel(){
+    if(!selectedDate){
+      panelContent.innerHTML = `<div class="text-center text-gray-500 p-8 h-full flex items-center justify-center">
+        <div>
+          <div class="text-5xl mb-2">🧾</div>
+          <div class="font-medium">Pick a day on the calendar to view or add expenses.</div>
+        </div>
+      </div>`; return;
+    }
+  const ds = isoLocalFromDate(selectedDate);
+    const dayData = byDate[ds] || { entries: [], total: 0 };
+    const entriesHtml = (dayData.entries||[]).map(e=>{
+      const allowed = (currentUser()===e.payer) || [adminName, 'Administrator', 'admin'].includes(currentUser());
+      return `
+      <div class="flex items-start justify-between p-2 border rounded mb-2">
+        <div>
+          <div class="font-medium">${e.title}${e.quantity? ` (${e.quantity})` : ''}</div>
+          <div class="text-xs text-gray-500">${e.category || ''} ${e.payer? `• by ${e.payer}`:''}</div>
+        </div>
+        <div class="text-right">
+          <div class="font-semibold">${fmt(e.amount)}</div>
+          <div class="text-xs mt-1 space-x-2 ${allowed? '' : 'hidden'}">
+            <button class="text-blue-600 hover:underline edit-expense" data-id="${e.id}" data-date="${ds}">Edit</button>
+            <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${e.payer||''}">
+              <input type="hidden" name="user" value="${currentUser()}">
+              <button type="submit" class="text-red-600 hover:underline">Delete</button>
+            </form>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    panelContent.innerHTML = `
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <div class="text-sm text-gray-500">Expenses for</div>
+          <div class="text-lg font-semibold">${selectedDate.toLocaleDateString()}</div>
+        </div>
+        <div class="text-lg font-semibold">${fmt(dayData.total||0)}</div>
+      </div>
+      <div>${entriesHtml || '<div class=\'text-gray-500\'>No expenses yet.</div>'}</div>
+      <button id="add-expense-btn" class="mt-3 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"><i class="fa-solid fa-plus mr-1"></i> Add Expense</button>
+    `;
+  }
+
+  async function fetchMonth(y, m){
+    const res = await fetch(`/api/expenses/month?year=${y}&month=${m}`);
+    const data = await res.json();
+    year = data.year; month = data.month; byDate = data.by_date || {}; summary = data.summary || summary; settings = data.settings || settings;
+    updateSummaryCards(); renderCalendar(); renderMonthlySidebar(); renderSidePanel();
+  }
+
+  // Event listeners
+  document.getElementById('prev-month').addEventListener('click', ()=>{
+    const d = new Date(year, month-2, 1); fetchMonth(d.getFullYear(), d.getMonth()+1); selectedDate = null;
+  });
+  document.getElementById('next-month').addEventListener('click', ()=>{
+    const d = new Date(year, month, 1); fetchMonth(d.getFullYear(), d.getMonth()+1); selectedDate = null;
+  });
+  document.getElementById('calendar-grid').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-date]');
+    if(!btn) return;
+    const ymd = btn.getAttribute('data-date');
+    selectedDate = dateFromYmd(ymd);
+    renderCalendar();
+    renderSidePanel();
+  });
+  document.getElementById('manage-recurring-btn').addEventListener('click', ()=>{
+    document.getElementById('recCreator').value = currentUser();
+    const rf = document.getElementById('recurring-form');
+    if (rf){
+      const sel = selectedDate ? selectedDate.toISOString().split('T')[0] : '';
+      rf.action = `/expenses?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
+    }
+    openModal(recurringModal);
+  });
+  document.getElementById('close-recurring').addEventListener('click', ()=> closeModal(recurringModal));
+
+  // Tabs in recurring/config modal
+  if (settingsTabs){
+    settingsTabs.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.tab-button');
+      if (!btn) return;
+      settingsTabs.querySelectorAll('.tab-button').forEach(b=> b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('#settings-tab-content .tab-content').forEach(c=> c.classList.add('hidden'));
+      const target = document.getElementById(`${btn.dataset.tab}-content`);
+      if (target) target.classList.remove('hidden');
+    });
+  }
+
+  // Add/Edit modal
+  document.addEventListener('click', (e)=>{
+    if (e.target && e.target.id === 'add-expense-btn'){
+  const ds = selectedDate ? isoLocalFromDate(selectedDate) : isoLocalFromDate(new Date());
+      document.getElementById('modal-title').textContent = 'Add Expense';
+  const form = document.getElementById('expense-form');
+  // preserve current view in action
+  const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
+  form.action = `/expenses?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
+      document.getElementById('expense-user').value = currentUser();
+      document.getElementById('expense-date').value = ds;
+      document.getElementById('expense-title').value = '';
+      document.getElementById('expense-category').value = '';
+      document.getElementById('expense-quantity').value = '';
+      document.getElementById('expense-unit-price').value = '';
+      document.getElementById('expense-amount').value = '';
+      document.getElementById('expense-payer').value = currentUser();
+      openModal(expenseModal);
+    }
+    if (e.target && e.target.classList.contains('edit-expense')){
+      const id = e.target.getAttribute('data-id');
+  const ds = e.target.getAttribute('data-date');
+      // Find entry in byDate
+      const entry = (byDate[ds]?.entries||[]).find(x=> String(x.id)===String(id));
+      if(!entry) return;
+      document.getElementById('modal-title').textContent = 'Edit Expense';
+  const form = document.getElementById('expense-form');
+  // preserve current view in action
+  const sel = selectedDate ? isoLocalFromDate(selectedDate) : ds;
+  form.action = `/expenses/edit/${id}?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
+      document.getElementById('expense-user').value = currentUser();
+      document.getElementById('expense-date').value = ds;
+      document.getElementById('expense-title').value = entry.title || '';
+      document.getElementById('expense-category').value = entry.category || '';
+      document.getElementById('expense-quantity').value = (entry.quantity!=null? entry.quantity : '');
+      document.getElementById('expense-unit-price').value = (entry.unit_price!=null? entry.unit_price : '');
+      document.getElementById('expense-amount').value = entry.amount || '';
+      document.getElementById('expense-payer').value = entry.payer || currentUser();
+      openModal(expenseModal);
+    }
+  });
+  document.getElementById('cancel-expense').addEventListener('click', ()=> closeModal(expenseModal));
+  expenseModal.addEventListener('click', (e)=>{ if (e.target===expenseModal) closeModal(expenseModal); });
+  recurringModal.addEventListener('click', (e)=>{ if (e.target===recurringModal) closeModal(recurringModal); });
+
+  // On load and on user switch, refresh UI bits that depend on user
+  function applyUserVisibility(){
+    // Hide delete buttons not allowed (handled inline per-entry), ensure hidden inputs reflect current user
+    document.querySelectorAll('form.delete-form input[name="user"]').forEach(i=> i.value = currentUser());
+    document.querySelectorAll('form[action^="/expenses/recurring/edit/"] input[name="user"]').forEach(i=> i.value = currentUser());
+    document.getElementById('settings-user').value = currentUser();
+    document.getElementById('bulk-user').value = currentUser();
+  }
+  document.addEventListener('user-switched', ()=>{ updateSummaryCards(); renderSidePanel(); applyUserVisibility(); });
+
+  // Initialize
+  updateSummaryCards();
+  renderCalendar();
+  renderMonthlySidebar();
+  renderSidePanel();
+  applyUserVisibility();
+
+  // Auto-total calculation when editing/adding
+  function recalcTotal(){
+    const q = parseFloat(document.getElementById('expense-quantity').value || '0');
+    const up = parseFloat(document.getElementById('expense-unit-price').value || '0');
+    if (!isNaN(q) && !isNaN(up) && (q>0 || up>0)){
+      document.getElementById('expense-amount').value = (q*up).toFixed(2);
+    }
+  }
+  ['expense-quantity','expense-unit-price'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', recalcTotal);
+  });
+
+  // Pre-fill settings UI (both settings tab and category chips usability)
+  document.getElementById('currency-input').value = settings.currency || '₹';
+  document.getElementById('categories-input').value = (settings.categories||[]).join(', ');
+  const chips = document.getElementById('category-chips');
+  chips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${c}">${c}</button>`).join('');
+  chips.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button.add-cat'); if(!btn) return;
+    const cat = btn.getAttribute('data-cat') || '';
+    const field = document.getElementById('expense-category');
+    if (field) field.value = cat;
+  });
+
+  // Also render category chips inside the modal for quick-pick
+  const modalChips = document.getElementById('modal-category-chips');
+  if (modalChips){
+    modalChips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${c}">${c}</button>`).join('');
+    modalChips.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button.add-cat'); if(!btn) return;
+      const cat = btn.getAttribute('data-cat') || '';
+      const field = document.getElementById('expense-category');
+      if (field) field.value = cat;
+    });
+  }
+  // Chips for recurring add form
+  const recChips = document.getElementById('recurring-category-chips');
+  if (recChips){
+    recChips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${c}">${c}</button>`).join('');
+    recChips.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button.add-cat'); if(!btn) return;
+      const cat = btn.getAttribute('data-cat') || '';
+      const field = document.querySelector('#recurring-form input[name="category"]');
+      if (field) field.value = cat;
+    });
+  }
+
+  // Enable category chips on each recurring edit form
+  document.querySelectorAll('.edit-category-chips').forEach(container => {
+    container.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${c}">${c}</button>`).join('');
+    container.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button.add-cat'); if(!btn) return;
+      const cat = btn.getAttribute('data-cat') || '';
+      const field = container.closest('form')?.querySelector('input[name="category"]');
+      if (field) field.value = cat;
+    });
+  });
+
+  // Bulk delete submit behavior
+  bulkBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    // Attach query params to preserve view
+  const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
+    bulkForm.action = `/expenses/bulk-delete?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
+    bulkForm.submit();
+  });
+
+  // Preserve view state on recurring delete/edit and settings save by updating form actions at click time
+  document.body.addEventListener('submit', (e)=>{
+    const f = e.target;
+    if (!(f instanceof HTMLFormElement)) return;
+    const needsPreserve = f.action.includes('/expenses/recurring/delete/') || f.action.includes('/expenses/recurring/edit/') || f.action.includes('/expenses/delete/') || f.action.endsWith('/expenses/settings');
+    if (needsPreserve){
+  const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
+      try {
+        const url = new URL(f.action, window.location.origin);
+        url.searchParams.set('y', String(year));
+        url.searchParams.set('m', String(month));
+        if (sel) url.searchParams.set('sel', sel); else url.searchParams.delete('sel');
+        f.action = url.pathname + url.search;
+      } catch(err) {
+        // Fallback string concat
+        f.action = f.action + `?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

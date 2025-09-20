@@ -1,0 +1,22 @@
+instance_name: "My Home Hub"
+password: "" #leave blank for password less access
+admin_name: "Administrator"
+feature_toggles:
+  shopping_list: true
+  media_downloader: true
+  pdf_compressor: true
+  qr_generator: true
+  notes: true
+  file_uploader: true
+  who_is_home: true
+  chores: true
+  recipes: true
+  expiry_tracker: true
+  url_shortener: true
+  expense_tracker: true
+family_members:
+  - Mom
+  - Dad
+  - Dipanshu
+  - Vivek
+  - India

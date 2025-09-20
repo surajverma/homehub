@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+	<div class="lg:col-span-2 space-y-6">
+		<div class="bg-white p-6 rounded-xl shadow">
+			<h1 class="text-3xl font-bold mb-2"><i class="fa-solid fa-house text-blue-600 mr-2"></i>Welcome to {{ config.instance_name }}!</h1>
+			<p class="mb-4 text-gray-600">Pick a tool from the left to get started.</p>
+			<div class="text-sm text-gray-500" id="today"></div>
+		</div>
+
+			<div class="bg-white p-6 rounded-xl shadow">
+				<h2 class="text-xl font-bold mb-3"><i class="fa-solid fa-bullhorn text-amber-600 mr-2"></i>Family Notice Board</h2>
+			{% if notice and notice.content %}
+				<div class="prose max-w-none whitespace-pre-wrap bg-yellow-50 border border-yellow-200 rounded p-4">{{ notice.content }}</div>
+				<div class="text-xs text-gray-500 mt-2">Last updated by {{ notice.updated_by }} at {{ notice.updated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+			{% else %}
+				<div class="text-gray-500">No notices yet. Admin can post one below.</div>
+			{% endif %}
+				<form method="POST" action="/notice" class="mt-4 space-y-2" id="noticeForm">
+				<textarea name="content" rows="5" class="w-full p-2 border rounded" placeholder="Type a family notice..."></textarea>
+				<input type="hidden" name="user" value="">
+				<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Update Notice (Admin)</button>
+			</form>
+			<!-- Notice form visibility is handled globally by applyUserContext() in base.html -->
+				{% if member_statuses %}
+				<div class="mt-6">
+					<h3 class="font-semibold mb-2"><i class="fa-solid fa-message text-blue-600 mr-2"></i>Family Status Updates</h3>
+					<div class="flex flex-wrap gap-2" id="memberStatusChips">
+						{% for name, text in member_statuses.items() %}
+						<span class="px-2 py-1 rounded text-sm border" data-name="{{ name }}">{{ name }}: {{ text }}</span>
+						{% endfor %}
+					</div>
+				</div>
+				{% endif %}
+				<form method="POST" action="/status/update" class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-2 items-end" id="memberStatusForm">
+					<div class="md:col-span-10">
+						<div class="flex items-center justify-between">
+							<label class="block text-sm text-gray-600 mb-1">My status</label>
+							<span id="memberStatusUserChip" class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-800"></span>
+						</div>
+						<input type="text" name="text" class="w-full p-2 border rounded" placeholder="e.g., Working late, At the store, etc.">
+					</div>
+					<input type="hidden" name="name" id="memberStatusName">
+					<button type="submit" class="md:col-span-2 px-3 py-2 rounded bg-blue-600 text-white"><i class="fa-solid fa-floppy-disk mr-1"></i>Save</button>
+				</form>
+				<form method="POST" action="/status/delete" class="mt-2" id="memberStatusDelete">
+					<input type="hidden" name="name" id="memberStatusDeleteName">
+					<button type="submit" class="px-3 py-2 rounded bg-red-100 text-red-800"><i class="fa-solid fa-trash mr-1"></i>Delete my status</button>
+				</form>
+			</div>
+	</div>
+
+	<div class="space-y-6">
+			<div class="bg-white p-6 rounded-xl shadow">
+				<h3 class="text-lg font-semibold mb-4"><i class="fa-solid fa-calendar-days text-green-600 mr-2"></i>Calendar</h3>
+				<div id="calendar" class="grid grid-cols-7 gap-2 text-sm"></div>
+				<div class="mt-4" id="remindersList"></div>
+				<!-- Add Reminder Modal -->
+				<div id="addModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+					<div class="bg-white w-full max-w-md p-4 rounded shadow">
+						<h4 class="font-semibold mb-2">Add Reminder for <span id="modalDate"></span></h4>
+						<form method="POST" action="/calendar/add" id="addForm" class="space-y-2">
+							<input type="hidden" name="date" id="modalDateInput">
+							<input type="text" name="title" class="w-full p-2 border rounded" placeholder="Title" required>
+							<textarea name="description" class="w-full p-2 border rounded" placeholder="Description (optional)"></textarea>
+							<input type="hidden" name="creator" value="">
+							<div class="flex gap-2 justify-end">
+								<button type="button" id="cancelAdd" class="px-3 py-2 rounded bg-gray-100 text-gray-800">Cancel</button>
+								<button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Add</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			<script id="remindersData" type="application/json">{{ reminders_json | safe }}</script>
+				<script>
+					// Modal helpers
+					const addModal = document.getElementById('addModal');
+					const modalDate = document.getElementById('modalDate');
+					const modalDateInput = document.getElementById('modalDateInput');
+					const addForm = document.getElementById('addForm');
+					const cancelAdd = document.getElementById('cancelAdd');
+					addForm.querySelector('input[name="creator"]').value = localStorage.getItem('username') || '';
+					cancelAdd.addEventListener('click', ()=>{ addModal.classList.add('hidden'); });
+
+					const today = new Date();
+					let selectedKey = null;
+					function buildCalendar(date){
+						const cal = document.getElementById('calendar');
+						cal.innerHTML='';
+						const year=date.getFullYear();
+						const month=date.getMonth();
+						const first=new Date(year,month,1);
+						const startDay=first.getDay();
+						const days=new Date(year,month+1,0).getDate();
+						const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+						names.forEach(n=>{ const h=document.createElement('div'); h.className='font-semibold text-gray-600'; h.textContent=n; cal.appendChild(h); });
+						for(let i=0;i<startDay;i++){ const e=document.createElement('div'); e.className='p-2'; cal.appendChild(e); }
+						let data = {};
+						try { data = JSON.parse(document.getElementById('remindersData')?.textContent || '{}'); } catch(e) { data = {}; }
+						for(let d=1; d<=days; d++){
+							const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+							const has = !!data[key];
+							const cell = document.createElement('button');
+							cell.type='button';
+							const isToday = (d===today.getDate() && month===today.getMonth() && year===today.getFullYear());
+							const isSelected = (selectedKey === key);
+							cell.className = 'relative p-2 rounded border text-left ' +
+								(isSelected? 'bg-blue-50 border-blue-300 ' : (has? 'bg-green-50 border-green-200 ' : 'bg-white ')) +
+								(isToday? ' ring-2 ring-blue-300':'');
+							// Corner badge smaller size
+							const badge = has? `<span class=\"absolute top-1 right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] rounded-full bg-blue-600 text-white\">${data[key].length}</span>`:'';
+							cell.innerHTML = `${badge}<div class=\"font-semibold\">${d}</div>`;
+							cell.addEventListener('click', ()=>{ 
+								selectedKey = key;
+								buildCalendar(date);
+								renderReminders(key, data[key]||[]);
+							});
+							cal.appendChild(cell);
+						}
+						// On first build, default to today
+						if(!selectedKey){
+							const tk = `${year}-${String(month+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+							selectedKey = tk;
+							renderReminders(tk, data[tk]||[]);
+						}
+					}
+						function renderReminders(key, list){
+						const wrap = document.getElementById('remindersList');
+						wrap.innerHTML = `<div class=\"flex items-center justify-between mb-2\"><h4 class=\"font-semibold\">Reminders for ${key}</h4><button class=\"px-2 py-1 rounded bg-blue-600 text-white\" id=\"openAdd\">Add</button></div>`;
+						if(!list.length){ wrap.innerHTML += '<div class="text-gray-500">No reminders for this day</div>'; }
+						document.getElementById('openAdd').onclick = ()=>{ 
+							modalDate.textContent = key;
+							modalDateInput.value = key;
+							addForm.reset();
+							addForm.querySelector('input[name="creator"]').value = localStorage.getItem('username') || '';
+							addModal.classList.remove('hidden');
+							addModal.classList.add('flex');
+						};
+							list.forEach(r=>{
+							const row=document.createElement('div');
+							row.className='flex items-start gap-2 p-2 rounded border mb-2';
+							row.innerHTML = `<div class="flex-1"><div class="font-semibold">${r.title}</div><div class="text-sm text-gray-600 whitespace-pre-wrap">${r.description||''}</div><div class="text-xs text-gray-500">By ${r.creator}</div></div>`;
+								// Always render the delete form and let applyUserContext() decide visibility
+								const form=document.createElement('form');
+								form.method='POST'; form.action='/calendar/delete/'+r.id; form.className='delete-form';
+								form.setAttribute('data-creator', r.creator || '');
+								form.innerHTML = '<input type="hidden" name="user">' + '<button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>';
+								form.querySelector('input[name=\"user\"]').value=localStorage.getItem('username')||'';
+								row.appendChild(form);
+							wrap.appendChild(row);
+						});
+							// Apply current user permissions to newly rendered forms
+							if (typeof applyUserContext === 'function') { applyUserContext(); }
+					}
+					buildCalendar(today);
+				</script>
+			</div>
+			{% if config.feature_toggles.get('who_is_home') %}
+			<div class="bg-white p-6 rounded-xl shadow">
+				<div class="flex items-center justify-between mb-2">
+					<h3 class="text-lg font-semibold"><i class="fa-solid fa-house-user mr-2 text-blue-600"></i>Who is Home?</h3>
+                    
+				</div>
+				{% if who_statuses %}
+				<div class="flex flex-wrap gap-2 mb-3" id="whoChips">
+					{% for name, status in who_statuses.items() %}
+						<span class="px-2 py-1 rounded text-sm border {{ 'bg-green-50 border-green-200 text-green-700' if status == 'Home' else 'bg-red-50 border-red-200 text-red-700' }}" data-name="{{ name }}" data-status="{{ status }}">{{ name }}: {{ status }}</span>
+					{% endfor %}
+				</div>
+				{% else %}
+				<div class="text-gray-500 mb-3">No status set yet.</div>
+				{% endif %}
+				<hr class="my-3">
+				<form method="POST" action="/whoishome/update" class="flex flex-wrap items-center gap-2" id="whoQuickForm">
+					<input type="hidden" name="name" id="whoName">
+					<select name="status" id="whoStatusSel" class="border rounded p-1">
+						<option value="Home">Home</option>
+						<option value="Away">Away</option>
+					</select>
+					<button type="submit" class="px-3 py-1 rounded bg-blue-600 text-white"><i class="fa-solid fa-check mr-1"></i>Update my status</button>
+				</form>
+				<form method="POST" action="/whoishome/clear" class="mt-2" id="whoClearForm">
+					<input type="hidden" name="name" id="whoNameClear">
+					<button type="submit" class="px-3 py-1 rounded bg-red-100 text-red-800"><i class="fa-solid fa-trash mr-1"></i>Clear my status</button>
+				</form>
+			</div>
+			{% endif %}
+	</div>
+</div>
+<script>
+	const d = new Date();
+	document.getElementById('today').textContent = d.toLocaleString();
+		// Toggle visibility of Notice form based on current user (admin)
+		(function(){
+			const nf = document.getElementById('noticeForm');
+			if(!nf) return;
+			const adminName = '{{ config.admin_name }}';
+			function update(){
+				const current = localStorage.getItem('username');
+				if (!(current === adminName || current === 'Administrator' || current === 'admin')) {
+					nf.style.display = 'none';
+				} else {
+					nf.style.display = '';
+				}
+				const userField = nf.querySelector('input[name="user"]');
+				if (userField) userField.value = current || '';
+			}
+			update();
+			document.getElementById('userSwitcher')?.addEventListener('change', update);
+		})();
+</script>
+<script>
+// Enhance chips for member personal statuses with per-name coloring; default and hide admin for Who is Home quick controls
+(function(){
+	// Personal member statuses: give each member a stable color
+	const chips = document.querySelectorAll('#memberStatusChips span[data-name]');
+	const palette = ['#DBEAFE','#FEF3C7','#DCFCE7','#FCE7F3','#E9D5FF','#FFEDD5','#E5E7EB'];
+	const names = Array.from(chips).map(el=>el.getAttribute('data-name'));
+	names.forEach((name, idx)=>{
+		const els = Array.from(chips).filter(e=>e.getAttribute('data-name')===name);
+		const bg = palette[idx % palette.length];
+		els.forEach(el=>{ el.style.backgroundColor = bg; el.style.borderColor = '#CBD5E1'; });
+	});
+	// Helper to update Who is Home quick controls and member status forms for current user
+	function updateHomeAndStatusUI(){
+		const current = localStorage.getItem('username') || '';
+		const adminName = '{{ config.admin_name }}';
+		// Hidden inputs
+		document.getElementById('whoName')?.setAttribute('value', current);
+		document.getElementById('whoNameClear')?.setAttribute('value', current);
+		document.getElementById('memberStatusName')?.setAttribute('value', current);
+		document.getElementById('memberStatusDeleteName')?.setAttribute('value', current);
+		// Update user chip
+		const chip = document.getElementById('memberStatusUserChip');
+		if (chip){ chip.textContent = current ? current : ''; }
+		// Admin: hide quick controls and personal status editor
+		const isAdmin = (current === adminName || current === 'Administrator' || current === 'admin');
+		const quick = document.getElementById('whoQuickForm');
+		const clear = document.getElementById('whoClearForm');
+		const msForm = document.getElementById('memberStatusForm');
+		const msDel = document.getElementById('memberStatusDelete');
+		if (isAdmin){
+			quick?.classList.add('hidden');
+			clear?.classList.add('hidden');
+			msForm?.classList.add('hidden');
+			msDel?.classList.add('hidden');
+			return;
+		} else {
+			quick?.classList.remove('hidden');
+			clear?.classList.remove('hidden');
+			msForm?.classList.remove('hidden');
+		}
+		// Show delete button only if current user has a status chip
+		const chips = document.querySelectorAll('#memberStatusChips span[data-name]');
+		const hasStatus = Array.from(chips).some(el => el.getAttribute('data-name') === current);
+		if (msDel){ msDel.classList.toggle('hidden', !hasStatus); }
+	}
+	// Initial paint
+	updateHomeAndStatusUI();
+	// Update on user switch without refresh (global event from base.html)
+	document.addEventListener('user-switched', updateHomeAndStatusUI);
+})();
+</script>
+{% endblock %}
