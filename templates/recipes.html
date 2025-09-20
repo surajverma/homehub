@@ -2,17 +2,17 @@
 {% block content %}
 <div class="mx-auto">
     <h2 class="text-xl font-bold mb-4">Recipe Book</h2>
-    <form method="POST" class="mb-4">
+    <form method="POST" class="mb-4 card p-4">
         <input type="text" name="title" value="{{ form_title if form_title is defined else '' }}" class="w-full p-2 border rounded mb-2" placeholder="Recipe title..." required>
         <input type="url" name="link" value="{{ form_link if form_link is defined else '' }}" class="w-full p-2 border rounded mb-2" placeholder="Link (optional)">
         <textarea name="ingredients" class="w-full p-2 border rounded mb-2" placeholder="Ingredients...">{{ form_ingredients if form_ingredients is defined else '' }}</textarea>
         <textarea name="instructions" class="w-full p-2 border rounded mb-2" placeholder="Instructions...">{{ form_instructions if form_instructions is defined else '' }}</textarea>
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Add Recipe</button>
+        <button type="submit" class="btn btn-primary">Add Recipe</button>
     </form>
     <ul>
         {% for recipe in recipes %}
-        <li class="bg-white p-4 mb-2 rounded shadow">
+        <li class="card p-4 mb-2">
             <div class="font-semibold text-lg">{{ recipe.title }}</div>
             {% if recipe.link %}<a href="{{ recipe.link }}" class="text-blue-600 underline">Link</a>{% endif %}
             <div class="text-xs text-gray-500">By {{ recipe.creator }} at {{ recipe.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
@@ -20,7 +20,7 @@
             <div class="mt-2"><strong>Instructions:</strong> {{ recipe.instructions }}</div>
             <form method="POST" action="/recipes/delete/{{ recipe.id }}" class="mt-2 delete-form" data-creator="{{ recipe.creator }}">
                 <input type="hidden" name="user">
-                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </li>
         {% endfor %}

@@ -5,21 +5,21 @@
     <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
         <input type="text" name="description" class="md:col-span-9 w-full p-2 border rounded" placeholder="Add a chore..." required>
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="md:col-span-3 bg-blue-600 text-white px-4 py-2 rounded">Add</button>
+        <button type="submit" class="md:col-span-3 btn btn-primary">Add</button>
     </form>
     <ul>
         {% for chore in chores %}
-        <li class="bg-white p-4 mb-2 rounded shadow flex flex-wrap gap-2 items-center">
+        <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
             <span class="flex-1 {% if chore.done %}line-through text-gray-400{% endif %}">{{ chore.description }}</span>
             <div class="text-xs text-gray-500">By {{ chore.creator }} at {{ chore.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/chores/toggle/{{ chore.id }}">
-                <button type="submit" class="px-3 py-1 rounded {{ 'bg-yellow-100 text-yellow-800' if chore.done else 'bg-green-100 text-green-800' }}">
+                <button type="submit" class="btn {{ 'btn-secondary' if chore.done else 'btn-success' }}">
                     {{ 'Mark Undone' if chore.done else 'Mark Done' }}
                 </button>
             </form>
             <form method="POST" action="/chores/delete/{{ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}">
                 <input type="hidden" name="user">
-                <button type="submit" class="px-3 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </li>
         {% endfor %}

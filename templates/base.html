@@ -6,35 +6,60 @@
     <title>{{ config.instance_name }} - HomeHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: {{ config.theme.primary_color }};
+            --secondary-color: {{ config.theme.secondary_color }};
+            --background-color: {{ config.theme.background_color }};
+            --card-background-color: {{ config.theme.card_background_color }};
+            --text-color: {{ config.theme.text_color }};
+            --sidebar-background-color: {{ config.theme.sidebar_background_color }};
+            --sidebar-text-color: {{ config.theme.sidebar_text_color }};
+            --sidebar-link-color: {{ config.theme.sidebar_link_color }};
+            --sidebar-link-border-color: {{ config.theme.sidebar_link_border_color }};
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
+    <script>
+        (function() {
+            const mq = window.matchMedia('(prefers-color-scheme: dark)');
+            const apply = () => document.documentElement.setAttribute('data-theme', mq.matches ? 'dark' : 'light');
+            apply();
+            try { mq.addEventListener('change', apply); } catch(e) { mq.addListener(apply); }
+        })();
+    </script>
 </head>
-<body class="bg-gradient-to-br from-indigo-50 via-white to-pink-50 min-h-screen">
+<body class="min-h-screen">
     <div class="flex min-h-screen">
         <!-- Global JSON data for client scripts -->
         <script id="familyData" type="application/json">{{ config.family_members | tojson }}</script>
         <!-- Sidebar -->
-        <aside id="sidebar" class="w-64 bg-blue-700 text-white flex flex-col fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 z-40">
-            <div class="p-6 text-2xl font-bold border-b border-blue-600 flex items-center justify-between">
+        <aside id="sidebar" class="sidebar w-64 text-white flex flex-col fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 z-40">
+            <div class="p-6 text-2xl font-bold border-b border-white/20 flex items-center justify-between" style="color: var(--sidebar-text-color);">
                 <span>{{ config.instance_name }}</span>
-                <button id="closeSidebar" class="md:hidden text-white/80 hover:text-white" aria-label="Close">✕</button>
+                <button id="closeSidebar" class="md:hidden text-white/90 hover:text-white" aria-label="Close">✕</button>
             </div>
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <a href="/" class="block py-2 px-4 rounded hover:bg-blue-600">Welcome</a>
-                {% if config.feature_toggles.get('notes') %}<a href="/notes" class="block py-2 px-4 rounded hover:bg-blue-600">Shared Notes</a>{% endif %}
-                {% if config.feature_toggles.get('file_uploader') %}<a href="/upload" class="block py-2 px-4 rounded hover:bg-blue-600">Shared Cloud</a>{% endif %}
-                {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="block py-2 px-4 rounded hover:bg-blue-600">Shopping List</a>{% endif %}
+                <a href="/" class="block py-2 px-4 rounded sidebar-link">Welcome</a>
+                {% if config.feature_toggles.get('notes') %}<a href="/notes" class="block py-2 px-4 rounded sidebar-link">Shared Notes</a>{% endif %}
+                {% if config.feature_toggles.get('file_uploader') %}<a href="/upload" class="block py-2 px-4 rounded sidebar-link">Shared Cloud</a>{% endif %}
+                {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="block py-2 px-4 rounded sidebar-link">Shopping List</a>{% endif %}
                 {# Removed standalone Who is Home link; dashboard section covers it #}
-                {% if config.feature_toggles.get('chores') %}<a href="/chores" class="block py-2 px-4 rounded hover:bg-blue-600">To-Do/Chores</a>{% endif %}
-                {% if config.feature_toggles.get('recipes') %}<a href="/recipes" class="block py-2 px-4 rounded hover:bg-blue-600">Recipe Book</a>{% endif %}
-                {% if config.feature_toggles.get('expiry_tracker') %}<a href="/expiry" class="block py-2 px-4 rounded hover:bg-blue-600">Expiry Tracker</a>{% endif %}
-                {% if config.feature_toggles.get('url_shortener') %}<a href="/shorten" class="block py-2 px-4 rounded hover:bg-blue-600">URL Shortener</a>{% endif %}
-                {% if config.feature_toggles.get('media_downloader') %}<a href="/media" class="block py-2 px-4 rounded hover:bg-blue-600">Media Downloader</a>{% endif %}
-                {% if config.feature_toggles.get('pdf_compressor') %}<a href="/pdfs" class="block py-2 px-4 rounded hover:bg-blue-600">PDF Compressor</a>{% endif %}
-                {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="block py-2 px-4 rounded hover:bg-blue-600">QR Generator</a>{% endif %}
-                {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="block py-2 px-4 rounded hover:bg-blue-600">Expense Tracker</a>{% endif %}
+                {% if config.feature_toggles.get('chores') %}<a href="/chores" class="block py-2 px-4 rounded sidebar-link">To-Do/Chores</a>{% endif %}
+                {% if config.feature_toggles.get('recipes') %}<a href="/recipes" class="block py-2 px-4 rounded sidebar-link">Recipe Book</a>{% endif %}
+                {% if config.feature_toggles.get('expiry_tracker') %}<a href="/expiry" class="block py-2 px-4 rounded sidebar-link">Expiry Tracker</a>{% endif %}
+                {% if config.feature_toggles.get('url_shortener') %}<a href="/shorten" class="block py-2 px-4 rounded sidebar-link">URL Shortener</a>{% endif %}
+                {% if config.feature_toggles.get('media_downloader') %}<a href="/media" class="block py-2 px-4 rounded sidebar-link">Media Downloader</a>{% endif %}
+                {% if config.feature_toggles.get('pdf_compressor') %}<a href="/pdfs" class="block py-2 px-4 rounded sidebar-link">PDF Compressor</a>{% endif %}
+                {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="block py-2 px-4 rounded sidebar-link">QR Generator</a>{% endif %}
+                {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="block py-2 px-4 rounded sidebar-link">Expense Tracker</a>{% endif %}
             </nav>
         </aside>
         <!-- Main Content -->
-        <main class="flex-1 p-4 md:p-8 overflow-y-auto md:ml-0 ml-0">
+        <main class="main-content flex-1 p-4 md:p-8 overflow-y-auto md:ml-0 ml-0">
             <div class="max-w-none md:max-w-none mx-auto">
                 <div class="sticky top-0 z-20 mb-4">
                     <div class="flex items-center flex-wrap gap-2">

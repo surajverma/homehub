@@ -2,21 +2,21 @@
 {% block content %}
 <div class="mx-auto">
     <h2 class="text-xl font-bold mb-4">Shared Cloud</h2>
-    <form method="POST" enctype="multipart/form-data" class="mb-4">
+    <form method="POST" enctype="multipart/form-data" class="mb-4 card p-4">
         <input type="file" name="files" multiple required class="mb-2">
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Upload</button>
+        <button type="submit" class="btn btn-primary">Upload</button>
     </form>
     <ul>
         {% for file in files %}
-        <li class="bg-white p-4 mb-2 rounded shadow flex justify-between items-center">
+        <li class="card p-4 mb-2 flex justify-between items-center">
             <div>
                 <a href="/uploads/{{ file.filename }}" class="font-semibold text-blue-700">{{ file.filename }}</a>
                 <div class="text-xs text-gray-500">By {{ file.creator }} at {{ file.upload_time.strftime('%Y-%m-%d %H:%M') }}</div>
             </div>
             <form method="POST" action="/upload/delete/{{ file.id }}" class="delete-form" data-creator="{{ file.creator }}">
                 <input type="hidden" name="user">
-                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </li>
         {% endfor %}

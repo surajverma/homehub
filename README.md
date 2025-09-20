@@ -1,19 +1,19 @@
 
 # HomeHub
 
-A lightweight, self-hosted family dashboard for your home network. Includes notes, shopping list, chores, Who is Home, recipes, expiry tracker, URL shortener, QR generator, media downloader, PDF compressor, and expense tracker—all in a simple web UI.
+A lightweight, self-hosted family utility hub for your home network. Includes notes, shopping list, chores, Who is Home, recipes, expiry tracker, URL shortener, QR generator, media downloader, PDF compressor, and expense tracker—all in a simple responsive web UI.
 
 ## Features
 
-- Welcome dashboard with Notice Board and Calendar/Reminders
+- Dashboard with Notice Board and Calendar/Reminders
 - Live user switcher, admin/owner controls
 - Notes, file uploads, shopping list, chores
-- Who is Home status board
+- Who is Home status board on welcome screen/dashboard
 - Recipe book, expiry tracker, URL shortener
 - QR code generator
 - Media downloader (mp3/mp4)
-- PDF compressor (Ghostscript)
-- Expense tracker with recurring rules
+- PDF compressor
+- Expense tracker with recurring rules (for recurring payments like milk/newspaper/utility bills etc.)
 
 ## Setup
 
@@ -38,11 +38,11 @@ feature_toggles:
   url_shortener: true
   expense_tracker: true
 family_members:
-  - Suraj
-  - Dad
-  - John
-  - Alice
   - Mom
+  - Dad
+  - Dipanshu
+  - Vivek
+  - India
 ```
 
 ### 2. Run with Docker Compose
@@ -57,6 +57,7 @@ services:
       - "5005:5005"
     environment:
       - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to random if not provided
     volumes:
       - ./uploads:/app/uploads
       - ./media:/app/media
@@ -81,6 +82,17 @@ pip install -r requirements.txt
 python run.py
 ```
 
+### Security notes
+
+- App authentication is optional, controlled via `config.yml > password`. If you set a password, it’s hashed on startup and the plain value is removed from memory.
+- Set a strong `SECRET_KEY` in production. With Docker, create a `.env` file next to your compose file:
+
+```env
+SECRET_KEY=generate-a-long-random-string-here
+```
+
+Compose picks it up automatically. If unset, the app generates a random key at runtime (sessions will invalidate when the container restarts).
+
 ## Usage
 
 - Use the sidebar to access each tool.
@@ -89,10 +101,43 @@ python run.py
 - Expense Tracker supports recurring rules, categories, and monthly summaries.
 - All config changes (in `config.yml`) are hot-reloaded—no restart needed.
 
+## Theming
+
+HomeHub follows your system dark/light mode automatically (using `prefers-color-scheme`) and updates live without refresh. You can customize colors via `config.yml > theme`. No rebuild is needed; changes hot-reload on the next request.
+
+Configurable keys:
+
+```yaml
+theme:
+  # Accent colors
+  primary_color: "#1d4ed8"
+  secondary_color: "#a0aec0"
+
+  # Surfaces & text
+  background_color: "#f7fafc"
+  card_background_color: "#ffffff"
+  text_color: "#333333"
+
+  # Sidebar palette
+  sidebar_background_color: "#2563eb"
+  sidebar_text_color: "#ffffff"                # text color used for the sidebar title and labels
+  sidebar_link_color: "rgba(255,255,255,0.95)" # link text color in sidebar items
+  sidebar_link_border_color: "rgba(255,255,255,0.18)" # subtle border around sidebar links
+```
+
+Tips:
+- Want higher contrast in the sidebar? Increase `sidebar_link_border_color` opacity (e.g., `rgba(255,255,255,0.3)`).
+- Prefer lighter/darker accents? Tweak `primary_color` and `secondary_color`.
+- Dark mode palette adapts automatically; the variables above apply to light mode, while dark mode uses tuned counterparts for good contrast.
+
+Advanced: You can further adjust styles in `static/custom.css`. Those styles read the same CSS variables emitted from `config.yml`.
+
 ## Storage
 
 - SQLite DB: `data/app.db`
 - User files: `uploads/`, `media/`, `pdfs/`
+
+Back up `data/` regularly if the instance holds important data.
 
 ## Troubleshooting
 

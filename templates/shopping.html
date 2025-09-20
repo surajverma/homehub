@@ -5,7 +5,7 @@
     <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
         <input type="text" name="item" class="md:col-span-9 w-full p-2 border rounded" placeholder="Add item..." required>
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="md:col-span-3 bg-blue-600 text-white px-4 py-2 rounded">Add</button>
+        <button type="submit" class="md:col-span-3 btn btn-primary">Add</button>
     </form>
     {% if suggestions %}
     <div class="mb-4">
@@ -15,7 +15,7 @@
             <form method="POST" class="inline">
                 <input type="hidden" name="item" value="{{ s }}">
                 <input type="hidden" name="creator" value="">
-                <button class="px-2 py-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200" type="submit">+ {{ s }}</button>
+                <button class="btn" type="submit">+ {{ s }}</button>
             </form>
             {% endfor %}
         </div>
@@ -23,9 +23,9 @@
     {% endif %}
     <ul>
         {% for item in items %}
-        <li class="bg-white p-4 mb-2 rounded shadow flex flex-wrap gap-2 items-center">
+        <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
             <form method="POST" action="/shopping/check/{{ item.id }}">
-                <button type="submit" class="mr-2 px-2 py-1 rounded {{ 'bg-green-100 text-green-800' if item.checked else 'bg-gray-100 text-gray-800' }}">
+                <button type="submit" class="mr-2 btn {{ 'btn-success' if item.checked else 'btn-secondary' }}">
                     {{ 'Purchased' if item.checked else 'Mark Purchased' }}
                 </button>
             </form>
@@ -33,7 +33,7 @@
             <div class="text-xs text-gray-500">By {{ item.creator }} at {{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/shopping/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}">
                 <input type="hidden" name="user">
-                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </li>
         {% endfor %}

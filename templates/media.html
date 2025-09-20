@@ -14,24 +14,24 @@
             <option value="bestvideo[height<=720]+bestaudio/best[height<=720]">Up to 720p</option>
         </select>
     <input type="hidden" name="creator" id="creator">
-    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded md:col-span-2">Download</button>
+    <button type="submit" class="btn btn-primary md:col-span-2">Download</button>
     </form>
         <ul>
         {% for media in media_list %}
-    <li class="bg-white p-4 mb-2 rounded shadow flex flex-wrap gap-2 items-center" data-id="{{ media.id }}">
+    <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center" data-id="{{ media.id }}">
             <span class="flex-1 truncate">{{ media.title }}</span>
             {% if media.status == 'pending' %}
         <span class="px-2 py-1 rounded bg-yellow-100 text-yellow-800 status-chip">Starting…</span>
         <span class="text-xs text-gray-500 progress-line">{{ media.progress or 'Will take a while…' }}</span>
                         {% elif media.filepath %}
-                <a href="/media/{{ media.filepath }}" class="px-2 py-1 rounded bg-gray-100 text-gray-800">Open</a>
+                <a href="/media/{{ media.filepath }}" class="btn">Open</a>
                         {% else %}
                 <span class="px-2 py-1 rounded bg-red-100 text-red-800">Not available</span>
                         {% endif %}
                         <div class="text-xs text-gray-500">By {{ media.creator }} at {{ media.download_time.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/media/delete/{{ media.id }}" class="delete-form" data-creator="{{ media.creator }}">
                 <input type="hidden" name="user">
-                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800 action-delete">Delete</button>
+                <button type="submit" class="btn btn-danger action-delete">Delete</button>
             </form>
                 </li>
                 {% endfor %}
@@ -72,7 +72,7 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
             } else if (d.status === 'done' && d.filepath){
                 // replace chip with Open link
                 const chip = item.querySelector('.status-chip');
-                if (chip){ chip.outerHTML = `<a href="/media/${d.filepath}" class="px-2 py-1 rounded bg-gray-100 text-gray-800">Open</a>`; }
+                if (chip){ chip.outerHTML = `<a href="/media/${d.filepath}" class="btn">Open</a>`; }
                 const p = item.querySelector('.progress-line');
                 if (p) p.textContent = '';
             } else if (d.status === 'error'){

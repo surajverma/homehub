@@ -5,17 +5,17 @@
     <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
         <input type="url" name="original_url" class="md:col-span-9 w-full p-2 border rounded" placeholder="Paste long URL here..." required>
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="md:col-span-3 bg-blue-600 text-white px-4 py-2 rounded">Shorten</button>
+        <button type="submit" class="md:col-span-3 btn btn-primary">Shorten</button>
     </form>
     <ul>
         {% for url in urls %}
-        <li class="bg-white p-4 mb-2 rounded shadow flex flex-wrap gap-2 items-center">
+        <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
             <span class="flex-1">{{ url.original_url }}</span>
             <a href="/s/{{ url.short_code }}" class="text-blue-600 underline">{{ (request.host_url ~ 's/' ~ url.short_code) }}</a>
             <div class="text-xs text-gray-500">By {{ url.creator }} at {{ url.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/shorten/delete/{{ url.id }}" class="delete-form" data-creator="{{ url.creator }}">
                 <input type="hidden" name="user">
-                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </li>
         {% endfor %}

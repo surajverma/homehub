@@ -2,13 +2,13 @@
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 	<div class="lg:col-span-2 space-y-6">
-		<div class="bg-white p-6 rounded-xl shadow">
+		<div class="card p-6">
 			<h1 class="text-3xl font-bold mb-2"><i class="fa-solid fa-house text-blue-600 mr-2"></i>Welcome to {{ config.instance_name }}!</h1>
 			<p class="mb-4 text-gray-600">Pick a tool from the left to get started.</p>
 			<div class="text-sm text-gray-500" id="today"></div>
 		</div>
 
-			<div class="bg-white p-6 rounded-xl shadow">
+			<div class="card p-6">
 				<h2 class="text-xl font-bold mb-3"><i class="fa-solid fa-bullhorn text-amber-600 mr-2"></i>Family Notice Board</h2>
 			{% if notice and notice.content %}
 				<div class="prose max-w-none whitespace-pre-wrap bg-yellow-50 border border-yellow-200 rounded p-4">{{ notice.content }}</div>
@@ -17,9 +17,9 @@
 				<div class="text-gray-500">No notices yet. Admin can post one below.</div>
 			{% endif %}
 				<form method="POST" action="/notice" class="mt-4 space-y-2" id="noticeForm">
-				<textarea name="content" rows="5" class="w-full p-2 border rounded" placeholder="Type a family notice..."></textarea>
+				<textarea name="content" rows="5" class="w-full p-2 border rounded" placeholder="Leave blank and click update to delete existing notice"></textarea>
 				<input type="hidden" name="user" value="">
-				<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Update Notice (Admin)</button>
+				<button type="submit" class="btn btn-primary">Update Notice (Admin)</button>
 			</form>
 			<!-- Notice form visibility is handled globally by applyUserContext() in base.html -->
 				{% if member_statuses %}
@@ -41,17 +41,17 @@
 						<input type="text" name="text" class="w-full p-2 border rounded" placeholder="e.g., Working late, At the store, etc.">
 					</div>
 					<input type="hidden" name="name" id="memberStatusName">
-					<button type="submit" class="md:col-span-2 px-3 py-2 rounded bg-blue-600 text-white"><i class="fa-solid fa-floppy-disk mr-1"></i>Save</button>
+					<button type="submit" class="md:col-span-2 btn btn-primary"><i class="fa-solid fa-floppy-disk mr-1"></i>Save</button>
 				</form>
 				<form method="POST" action="/status/delete" class="mt-2" id="memberStatusDelete">
 					<input type="hidden" name="name" id="memberStatusDeleteName">
-					<button type="submit" class="px-3 py-2 rounded bg-red-100 text-red-800"><i class="fa-solid fa-trash mr-1"></i>Delete my status</button>
+					<button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash mr-1"></i>Delete my status</button>
 				</form>
 			</div>
 	</div>
 
 	<div class="space-y-6">
-			<div class="bg-white p-6 rounded-xl shadow">
+			<div class="card p-6">
 				<h3 class="text-lg font-semibold mb-4"><i class="fa-solid fa-calendar-days text-green-600 mr-2"></i>Calendar</h3>
 				<div id="calendar" class="grid grid-cols-7 gap-2 text-sm"></div>
 				<div class="mt-4" id="remindersList"></div>
@@ -65,8 +65,8 @@
 							<textarea name="description" class="w-full p-2 border rounded" placeholder="Description (optional)"></textarea>
 							<input type="hidden" name="creator" value="">
 							<div class="flex gap-2 justify-end">
-								<button type="button" id="cancelAdd" class="px-3 py-2 rounded bg-gray-100 text-gray-800">Cancel</button>
-								<button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Add</button>
+								<button type="button" id="cancelAdd" class="btn">Cancel</button>
+								<button type="submit" class="btn btn-primary">Add</button>
 							</div>
 						</form>
 					</div>
@@ -108,8 +108,8 @@
 								(isSelected? 'bg-blue-50 border-blue-300 ' : (has? 'bg-green-50 border-green-200 ' : 'bg-white ')) +
 								(isToday? ' ring-2 ring-blue-300':'');
 							// Corner badge smaller size
-							const badge = has? `<span class=\"absolute top-1 right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] rounded-full bg-blue-600 text-white\">${data[key].length}</span>`:'';
-							cell.innerHTML = `${badge}<div class=\"font-semibold\">${d}</div>`;
+							const badge = has? `<span class="absolute top-1 right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] rounded-full bg-blue-600 text-white">${data[key].length}</span>`:'';
+							cell.innerHTML = `${badge}<div class="font-semibold">${d}</div>`;
 							cell.addEventListener('click', ()=>{ 
 								selectedKey = key;
 								buildCalendar(date);
@@ -126,7 +126,7 @@
 					}
 						function renderReminders(key, list){
 						const wrap = document.getElementById('remindersList');
-						wrap.innerHTML = `<div class=\"flex items-center justify-between mb-2\"><h4 class=\"font-semibold\">Reminders for ${key}</h4><button class=\"px-2 py-1 rounded bg-blue-600 text-white\" id=\"openAdd\">Add</button></div>`;
+						wrap.innerHTML = `<div class="flex items-center justify-between mb-2"><h4 class="font-semibold">Reminders for ${key}</h4><button class="btn btn-primary" id="openAdd">Add</button></div>`;
 						if(!list.length){ wrap.innerHTML += '<div class="text-gray-500">No reminders for this day</div>'; }
 						document.getElementById('openAdd').onclick = ()=>{ 
 							modalDate.textContent = key;
@@ -144,8 +144,8 @@
 								const form=document.createElement('form');
 								form.method='POST'; form.action='/calendar/delete/'+r.id; form.className='delete-form';
 								form.setAttribute('data-creator', r.creator || '');
-								form.innerHTML = '<input type="hidden" name="user">' + '<button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>';
-								form.querySelector('input[name=\"user\"]').value=localStorage.getItem('username')||'';
+								form.innerHTML = '<input type="hidden" name="user">' + '<button type="submit" class="btn btn-danger">Delete</button>';
+								form.querySelector('input[name="user"]').value=localStorage.getItem('username')||'';
 								row.appendChild(form);
 							wrap.appendChild(row);
 						});
@@ -156,7 +156,7 @@
 				</script>
 			</div>
 			{% if config.feature_toggles.get('who_is_home') %}
-			<div class="bg-white p-6 rounded-xl shadow">
+			<div class="card p-6">
 				<div class="flex items-center justify-between mb-2">
 					<h3 class="text-lg font-semibold"><i class="fa-solid fa-house-user mr-2 text-blue-600"></i>Who is Home?</h3>
                     
@@ -171,18 +171,20 @@
 				<div class="text-gray-500 mb-3">No status set yet.</div>
 				{% endif %}
 				<hr class="my-3">
-				<form method="POST" action="/whoishome/update" class="flex flex-wrap items-center gap-2" id="whoQuickForm">
-					<input type="hidden" name="name" id="whoName">
-					<select name="status" id="whoStatusSel" class="border rounded p-1">
-						<option value="Home">Home</option>
-						<option value="Away">Away</option>
-					</select>
-					<button type="submit" class="px-3 py-1 rounded bg-blue-600 text-white"><i class="fa-solid fa-check mr-1"></i>Update my status</button>
-				</form>
-				<form method="POST" action="/whoishome/clear" class="mt-2" id="whoClearForm">
-					<input type="hidden" name="name" id="whoNameClear">
-					<button type="submit" class="px-3 py-1 rounded bg-red-100 text-red-800"><i class="fa-solid fa-trash mr-1"></i>Clear my status</button>
-				</form>
+				<div class="flex flex-nowrap items-center gap-3" id="whoActionRow">
+					<form method="POST" action="/whoishome/update" class="flex items-center gap-2" id="whoQuickForm">
+						<input type="hidden" name="name" id="whoName">
+						<select name="status" id="whoStatusSel" class="border rounded p-1">
+							<option value="Home">Home</option>
+							<option value="Away">Away</option>
+						</select>
+						<button type="submit" class="btn btn-primary"><i class="fa-solid fa-check mr-1"></i>Update status</button>
+					</form>
+					<form method="POST" action="/whoishome/clear" class="flex items-center" id="whoClearForm">
+						<input type="hidden" name="name" id="whoNameClear">
+						<button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash mr-1"></i>Clear status</button>
+					</form>
+				</div>
 			</div>
 			{% endif %}
 	</div>

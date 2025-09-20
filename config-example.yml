@@ -20,3 +20,13 @@ family_members:
   - Dipanshu
   - Vivek
   - India
+theme:
+  primary_color: "#1d4ed8"
+  secondary_color: "#a0aec0"
+  background_color: "#f7fafc"
+  card_background_color: "#fff"
+  text_color: "#333"
+  sidebar_background_color: "#2563eb"
+  sidebar_text_color: "#ffffff"
+  sidebar_link_color: "rgba(255,255,255,0.95)"
+  sidebar_link_border_color: "rgba(255,255,255,0.18)"

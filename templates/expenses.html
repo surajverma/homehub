@@ -17,36 +17,36 @@
 
   <!-- Summary Cards -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="summary-cards">
-    <div class="bg-white p-4 rounded-lg shadow flex items-center">
+    <div class="card p-4 flex items-center">
       <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><i class="fas fa-wallet"></i></div>
       <div class="ml-4">
         <p class="text-gray-500 text-sm">Total This Month</p>
         <p class="text-2xl font-bold text-gray-800" id="total-this-month">₹0.00</p>
       </div>
     </div>
-    <div class="bg-white p-4 rounded-lg shadow flex items-center">
+    <div class="card p-4 flex items-center">
       <div class="bg-green-100 text-green-600 p-3 rounded-full"><i class="fas fa-user-circle"></i></div>
       <div class="ml-4">
         <p class="text-gray-500 text-sm">My Spending</p>
         <p class="text-2xl font-bold text-gray-800" id="my-spending">₹0.00</p>
       </div>
     </div>
-    <div class="bg-white p-4 rounded-lg shadow flex items-center">
+    <div class="card p-4 flex items-center">
       <div class="bg-purple-100 text-purple-600 p-3 rounded-full"><i class="fas fa-chart-pie"></i></div>
       <div class="ml-4">
         <p class="text-gray-500 text-sm">Top Category</p>
         <p class="text-2xl font-bold text-gray-800" id="top-category">-</p>
       </div>
     </div>
-    <div class="bg-white p-4 rounded-lg shadow flex items-center justify-center">
-      <button id="manage-recurring-btn" class="w-full h-full bg-gray-100 text-gray-800 py-2 rounded-md hover:bg-gray-200 font-semibold"><i class="fas fa-cog mr-2"></i>Recurring rules & config</button>
+    <div class="card p-4 flex items-center justify-center">
+      <button id="manage-recurring-btn" class="w-full h-full btn"><i class="fas fa-cog mr-2"></i>Recurring rules & config</button>
     </div>
   </div>
 
   <!-- Main Content -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
     <!-- Calendar -->
-  <div class="lg:col-span-5 bg-white p-4 rounded-lg shadow relative z-0">
+  <div class="lg:col-span-5 card p-4 relative z-0">
       <div class="flex items-center justify-between mb-3">
         <button id="prev-month" class="p-2 rounded-full hover:bg-gray-100" title="Prev"><i class="fas fa-chevron-left"></i></button>
         <h2 class="text-xl font-bold" id="calendar-header"></h2>
@@ -59,20 +59,23 @@
     </div>
 
     <!-- Side Panel -->
-    <div id="side-panel" class="lg:col-span-3 bg-white p-4 rounded-lg shadow relative z-0">
+    <div id="side-panel" class="lg:col-span-3 card p-4 relative z-0">
       <div id="panel-content"></div>
     </div>
 
     <!-- Monthly Summary Sidebar -->
-    <div class="lg:col-span-4 bg-white p-4 rounded-lg shadow monthly-summary-container relative z-0">
-      <div class="flex-shrink-0"><h3 class="text-lg font-bold mb-3">Entries This Month</h3></div>
+    <div class="lg:col-span-4 card p-4 monthly-summary-container relative z-0">
+      <div class="flex-shrink-0 flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold">Entries This Month</h3>
+        <label class="text-sm flex items-center gap-2"><input type="checkbox" id="select-all-month" class="rounded"> Select all</label>
+      </div>
       <form id="bulk-delete-form" method="POST" action="/expenses/bulk-delete" class="flex-grow overflow-y-auto pr-2 no-scrollbar">
         <input type="hidden" name="user" id="bulk-user">
         <div id="monthly-entries-list"></div>
       </form>
       <div id="monthly-total-footer" class="flex-shrink-0 border-t pt-3 mt-3 flex justify-between items-center">
         <div class="flex items-center gap-3">
-          <button id="bulk-delete-btn" class="px-3 py-2 bg-red-600 text-white rounded disabled:opacity-50" disabled>Delete Selected</button>
+          <button id="bulk-delete-btn" class="btn btn-danger" disabled>Delete Selected</button>
         </div>
         <div class="flex items-center gap-2">
           <span class="font-semibold">Month Total:</span>
@@ -87,7 +90,7 @@
 
 <!-- Add/Edit Expense Modal -->
 <div id="expense-modal" class="modal fixed inset-0 z-50 bg-black bg-opacity-50 items-center justify-center p-4 hidden">
-  <div class="modal-content bg-white w-full max-w-md p-6 rounded-lg shadow-xl transform scale-95">
+  <div class="modal-content card w-full max-w-md p-6 transform scale-95">
     <h2 class="text-2xl font-bold mb-4" id="modal-title">Add Expense</h2>
     <form id="expense-form" method="POST" action="/expenses">
       <input type="hidden" name="form_type" value="single">
@@ -128,8 +131,8 @@
         </div>
       </div>
       <div class="mt-5 flex justify-end gap-2">
-        <button type="button" id="cancel-expense" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save Expense</button>
+        <button type="button" id="cancel-expense" class="btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Expense</button>
       </div>
     </form>
   </div>
@@ -137,7 +140,7 @@
 
 <!-- Recurring rules & Config Modal (tabbed) -->
 <div id="recurring-modal" class="modal fixed inset-0 z-40 bg-black bg-opacity-50 items-center justify-center p-4 hidden">
-  <div class="modal-content bg-white w-full max-w-3xl p-6 rounded-lg shadow-xl transform scale-95">
+  <div class="modal-content card w-full max-w-4xl p-6 transform scale-95">
     <h2 class="text-2xl font-bold mb-4">Expense Settings</h2>
     <!-- Tabs -->
     <div class="border-b border-gray-200 mb-4">
@@ -153,16 +156,17 @@
   <div class="space-y-3 pr-2">
           {% for r in rules %}
           <details class="border rounded p-3">
-            <summary class="cursor-pointer flex items-center justify-between">
-              <div>
+            <summary class="cursor-pointer flex items-center justify-between gap-4">
+              <div class="min-w-0">
                 <div class="font-medium">{{ r.title }} — {{ r.frequency }}{% if r.frequency=='monthly' %} ({{ r.monthly_mode or 'day_of_month' }}){% endif %}</div>
                 <div class="text-xs text-gray-500">{{ r.default_quantity }} × {{ '%.2f'|format(r.unit_price or 0) }} • {{ r.start_date }}{% if r.end_date %} → {{ r.end_date }}{% endif %} • by {{ r.creator }}</div>
               </div>
-              <div class="flex items-center gap-2">
-                <button type="button" class="px-2 py-1 rounded bg-blue-100 text-blue-800" onclick="this.closest('details').open=true">Edit</button>
-                <form method="POST" action="/expenses/recurring/delete/{{ r.id }}" class="delete-form" data-creator="{{ r.creator }}">
+              <div class="flex items-center gap-3 shrink-0">
+                <button type="button" class="btn btn-secondary" onclick="this.closest('details').open=true">Edit</button>
+                <form method="POST" action="/expenses/recurring/delete/{{ r.id }}" class="delete-form flex items-center gap-3" data-creator="{{ r.creator }}">
                   <input type="hidden" name="user">
-                  <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                  <label class="text-sm text-gray-600 inline-flex items-center gap-1"><input type="checkbox" name="delete_entries" value="1" class="rounded align-middle"> delete generated entries</label>
+                  <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
               </div>
             </summary>
@@ -197,7 +201,7 @@
                 <label class="text-sm text-gray-600">Monthly Mode</label>
                 <select name="monthly_mode" class="w-full border rounded p-2">
                   <option value="day_of_month" {% if (r.monthly_mode or 'day_of_month')=='day_of_month' %}selected{% endif %}>Same day-of-month</option>
-                  <option value="calendar" {% if (r.monthly_mode or 'day_of_month')=='calendar' %}selected{% endif %}>Calendar boundary</option>
+                  <option value="calendar" {% if (r.monthly_mode or 'day_of_month')=='calendar' %}selected{% endif %}>Calendar month</option>
                 </select>
               </div>
               <div>
@@ -209,7 +213,7 @@
                 <input type="date" name="end_date" class="w-full border rounded p-2" value="{{ r.end_date or '' }}">
               </div>
               <div class="md:col-span-3 flex justify-end">
-                <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Save</button>
+                <button type="submit" class="btn btn-primary">Save</button>
               </div>
             </form>
           </details>
@@ -241,7 +245,7 @@
           <input type="date" name="end_date" class="md:col-span-6 p-2 border rounded" placeholder="End (optional)">
           <input type="hidden" name="creator" id="recCreator">
           <div class="md:col-span-12 flex justify-end">
-            <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Add Recurring</button>
+            <button type="submit" class="btn btn-primary">Add Recurring</button>
           </div>
         </form>
       </div>
@@ -258,13 +262,13 @@
             <div id="category-chips" class="mt-2 flex flex-wrap gap-2"></div>
           </div>
           <div class="flex justify-end">
-            <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Save Settings</button>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
           </div>
         </form>
       </div>
     </div>
     <div class="mt-6 flex justify-end space-x-3">
-      <button type="button" id="close-recurring" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Close</button>
+      <button type="button" id="close-recurring" class="btn">Close</button>
     </div>
   </div>
 </div>
@@ -342,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function(){
       const isSelected = selectedDate && (isoLocalFromDate(selectedDate)===ds);
       let cls = 'calendar-cell p-2 border rounded-md cursor-pointer flex flex-col text-left';
       if (isSelected) cls += ' bg-blue-500 text-white';
-      else if (isToday) cls += ' bg-blue-100';
+      else if (isToday) cls += ' bg-green-500';
       grid.insertAdjacentHTML('beforeend', `
         <button class="${cls}" data-date="${ds}">
           <div class="font-semibold">${day}</div>
@@ -357,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function(){
     Object.keys(byDate).sort().forEach(ds=>{
       (byDate[ds].entries||[]).forEach(e=> items.push({date: ds, ...e}));
     });
-    items.sort((a,b)=> a.date.localeCompare(b.date));
+  items.sort((a,b)=> b.date.localeCompare(a.date));
     if(items.length===0){
       monthlyList.innerHTML = '<div class="text-gray-500">No entries this month.</div>';
       return;
@@ -379,6 +383,9 @@ document.addEventListener('DOMContentLoaded', function(){
         bulkBtn.disabled = !any;
       });
     });
+    // Reset select-all based on current items
+    const selAll = document.getElementById('select-all-month');
+    if (selAll){ selAll.checked = false; selAll.indeterminate = false; }
   }
 
   function renderSidePanel(){
@@ -452,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const rf = document.getElementById('recurring-form');
     if (rf){
       const sel = selectedDate ? selectedDate.toISOString().split('T')[0] : '';
-      rf.action = `/expenses?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
+      rf.action = `/expenses?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}&open=recurring`;
     }
     openModal(recurringModal);
   });
@@ -470,6 +477,43 @@ document.addEventListener('DOMContentLoaded', function(){
       if (target) target.classList.remove('hidden');
     });
   }
+
+  // Hide/disable Monthly Mode when frequency is not 'monthly'
+  (function setupMonthlyModeToggles(){
+    // Add New Rule form
+    const addForm = document.getElementById('recurring-form');
+    if (addForm){
+      const freqSel = addForm.querySelector('select[name="frequency"]');
+      const modeSel = addForm.querySelector('select[name="monthly_mode"]');
+      // In the Add form, the monthly_mode select isn't wrapped in its own div,
+      // so hide just the select itself to avoid hiding the entire tab content.
+      const modeWrap = modeSel; 
+      const sync = ()=>{
+        if (!freqSel || !modeSel) return;
+        const isMonthly = freqSel.value === 'monthly';
+        modeSel.disabled = !isMonthly;
+        if (modeWrap) modeWrap.style.display = isMonthly ? '' : 'none';
+      };
+      if (freqSel){ freqSel.addEventListener('change', sync); }
+      sync();
+    }
+
+    // Existing Rule edit forms
+    document.querySelectorAll('#recurring-rules-content form[action^="/expenses/recurring/edit/"]').forEach(form=>{
+      const freqSel = form.querySelector('select[name="frequency"]');
+      const modeSel = form.querySelector('select[name="monthly_mode"]');
+      // In edit forms, hide the field's container (has label + select)
+      const modeWrap = (modeSel && modeSel.closest('div')) ? modeSel.closest('div') : modeSel;
+      const sync = ()=>{
+        if (!freqSel || !modeSel) return;
+        const isMonthly = freqSel.value === 'monthly';
+        modeSel.disabled = !isMonthly;
+        if (modeWrap) modeWrap.style.display = isMonthly ? '' : 'none';
+      };
+      if (freqSel){ freqSel.addEventListener('change', sync); }
+      sync();
+    });
+  })();
 
   // Add/Edit modal
   document.addEventListener('click', (e)=>{
@@ -600,6 +644,25 @@ document.addEventListener('DOMContentLoaded', function(){
     bulkForm.submit();
   });
 
+  // Select-all behavior for monthly list
+  const selAll = document.getElementById('select-all-month');
+  if (selAll){
+    selAll.addEventListener('change', ()=>{
+      const boxes = bulkForm.querySelectorAll('input.entry-select');
+      boxes.forEach(b=> b.checked = selAll.checked);
+      const any = [...boxes].some(x=> x.checked);
+      bulkBtn.disabled = !any;
+    });
+    // Keep indeterminate state in sync when user toggles individual boxes
+    bulkForm.addEventListener('change', (e)=>{
+      if (!e.target.classList.contains('entry-select')) return;
+      const boxes = [...bulkForm.querySelectorAll('input.entry-select')];
+      const checked = boxes.filter(b=> b.checked).length;
+      selAll.indeterminate = checked>0 && checked<boxes.length;
+      selAll.checked = checked===boxes.length && boxes.length>0;
+    });
+  }
+
   // Preserve view state on recurring delete/edit and settings save by updating form actions at click time
   document.body.addEventListener('submit', (e)=>{
     const f = e.target;
@@ -612,13 +675,28 @@ document.addEventListener('DOMContentLoaded', function(){
         url.searchParams.set('y', String(year));
         url.searchParams.set('m', String(month));
         if (sel) url.searchParams.set('sel', sel); else url.searchParams.delete('sel');
+        // If this form is within the recurring modal or is a recurring/settings form, keep the modal open on reload
+        const inRecurringModal = !!f.closest('#recurring-modal');
+        if (inRecurringModal || f.action.includes('/expenses/recurring/')){
+          url.searchParams.set('open', 'recurring');
+        }
         f.action = url.pathname + url.search;
       } catch(err) {
         // Fallback string concat
-        f.action = f.action + `?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
+        const extra = `&open=recurring`;
+        f.action = f.action + `?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}${extra}`;
       }
     }
   });
+
+  // If the page loaded with ?open=recurring, reopen the modal automatically
+  try {
+    const u = new URL(window.location.href);
+    if ((u.searchParams.get('open')||'') === 'recurring'){
+      document.getElementById('recCreator').value = currentUser();
+      openModal(recurringModal);
+    }
+  } catch(err) { /* noop */ }
 });
 </script>
 {% endblock %}

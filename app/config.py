@@ -22,4 +22,15 @@ def load_config():
     config.setdefault('admin_name', 'Administrator')
     # Family members default list
     config.setdefault('family_members', [])
+    # Theme defaults
+    theme = config.setdefault('theme', {})
+    theme.setdefault('primary_color', '#1d4ed8')
+    theme.setdefault('secondary_color', '#a0aec0')
+    theme.setdefault('background_color', '#f7fafc')
+    theme.setdefault('card_background_color', '#ffffff')
+    theme.setdefault('text_color', '#333333')
+    theme.setdefault('sidebar_background_color', '#2563eb')
+    theme.setdefault('sidebar_text_color', '#ffffff')
+    theme.setdefault('sidebar_link_color', 'rgba(255,255,255,0.95)')
+    theme.setdefault('sidebar_link_border_color', 'rgba(255,255,255,0.18)')
     return config

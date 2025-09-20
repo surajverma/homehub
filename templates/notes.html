@@ -5,24 +5,24 @@
     <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-start" id="noteForm">
         <textarea name="content" class="md:col-span-9 w-full p-2 border rounded" placeholder="Write a note..." required></textarea>
         <div class="md:col-span-3 flex gap-2">
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded flex-1">Save</button>
-            <button type="button" id="cancelEdit" class="px-4 py-2 rounded bg-gray-100 text-gray-800 hidden">Cancel</button>
+            <button type="submit" class="btn btn-primary flex-1">Save</button>
+            <button type="button" id="cancelEdit" class="btn hidden">Cancel</button>
         </div>
         <input type="hidden" name="note_id" value="">
         <input type="hidden" name="creator" id="creator">
     </form>
     <ul>
         {% for note in notes %}
-        <li class="bg-white p-4 mb-2 rounded shadow flex justify-between items-center">
+        <li class="card p-4 mb-2 flex justify-between items-center">
             <div class="pr-2">
                 <div class="font-semibold break-words">{{ note.content }}</div>
                 <div class="text-xs text-gray-500">By {{ note.creator }} at {{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
             </div>
             <div class="flex items-center gap-2">
-                <button type="button" class="px-2 py-1 rounded bg-gray-100 text-gray-800 edit-btn" data-id="{{ note.id }}" data-content="{{ note.content|e }}" data-creator="{{ note.creator }}">Edit</button>
+                <button type="button" class="btn edit-btn" data-id="{{ note.id }}" data-content="{{ note.content|e }}" data-creator="{{ note.creator }}">Edit</button>
                 <form method="POST" action="/notes/delete/{{ note.id }}" class="delete-form" data-creator="{{ note.creator }}">
                     <input type="hidden" name="user">
-                    <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>
         </li>

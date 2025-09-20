@@ -4,7 +4,7 @@ services:
     # image: ghcr.io/surajverma/homehub:latest
     build: .
     ports:
-      - "5000:5000"
+      - "5005:5005"
     volumes:
       - ./uploads:/app/uploads
       - ./media:/app/media
@@ -13,4 +13,4 @@ services:
       - ./config.yml:/app/config.yml:ro
     environment:
       - FLASK_ENV=production
-      - SECRET_KEY=supersecretkey
+      - SECRET_KEY=${SECRET_KEY:-}

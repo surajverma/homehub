@@ -6,17 +6,17 @@
         <input type="text" name="name" class="md:col-span-5 w-full p-2 border rounded" placeholder="Item name..." required>
         <input type="date" name="expiry_date" class="md:col-span-4 w-full p-2 border rounded" required>
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="md:col-span-3 bg-blue-600 text-white px-4 py-2 rounded">Add Item</button>
+        <button type="submit" class="md:col-span-3 btn btn-primary">Add Item</button>
     </form>
     <ul>
         {% for item in items %}
-        <li class="bg-white p-4 mb-2 rounded shadow flex flex-wrap gap-2 items-center">
+        <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
             <span class="flex-1">{{ item.name }}</span>
             <span class="font-semibold {% if item.expiry_date < today %}text-red-600{% else %}text-green-600{% endif %}">{{ item.expiry_date.strftime('%Y-%m-%d') }}</span>
             <div class="text-xs text-gray-500">By {{ item.creator }} at {{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/expiry/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}">
                 <input type="hidden" name="user">
-                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </li>
         {% endfor %}

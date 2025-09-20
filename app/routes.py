@@ -205,7 +205,9 @@ def expenses():
     for r in recs:
         # Determine next date to generate
         start = r.start_date or today
-        last = r.last_generated_date or (start - timedelta(days=1))
+        # For monthly same-day mode, base day should be from start_date to preserve intent
+        base_day = (r.start_date or today).day
+        last = r.last_generated_date  # may be None
         # Iterate dates based on frequency
         def next_date(d):
             if r.frequency == 'daily':
@@ -221,14 +223,33 @@ def expenses():
                 return date(ny, nm, 1)
             else:
                 # same day-of-month next month (clamped to last day)
-                base_day = (r.start_date or d).day
                 ny = d.year + (1 if d.month == 12 else 0)
                 nm = 1 if d.month == 12 else d.month + 1
-                last = _calendar.monthrange(ny, nm)[1]
-                day = min(base_day, last)
+                last_dom = _calendar.monthrange(ny, nm)[1]
+                day = min(base_day, last_dom)
                 return date(ny, nm, day)
-        gen = (last if last >= start else start - timedelta(days=1))
-        d = next_date(gen)
+        # Seed generation correctly for each frequency
+        if last is None or (last and last < start):
+            # Treat as fresh generation starting from start date
+            if r.frequency == 'daily':
+                d = start
+            elif r.frequency == 'weekly':
+                d = start
+            else:  # monthly
+                mode = getattr(r, 'monthly_mode', 'day_of_month') or 'day_of_month'
+                if mode == 'calendar':
+                    # If start is on the 1st, include it; otherwise begin on first day of next month
+                    if start.day == 1:
+                        d = start
+                    else:
+                        ny = start.year + (1 if start.month == 12 else 0)
+                        nm = 1 if start.month == 12 else start.month + 1
+                        d = date(ny, nm, 1)
+                else:
+                    d = start
+        else:
+            # Continue from last generated date
+            d = next_date(last)
         while d <= today and (not r.end_date or d <= r.end_date):
             # only create if not already present
             exists = ExpenseEntry.query.filter_by(date=d, recurring_id=r.id).first()
@@ -370,6 +391,14 @@ def delete_recurring(rec_id):
     admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
     admin_aliases = {admin_name, 'Administrator', 'admin'}
     if user in admin_aliases or user == r.creator:
+        # If requested, delete all generated entries for this rule
+        if request.form.get('delete_entries'):
+            try:
+                entries = ExpenseEntry.query.filter_by(recurring_id=r.id).all()
+                for e in entries:
+                    db.session.delete(e)
+            except Exception:
+                pass
         db.session.delete(r)
         db.session.commit()
     y = request.args.get('y') or date.today().year
@@ -418,7 +447,7 @@ def api_expenses_month():
     recs = RecurringExpense.query.all()
     for r in recs:
         start = r.start_date or today
-        last = r.last_generated_date or (start - timedelta(days=1))
+        last = r.last_generated_date
         def next_date(d):
             if r.frequency == 'daily':
                 return d + timedelta(days=1)
@@ -430,14 +459,31 @@ def api_expenses_month():
                 nm = 1 if d.month == 12 else d.month + 1
                 return date(ny, nm, 1)
             else:
-                base_day = (r.start_date or d).day
+                base_day = (r.start_date or today).day
                 ny = d.year + (1 if d.month == 12 else 0)
                 nm = 1 if d.month == 12 else d.month + 1
                 last = _calendar.monthrange(ny, nm)[1]
                 day = min(base_day, last)
                 return date(ny, nm, day)
-        gen = (last if last >= start else start - timedelta(days=1))
-        d = next_date(gen)
+        # Seed similarly to page route
+        if last is None or (last and last < start):
+            if r.frequency == 'daily':
+                d = start
+            elif r.frequency == 'weekly':
+                d = start
+            else:
+                mode = getattr(r, 'monthly_mode', 'day_of_month') or 'day_of_month'
+                if mode == 'calendar':
+                    if start.day == 1:
+                        d = start
+                    else:
+                        ny = start.year + (1 if start.month == 12 else 0)
+                        nm = 1 if start.month == 12 else start.month + 1
+                        d = date(ny, nm, 1)
+                else:
+                    d = start
+        else:
+            d = next_date(last)
         while d <= today and (not r.end_date or d <= r.end_date):
             exists = ExpenseEntry.query.filter_by(date=d, recurring_id=r.id).first()
             if not exists:
@@ -573,6 +619,14 @@ def edit_recurring(rec_id):
                 e.amount = float(e.unit_price) * float(e.quantity)
             except Exception:
                 pass
+    # Align last_generated_date to latest existing generated entry after edits
+    try:
+        if entries:
+            r.last_generated_date = max(e.date for e in entries if getattr(e, 'date', None))
+        else:
+            r.last_generated_date = None
+    except Exception:
+        pass
     db.session.commit()
     flash('Recurring rule updated.', 'success')
     y = request.args.get('y') or date.today().year

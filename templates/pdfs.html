@@ -5,17 +5,17 @@
     <form method="POST" enctype="multipart/form-data" class="mb-4 grid gap-2 md:grid-cols-12 items-end">
         <input type="file" name="pdf" accept="application/pdf" required class="md:col-span-10">
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white md:col-span-2"><i class="fa-solid fa-compress mr-1"></i>Compress PDF</button>
+        <button type="submit" class="btn btn-primary md:col-span-2"><i class="fa-solid fa-compress mr-1"></i>Compress PDF</button>
     </form>
     <ul>
         {% for pdf in pdfs %}
-        <li class="bg-white p-4 mb-2 rounded shadow flex flex-wrap gap-2 items-center">
+        <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
             <span class="flex-1"><i class="fa-solid fa-file text-gray-500 mr-2"></i>{{ pdf.filename }}</span>
-            <a href="/pdfs/{{ pdf.compressed_path }}" class="px-2 py-1 rounded bg-gray-100 text-gray-800"><i class="fa-solid fa-download mr-1"></i>Download</a>
+            <a href="/pdfs/{{ pdf.compressed_path }}" class="btn"><i class="fa-solid fa-download mr-1"></i>Download</a>
             <div class="text-xs text-gray-500">By {{ pdf.creator }} at {{ pdf.upload_time.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/pdfs/delete/{{ pdf.id }}" class="delete-form" data-creator="{{ pdf.creator }}">
                 <input type="hidden" name="user">
-                <button type="submit" class="px-2 py-1 rounded bg-red-100 text-red-800">Delete</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </li>
         {% endfor %}
