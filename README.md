@@ -19,6 +19,9 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **🎬 Media Downloader**: Save videos or music from popular sites directly to your server.
 * ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, and **QR Code Generator**!
 
+![homehub](https://github.com/user-attachments/assets/0a170e1c-d21d-4902-ba3d-c0c58bbccbee)
+
+
 ## Getting Started is Easy
 
 The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
