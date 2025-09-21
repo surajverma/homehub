@@ -19,6 +19,12 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **🎬 Media Downloader**: Save videos or music from popular sites directly to your server.
 * ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, and **QR Code Generator**!
 
+## Salient Features
+* **Private & Self-Hosted**: All your data stays on your network. No cloud, no tracking.
+* **Simple & Lightweight**: Runs smoothly on minimal hardware.
+* **Family-Focused**: Designed to be intuitive for users of all technical skill levels.
+* **Customizable**: Toggle features on or off and even change the color theme right from the `config.yml` file.
+
 ![homehub](https://github.com/user-attachments/assets/0a170e1c-d21d-4902-ba3d-c0c58bbccbee)
 
 
@@ -80,13 +86,6 @@ services:
 docker compose up -d
 ```
 That's it! Open your browser and head to [http://localhost:5000](http://localhost:5000)
-
-## Our Philosophy
-
-* **Private & Self-Hosted**: All your data stays on your network. No cloud, no tracking.
-* **Simple & Lightweight**: Runs smoothly on minimal hardware like a Raspberry Pi.
-* **Family-Focused**: Designed to be intuitive for users of all technical skill levels.
-* **Customizable**: Toggle features on or off and even change the color theme right from the `config.yml` file.
 
 ## Theming
 
