@@ -123,11 +123,11 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contributing
 
-Contributions are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request.
+Contributions are always welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request.
 
 
 ## Have Fun!
 
-This project was built to be a practical tool for my own family, and I hope it's useful for yours too. If you have ideas or find bugs, feel free to open an issue on GitHub. Contributions are always welcome!
+This project was built to be a practical tool for my own family, and I hope it's useful for yours too.
 
 If you find HomeHub useful, you can [buy me a coffee ☕](https://ko-fi.com/skv).
