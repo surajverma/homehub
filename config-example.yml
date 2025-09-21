@@ -30,3 +30,4 @@ theme:
   sidebar_text_color: "#ffffff"
   sidebar_link_color: "rgba(255,255,255,0.95)"
   sidebar_link_border_color: "rgba(255,255,255,0.18)"
+  sidebar_active_color: "#3b82f6" # highlight color for active sidebar menu

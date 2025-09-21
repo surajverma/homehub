@@ -20,6 +20,7 @@
             --sidebar-text-color: {{ config.theme.sidebar_text_color }};
             --sidebar-link-color: {{ config.theme.sidebar_link_color }};
             --sidebar-link-border-color: {{ config.theme.sidebar_link_border_color }};
+            --sidebar-active-color: {{ config.theme.sidebar_active_color }};
         }
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
@@ -42,7 +43,7 @@
                 <span>{{ config.instance_name }}</span>
                 <button id="closeSidebar" class="md:hidden text-white/90 hover:text-white" aria-label="Close">✕</button>
             </div>
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="sidebarNav">
                 <a href="/" class="block py-2 px-4 rounded sidebar-link">Welcome</a>
                 {% if config.feature_toggles.get('notes') %}<a href="/notes" class="block py-2 px-4 rounded sidebar-link">Shared Notes</a>{% endif %}
                 {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="block py-2 px-4 rounded sidebar-link">Shared Cloud</a>{% endif %}
@@ -57,6 +58,22 @@
                 {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="block py-2 px-4 rounded sidebar-link">QR Generator</a>{% endif %}
                 {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="block py-2 px-4 rounded sidebar-link">Expense Tracker</a>{% endif %}
             </nav>
+            <script>
+            // Highlight active sidebar link
+            (() => {
+                const links = document.querySelectorAll('#sidebarNav .sidebar-link');
+                const path = window.location.pathname.replace(/\/$/, '');
+                links.forEach(link => {
+                    let href = link.getAttribute('href').replace(/\/$/, '');
+                    // Only mark active if exact match
+                    if (href === path) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+            })();
+            </script>
         </aside>
         <!-- Main Content -->
         <main class="main-content flex-1 p-4 md:p-8 overflow-y-auto md:ml-0 ml-0">
