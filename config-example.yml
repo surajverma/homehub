@@ -7,7 +7,7 @@ feature_toggles:
   pdf_compressor: true
   qr_generator: true
   notes: true
-  file_uploader: true
+  shared_cloud: true
   who_is_home: true
   chores: true
   recipes: true

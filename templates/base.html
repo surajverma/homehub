@@ -45,7 +45,7 @@
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
                 <a href="/" class="block py-2 px-4 rounded sidebar-link">Welcome</a>
                 {% if config.feature_toggles.get('notes') %}<a href="/notes" class="block py-2 px-4 rounded sidebar-link">Shared Notes</a>{% endif %}
-                {% if config.feature_toggles.get('file_uploader') %}<a href="/upload" class="block py-2 px-4 rounded sidebar-link">Shared Cloud</a>{% endif %}
+                {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="block py-2 px-4 rounded sidebar-link">Shared Cloud</a>{% endif %}
                 {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="block py-2 px-4 rounded sidebar-link">Shopping List</a>{% endif %}
                 {# Removed standalone Who is Home link; dashboard section covers it #}
                 {% if config.feature_toggles.get('chores') %}<a href="/chores" class="block py-2 px-4 rounded sidebar-link">To-Do/Chores</a>{% endif %}

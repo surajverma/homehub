@@ -21,15 +21,57 @@ HomeHub is packed with useful tools to make family life a little more organized:
 
 ## Getting Started is Easy
 
-The best way to run HomeHub is with Docker. It's quick and keeps everything tidy.
+The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
 
-**1. Create your `config.yml`**
+1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub and add family members. You can also set an optional password to protect the whole site.
 
-First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub and add family members. You can also set an optional password to protect the whole site.
+```yaml
+instance_name: "My Home Hub"
+password: "" # leave blank for no login; set a password to require login
+admin_name: "Administrator"
+feature_toggles:
+  shopping_list: true
+  media_downloader: true
+  pdf_compressor: true
+  qr_generator: true
+  notes: true
+  shared_cloud: true
+  who_is_home: true
+  chores: true
+  recipes: true
+  expiry_tracker: true
+  url_shortener: true
+  expense_tracker: true
+family_members:
+  - Mom
+  - Dad
+  - Dipanshu
+  - Vivek
+  - India
+```
 
 **2. Run with Docker Compose**
 
 Use the provided `compose.yml` file to get started in seconds:
+
+```yaml
+# compose.yml
+services:
+  homehub:
+    container_name: homehub
+    image: ghcr.io/surajverma/homehub:latest
+    ports:
+      - "5000:5000" #app listens internally on port 5000
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to random if not provided
+    volumes:
+      - ./uploads:/app/uploads
+      - ./media:/app/media
+      - ./pdfs:/app/pdfs
+      - ./data:/app/data
+      - ./config.yml:/app/config.yml:ro
+```
 
 ```bash
 docker compose up -d
