@@ -1,3 +1,9 @@
+[![CI/CD](https://github.com/surajverma/homehub/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/surajverma/homehub/actions/workflows/docker-publish.yml)
+![Latest Release](https://img.shields.io/github/v/release/surajverma/homehub?include_prereleases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/surajverma/homehub)](https://github.com/surajverma/homehub/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/surajverma/homehub)](https://github.com/surajverma/homehub/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/surajverma/homehub?style=social)](https://github.com/surajverma/homehub/stargazers)
+
 
 # 🏡 HomeHub: Your All-In-One Family Dashboard
 
@@ -87,44 +93,6 @@ docker compose up -d
 ```
 That's it! Open your browser and head to [http://localhost:5000](http://localhost:5000)
 
-## Development Setup
-
-If you're developing HomeHub locally and want to work with styles:
-
-### CSS Build Process
-
-HomeHub uses Tailwind CSS with custom styles consolidated into a single minified output file. All custom CSS (formerly `custom.css`) is now integrated into `static/input.css` for a streamlined build process.
-
-1. **Install Node.js dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Build CSS (production):**
-   ```bash
-   npm run build:css
-   ```
-   This generates `static/output.css` - a minified file containing Tailwind utilities + all custom styles.
-
-3. **Watch mode for development:**
-   ```bash
-   npm run watch:css
-   ```
-   This rebuilds `static/output.css` automatically when you change templates or modify `static/input.css`.
-
-4. **Automated builds:**
-   - **Local Docker:** Dockerfile includes Node.js and runs `npm run build:css` during image creation
-   - **CI/CD:** GitHub Actions workflow pre-builds CSS before Docker build for faster deployments
-
-### File Structure
-- `static/input.css` - Tailwind directives + all custom styles (edit this for styling changes)
-- `static/output.css` - Built & minified CSS (git-ignored, auto-generated)
-- `static/custom.css` - **Deprecated** (now consolidated into input.css, git-ignored)
-- `tailwind.config.js` - Tailwind configuration
-- `package.json` - Node dependencies and build scripts
-
-**Note:** Only `output.css` is loaded by the application. Custom styles are now part of the Tailwind build pipeline for optimal minification and caching.
-
 ## Theming
 
 HomeHub follows your system dark/light mode. You can customize colors via `config.yml > theme`.
@@ -151,6 +119,52 @@ Tips:
 - Want higher contrast in the sidebar? Increase `sidebar_link_border_color` opacity (e.g., `rgba(255,255,255,0.3)`).
 - Prefer lighter/darker accents? Tweak `primary_color` and `secondary_color`.
 - Dark mode palette adapts automatically; the variables above apply to light mode, while dark mode uses tuned counterparts for good contrast.
+
+## Development Setup
+
+To contribute or run & build HomeHub locally, follow these steps:
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/surajverma/homehub.git
+cd homehub
+```
+
+### 2. Python Environment Setup
+```bash
+python -m venv venv
+venv\Scripts\activate  # On Windows
+pip install -r requirements.txt
+```
+
+### 3. Configuration
+- Copy `config-example.yml` to `config.yml` and edit as needed for your family, features, and theme.
+
+### 4. CSS Build (Tailwind + Custom Styles)
+```bash
+npm install
+npm run build:css
+```
+- For live CSS rebuilds during development:
+```bash
+npm run watch:css
+```
+
+### 5. Running the App
+- **With Docker (recommended):**
+  ```bash
+  docker compose up -d
+  ```
+- **Locally (for development):**
+  ```bash
+  python run.py
+  ```
+  (Ensure you have built CSS and set up your config.)
+
+### 6. Troubleshooting
+- If you see missing dependency errors, ensure you have run both `pip install -r requirements.txt` and `npm install`.
+- If port 5000 is in use, stop the conflicting service or change the port in `compose.yml` and `config.yml`.
+- For Docker issues, try `docker compose down` then `docker compose up -d`.
 
 
 ## License
