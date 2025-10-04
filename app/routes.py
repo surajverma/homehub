@@ -144,7 +144,7 @@ def api_reminders_list():
         from sqlalchemy import case
         rows = q.order_by(
             Reminder.date.asc(),
-            case((Reminder.time == None, 1), (Reminder.time == '', 1), else_=0).asc(),  # noqa: E711
+            case((Reminder.time.is_(None), 1), (Reminder.time == '', 1), else_=0).asc(),  # noqa: E711
             Reminder.time.asc(),
             Reminder.id.asc()
         ).all()
