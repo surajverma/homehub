@@ -1,7 +1,14 @@
 {% extends "base.html" %}
+{% block extra_head %}
+<!-- Category color styles will be injected by script after DOM ready -->
+<script>
+window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.reminders and config.reminders.time_format) or '12h' }}";
+</script>
+{% endblock %}
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 	<div class="lg:col-span-2 space-y-6">
+		<script id="familyMembersData" type="application/json">{{ config.family_members|tojson }}</script>
 		<div class="card p-6">
 			<h1 class="text-3xl font-bold mb-2"><i class="fa-solid fa-house text-blue-600 mr-2"></i>Welcome to {{ config.instance_name }}!</h1>
 			<p class="mb-4 text-gray-600">Pick a tool from the left to get started.</p>
@@ -16,179 +23,298 @@
 			{% else %}
 				<div class="text-gray-500">No notices yet. Admin can post one below.</div>
 			{% endif %}
-				<form method="POST" action="/notice" class="mt-4 space-y-2" id="noticeForm">
-				<textarea name="content" rows="5" class="w-full p-2 border rounded" placeholder="Leave blank and click update to delete existing notice"></textarea>
+			<form method="POST" action="/notice" class="mt-4 space-y-2" id="noticeForm">
+				<textarea name="content" rows="4" class="w-full p-2 border rounded" placeholder="Leave blank and submit to clear the notice"></textarea>
 				<input type="hidden" name="user" value="">
 				<button type="submit" class="btn btn-primary">Update Notice (Admin)</button>
 			</form>
-			<!-- Notice form visibility is handled globally by applyUserContext() in base.html -->
-				{% if member_statuses %}
-				<div class="mt-6">
-					<h3 class="font-semibold mb-2"><i class="fa-solid fa-message text-blue-600 mr-2"></i>Family Status Updates</h3>
-					<div class="flex flex-wrap gap-2" id="memberStatusChips">
-						{% for name, text in member_statuses.items() %}
-						<span class="px-2 py-1 rounded text-sm border" data-name="{{ name }}">{{ name }}: {{ text }}</span>
-						{% endfor %}
-					</div>
-				</div>
-				{% endif %}
-				<form method="POST" action="/status/update" class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-2 items-end" id="memberStatusForm">
-					<div class="md:col-span-10">
-						<div class="flex items-center justify-between">
-							<label class="block text-sm text-gray-600 mb-1">My status</label>
-							<span id="memberStatusUserChip" class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-800"></span>
-						</div>
-						<input type="text" name="text" class="w-full p-2 border rounded" placeholder="e.g., Working late, At the store, etc.">
-					</div>
-					<input type="hidden" name="name" id="memberStatusName">
-					<button type="submit" class="md:col-span-2 btn btn-primary"><i class="fa-solid fa-floppy-disk mr-1"></i>Save</button>
-				</form>
-				<form method="POST" action="/status/delete" class="mt-2" id="memberStatusDelete">
-					<input type="hidden" name="name" id="memberStatusDeleteName">
-					<button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash mr-1"></i>Delete my status</button>
-				</form>
-			</div>
-	</div>
+		</div> <!-- /card -->
 
-	<div class="space-y-6">
-			<div class="card p-6">
-				<h3 class="text-lg font-semibold mb-4"><i class="fa-solid fa-calendar-days text-green-600 mr-2"></i>Calendar</h3>
-				<div id="calendar" class="grid grid-cols-7 gap-2 text-sm"></div>
-				<div class="mt-4" id="remindersList"></div>
-				<!-- Add Reminder Modal -->
-				<div id="addModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
-					<div class="bg-white w-full max-w-md p-4 rounded shadow">
-						<h4 class="font-semibold mb-2">Add Reminder for <span id="modalDate"></span></h4>
-						<form method="POST" action="/calendar/add" id="addForm" class="space-y-2">
-							<input type="hidden" name="date" id="modalDateInput">
-							<input type="text" name="title" class="w-full p-2 border rounded" placeholder="Title" required>
-							<textarea name="description" class="w-full p-2 border rounded" placeholder="Description (optional)"></textarea>
-							<input type="hidden" name="creator" value="">
-							<div class="flex gap-2 justify-end">
-								<button type="button" id="cancelAdd" class="btn">Cancel</button>
-								<button type="submit" class="btn btn-primary">Add</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			<script id="remindersData" type="application/json">{{ reminders_json | safe }}</script>
-				<script>
-					// Modal helpers
-					const addModal = document.getElementById('addModal');
-					const modalDate = document.getElementById('modalDate');
-					const modalDateInput = document.getElementById('modalDateInput');
-					const addForm = document.getElementById('addForm');
-					const cancelAdd = document.getElementById('cancelAdd');
-					addForm.querySelector('input[name="creator"]').value = localStorage.getItem('username') || '';
-					cancelAdd.addEventListener('click', ()=>{ addModal.classList.add('hidden'); });
-
-					const today = new Date();
-					let selectedKey = null;
-					function buildCalendar(date){
-						const cal = document.getElementById('calendar');
-						cal.innerHTML='';
-						const year=date.getFullYear();
-						const month=date.getMonth();
-						const first=new Date(year,month,1);
-						const startDay=first.getDay();
-						const days=new Date(year,month+1,0).getDate();
-						const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-						names.forEach(n=>{ const h=document.createElement('div'); h.className='font-semibold text-gray-600'; h.textContent=n; cal.appendChild(h); });
-						for(let i=0;i<startDay;i++){ const e=document.createElement('div'); e.className='p-2'; cal.appendChild(e); }
-						let data = {};
-						try { data = JSON.parse(document.getElementById('remindersData')?.textContent || '{}'); } catch(e) { data = {}; }
-						for(let d=1; d<=days; d++){
-							const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-							const has = !!data[key];
-							const cell = document.createElement('button');
-							cell.type='button';
-							const isToday = (d===today.getDate() && month===today.getMonth() && year===today.getFullYear());
-							const isSelected = (selectedKey === key);
-							cell.className = 'relative p-2 rounded border text-left ' +
-								(isSelected? 'bg-blue-50 border-blue-300 ' : (has? 'bg-green-50 border-green-200 ' : 'bg-white ')) +
-								(isToday? ' ring-2 ring-blue-300':'');
-							// Corner badge smaller size
-							const badge = has? `<span class="absolute top-1 right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] rounded-full bg-blue-600 text-white">${data[key].length}</span>`:'';
-							cell.innerHTML = `${badge}<div class="font-semibold">${d}</div>`;
-							cell.addEventListener('click', ()=>{ 
-								selectedKey = key;
-								buildCalendar(date);
-								renderReminders(key, data[key]||[]);
-							});
-							cal.appendChild(cell);
-						}
-						// On first build, default to today
-						if(!selectedKey){
-							const tk = `${year}-${String(month+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-							selectedKey = tk;
-							renderReminders(tk, data[tk]||[]);
-						}
-					}
-						function renderReminders(key, list){
-						const wrap = document.getElementById('remindersList');
-						wrap.innerHTML = `<div class="flex items-center justify-between mb-2"><h4 class="font-semibold">Reminders for ${key}</h4><button class="btn btn-primary" id="openAdd">Add</button></div>`;
-						if(!list.length){ wrap.innerHTML += '<div class="text-gray-500">No reminders for this day</div>'; }
-						document.getElementById('openAdd').onclick = ()=>{ 
-							modalDate.textContent = key;
-							modalDateInput.value = key;
-							addForm.reset();
-							addForm.querySelector('input[name="creator"]').value = localStorage.getItem('username') || '';
-							addModal.classList.remove('hidden');
-							addModal.classList.add('flex');
-						};
-							list.forEach(r=>{
-							const row=document.createElement('div');
-							row.className='flex items-start gap-2 p-2 rounded border mb-2';
-							row.innerHTML = `<div class="flex-1"><div class="font-semibold">${r.title}</div><div class="text-sm text-gray-600 whitespace-pre-wrap">${r.description||''}</div><div class="text-xs text-gray-500">By ${r.creator}</div></div>`;
-								// Always render the delete form and let applyUserContext() decide visibility
-								const form=document.createElement('form');
-								form.method='POST'; form.action='/calendar/delete/'+r.id; form.className='delete-form';
-								form.setAttribute('data-creator', r.creator || '');
-								form.innerHTML = '<input type="hidden" name="user">' + '<button type="submit" class="btn btn-danger">Delete</button>';
-								form.querySelector('input[name="user"]').value=localStorage.getItem('username')||'';
-								row.appendChild(form);
-							wrap.appendChild(row);
-						});
-							// Apply current user permissions to newly rendered forms
-							if (typeof applyUserContext === 'function') { applyUserContext(); }
-					}
-					buildCalendar(today);
-				</script>
-			</div>
-			{% if config.feature_toggles.get('who_is_home') %}
-			<div class="card p-6">
-				<div class="flex items-center justify-between mb-2">
-					<h3 class="text-lg font-semibold"><i class="fa-solid fa-house-user mr-2 text-blue-600"></i>Who is Home?</h3>
-                    
-				</div>
-				{% if who_statuses %}
-				<div class="flex flex-wrap gap-2 mb-3" id="whoChips">
-					{% for name, status in who_statuses.items() %}
-						<span class="px-2 py-1 rounded text-sm border {{ 'bg-green-50 border-green-200 text-green-700' if status == 'Home' else 'bg-red-50 border-red-200 text-red-700' }}" data-name="{{ name }}" data-status="{{ status }}">{{ name }}: {{ status }}</span>
+		<!-- Two-column (Who is Home + Personal Status) under Notice Board -->
+		<div class="grid md:grid-cols-2 gap-6">
+			<!-- Who is Home (compact) -->
+			<div class="card p-4" id="whoHomeCard">
+				<h2 class="text-lg font-semibold mb-3 flex items-center gap-2"><i class="fa-solid fa-house-user text-green-600"></i> Who is Home?</h2>
+				<div id="whoStatusList" class="flex flex-wrap gap-2 mb-3 text-xs">
+					{% for member in config.family_members %}
+						{% set st = who_statuses.get(member) %}
+						<span class="px-2 py-1 rounded border bg-white flex items-center gap-1" data-member="{{ member }}">
+							<span class="font-medium">{{ member }}</span>
+							<span class="status-pill px-1.5 py-0.5 rounded text-[10px] leading-none
+							{% if st == 'Home' %} bg-green-100 text-green-700 border border-green-300
+							{% elif st == 'Away' %} bg-gray-100 text-gray-600 border border-gray-300
+							{% elif st == 'Out' %} bg-amber-100 text-amber-700 border border-amber-300
+							{% elif st == 'Traveling' %} bg-indigo-100 text-indigo-700 border border-indigo-300
+							{% elif st %} bg-blue-100 text-blue-700 border border-blue-300
+							{% else %} bg-gray-100 text-gray-500 border border-gray-200
+							{% endif %}">{{ st or '—' }}</span>
+						</span>
 					{% endfor %}
 				</div>
-				{% else %}
-				<div class="text-gray-500 mb-3">No status set yet.</div>
-				{% endif %}
-				<hr class="my-3">
-				<div class="flex flex-nowrap items-center gap-3" id="whoActionRow">
-					<form method="POST" action="/whoishome/update" class="flex items-center gap-2" id="whoQuickForm">
-						<input type="hidden" name="name" id="whoName">
-						<select name="status" id="whoStatusSel" class="border rounded p-1">
-							<option value="Home">Home</option>
-							<option value="Away">Away</option>
-						</select>
-						<button type="submit" class="btn btn-primary"><i class="fa-solid fa-check mr-1"></i>Update status</button>
-					</form>
-					<form method="POST" action="/whoishome/clear" class="flex items-center" id="whoClearForm">
-						<input type="hidden" name="name" id="whoNameClear">
-						<button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash mr-1"></i>Clear status</button>
-					</form>
-				</div>
+				<form id="whoUnifiedForm" method="POST" action="/whoishome" class="flex flex-wrap items-center gap-2 text-xs">
+					<input type="hidden" name="action" id="whoAction" value="update">
+					<input type="hidden" name="name" id="whoName" value="">
+					<select name="status" class="border rounded p-1 text-xs">
+						<option>Home</option>
+						<option>Away</option>
+						<option>Out</option>
+						<option>Traveling</option>
+					</select>
+					<button id="whoUpdateBtn" type="submit" class="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">Update</button>
+					<button id="whoClearBtn" type="button" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" title="Clear my status">Clear</button>
+				</form>
 			</div>
-			{% endif %}
-	</div>
-</div>
+
+			<!-- Personal Status (compact) -->
+			<div class="card p-4" id="personalStatusCard">
+				<h3 class="text-lg font-semibold mb-3 flex items-center gap-2"><i class="fa-solid fa-user-pen text-blue-600"></i> Personal Status</h3>
+				<div id="memberStatusChips" class="flex flex-wrap gap-2 mb-3 text-xs">
+					{% for name, text in member_statuses.items() %}
+						<span data-name="{{ name }}" class="px-2 py-1 rounded border bg-white shadow-sm">{{ text }} <span class="text-gray-500 text-[10px]">— {{ name }}</span></span>
+					{% endfor %}
+				</div>
+				<form id="memberStatusForm" action="/status/update" method="POST" class="flex items-center gap-2 text-xs">
+					<input type="hidden" name="name" id="memberStatusName" value="">
+					<input type="text" name="text" placeholder="My status" class="flex-1 border rounded p-1" />
+					<button type="submit" class="px-2 py-3 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+				</form>
+				<form id="memberStatusDelete" action="/status/delete" method="POST" class="mt-2 text-right">
+					<input type="hidden" name="name" id="memberStatusDeleteName" value="">
+					<button type="submit" class="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 text-xs">Remove My Status</button>
+				</form>
+			</div>
+		</div>
+	</div><!-- /left col -->
+
+	<div class="space-y-6">
+		<!-- Reminders & Calendar (moved to right column) -->
+		<div class="card p-6" id="remindersCard">
+			<h2 class="text-xl font-bold flex items-center gap-2 mb-3"><i class="fa-solid fa-calendar-days text-blue-600"></i> Reminders</h2>
+			<div id="reminderMonthNav" class="flex items-center justify-between mb-2">
+				<button type="button" id="calPrev" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" aria-label="Previous Month">◀</button>
+				<div id="calLabel" class="font-semibold flex-1 text-center"></div>
+				<button type="button" id="calNext" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" aria-label="Next Month">▶</button>
+			</div>
+			<div class="flex justify-end mb-2"><button id="backToToday" type="button" class="hidden text-xs text-blue-600 hover:underline">Back to Today</button></div>
+			<div class="grid grid-cols-7 gap-1 text-xs font-semibold text-gray-600 mb-1">
+				<div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+			</div>
+			<div id="calendar" class="grid grid-cols-7 gap-1 mb-4"></div>
+			<div class="flex items-center flex-wrap gap-2 mb-2" id="remindersHeader">
+				<button type="button" id="openAdd" class="btn btn-primary text-sm">Add Reminder</button>
+				<div class="text-sm text-gray-600" id="remindersSelectedDate"></div>
+				<div class="flex items-center gap-2 ml-auto" id="scopeBarWrap"></div>
+			</div>
+			<!-- Inline form now appears directly under header -->
+			<div id="reminderInlineFormWrap" class="hidden mb-3">
+				<form id="reminderInlineForm" class="space-y-3 bg-gray-50 dark:bg-slate-800/60 border rounded p-3">
+					<input type="hidden" name="id" value="">
+					<div>
+						<label class="block text-xs font-semibold mb-1">Title</label>
+						<input type="text" name="title" required class="w-full h-10 border rounded p-2 text-sm" placeholder="Reminder title">
+					</div>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+						<div>
+							<label class="block text-xs font-semibold mb-1">Date</label>
+							<input name="date" required type="date" class="h-10 w-full border rounded p-2 text-sm">
+						</div>
+						<div>
+							<label class="block text-xs font-semibold mb-1">Time</label>
+							<input name="time" type="time" class="h-10 w-full border rounded p-2 text-sm" aria-label="Reminder time (optional)">
+						</div>
+					</div>
+					<div id="categorySelectRow" class="hidden">
+						<label class="block text-xs font-semibold mb-1">Category</label>
+						<select name="category" class="h-10 w-full border rounded p-2 text-sm"></select>
+					</div>
+					<div>
+						<label class="block text-xs font-semibold mb-1">Description</label>
+						<textarea name="description" rows="2" class="w-full border rounded p-2 text-sm"></textarea>
+					</div>
+					<div class="flex gap-2 justify-end pt-2 border-t">
+						<button type="button" id="reminderCancelBtn" class="px-3 py-1.5 text-sm rounded border bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600">Cancel</button>
+						<button type="submit" id="reminderSaveBtn" class="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+					</div>
+				</form>
+			</div>
+			<form id="bulkDeleteForm" class="mb-2" data-creator="" >
+				<div id="remindersBulkBar" class="hidden flex items-center gap-3 bg-red-50 border border-red-200 rounded p-2 text-xs">
+					<span><span id="bulkCount">0</span> selected</span>
+					<input type="hidden" id="bulkIds" value="">
+					<input type="hidden" id="bulkUser" name="creator" value="">
+					<button type="submit" class="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700">Delete Selected</button>
+					<button type="button" id="bulkClearSel" class="px-2 py-1 rounded border bg-white hover:bg-gray-50">Clear</button>
+				</div>
+			</form>
+			<div class="flex items-center justify-between mb-1 text-[11px] text-gray-500">
+				<div id="reminderCategorySummary" class="flex flex-wrap gap-2"></div>
+			</div>
+			<div id="remindersScroll" class="space-y-2 max-h-72 overflow-auto border rounded p-2 bg-white" aria-label="Reminders list"></div>
+			<noscript>
+				<div class="mt-4 text-sm text-gray-600">JavaScript disabled: reminders editing requires JS. Existing reminder counts are shown on the calendar only.</div>
+			</noscript>
+		</div>
+
+
+		<script id="legacyRemindersData" type="application/json">{{ reminders_json|safe }}</script>
+		<script id="reminderCategoriesData" type="application/json">{{ reminder_categories|tojson }}</script>
+		<script>
+// Inject category color classes immediately after data is available
+(function(){
+	try {
+		var dataEl = document.getElementById('reminderCategoriesData');
+		const cats = JSON.parse(dataEl ? dataEl.textContent || '[]' : '[]');
+		let css = '';
+		cats.forEach(c=>{ 
+			if(!c || !c.key) return; 
+			const key=(c.key+'').replace(/[^a-zA-Z0-9_-]/g,''); 
+			const col=c.color||'#6b7280'; 
+			css += '.rem-cat-dot-'+key+'{background:'+col+' !important;}'; 
+		});
+		css += '.rem-cat-pill{transition:background-color .15s,box-shadow .15s;}';
+		css += '.rem-cat-pill:hover{box-shadow:0 0 0 1px rgba(var(--primary-rgb,37,99,235),0.35);}';
+		const el=document.createElement('style'); 
+		el.id='reminder-category-styles'; 
+		el.textContent=css; 
+		document.head.appendChild(el);
+	}catch(e){ console.warn('Category style inject failed', e); }
+})();
+</script>
+		<script>
+// --- Reminders Progressive Enhancement (clean re-integration) ---
+(function(){
+	// Wait until remindersApi is available (in case script ordering delays)
+	if(!window.remindersApi){
+		let tries=0; const timer=setInterval(()=>{
+			if(window.remindersApi){ clearInterval(timer); init(); }
+			else if(++tries>20){ clearInterval(timer); }
+		},150);
+		return;
+	}
+	init();
+	function init(){
+	const cal = document.getElementById('calendar');
+	const calLabel = document.getElementById('calLabel');
+	const prevBtn = document.getElementById('calPrev');
+	const nextBtn = document.getElementById('calNext');
+	const header = document.getElementById('remindersHeader');
+	const listWrap = document.getElementById('remindersScroll');
+	const bulkBar = document.getElementById('remindersBulkBar');
+	const bulkCount = document.getElementById('bulkCount');
+	const bulkIds = document.getElementById('bulkIds');
+	const bulkUser = document.getElementById('bulkUser');
+	const inlineWrap = document.getElementById('reminderInlineFormWrap');
+	const inlineForm = document.getElementById('reminderInlineForm');
+	const categoryRow = document.getElementById('categorySelectRow');
+	const scopeBarWrap = document.getElementById('scopeBarWrap');
+	const categorySelect = categoryRow.querySelector('select');
+	const categoryFilter = null; // dropdown removed; using pills only
+	const cancelBtn = document.getElementById('reminderCancelBtn');
+	const selectedDateDisplay = document.getElementById('remindersSelectedDate');
+	let editingId = null;
+	let currentScope = localStorage.getItem('remindersScope') || 'day';
+	let display = new Date(); // current month
+	let monthCache = {}; // YYYY-MM -> { reminders:[], counts:{}, categories_counts:{} }
+	const legacyDataEl = document.getElementById('legacyRemindersData');
+	const catDataEl = document.getElementById('reminderCategoriesData');
+	const toastHostId = 'toastHost';
+	let live = document.getElementById('reminderLiveRegion');
+	if(!live){ live=document.createElement('div'); live.id='reminderLiveRegion'; live.className='sr-only'; live.setAttribute('aria-live','polite'); header.appendChild(live);}  
+	if(!document.getElementById(toastHostId)){
+		const th=document.createElement('div'); th.id=toastHostId; th.className='fixed top-4 right-4 space-y-2 z-50 pointer-events-none'; document.body.appendChild(th);
+	}
+	function toast(msg,type='info'){
+		const host=document.getElementById(toastHostId); if(!host) return;
+		const el=document.createElement('div'); el.className='pointer-events-auto px-3 py-2 rounded shadow text-sm text-white '+(type==='error'?'bg-red-600':type==='success'?'bg-green-600':'bg-gray-700');
+		el.textContent=msg; host.appendChild(el);
+		setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); },3000);
+		live.textContent=msg;
+	}
+	let catPalette={};
+	try{ const cats=JSON.parse(catDataEl?.textContent||'[]'); if(cats.length){ categoryRow.classList.remove('hidden'); categorySelect.innerHTML='<option value="">(No category)</option>'+cats.map(c=>`<option value="${c.key}">${c.label||c.key}</option>`).join(''); cats.forEach(c=>{ catPalette[c.key]=c.color||'#2563eb'; }); } }catch(e){}
+	function categoryColor(k){ return catPalette[k]; }
+	function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+	function setSelectedDate(d){ header.setAttribute('data-selected-date', d); selectedDateDisplay.textContent=d; localStorage.setItem('remindersSelectedDate', d); }
+	function getSelectedDate(){ return header.getAttribute('data-selected-date') || localStorage.getItem('remindersSelectedDate') || new Date().toISOString().slice(0,10); }
+	const scopeBar=document.createElement('div'); scopeBar.className='flex gap-1'; scopeBar.innerHTML=['day','week','month'].map(s=>`<button type="button" data-scope="${s}" class="px-2 py-0.5 text-xs rounded border scopeBtn ${s===currentScope?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'}">${s[0].toUpperCase()+s.slice(1)}</button>`).join(''); scopeBarWrap.appendChild(scopeBar);
+	scopeBar.addEventListener('click', e=>{ const b=e.target.closest('button[data-scope]'); if(!b)return; currentScope=b.getAttribute('data-scope'); localStorage.setItem('remindersScope', currentScope); scopeBar.querySelectorAll('.scopeBtn').forEach(btn=>{ const act=btn.getAttribute('data-scope')===currentScope; btn.className='px-2 py-0.5 text-xs rounded border scopeBtn '+(act?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'); }); renderList(); });
+	function openForm(mode,dateStr,data){ inlineForm.reset(); editingId=null; inlineForm.querySelector('[name=id]').value=''; inlineForm.querySelector('[name=date]').value=dateStr; if(mode==='edit'&&data){ editingId=data.id; inlineForm.querySelector('[name=id]').value=data.id; inlineForm.querySelector('[name=title]').value=data.title; inlineForm.querySelector('[name=description]').value=data.description||''; if(data.category && categorySelect) categorySelect.value=data.category; if(data.time) inlineForm.querySelector('[name=time]').value=data.time; }
+		inlineWrap.classList.remove('hidden'); setTimeout(()=>inlineForm.querySelector('[name=title]').focus(),30); }
+	function closeForm(){ inlineWrap.classList.add('hidden'); editingId=null; }
+	cancelBtn.addEventListener('click', closeForm);
+	document.getElementById('openAdd').addEventListener('click', ()=> openForm('create', getSelectedDate(), null));
+	// Recalculate counts & category aggregates for a month key (YYYY-M)
+	function recalcMonth(key){ const bucket=monthCache[key]; if(!bucket) return; const counts={}; const catsCounts={}; bucket.reminders.forEach(r=>{ counts[r.date]=(counts[r.date]||0)+1; if(r.category){ if(!catsCounts[r.date]) catsCounts[r.date]={}; catsCounts[r.date][r.category]=(catsCounts[r.date][r.category]||0)+1; } }); bucket.counts=counts; bucket.categories_counts=catsCounts; }
+	inlineForm.addEventListener('submit', async e=>{ e.preventDefault(); const fd=new FormData(inlineForm); const data=Object.fromEntries(fd.entries()); const creator=localStorage.getItem('username')||''; const payload={title:data.title, date:data.date, time:data.time||undefined, description:data.description, creator, category:data.category||undefined}; let res; const touchedMonths=new Set(); if(data.id){ // update existing
+		const id=parseInt(data.id);
+		res=await window.remindersApi.update(id,payload);
+		if(res.ok){ // Remove old instances from all months then re-add fresh
+			Object.entries(monthCache).forEach(([k,mc])=>{ const before=mc.reminders.length; mc.reminders=mc.reminders.filter(r=>r.id!==id); if(before!==mc.reminders.length) touchedMonths.add(k); });
+			const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(res.reminder); touchedMonths.add(key);
+		}
+	} else { // create
+		res=await window.remindersApi.create(payload);
+		if(res.ok){ const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(res.reminder); touchedMonths.add(key); }
+	}
+	if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); closeForm(); renderList(); updateCalendarBadges(); toast(data.id?'Reminder updated':'Reminder added','success'); } else { toast((res&&res.error)||'Save failed','error'); }
+	});
+	async function fetchMonth(dateStr){ const d=new Date(dateStr); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key]) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast('Network error','error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{}}; }
+	function renderCalendar(){ const year=display.getFullYear(); const month=display.getMonth(); calLabel.textContent=display.toLocaleString(undefined,{month:'long', year:'numeric'}); cal.innerHTML=''; const today=new Date(); const curKey=year+'-'+month; const todayKey=today.getFullYear()+'-'+today.getMonth(); const selected = getSelectedDate(); const todayBtn=document.getElementById('backToToday'); if(todayBtn){ todayBtn.classList.toggle('hidden', curKey===todayKey); if(!todayBtn.dataset.bound){ todayBtn.dataset.bound='1'; todayBtn.addEventListener('click', ()=>{ const now=new Date(); display=new Date(now.getFullYear(), now.getMonth(),1); const todayStr=now.toISOString().slice(0,10); setSelectedDate(todayStr); buildAndEnsure(); renderList(); }); }} const days=new Date(year,month+1,0).getDate(); for(let d=1; d<=days; d++){ const dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); const btn=document.createElement('button'); btn.type='button'; const isToday = dateStr===today.toISOString().slice(0,10); const isSel = dateStr===selected; btn.className='calendar-day relative p-2 rounded border text-left focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 '+(isSel?'bg-blue-50 dark:bg-slate-700 border-blue-500':''); btn.setAttribute('aria-pressed', isSel?'true':'false'); btn.innerHTML='<div class="font-semibold '+(isToday?'text-blue-600':'')+'">'+d+'</div>'; const monthKey=year+'-'+String(month+1).padStart(2,'0'); const cache=monthCache[monthKey]||{}; const count=(cache.counts||{})[dateStr]; if(count){ const badge=document.createElement('span'); badge.className='day-count-badge absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] rounded-full bg-blue-600 text-white'; badge.textContent=count; btn.appendChild(badge); const cats=(cache.categories_counts||{})[dateStr]; if(cats){ const wrap=document.createElement('div'); wrap.className='absolute left-1 bottom-1 flex gap-0.5 cat-dots'; Object.entries(cats).slice(0,5).forEach(([k,_v])=>{ if(k==='_uncategorized') return; const dot=document.createElement('span'); dot.className='w-1.5 h-1.5 rounded-full rem-cat-dot-'+k; wrap.appendChild(dot); }); btn.appendChild(wrap); }} btn.addEventListener('click', ()=>{ setSelectedDate(dateStr); renderList(); renderCalendar(); }); cal.appendChild(btn);} }
+	function updateCalendarBadges(){ // ensure counts are in sync for currently loaded months
+	Object.keys(monthCache).forEach(recalcMonth); renderCalendar(); }
+	try { const legacy=JSON.parse(legacyDataEl?.textContent||'{}'); const today=new Date(); const mk=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0'); monthCache[mk]={reminders:[], counts:{}, categories_counts:{}}; Object.entries(legacy).forEach(([d,arr])=>{ if(d.startsWith(mk+'-')){ monthCache[mk].counts[d]=arr.length; monthCache[mk].reminders.push(...arr.map(r=>({id:r.id,title:r.title,description:r.description,creator:r.creator,date:d}))); }}); }catch(e){}
+	let activeCategory = 'ALL';
+	function renderList(){ const dateStr=getSelectedDate(); const dObj=new Date(dateStr); const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]; if(!cache){ listWrap.innerHTML='<div class="text-xs text-gray-400">Loading...</div>'; fetchMonth(dateStr).then(()=>{ renderCalendar(); renderList(); }); return;} let items=[]; // Always start from full month, then apply scope if user explicitly changed scope
+	if(currentScope==='day'){ items=cache.reminders.filter(r=>r.date===dateStr);} else if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); items=cache.reminders.filter(r=>{ const rd=new Date(r.date); return rd>=mon && rd<=end; }); } else { items=cache.reminders.slice(); }
+	if(activeCategory!=='ALL'){ items=items.filter(r=> r.category===activeCategory); }
+	paintItems(items);
+	if(currentScope==='month'){ const prev=new Date(dObj.getFullYear(), dObj.getMonth()-1,1); const next=new Date(dObj.getFullYear(), dObj.getMonth()+1,1); fetchMonth(prev.toISOString().slice(0,10)); fetchMonth(next.toISOString().slice(0,10)); }
+	updateCategorySummary(cache.reminders); }
+	// Category summary pills (buttons) click handler using data-cat attribute
+	const catSummaryEl=document.getElementById('reminderCategorySummary');
+	if(catSummaryEl && !catSummaryEl.dataset.clickReady){
+		catSummaryEl.dataset.clickReady='1';
+		catSummaryEl.addEventListener('click', e=>{ const b=e.target.closest('button[data-cat]'); if(!b) return; const val=b.getAttribute('data-cat'); activeCategory = (val===activeCategory)?'ALL':val; renderList(); updateCategorySummary((monthCache[getSelectedDate().slice(0,7)]||{}).reminders||[]); });
+	}
+	function updateCategorySummary(fullList){ const wrap=document.getElementById('reminderCategorySummary'); if(!fullList.length){ wrap.innerHTML=''; return;} const counts={}; fullList.forEach(r=>{ if(r.category) counts[r.category]=(counts[r.category]||0)+1; }); const ordered=Object.entries(counts).sort((a,b)=>b[1]-a[1]); let html=`<button type="button" data-cat="ALL" class="rem-cat-pill ${activeCategory==='ALL'?'ring-1 ring-blue-500 bg-blue-50':''} inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50">All: ${fullList.length}</button>`; ordered.forEach(([k,v])=>{ const act=activeCategory===k; html+=`<button type="button" data-cat="${k}" class="rem-cat-pill ${act?'ring-1 ring-blue-500 bg-blue-50':''} inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50"><span class="w-2 h-2 rounded-full rem-cat-dot-${k}"></span>${escapeHtml(k)}: ${v}</button>`; }); wrap.innerHTML=html; }
+	function paintItems(list){ const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); const selections=new Set(); listWrap.innerHTML=''; bulkBar.classList.add('hidden'); bulkCount.textContent='0'; if(!list.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; return;} list.sort((a,b)=> (a.date.localeCompare(b.date)) || ((a.time||'~').localeCompare(b.time||'~')) || (a.id-b.id));
+	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
+	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\">✎</button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast('Deleted (undo available)','success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent='Undo delete'; undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast('Delete failed','error');}); }); }
+	listWrap.appendChild(row); }); function updateBulk(){ bulkCount.textContent=selections.size; bulkIds.value=Array.from(selections).join(','); bulkBar.classList.toggle('hidden', !selections.size); } listWrap.querySelectorAll('.reminderChk').forEach(cb=>cb.addEventListener('change',()=>{ const id=parseInt(cb.value); if(cb.checked) selections.add(id); else selections.delete(id); updateBulk(); })); document.getElementById('bulkClearSel').onclick=()=>{ selections.clear(); listWrap.querySelectorAll('.reminderChk').forEach(c=>c.checked=false); updateBulk(); }; const bulkForm=document.getElementById('bulkDeleteForm'); if(bulkForm && !bulkForm.dataset.ajax){ bulkForm.dataset.ajax='1'; bulkForm.addEventListener('submit', e=>{ e.preventDefault(); const ids=Array.from(selections); if(!ids.length) return; const creator=localStorage.getItem('username')||''; window.remindersApi.removeMany(ids,creator).then(resp=>{ if(!resp.ok){ toast('Delete failed','error'); return;} Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(r=>!ids.includes(r.id)); }); toast('Deleted '+ids.length,'success'); selections.clear(); bulkCount.textContent='0'; bulkBar.classList.add('hidden'); renderList(); updateCalendarBadges(); }); }); }
+	}
+	function onMonthChange(delta){ 
+		const oldMonth = display.getMonth(); 
+		display = new Date(display.getFullYear(), display.getMonth()+delta, 1); 
+		buildAndEnsure(); 
+		// When month changes, show entire month and switch to first day of that month
+		const firstDayOfMonth = display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0')+'-01';
+		setSelectedDate(firstDayOfMonth);
+		// Reset scope to month to show full month list
+		currentScope='month'; 
+		localStorage.setItem('remindersScope', currentScope);
+		scopeBar.querySelectorAll('.scopeBtn').forEach(btn=>{ 
+			const act=btn.getAttribute('data-scope')===currentScope; 
+			btn.className='px-2 py-0.5 text-xs rounded border scopeBtn '+(act?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'); 
+		}); 
+		renderList(); 
+	}
+	prevBtn.addEventListener('click', ()=> onMonthChange(-1));
+	nextBtn.addEventListener('click', ()=> onMonthChange(1));
+	function buildAndEnsure(){ const mk=display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0'); if(!monthCache[mk]){ fetchMonth(mk+'-01').then(()=>{ renderCalendar(); }); } renderCalendar(); }
+	const startDate = getSelectedDate(); setSelectedDate(startDate); buildAndEnsure(); renderList();
+	// No dropdown filter now
+	bulkUser.value = localStorage.getItem('username')||'';
+	
+	// Re-render list when user switches to update edit/delete visibility
+	document.addEventListener('user-switched', function() {
+		bulkUser.value = localStorage.getItem('username')||'';
+		renderList(); // This will recalculate canEdit for all items
+	});
+	}
+	})();
+		</script>
+	</div> <!-- /right col -->
+</div> <!-- /grid -->
 <script>
 	const d = new Date();
 	document.getElementById('today').textContent = d.toLocaleString();
@@ -215,14 +341,17 @@
 // Enhance chips for member personal statuses with per-name coloring; default and hide admin for Who is Home quick controls
 (function(){
 	// Personal member statuses: give each member a stable color
-	const chips = document.querySelectorAll('#memberStatusChips span[data-name]');
-	const palette = ['#DBEAFE','#FEF3C7','#DCFCE7','#FCE7F3','#E9D5FF','#FFEDD5','#E5E7EB'];
-	const names = Array.from(chips).map(el=>el.getAttribute('data-name'));
-	names.forEach((name, idx)=>{
-		const els = Array.from(chips).filter(e=>e.getAttribute('data-name')===name);
-		const bg = palette[idx % palette.length];
-		els.forEach(el=>{ el.style.backgroundColor = bg; el.style.borderColor = '#CBD5E1'; });
-	});
+	function colorPersonalChips(){
+		const chips = document.querySelectorAll('#memberStatusChips span[data-name]');
+		const palette = ['#DBEAFE','#FEF3C7','#DCFCE7','#FCE7F3','#E9D5FF','#FFEDD5','#E5E7EB'];
+		const names = Array.from(new Set(Array.from(chips).map(el=>el.getAttribute('data-name'))));
+		names.forEach((name, idx)=>{
+			const els = Array.from(chips).filter(e=>e.getAttribute('data-name')===name);
+			const bg = palette[idx % palette.length];
+			els.forEach(el=>{ el.style.backgroundColor = bg; el.style.borderColor = '#CBD5E1'; });
+		});
+	}
+	colorPersonalChips();
 	// Helper to update Who is Home quick controls and member status forms for current user
 	function updateHomeAndStatusUI(){
 		const current = localStorage.getItem('username') || '';
@@ -237,19 +366,19 @@
 		if (chip){ chip.textContent = current ? current : ''; }
 		// Admin: hide quick controls and personal status editor
 		const isAdmin = (current === adminName || current === 'Administrator' || current === 'admin');
-		const quick = document.getElementById('whoQuickForm');
-		const clear = document.getElementById('whoClearForm');
+		const quick = document.getElementById('whoUnifiedForm');
 		const msForm = document.getElementById('memberStatusForm');
 		const msDel = document.getElementById('memberStatusDelete');
+		const whoCard = document.getElementById('whoHomeCard');
+		const personalCard = document.getElementById('personalStatusCard');
 		if (isAdmin){
-			quick?.classList.add('hidden');
-			clear?.classList.add('hidden');
-			msForm?.classList.add('hidden');
-			msDel?.classList.add('hidden');
-			return;
-		} else {
+			whoCard?.classList.add('hidden');
+			personalCard?.classList.add('hidden');
+			return; // hide entire cards for admin
+		}else{
+			whoCard?.classList.remove('hidden');
+			personalCard?.classList.remove('hidden');
 			quick?.classList.remove('hidden');
-			clear?.classList.remove('hidden');
 			msForm?.classList.remove('hidden');
 		}
 		// Show delete button only if current user has a status chip
@@ -261,6 +390,94 @@
 	updateHomeAndStatusUI();
 	// Update on user switch without refresh (global event from base.html)
 	document.addEventListener('user-switched', updateHomeAndStatusUI);
+
+	// Unified Who is Home form clear button handling
+	const whoClearBtn = document.getElementById('whoClearBtn');
+	const whoUnifiedForm = document.getElementById('whoUnifiedForm');
+	if (whoClearBtn && whoUnifiedForm){
+		whoClearBtn.addEventListener('click', function(){
+			const actionField = document.getElementById('whoAction');
+			if(actionField){ actionField.value = 'clear'; }
+			whoUnifiedForm.submit();
+		});
+		const updateBtn = document.getElementById('whoUpdateBtn');
+		if(updateBtn){
+			updateBtn.addEventListener('click', function(){
+				const actionField = document.getElementById('whoAction');
+				if(actionField){ actionField.value = 'update'; }
+			});
+		}
+	}
+})();
+</script>
+<script>
+// AJAX enhancement for Who is Home & Personal Status forms (no page reload)
+(function(){
+		// Family members injected from server
+		const FAMILY_MEMBERS = JSON.parse(document.getElementById('familyMembersData').textContent || '[]');
+		function fetchJson(url, opts){
+		opts = opts || {}; opts.headers = Object.assign({'X-Requested-With':'fetch'}, opts.headers||{});
+		return fetch(url, opts).then(r=>r.json().catch(()=>({error:'Bad JSON'})));
+	}
+	const whoForm = document.getElementById('whoUnifiedForm');
+	const memberForm = document.getElementById('memberStatusForm');
+	const memberDel = document.getElementById('memberStatusDelete');
+	const whoList = document.getElementById('whoStatusList');
+	const memberChips = document.getElementById('memberStatusChips');
+	function currentUser(){ return localStorage.getItem('username')||''; }
+	function toast(msg){ console.log('[ajax]',msg); }
+		function updateWhoDOM(data){
+			if(!data) return;
+			let statuses={};
+			if(Array.isArray(data.entries)) data.entries.forEach(e=>{ statuses[e.name]=e.status; });
+			else if(data.who_statuses && typeof data.who_statuses==='object') statuses=data.who_statuses;
+		const frag=document.createDocumentFragment();
+		FAMILY_MEMBERS.forEach(member=>{
+			const st = statuses[member];
+			const span=document.createElement('span');
+			span.className='px-2 py-1 rounded border bg-white flex items-center gap-1 text-xs';
+			span.setAttribute('data-member', member);
+			let pillClass='bg-gray-100 text-gray-500 border border-gray-200';
+			if(st==='Home') pillClass='bg-green-100 text-green-700 border border-green-300';
+			else if(st==='Away') pillClass='bg-gray-100 text-gray-600 border border-gray-300';
+			else if(st==='Out') pillClass='bg-amber-100 text-amber-700 border border-amber-300';
+			else if(st==='Traveling') pillClass='bg-indigo-100 text-indigo-700 border border-indigo-300';
+			else if(st) pillClass='bg-blue-100 text-blue-700 border border-blue-300';
+			span.innerHTML='<span class="font-medium">'+member+'</span><span class="status-pill px-1.5 py-0.5 rounded text-[10px] leading-none '+pillClass+'">'+(st||'—')+'</span>';
+			frag.appendChild(span);
+		});
+		whoList.innerHTML=''; whoList.appendChild(frag);
+	}
+	function recolorMemberChips(){
+		const chips = memberChips.querySelectorAll('span[data-name]');
+		const palette=['#DBEAFE','#FEF3C7','#DCFCE7','#FCE7F3','#E9D5FF','#FFEDD5','#E5E7EB'];
+		const names=[...new Set(Array.from(chips).map(c=>c.dataset.name))];
+		names.forEach((n,i)=>{ const bg=palette[i%palette.length]; chips.forEach(ch=>{ if(ch.dataset.name===n){ ch.style.backgroundColor=bg; ch.style.borderColor='#CBD5E1'; } }); });
+	}
+		function updateMemberStatusDOM(data){
+			if(!data) return;
+			let entries=[];
+			if(Array.isArray(data.entries)) entries=data.entries;
+			else if(data.member_statuses && typeof data.member_statuses==='object'){
+				entries = Object.entries(data.member_statuses).map(([name,text])=>({name,text}));
+			}
+			memberChips.innerHTML='';
+			entries.forEach(e=>{ if(!e.text) return; const span=document.createElement('span'); span.dataset.name=e.name; span.className='px-2 py-1 rounded border bg-white shadow-sm text-xs'; span.innerHTML=e.text+' <span class="text-gray-500 text-[10px]">— '+e.name+'</span>'; memberChips.appendChild(span); });
+		recolorMemberChips();
+		const user=currentUser();
+		const has=Array.from(memberChips.querySelectorAll('span[data-name]')).some(el=>el.dataset.name===user);
+		memberDel.classList.toggle('hidden', !has);
+	}
+		if(whoForm){ whoForm.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(whoForm); const payload=new URLSearchParams(fd); const targetUrl=whoForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:payload}).then(resp=>{ if(resp && resp.ok){ updateWhoDOM(resp); toast('Status updated'); } else toast('Update failed'); }); }); }
+	const whoClear=document.getElementById('whoClearBtn');
+	if(whoClear){ whoClear.addEventListener('click', e=>{ e.preventDefault(); const action=document.getElementById('whoAction'); if(action) action.value='clear'; whoForm?.dispatchEvent(new Event('submit',{cancelable:true})); }); }
+		if(memberForm){ memberForm.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(memberForm); const qs=new URLSearchParams(fd); const targetUrl=memberForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); memberForm.reset(); memberForm.querySelector('[name=name]').value=currentUser(); toast('Saved'); } else toast('Save failed'); }); }); }
+		if(memberDel){ memberDel.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(memberDel); const qs=new URLSearchParams(fd); const targetUrl=memberDel.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); toast('Removed'); } else toast('Remove failed'); }); }); }
+	// Initialize name fields
+	const cur=currentUser();
+	document.getElementById('whoName')?.setAttribute('value', cur);
+	document.getElementById('memberStatusName')?.setAttribute('value', cur);
+	document.getElementById('memberStatusDeleteName')?.setAttribute('value', cur);
 })();
 </script>
 {% endblock %}

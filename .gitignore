@@ -14,3 +14,9 @@ __pycache__/
 # Environment variables
 .env
 config.yml
+
+# Node.js dependencies and build artifacts
+node_modules/
+package-lock.json
+static/output.css
+static/custom.css

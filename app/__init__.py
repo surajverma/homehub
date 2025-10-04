@@ -68,6 +68,15 @@ def create_app():
             # Add 'progress' to media
             if not has_column('media', 'progress'):
                 cur.execute("ALTER TABLE media ADD COLUMN progress TEXT")
+            # Reminder new columns (category, color, updated_at)
+            if not has_column('reminder', 'category'):
+                cur.execute("ALTER TABLE reminder ADD COLUMN category TEXT")
+            if not has_column('reminder', 'color'):
+                cur.execute("ALTER TABLE reminder ADD COLUMN color TEXT")
+            if not has_column('reminder', 'updated_at'):
+                cur.execute("ALTER TABLE reminder ADD COLUMN updated_at TIMESTAMP")
+            if not has_column('reminder', 'time'):
+                cur.execute("ALTER TABLE reminder ADD COLUMN time TEXT")
             # Ensure memberstatus table exists
             cur.execute("CREATE TABLE IF NOT EXISTS member_status (id INTEGER PRIMARY KEY, name TEXT, text TEXT, updated_at TIMESTAMP)")
             # Ensure new tables for groceries and expenses exist

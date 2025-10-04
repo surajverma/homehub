@@ -4,26 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.instance_name }} - HomeHub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='output.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: {{ config.theme.primary_color }};
-            --secondary-color: {{ config.theme.secondary_color }};
-            --background-color: {{ config.theme.background_color }};
-            --card-background-color: {{ config.theme.card_background_color }};
-            --text-color: {{ config.theme.text_color }};
-            --sidebar-background-color: {{ config.theme.sidebar_background_color }};
-            --sidebar-text-color: {{ config.theme.sidebar_text_color }};
-            --sidebar-link-color: {{ config.theme.sidebar_link_color }};
-            --sidebar-link-border-color: {{ config.theme.sidebar_link_border_color }};
-            --sidebar-active-color: {{ config.theme.sidebar_active_color }};
-        }
+    <!-- Config-driven theme variables (takes priority) -->
+    {% set pc = config.theme.primary_color.lstrip('#') %}
+    <style id="config-theme-vars">
+    /* Apply configured colors only when not in dark mode so dark overrides can take effect */
+    :root:not([data-theme="dark"]), [data-theme="light"] {
+        --primary-color: {{ config.theme.primary_color }};
+        --secondary-color: {{ config.theme.secondary_color }};
+        --background-color: {{ config.theme.background_color }};
+        --card-background-color: {{ config.theme.card_background_color }};
+        --text-color: {{ config.theme.text_color }};
+        --sidebar-background-color: {{ config.theme.sidebar_background_color }};
+        --sidebar-text-color: {{ config.theme.sidebar_text_color }};
+        --sidebar-link-color: {{ config.theme.sidebar_link_color }};
+        --sidebar-link-border-color: {{ config.theme.sidebar_link_border_color }};
+        --sidebar-active-color: {{ config.theme.sidebar_active_color }};
+    }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
+    {% if pc|length == 6 %}
+    <style>:root { --primary-rgb: {{ pc[0:2]|int(base=16) }}, {{ pc[2:4]|int(base=16) }}, {{ pc[4:6]|int(base=16) }}; }</style>
+    {% endif %}
+    <style>
+    .btn, button.btn, a.btn { padding:0.5rem 0.75rem; font-size:0.875rem; font-weight:500; line-height:1.25rem; border-radius:0.375rem; display:inline-flex; align-items:center; gap:0.25rem; }
+    .btn-primary { background:var(--primary-color); color:#fff; }
+    .btn-primary:hover { filter:brightness(.92); }
+    .btn-danger { background:#dc2626; color:#fff; }
+    .btn-danger:hover { filter:brightness(.9); }
+    /* Ensure dark theme variable overrides reassert after config injection */
+    [data-theme="dark"] {
+        --background-color: #0f172a;
+        --card-background-color: #111827;
+        --text-color: #e5e7eb;
+    }
+    </style>
+    {% block extra_head %}{% endblock %}
     <script>
         (function() {
             const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -209,4 +228,6 @@
     </div>
     
 </body>
+<!-- Phase 2 reminders API helper (progressive enhancement) -->
+<script src="/static/js/reminders_api.js"></script>
 </html>

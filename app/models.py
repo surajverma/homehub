@@ -94,10 +94,15 @@ class Notice(db.Model):
 class Reminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
+    time = db.Column(db.String(5))  # HH:MM (optional)
     title = db.Column(db.String(256), nullable=False)
     description = db.Column(db.Text)
     creator = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    # New fields (phase 1) - added via auto-migration if missing
+    category = db.Column(db.String(64))  # key referencing configured category
+    color = db.Column(db.String(16))     # optional override hex color
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class MemberStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
