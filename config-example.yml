@@ -20,6 +20,24 @@ family_members:
   - Dipanshu
   - Vivek
   - India
+reminders:
+  # time_format controls how reminder times are displayed in the UI.
+  # Allowed values: "12h" (default) or "24h". Remove or leave blank to fall back to 12h.
+  time_format: "12h"
+  categories:
+    # Example reminder categories (keys lowercase no spaces recommended)
+    - key: health
+      label: Health
+      color: "#dc2626"   # red
+    - key: bills
+      label: Bills
+      color: "#0d9488"   # teal
+    - key: school
+      label: School
+      color: "#7c3aed"   # violet
+    - key: family
+      label: Family
+      color: "#2563eb"   # blue
 theme:
   primary_color: "#1d4ed8"
   secondary_color: "#a0aec0"

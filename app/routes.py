@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, date, timedelta
 import calendar as _calendar
 import bleach
+import json
 
 main_bp = Blueprint('main', __name__)
 
@@ -70,7 +71,196 @@ def index():
     family = list(dict.fromkeys(config.get('family_members', [])))
     who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
     member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
-    return render_template('index.html', config=config, notice=notice, reminders_json=reminders_json, who_statuses=who_statuses, member_statuses=member_statuses)
+    # Extract reminder categories (config structure: reminders: { categories: [ {key,label,color}, ... ] })
+    reminder_categories = []
+    try:
+        rcfg = (config.get('reminders') or {}).get('categories') or []
+        if isinstance(rcfg, list):
+            for entry in rcfg:
+                if not isinstance(entry, dict):
+                    continue
+                key = entry.get('key');
+                if not key:
+                    continue
+                reminder_categories.append({
+                    'key': key,
+                    'label': entry.get('label') or key,
+                    'color': entry.get('color') or None
+                })
+    except Exception:
+        reminder_categories = []
+    return render_template('index.html', config=config, notice=notice, reminders_json=reminders_json, who_statuses=who_statuses, member_statuses=member_statuses, reminder_categories=reminder_categories)
+
+# ---------------------- API (Phase 2) Reminders ----------------------
+
+def serialize_reminder(r: Reminder):
+    return {
+        'id': r.id,
+        'date': r.date.strftime('%Y-%m-%d') if r.date else None,
+        'time': getattr(r, 'time', None) or None,
+        'title': r.title,
+        'description': r.description or '',
+        'creator': r.creator or '',
+        'category': getattr(r, 'category', None),
+        'color': getattr(r, 'color', None),
+        'timestamp': r.timestamp.isoformat() if r.timestamp else None,
+        'updated_at': getattr(r, 'updated_at', None).isoformat() if getattr(r, 'updated_at', None) else None,
+    }
+
+def parse_date_param(value, default=None):
+    if not value:
+        return default
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').date()
+    except Exception:
+        return default
+
+@main_bp.route('/api/reminders')
+def api_reminders_list():
+    """List reminders by scope (day|week|month). Default day of supplied date or today."""
+    scope = request.args.get('scope', 'day').lower()
+    date_s = request.args.get('date')
+    base_date = parse_date_param(date_s, date.today())
+    q = Reminder.query
+    # For month scope fetch whole month
+    if scope == 'month':
+        start = base_date.replace(day=1)
+        # naive month end
+        if start.month == 12:
+            next_month = start.replace(year=start.year+1, month=1, day=1)
+        else:
+            next_month = start.replace(month=start.month+1, day=1)
+        end = next_month - timedelta(days=1)
+        q = q.filter(Reminder.date >= start, Reminder.date <= end)
+    elif scope == 'week':
+        # ISO week start (Monday)
+        start = base_date - timedelta(days=base_date.weekday())
+        end = start + timedelta(days=6)
+        q = q.filter(Reminder.date >= start, Reminder.date <= end)
+    else:  # day
+        q = q.filter(Reminder.date == base_date)
+    # Order by date then time (placing NULL/blank times last) then id
+    try:
+        from sqlalchemy import case
+        rows = q.order_by(
+            Reminder.date.asc(),
+            case((Reminder.time == None, 1), (Reminder.time == '', 1), else_=0).asc(),  # noqa: E711
+            Reminder.time.asc(),
+            Reminder.id.asc()
+        ).all()
+    except Exception:
+        rows = q.order_by(Reminder.date.asc(), Reminder.id.asc()).all()
+    data = [serialize_reminder(r) for r in rows]
+    # Aggregates for month scope (counts per day + per-category counts)
+    counts = {}
+    categories_counts = {}
+    if scope == 'month':
+        for r in rows:
+            k = r.date.strftime('%Y-%m-%d')
+            counts[k] = counts.get(k, 0) + 1
+            cat = getattr(r, 'category', None) or '_uncategorized'
+            if k not in categories_counts:
+                categories_counts[k] = {}
+            categories_counts[k][cat] = categories_counts[k].get(cat, 0) + 1
+    return jsonify({
+        'ok': True,
+        'scope': scope,
+        'date': base_date.strftime('%Y-%m-%d'),
+        'reminders': data,
+        'counts': counts,
+        'categories_counts': categories_counts
+    })
+
+@main_bp.route('/api/reminders', methods=['POST'])
+def api_reminders_create():
+    payload = request.get_json(silent=True) or {}
+    title = bleach.clean(payload.get('title', '')).strip()
+    date_s = payload.get('date')
+    creator = bleach.clean(payload.get('creator', '')).strip()
+    description = bleach.clean(payload.get('description', ''), tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
+    if not title:
+        return jsonify({'ok': False, 'error': 'Title required'}), 400
+    d = parse_date_param(date_s, None)
+    if not d:
+        return jsonify({'ok': False, 'error': 'Invalid date'}), 400
+    time_raw = payload.get('time')
+    tval = None
+    if isinstance(time_raw, str) and len(time_raw) == 5 and time_raw[2] == ':':
+        hh, mm = time_raw.split(':', 1)
+        if hh.isdigit() and mm.isdigit():
+            hhi, mmi = int(hh), int(mm)
+            if 0 <= hhi < 24 and 0 <= mmi < 60:
+                tval = f"{hhi:02d}:{mmi:02d}"
+    r = Reminder(date=d, title=title, description=description, creator=creator, time=tval)
+    # Optional future fields (category/color) accepted but ignored if not configured yet
+    cat = payload.get('category'); col = payload.get('color')
+    if hasattr(r, 'category'):
+        r.category = bleach.clean(cat) if cat else None
+    if hasattr(r, 'color'):
+        r.color = bleach.clean(col) if col else None
+    db.session.add(r)
+    db.session.commit()
+    return jsonify({'ok': True, 'reminder': serialize_reminder(r)})
+
+@main_bp.route('/api/reminders/<int:rid>', methods=['PATCH'])
+def api_reminders_update(rid):
+    r = Reminder.query.get_or_404(rid)
+    payload = request.get_json(silent=True) or {}
+    user = bleach.clean(payload.get('creator', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if user not in admin_aliases and user != (r.creator or ''):
+        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+    if 'title' in payload:
+        title = bleach.clean(payload['title']).strip()
+        if title:
+            r.title = title
+    if 'description' in payload:
+        r.description = bleach.clean(payload['description'], tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
+    if 'date' in payload:
+        nd = parse_date_param(payload['date'], None)
+        if nd:
+            r.date = nd
+    if hasattr(r, 'time') and 'time' in payload:
+        time_raw = payload.get('time')
+        if isinstance(time_raw, str) and len(time_raw) == 5 and time_raw[2] == ':':
+            hh, mm = time_raw.split(':', 1)
+            if hh.isdigit() and mm.isdigit():
+                hhi, mmi = int(hh), int(mm)
+                if 0 <= hhi < 24 and 0 <= mmi < 60:
+                    r.time = f"{hhi:02d}:{mmi:02d}"
+    if hasattr(r, 'category') and 'category' in payload:
+        r.category = bleach.clean(payload.get('category')) if payload.get('category') else None
+    if hasattr(r, 'color') and 'color' in payload:
+        r.color = bleach.clean(payload.get('color')) if payload.get('color') else None
+    db.session.commit()
+    return jsonify({'ok': True, 'reminder': serialize_reminder(r)})
+
+@main_bp.route('/api/reminders', methods=['DELETE'])
+def api_reminders_delete_bulk():
+    payload = request.get_json(silent=True) or {}
+    ids = payload.get('ids') or []
+    user = bleach.clean(payload.get('creator', ''))
+    if not isinstance(ids, list) or not ids:
+        return jsonify({'ok': False, 'error': 'No ids provided'}), 400
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    deleted = 0
+    dates = set()
+    for rid in ids:
+        if not isinstance(rid, int):
+            continue
+        r = Reminder.query.get(rid)
+        if not r:
+            continue
+        if user in admin_aliases or user == (r.creator or ''):
+            if r.date:
+                dates.add(r.date.strftime('%Y-%m-%d'))
+            db.session.delete(r)
+            deleted += 1
+    if deleted:
+        db.session.commit()
+    return jsonify({'ok': True, 'deleted': deleted, 'dates': list(dates)})
 
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -914,7 +1104,8 @@ def add_reminder():
     db.session.add(r)
     db.session.commit()
     flash('Reminder added.', 'success')
-    return redirect(url_for('main.index'))
+    # Preserve the selected date in query so UI can stay on that month
+    return redirect(url_for('main.index', date=date_s))
 
 @main_bp.route('/calendar/delete/<int:reminder_id>', methods=['POST'])
 def delete_reminder(reminder_id):
@@ -928,7 +1119,52 @@ def delete_reminder(reminder_id):
         flash('Reminder deleted.', 'success')
     else:
         flash('Not allowed to delete this reminder.', 'error')
-    return redirect(url_for('main.index'))
+    # After deletion, try to stay on the same date (day of deleted reminder)
+    date_s = None
+    try:
+        if r.date:
+            date_s = r.date.strftime('%Y-%m-%d')
+    except Exception:
+        date_s = None
+    return redirect(url_for('main.index', date=date_s) if date_s else url_for('main.index'))
+
+@main_bp.route('/calendar/delete_bulk', methods=['POST'])
+def delete_reminders_bulk():
+    """Delete multiple reminders in one action.
+    Expects form field 'ids' as comma-separated reminder ids and 'user'."""
+    ids_raw = bleach.clean(request.form.get('ids', ''))
+    user = bleach.clean(request.form.get('user', ''))
+    if not ids_raw:
+        return redirect(url_for('main.index'))
+    id_list = []
+    for part in ids_raw.split(','):
+        part = part.strip()
+        if part.isdigit():
+            id_list.append(int(part))
+    if not id_list:
+        return redirect(url_for('main.index'))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    kept_date = None
+    deleted = 0
+    for rid in id_list:
+        r = Reminder.query.get(rid)
+        if not r:
+            continue
+        if kept_date is None and getattr(r, 'date', None):
+            try:
+                kept_date = r.date.strftime('%Y-%m-%d')
+            except Exception:
+                kept_date = None
+        if user in admin_aliases or user == r.creator:
+            db.session.delete(r)
+            deleted += 1
+    if deleted:
+        db.session.commit()
+        flash(f'Deleted {deleted} reminder(s).', 'success')
+    else:
+        flash('No reminders deleted (permission?).', 'error')
+    return redirect(url_for('main.index', date=kept_date) if kept_date else url_for('main.index'))
 
 @main_bp.route('/media/<filename>')
 def serve_media(filename):
@@ -1070,38 +1306,43 @@ def update_notice():
     return redirect(url_for('main.index'))
 
 # Lightweight endpoints for updating/clearing current user's home status from the dashboard
-@main_bp.route('/whoishome/update', methods=['POST'])
-def who_is_home_update():
-    config = current_app.config['HOMEHUB_CONFIG']
-    family = set(config.get('family_members', []))
-    name = bleach.clean(request.form.get('name', ''))
-    status = bleach.clean(request.form.get('status', ''))
-    if not name or name not in family:
-        flash('Invalid user for status update.', 'error')
-        return redirect(url_for('main.index'))
-    hs = HomeStatus.query.filter_by(name=name).first()
-    if hs:
-        hs.status = status or 'Away'
-    else:
-        db.session.add(HomeStatus(name=name, status=status or 'Away'))
-    db.session.commit()
-    flash('Status updated.', 'success')
-    return redirect(url_for('main.index'))
-
-@main_bp.route('/whoishome/clear', methods=['POST'])
-def who_is_home_clear():
+@main_bp.route('/whoishome', methods=['POST'])
+def who_is_home_action():
+    """Unified endpoint for updating or clearing a home status.
+    Expects hidden field 'action' = update|clear."""
+    action = bleach.clean(request.form.get('action', 'update'))
     config = current_app.config['HOMEHUB_CONFIG']
     family = set(config.get('family_members', []))
     name = bleach.clean(request.form.get('name', ''))
     if not name or name not in family:
-        flash('Invalid user for status removal.', 'error')
+        flash('Invalid user for status.', 'error')
         return redirect(url_for('main.index'))
-    hs = HomeStatus.query.filter_by(name=name).first()
-    if hs:
-        db.session.delete(hs)
+    if action == 'clear':
+        hs = HomeStatus.query.filter_by(name=name).first()
+        if hs:
+            db.session.delete(hs)
+            db.session.commit()
+            flash('Status cleared.', 'success')
+        else:
+            flash('No status to clear.', 'info')
+    else:  # update
+        status = bleach.clean(request.form.get('status', '')) or 'Away'
+        hs = HomeStatus.query.filter_by(name=name).first()
+        if hs:
+            hs.status = status
+        else:
+            db.session.add(HomeStatus(name=name, status=status))
         db.session.commit()
-        flash('Status cleared.', 'success')
-    return redirect(url_for('main.index'))
+        flash('Status updated.', 'success')
+    # AJAX (fetch) support
+    if request.headers.get('X-Requested-With') == 'fetch':
+        # Recompute statuses
+        who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
+        member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
+        return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses})
+    # Preserve date if present (calendar context)
+    date_q = request.args.get('date') or request.form.get('date')
+    return redirect(url_for('main.index', date=date_q) if date_q else url_for('main.index'))
 
 # Member personal status (text) updates under notice board
 @main_bp.route('/status/update', methods=['POST'])
@@ -1122,6 +1363,10 @@ def member_status_update():
         db.session.add(MemberStatus(name=name, text=text, updated_at=now))
     db.session.commit()
     flash('Status saved.', 'success')
+    if request.headers.get('X-Requested-With') == 'fetch':
+        who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
+        member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
+        return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses})
     return redirect(url_for('main.index'))
 
 @main_bp.route('/status/delete', methods=['POST'])
@@ -1137,4 +1382,8 @@ def member_status_delete():
         db.session.delete(ms)
         db.session.commit()
         flash('Status removed.', 'success')
+    if request.headers.get('X-Requested-With') == 'fetch':
+        who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
+        member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
+        return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses})
     return redirect(url_for('main.index'))
