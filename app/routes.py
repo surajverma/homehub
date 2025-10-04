@@ -79,7 +79,7 @@ def index():
             for entry in rcfg:
                 if not isinstance(entry, dict):
                     continue
-                key = entry.get('key');
+                key = entry.get('key')
                 if not key:
                     continue
                 reminder_categories.append({
