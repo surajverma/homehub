@@ -259,7 +259,77 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 	if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); closeForm(); renderList(); updateCalendarBadges(); toast(data.id?'Reminder updated':'Reminder added','success'); } else { toast((res&&res.error)||'Save failed','error'); }
 	});
 	async function fetchMonth(dateStr){ const d=new Date(dateStr); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key]) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast('Network error','error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{}}; }
-	function renderCalendar(){ const year=display.getFullYear(); const month=display.getMonth(); calLabel.textContent=display.toLocaleString(undefined,{month:'long', year:'numeric'}); cal.innerHTML=''; const today=new Date(); const curKey=year+'-'+month; const todayKey=today.getFullYear()+'-'+today.getMonth(); const selected = getSelectedDate(); const todayBtn=document.getElementById('backToToday'); if(todayBtn){ todayBtn.classList.toggle('hidden', curKey===todayKey); if(!todayBtn.dataset.bound){ todayBtn.dataset.bound='1'; todayBtn.addEventListener('click', ()=>{ const now=new Date(); display=new Date(now.getFullYear(), now.getMonth(),1); const todayStr=now.toISOString().slice(0,10); setSelectedDate(todayStr); buildAndEnsure(); renderList(); }); }} const days=new Date(year,month+1,0).getDate(); for(let d=1; d<=days; d++){ const dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); const btn=document.createElement('button'); btn.type='button'; const isToday = dateStr===today.toISOString().slice(0,10); const isSel = dateStr===selected; btn.className='calendar-day relative p-2 rounded border text-left focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 '+(isSel?'bg-blue-50 dark:bg-slate-700 border-blue-500':''); btn.setAttribute('aria-pressed', isSel?'true':'false'); btn.innerHTML='<div class="font-semibold '+(isToday?'text-blue-600':'')+'">'+d+'</div>'; const monthKey=year+'-'+String(month+1).padStart(2,'0'); const cache=monthCache[monthKey]||{}; const count=(cache.counts||{})[dateStr]; if(count){ const badge=document.createElement('span'); badge.className='day-count-badge absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] rounded-full bg-blue-600 text-white'; badge.textContent=count; btn.appendChild(badge); const cats=(cache.categories_counts||{})[dateStr]; if(cats){ const wrap=document.createElement('div'); wrap.className='absolute left-1 bottom-1 flex gap-0.5 cat-dots'; Object.entries(cats).slice(0,5).forEach(([k,_v])=>{ if(k==='_uncategorized') return; const dot=document.createElement('span'); dot.className='w-1.5 h-1.5 rounded-full rem-cat-dot-'+k; wrap.appendChild(dot); }); btn.appendChild(wrap); }} btn.addEventListener('click', ()=>{ setSelectedDate(dateStr); renderList(); renderCalendar(); }); cal.appendChild(btn);} }
+	function renderCalendar() {
+	    const year = display.getFullYear();
+	    const month = display.getMonth();
+	    calLabel.textContent = display.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+	    cal.innerHTML = '';
+	    const today = new Date();
+	    const curKey = year + '-' + month;
+	    const todayKey = today.getFullYear() + '-' + today.getMonth();
+	    const selected = getSelectedDate();
+	    const todayBtn = document.getElementById('backToToday');
+	    if (todayBtn) {
+	        todayBtn.classList.toggle('hidden', curKey === todayKey);
+	        if (!todayBtn.dataset.bound) {
+	            todayBtn.dataset.bound = '1';
+	            todayBtn.addEventListener('click', () => {
+	                const now = new Date();
+	                display = new Date(now.getFullYear(), now.getMonth(), 1);
+	                const todayStr = now.toISOString().slice(0, 10);
+	                setSelectedDate(todayStr);
+	                buildAndEnsure();
+	                renderList();
+	            });
+	        }
+	    }
+	    const firstDay = new Date(year, month, 1);
+	    const startDayOfWeek = (firstDay.getDay() + 6) % 7;
+	    for (let i = 0; i < startDayOfWeek; i++) {
+	        const empty = document.createElement('div');
+	        empty.className = 'calendar-day-empty';
+	        cal.appendChild(empty);
+	    }
+	    const days = new Date(year, month + 1, 0).getDate();
+	    for (let d = 1; d <= days; d++) {
+	        const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+	        const btn = document.createElement('button');
+	        btn.type = 'button';
+	        const isToday = dateStr === today.toISOString().slice(0, 10);
+	        const isSel = dateStr === selected;
+	        btn.className = 'calendar-day relative p-2 rounded border text-left focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 ' +
+	            (isSel ? 'bg-blue-50 dark:bg-slate-700 border-blue-500' : '');
+	        btn.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+	        btn.innerHTML = '<div class="font-semibold ' + (isToday ? 'text-blue-600' : '') + '">' + d + '</div>';
+	        const monthKey = year + '-' + String(month + 1).padStart(2, '0');
+	        const cache = monthCache[monthKey] || {};
+	        const count = (cache.counts || {})[dateStr];
+	        if (count) {
+	            const badge = document.createElement('span');
+	            badge.className = 'day-count-badge absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] rounded-full bg-blue-600 text-white';
+	            badge.textContent = count;
+	            btn.appendChild(badge);
+	            const cats = (cache.categories_counts || {})[dateStr];
+	            if (cats) {
+	                const wrap = document.createElement('div');
+	                wrap.className = 'absolute left-1 bottom-1 flex gap-0.5 cat-dots';
+	                Object.entries(cats).slice(0, 5).forEach(([k, _v]) => {
+	                    if (k === '_uncategorized') return;
+	                    const dot = document.createElement('span');
+	                    dot.className = 'w-1.5 h-1.5 rounded-full rem-cat-dot-' + k;
+	                    wrap.appendChild(dot);
+	                });
+	                btn.appendChild(wrap);
+	            }
+	        }
+	        btn.addEventListener('click', () => {
+	            setSelectedDate(dateStr);
+	            renderList();
+	            renderCalendar();
+	        });
+	        cal.appendChild(btn);
+	    }
+	}
 	function updateCalendarBadges(){ // ensure counts are in sync for currently loaded months
 	Object.keys(monthCache).forEach(recalcMonth); renderCalendar(); }
 	try { const legacy=JSON.parse(legacyDataEl?.textContent||'{}'); const today=new Date(); const mk=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0'); monthCache[mk]={reminders:[], counts:{}, categories_counts:{}}; Object.entries(legacy).forEach(([d,arr])=>{ if(d.startsWith(mk+'-')){ monthCache[mk].counts[d]=arr.length; monthCache[mk].reminders.push(...arr.map(r=>({id:r.id,title:r.title,description:r.description,creator:r.creator,date:d}))); }}); }catch(e){}
