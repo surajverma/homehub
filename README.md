@@ -42,7 +42,7 @@ The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
 
 ```yaml
 instance_name: "My Home Hub"
-password: "" # leave blank for no login; set a password to require login
+password: "" #leave blank for password less access
 admin_name: "Administrator"
 feature_toggles:
   shopping_list: true
@@ -63,6 +63,35 @@ family_members:
   - Dipanshu
   - Vivek
   - India
+reminders:
+  # time_format controls how reminder times are displayed in the UI.
+  # Allowed values: "12h" (default) or "24h". Remove or leave blank to fall back to 12h.
+  time_format: "12h"
+  categories:
+    # Example reminder categories (keys lowercase no spaces recommended)
+    - key: health
+      label: Health
+      color: "#dc2626"   # red
+    - key: bills
+      label: Bills
+      color: "#0d9488"   # teal
+    - key: school
+      label: School
+      color: "#7c3aed"   # violet
+    - key: family
+      label: Family
+      color: "#2563eb"   # blue
+theme:
+  primary_color: "#1d4ed8"
+  secondary_color: "#a0aec0"
+  background_color: "#f7fafc"
+  card_background_color: "#fff"
+  text_color: "#333"
+  sidebar_background_color: "#2563eb"
+  sidebar_text_color: "#ffffff"
+  sidebar_link_color: "rgba(255,255,255,0.95)"
+  sidebar_link_border_color: "rgba(255,255,255,0.18)"
+  sidebar_active_color: "#3b82f6" # highlight color for active sidebar menu
 ```
 
 **2. Run with Docker Compose**
