@@ -18,6 +18,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `Thank you for taking the time to open an issue! To help me assist you efficiently, please provide as much detail as possible about the problem, including clear steps to reproduce it if applicable. If you’re suggesting a new feature, kindly describe your idea thoroughly to help me understand your needs.
-
-As the sole maintainer, I balance this project alongside a full-time job. I typically address issues after work hours or on weekends, depending on my availability and energy. Please bear with me if there’s a delay in my response—I truly appreciate your patience and support for the project!`
+              As the sole maintainer, I balance this project alongside a full-time job. I typically address issues after work hours or on weekends, depending on my availability and energy. Please bear with me if there’s a delay in my response—I truly appreciate your patience and support for the project!`
             })
