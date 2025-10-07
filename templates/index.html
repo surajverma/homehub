@@ -3,6 +3,15 @@
 <!-- Category color styles will be injected by script after DOM ready -->
 <script>
 window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.reminders and config.reminders.time_format) or '12h' }}";
+// Calendar start day injected from config (defaults to Sunday if invalid)
+window.REMINDERS_CAL_START = (function(){
+	var raw = "{{ (config.reminders.calendar_start_day if config.reminders and config.reminders.calendar_start_day is defined else 'sunday') }}";
+	var val = (raw || '').trim().toLowerCase();
+	var names = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+	if(/^\d$/.test(val)) { var num=parseInt(val,10); if(num>=0 && num<=6) return names[num]; }
+	if(names.indexOf(val) !== -1) return val;
+	return 'sunday';
+})();
 </script>
 {% endblock %}
 {% block content %}
@@ -31,8 +40,12 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 		</div> <!-- /card -->
 
 		<!-- Two-column (Who is Home + Personal Status) under Notice Board -->
-		<div class="grid md:grid-cols-2 gap-6">
+		{% set show_who = config.feature_toggles.who_is_home %}
+		{% set show_status = (config.feature_toggles.personal_status if config.feature_toggles.personal_status is defined else True) %}
+		{% set two_col = show_who and show_status %}
+		<div class="grid {{ 'md:grid-cols-2' if two_col else 'md:grid-cols-1' }} gap-6">
 			<!-- Who is Home (compact) -->
+			{% if show_who %}
 			<div class="card p-4" id="whoHomeCard">
 				<h2 class="text-lg font-semibold mb-3 flex items-center gap-2"><i class="fa-solid fa-house-user text-green-600"></i> Who is Home?</h2>
 				<div id="whoStatusList" class="flex flex-wrap gap-2 mb-3 text-xs">
@@ -51,7 +64,7 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 						</span>
 					{% endfor %}
 				</div>
-				<form id="whoUnifiedForm" method="POST" action="/whoishome" class="flex flex-wrap items-center gap-2 text-xs">
+				<form id="whoUnifiedForm" method="POST" action="/whoishome" onsubmit="return false" class="flex flex-wrap items-center gap-2 text-xs" data-ajax="1">
 					<input type="hidden" name="action" id="whoAction" value="update">
 					<input type="hidden" name="name" id="whoName" value="">
 					<select name="status" class="border rounded p-1 text-xs">
@@ -63,9 +76,11 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 					<button id="whoUpdateBtn" type="submit" class="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">Update</button>
 					<button id="whoClearBtn" type="button" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" title="Clear my status">Clear</button>
 				</form>
-			</div>
+            </div>
+			{% endif %}
 
 			<!-- Personal Status (compact) -->
+			{% if show_status %}
 			<div class="card p-4" id="personalStatusCard">
 				<h3 class="text-lg font-semibold mb-3 flex items-center gap-2"><i class="fa-solid fa-user-pen text-blue-600"></i> Personal Status</h3>
 				<div id="memberStatusChips" class="flex flex-wrap gap-2 mb-3 text-xs">
@@ -83,12 +98,13 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 					<button type="submit" class="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 text-xs">Remove My Status</button>
 				</form>
 			</div>
+			{% endif %}
 		</div>
 	</div><!-- /left col -->
 
 	<div class="space-y-6">
 		<!-- Reminders & Calendar (moved to right column) -->
-		<div class="card p-6" id="remindersCard">
+		<div class="card p-6" id="remindersCard" style="min-height:520px">
 			<h2 class="text-xl font-bold flex items-center gap-2 mb-3"><i class="fa-solid fa-calendar-days text-blue-600"></i> Reminders</h2>
 			<div id="reminderMonthNav" class="flex items-center justify-between mb-2">
 				<button type="button" id="calPrev" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" aria-label="Previous Month">◀</button>
@@ -96,9 +112,7 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 				<button type="button" id="calNext" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" aria-label="Next Month">▶</button>
 			</div>
 			<div class="flex justify-end mb-2"><button id="backToToday" type="button" class="hidden text-xs text-blue-600 hover:underline">Back to Today</button></div>
-			<div class="grid grid-cols-7 gap-1 text-xs font-semibold text-gray-600 mb-1">
-				<div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
-			</div>
+			<div id="reminderWeekdayRow" class="grid grid-cols-7 gap-1 text-xs font-semibold text-gray-600 mb-1"></div>
 			<div id="calendar" class="grid grid-cols-7 gap-1 mb-4"></div>
 			<div class="flex items-center flex-wrap gap-2 mb-2" id="remindersHeader">
 				<button type="button" id="openAdd" class="btn btn-primary text-sm">Add Reminder</button>
@@ -217,18 +231,12 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 	let monthCache = {}; // YYYY-MM -> { reminders:[], counts:{}, categories_counts:{} }
 	const legacyDataEl = document.getElementById('legacyRemindersData');
 	const catDataEl = document.getElementById('reminderCategoriesData');
-	const toastHostId = 'toastHost';
 	let live = document.getElementById('reminderLiveRegion');
 	if(!live){ live=document.createElement('div'); live.id='reminderLiveRegion'; live.className='sr-only'; live.setAttribute('aria-live','polite'); header.appendChild(live);}  
-	if(!document.getElementById(toastHostId)){
-		const th=document.createElement('div'); th.id=toastHostId; th.className='fixed top-4 right-4 space-y-2 z-50 pointer-events-none'; document.body.appendChild(th);
-	}
+	// Use global toast from base.html (no duplicate toast host)
 	function toast(msg,type='info'){
-		const host=document.getElementById(toastHostId); if(!host) return;
-		const el=document.createElement('div'); el.className='pointer-events-auto px-3 py-2 rounded shadow text-sm text-white '+(type==='error'?'bg-red-600':type==='success'?'bg-green-600':'bg-gray-700');
-		el.textContent=msg; host.appendChild(el);
-		setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); },3000);
-		live.textContent=msg;
+		if(window.globalToast){ window.globalToast(msg,type); }
+		if(live) live.textContent=msg;
 	}
 	let catPalette={};
 	try{ const cats=JSON.parse(catDataEl?.textContent||'[]'); if(cats.length){ categoryRow.classList.remove('hidden'); categorySelect.innerHTML='<option value="">(No category)</option>'+cats.map(c=>`<option value="${c.key}">${c.label||c.key}</option>`).join(''); cats.forEach(c=>{ catPalette[c.key]=c.color||'#2563eb'; }); } }catch(e){}
@@ -248,17 +256,24 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 	inlineForm.addEventListener('submit', async e=>{ e.preventDefault(); const fd=new FormData(inlineForm); const data=Object.fromEntries(fd.entries()); const creator=localStorage.getItem('username')||''; const payload={title:data.title, date:data.date, time:data.time||undefined, description:data.description, creator, category:data.category||undefined}; let res; const touchedMonths=new Set(); if(data.id){ // update existing
 		const id=parseInt(data.id);
 		res=await window.remindersApi.update(id,payload);
-		if(res.ok){ // Remove old instances from all months then re-add fresh
-			Object.entries(monthCache).forEach(([k,mc])=>{ const before=mc.reminders.length; mc.reminders=mc.reminders.filter(r=>r.id!==id); if(before!==mc.reminders.length) touchedMonths.add(k); });
-			const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(res.reminder); touchedMonths.add(key);
-		}
+		if(res.ok){ Object.entries(monthCache).forEach(([k,mc])=>{ const before=mc.reminders.length; mc.reminders=mc.reminders.filter(r=>r.id!==id); if(before!==mc.reminders.length) touchedMonths.add(k); }); await fetchMonth(res.reminder.date, true); const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key); }
 	} else { // create
 		res=await window.remindersApi.create(payload);
-		if(res.ok){ const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(res.reminder); touchedMonths.add(key); }
+		if(res.ok){ await fetchMonth(res.reminder.date, true); const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key); }
 	}
-	if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); closeForm(); renderList(); updateCalendarBadges(); toast(data.id?'Reminder updated':'Reminder added','success'); } else { toast((res&&res.error)||'Save failed','error'); }
+	if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); updateCalendarBadges(); closeForm(); renderList(); toast(data.id?'Reminder updated':'Reminder added','success'); } else { toast((res&&res.error)||'Save failed','error'); }
 	});
-	async function fetchMonth(dateStr){ const d=new Date(dateStr); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key]) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast('Network error','error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{}}; }
+	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast('Network error','error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{}}; }
+	function buildWeekdayHeader(){
+		const row=document.getElementById('reminderWeekdayRow'); if(!row) return; const base=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+		// Convert config start day to index
+		let startName = (window.REMINDERS_CAL_START||'sunday').toLowerCase();
+		const idxMap = {sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
+		let startIdx = idxMap[startName]; if(startIdx===undefined) startIdx=0;
+		const ordered=[]; for(let i=0;i<7;i++){ ordered.push(base[(startIdx+i)%7]); }
+		row.innerHTML=ordered.map(n=>'<div>'+n.slice(0,3)+'</div>').join('');
+	}
+	buildWeekdayHeader();
 	function renderCalendar() {
 	    const year = display.getFullYear();
 	    const month = display.getMonth();
@@ -284,8 +299,13 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 	        }
 	    }
 	    const firstDay = new Date(year, month, 1);
-	    const startDayOfWeek = (firstDay.getDay() + 6) % 7;
-	    for (let i = 0; i < startDayOfWeek; i++) {
+	    // Compute offset based on configured week start
+	    const weekStartName = (window.REMINDERS_CAL_START||'sunday').toLowerCase();
+	    const nameToIdx = {sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
+	    let startIdx = nameToIdx[weekStartName]; if(startIdx===undefined) startIdx=0;
+	    // firstDay.getDay() returns 0=Sunday..6=Saturday; we want number of blanks before first day in custom week
+	    let gap = firstDay.getDay() - startIdx; if(gap < 0) gap += 7;
+	    for (let i = 0; i < gap; i++) {
 	        const empty = document.createElement('div');
 	        empty.className = 'calendar-day-empty';
 	        cal.appendChild(empty);
@@ -332,21 +352,23 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 	}
 	function updateCalendarBadges(){ // ensure counts are in sync for currently loaded months
 	Object.keys(monthCache).forEach(recalcMonth); renderCalendar(); }
-	try { const legacy=JSON.parse(legacyDataEl?.textContent||'{}'); const today=new Date(); const mk=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0'); monthCache[mk]={reminders:[], counts:{}, categories_counts:{}}; Object.entries(legacy).forEach(([d,arr])=>{ if(d.startsWith(mk+'-')){ monthCache[mk].counts[d]=arr.length; monthCache[mk].reminders.push(...arr.map(r=>({id:r.id,title:r.title,description:r.description,creator:r.creator,date:d}))); }}); }catch(e){}
+	try { const legacy=JSON.parse(legacyDataEl?.textContent||'{}'); const today=new Date(); const mk=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0'); monthCache[mk]={reminders:[], counts:{}, categories_counts:{}}; Object.entries(legacy).forEach(([d,arr])=>{ if(d.startsWith(mk+'-')){ monthCache[mk].counts[d]=arr.length; monthCache[mk].reminders.push(...arr.map(r=>({id:r.id,title:r.title,description:r.description,creator:r.creator,date:d,time:r.time||null,category:r.category||null}))); }}); recalcMonth(mk); }catch(e){}
 	let activeCategory = 'ALL';
-	function renderList(){ const dateStr=getSelectedDate(); const dObj=new Date(dateStr); const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]; if(!cache){ listWrap.innerHTML='<div class="text-xs text-gray-400">Loading...</div>'; fetchMonth(dateStr).then(()=>{ renderCalendar(); renderList(); }); return;} let items=[]; // Always start from full month, then apply scope if user explicitly changed scope
-	if(currentScope==='day'){ items=cache.reminders.filter(r=>r.date===dateStr);} else if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); items=cache.reminders.filter(r=>{ const rd=new Date(r.date); return rd>=mon && rd<=end; }); } else { items=cache.reminders.slice(); }
-	if(activeCategory!=='ALL'){ items=items.filter(r=> r.category===activeCategory); }
+	function renderList(){ const dateStr=getSelectedDate(); const dObj=new Date(dateStr); const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]; if(!cache){ listWrap.innerHTML='<div class="text-xs text-gray-400">Loading...</div>'; fetchMonth(dateStr).then(()=>{ renderCalendar(); renderList(); }); return;} let baseItems=[]; // Unfiltered items for current scope
+	if(currentScope==='day'){ baseItems=cache.reminders.filter(r=>r.date===dateStr);} else if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); baseItems=cache.reminders.filter(r=>{ const rd=new Date(r.date); return rd>=mon && rd<=end; }); } else { baseItems=cache.reminders.slice(); }
+	// If activeCategory no longer present in this scope, reset to ALL
+	if(activeCategory!=='ALL' && !baseItems.some(r=>r.category===activeCategory)) activeCategory='ALL';
+	let items = activeCategory==='ALL'? baseItems : baseItems.filter(r=> r.category===activeCategory);
 	paintItems(items);
 	if(currentScope==='month'){ const prev=new Date(dObj.getFullYear(), dObj.getMonth()-1,1); const next=new Date(dObj.getFullYear(), dObj.getMonth()+1,1); fetchMonth(prev.toISOString().slice(0,10)); fetchMonth(next.toISOString().slice(0,10)); }
-	updateCategorySummary(cache.reminders); }
+	updateCategorySummary(baseItems); }
 	// Category summary pills (buttons) click handler using data-cat attribute
 	const catSummaryEl=document.getElementById('reminderCategorySummary');
 	if(catSummaryEl && !catSummaryEl.dataset.clickReady){
 		catSummaryEl.dataset.clickReady='1';
-		catSummaryEl.addEventListener('click', e=>{ const b=e.target.closest('button[data-cat]'); if(!b) return; const val=b.getAttribute('data-cat'); activeCategory = (val===activeCategory)?'ALL':val; renderList(); updateCategorySummary((monthCache[getSelectedDate().slice(0,7)]||{}).reminders||[]); });
+		catSummaryEl.addEventListener('click', e=>{ const b=e.target.closest('button[data-cat]'); if(!b) return; const val=b.getAttribute('data-cat'); activeCategory = (val===activeCategory)?'ALL':val; renderList(); });
 	}
-	function updateCategorySummary(fullList){ const wrap=document.getElementById('reminderCategorySummary'); if(!fullList.length){ wrap.innerHTML=''; return;} const counts={}; fullList.forEach(r=>{ if(r.category) counts[r.category]=(counts[r.category]||0)+1; }); const ordered=Object.entries(counts).sort((a,b)=>b[1]-a[1]); let html=`<button type="button" data-cat="ALL" class="rem-cat-pill ${activeCategory==='ALL'?'ring-1 ring-blue-500 bg-blue-50':''} inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50">All: ${fullList.length}</button>`; ordered.forEach(([k,v])=>{ const act=activeCategory===k; html+=`<button type="button" data-cat="${k}" class="rem-cat-pill ${act?'ring-1 ring-blue-500 bg-blue-50':''} inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50"><span class="w-2 h-2 rounded-full rem-cat-dot-${k}"></span>${escapeHtml(k)}: ${v}</button>`; }); wrap.innerHTML=html; }
+	function updateCategorySummary(scopeList){ const wrap=document.getElementById('reminderCategorySummary'); if(!scopeList.length){ wrap.innerHTML=''; return;} const counts={}; scopeList.forEach(r=>{ if(r.category) counts[r.category]=(counts[r.category]||0)+1; }); const ordered=Object.entries(counts).sort((a,b)=>b[1]-a[1]); let html=`<button type="button" data-cat="ALL" class="rem-cat-pill ${activeCategory==='ALL'?'ring-1 ring-blue-500 bg-blue-50':''} inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50">All: ${scopeList.length}</button>`; ordered.forEach(([k,v])=>{ const act=activeCategory===k; html+=`<button type="button" data-cat="${k}" class="rem-cat-pill ${act?'ring-1 ring-blue-500 bg-blue-50':''} inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50"><span class="w-2 h-2 rounded-full rem-cat-dot-${k}"></span>${escapeHtml(k)}: ${v}</button>`; }); wrap.innerHTML=html; }
 	function paintItems(list){ const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); const selections=new Set(); listWrap.innerHTML=''; bulkBar.classList.add('hidden'); bulkCount.textContent='0'; if(!list.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; return;} list.sort((a,b)=> (a.date.localeCompare(b.date)) || ((a.time||'~').localeCompare(b.time||'~')) || (a.id-b.id));
 	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
 	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\">✎</button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast('Deleted (undo available)','success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent='Undo delete'; undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast('Delete failed','error');}); }); }
@@ -368,10 +390,27 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 		}); 
 		renderList(); 
 	}
+
+	// Fix: when reloading page after viewing another month, ensure selected date's month matches display month cache and list uses current month not stale prior selection
+	function normalizeAfterInitialLoad(){
+		const selected = getSelectedDate();
+		const selDate = new Date(selected);
+		if(selDate.getMonth() !== display.getMonth() || selDate.getFullYear() !== display.getFullYear()){
+			// Reset selected date to today's date within current display month
+			const today=new Date();
+			if(today.getMonth()===display.getMonth() && today.getFullYear()===display.getFullYear()){
+				setSelectedDate(today.toISOString().slice(0,10));
+			}else{
+				// fallback to first day of display month
+				const firstDayOfMonth = display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0')+'-01';
+				setSelectedDate(firstDayOfMonth);
+			}
+		}
+	}
 	prevBtn.addEventListener('click', ()=> onMonthChange(-1));
 	nextBtn.addEventListener('click', ()=> onMonthChange(1));
 	function buildAndEnsure(){ const mk=display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0'); if(!monthCache[mk]){ fetchMonth(mk+'-01').then(()=>{ renderCalendar(); }); } renderCalendar(); }
-	const startDate = getSelectedDate(); setSelectedDate(startDate); buildAndEnsure(); renderList();
+	const startDate = getSelectedDate(); setSelectedDate(startDate); buildAndEnsure(); normalizeAfterInitialLoad(); renderList();
 	// No dropdown filter now
 	bulkUser.value = localStorage.getItem('username')||'';
 	
@@ -483,6 +522,8 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 <script>
 // AJAX enhancement for Who is Home & Personal Status forms (no page reload)
 (function(){
+	// Skip if Who is Home feature disabled
+	if(!document.getElementById('whoUnifiedForm') && !document.getElementById('whoStatusList')) return;
 		// Family members injected from server
 		const FAMILY_MEMBERS = JSON.parse(document.getElementById('familyMembersData').textContent || '[]');
 		function fetchJson(url, opts){
@@ -494,29 +535,37 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 	const memberDel = document.getElementById('memberStatusDelete');
 	const whoList = document.getElementById('whoStatusList');
 	const memberChips = document.getElementById('memberStatusChips');
+	// Safe toast alias (previous inline function removed) to avoid ReferenceError breaking listeners
+	const toast = (msg,type)=>{ if(window.globalToast) window.globalToast(msg,type); else console.log('[toast]', type||'', msg); };
 	function currentUser(){ return localStorage.getItem('username')||''; }
-	function toast(msg){ console.log('[ajax]',msg); }
-		function updateWhoDOM(data){
-			if(!data) return;
-			let statuses={};
-			if(Array.isArray(data.entries)) data.entries.forEach(e=>{ statuses[e.name]=e.status; });
-			else if(data.who_statuses && typeof data.who_statuses==='object') statuses=data.who_statuses;
-		const frag=document.createDocumentFragment();
-		FAMILY_MEMBERS.forEach(member=>{
-			const st = statuses[member];
-			const span=document.createElement('span');
-			span.className='px-2 py-1 rounded border bg-white flex items-center gap-1 text-xs';
-			span.setAttribute('data-member', member);
-			let pillClass='bg-gray-100 text-gray-500 border border-gray-200';
-			if(st==='Home') pillClass='bg-green-100 text-green-700 border border-green-300';
-			else if(st==='Away') pillClass='bg-gray-100 text-gray-600 border border-gray-300';
-			else if(st==='Out') pillClass='bg-amber-100 text-amber-700 border border-amber-300';
-			else if(st==='Traveling') pillClass='bg-indigo-100 text-indigo-700 border border-indigo-300';
-			else if(st) pillClass='bg-blue-100 text-blue-700 border border-blue-300';
-			span.innerHTML='<span class="font-medium">'+member+'</span><span class="status-pill px-1.5 py-0.5 rounded text-[10px] leading-none '+pillClass+'">'+(st||'—')+'</span>';
-			frag.appendChild(span);
+	function updateWhoDOM(data){
+		if(!data) return;
+		let statuses={};
+		if(Array.isArray(data.entries)) data.entries.forEach(e=>{ statuses[e.name]=e.status; });
+		else if(data.who_statuses && typeof data.who_statuses==='object') statuses=data.who_statuses;
+		// Use requestAnimationFrame to batch DOM updates and prevent layout thrashing
+		requestAnimationFrame(()=>{
+			whoList.querySelectorAll('[data-member]').forEach(container=>{
+				const member=container.getAttribute('data-member');
+				const st=statuses[member];
+				const pill=container.querySelector('.status-pill');
+				if(!pill) return;
+				// Update text content only if changed
+				const newText=st||'—';
+				if(pill.textContent!==newText) pill.textContent=newText;
+				// Compute new classes
+				const baseClasses=['px-1.5','py-0.5','rounded','text-[10px]','leading-none','status-pill'];
+				let colorClasses=[];
+				if(st==='Home'){ colorClasses=['bg-green-100','text-green-700','border','border-green-300']; }
+				else if(st==='Away'){ colorClasses=['bg-gray-100','text-gray-600','border','border-gray-300']; }
+				else if(st==='Out'){ colorClasses=['bg-amber-100','text-amber-700','border','border-amber-300']; }
+				else if(st==='Traveling'){ colorClasses=['bg-indigo-100','text-indigo-700','border','border-indigo-300']; }
+				else if(st){ colorClasses=['bg-blue-100','text-blue-700','border','border-blue-300']; }
+				else{ colorClasses=['bg-gray-100','text-gray-500','border','border-gray-200']; }
+				// Replace className entirely to avoid classList manipulation overhead
+				pill.className=baseClasses.concat(colorClasses).join(' ');
+			});
 		});
-		whoList.innerHTML=''; whoList.appendChild(frag);
 	}
 	function recolorMemberChips(){
 		const chips = memberChips.querySelectorAll('span[data-name]');
@@ -538,11 +587,30 @@ window.REMINDERS_TIME_FORMAT = "{{ (config.reminders.time_format if config.remin
 		const has=Array.from(memberChips.querySelectorAll('span[data-name]')).some(el=>el.dataset.name===user);
 		memberDel.classList.toggle('hidden', !has);
 	}
-		if(whoForm){ whoForm.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(whoForm); const payload=new URLSearchParams(fd); const targetUrl=whoForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:payload}).then(resp=>{ if(resp && resp.ok){ updateWhoDOM(resp); toast('Status updated'); } else toast('Update failed'); }); }); }
+		if(whoForm){ whoForm.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(whoForm); const payload=new URLSearchParams(fd); const actionField=document.getElementById('whoAction'); const actVal=actionField?.value; const targetUrl=whoForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:payload}).then(resp=>{ if(resp && resp.ok){ updateWhoDOM(resp); const resType = resp.result || (actVal==='clear'?'cleared':'updated'); if(resType==='cleared') toast('Status cleared','success'); else if(resType==='none') toast('No status to clear','info'); else toast('Status updated','success'); if(actionField) actionField.value='update'; } else toast(resp && resp.error || 'Update failed','error'); }); }); }
 	const whoClear=document.getElementById('whoClearBtn');
-	if(whoClear){ whoClear.addEventListener('click', e=>{ e.preventDefault(); const action=document.getElementById('whoAction'); if(action) action.value='clear'; whoForm?.dispatchEvent(new Event('submit',{cancelable:true})); }); }
-		if(memberForm){ memberForm.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(memberForm); const qs=new URLSearchParams(fd); const targetUrl=memberForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); memberForm.reset(); memberForm.querySelector('[name=name]').value=currentUser(); toast('Saved'); } else toast('Save failed'); }); }); }
-		if(memberDel){ memberDel.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(memberDel); const qs=new URLSearchParams(fd); const targetUrl=memberDel.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); toast('Removed'); } else toast('Remove failed'); }); }); }
+	if(whoClear){
+		whoClear.addEventListener('click', e=>{
+			e.preventDefault();
+			if(!whoForm) return;
+			const nameVal = whoForm.querySelector('[name=name]')?.value || '';
+			const payload = new URLSearchParams();
+			payload.append('action','clear');
+			payload.append('name', nameVal);
+			fetchJson(whoForm.getAttribute('action'), { method:'POST', body: payload }).then(resp=>{
+				if(resp && resp.ok){
+					updateWhoDOM(resp);
+					if(resp.result==='cleared') toast('Status cleared','success');
+					else if(resp.result==='none') toast('No status to clear','info');
+					else toast('Status updated','success');
+				} else {
+					toast((resp && resp.error) || 'Update failed','error');
+				}
+			});
+		});
+	}
+		if(memberForm){ memberForm.addEventListener('submit', e=>{ e.preventDefault(); const input=memberForm.querySelector('[name=text]'); const val=(input?.value||'').trim(); if(!val){ toast('Cannot save empty status','info'); return; } const fd=new FormData(memberForm); const qs=new URLSearchParams(fd); const targetUrl=memberForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); memberForm.reset(); memberForm.querySelector('[name=name]').value=currentUser(); toast('Status saved','success'); } else { if(resp && resp.error==='Empty status'){ toast('Cannot save empty status','info'); } else toast(resp && resp.error || 'Save failed','error'); } }); }); }
+		if(memberDel){ memberDel.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(memberDel); const qs=new URLSearchParams(fd); const targetUrl=memberDel.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); toast('Status removed','success'); } else toast(resp && resp.error || 'Remove failed','error'); }); }); }
 	// Initialize name fields
 	const cur=currentUser();
 	document.getElementById('whoName')?.setAttribute('value', cur);

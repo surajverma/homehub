@@ -45,11 +45,20 @@ def index():
     # Calendar: gather reminders grouped by date
     # Use with_entities to avoid passing ORM models around accidentally
     try:
-        rows = Reminder.query.with_entities(Reminder.id, Reminder.title, Reminder.description, Reminder.creator, Reminder.date).all()
+        # Include time and category so initial month cache has full data
+        rows = Reminder.query.with_entities(
+            Reminder.id,
+            Reminder.title,
+            Reminder.description,
+            Reminder.creator,
+            Reminder.date,
+            Reminder.time,
+            Reminder.category
+        ).all()
     except Exception:
         rows = []
     by_date = {}
-    for rid, title, description, creator, rdate in rows:
+    for rid, title, description, creator, rdate, rtime, rcat in rows:
         try:
             key = rdate.strftime('%Y-%m-%d')
         except Exception:
@@ -60,6 +69,8 @@ def index():
             'title': title or '',
             'description': description or '',
             'creator': creator or '',
+            'time': rtime or None,
+            'category': rcat or None,
         })
     # Serialize once server-side to avoid Jinja tojson on ORM-related objects
     import json
@@ -1315,16 +1326,25 @@ def who_is_home_action():
     family = set(config.get('family_members', []))
     name = bleach.clean(request.form.get('name', ''))
     if not name or name not in family:
-        flash('Invalid user for status.', 'error')
+        if request.headers.get('X-Requested-With') != 'fetch':
+            flash('Invalid user for status.', 'error')
+        # For AJAX we just return a JSON error payload
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return jsonify({'ok': False, 'error': 'Invalid user'}), 400
         return redirect(url_for('main.index'))
+    result = None
     if action == 'clear':
         hs = HomeStatus.query.filter_by(name=name).first()
         if hs:
             db.session.delete(hs)
             db.session.commit()
-            flash('Status cleared.', 'success')
+            result = 'cleared'
+            if request.headers.get('X-Requested-With') != 'fetch':
+                flash('Status cleared.', 'success')
         else:
-            flash('No status to clear.', 'info')
+            result = 'none'
+            if request.headers.get('X-Requested-With') != 'fetch':
+                flash('No status to clear.', 'info')
     else:  # update
         status = bleach.clean(request.form.get('status', '')) or 'Away'
         hs = HomeStatus.query.filter_by(name=name).first()
@@ -1333,13 +1353,16 @@ def who_is_home_action():
         else:
             db.session.add(HomeStatus(name=name, status=status))
         db.session.commit()
-        flash('Status updated.', 'success')
+        result = 'updated'
+        if request.headers.get('X-Requested-With') != 'fetch':
+            flash('Status updated.', 'success')
     # AJAX (fetch) support
     if request.headers.get('X-Requested-With') == 'fetch':
-        # Recompute statuses
         who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
         member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
-        return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses})
+        # Ensure result has a value
+        result = result or 'updated'
+        return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses, 'result': result})
     # Preserve date if present (calendar context)
     date_q = request.args.get('date') or request.form.get('date')
     return redirect(url_for('main.index', date=date_q) if date_q else url_for('main.index'))
@@ -1350,10 +1373,21 @@ def member_status_update():
     config = current_app.config['HOMEHUB_CONFIG']
     family = set(config.get('family_members', []))
     name = bleach.clean(request.form.get('name', ''))
-    text = bleach.clean(request.form.get('text', ''))
+    raw_text = request.form.get('text', '') or ''
+    text = bleach.clean(raw_text).strip()
     if not name or name not in family:
-        flash('Invalid user for status.', 'error')
+        if request.headers.get('X-Requested-With') != 'fetch':
+            flash('Invalid user for status.', 'error')
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return jsonify({'ok': False, 'error': 'Invalid user'}), 400
         return redirect(url_for('main.index'))
+    # Do not allow blank/whitespace-only personal statuses
+    if not text:
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return jsonify({'ok': False, 'error': 'Empty status'}), 400
+        else:
+            flash('Status cannot be empty.', 'error')
+            return redirect(url_for('main.index'))
     ms = MemberStatus.query.filter_by(name=name).first()
     now = datetime.utcnow()
     if ms:
@@ -1362,11 +1396,12 @@ def member_status_update():
     else:
         db.session.add(MemberStatus(name=name, text=text, updated_at=now))
     db.session.commit()
-    flash('Status saved.', 'success')
+    if request.headers.get('X-Requested-With') != 'fetch':
+        flash('Status saved.', 'success')
     if request.headers.get('X-Requested-With') == 'fetch':
         who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
         member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
-        return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses})
+        return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses, 'result': 'saved'})
     return redirect(url_for('main.index'))
 
 @main_bp.route('/status/delete', methods=['POST'])
@@ -1375,15 +1410,21 @@ def member_status_delete():
     family = set(config.get('family_members', []))
     name = bleach.clean(request.form.get('name', ''))
     if not name or name not in family:
-        flash('Invalid user for status removal.', 'error')
+        if request.headers.get('X-Requested-With') != 'fetch':
+            flash('Invalid user for status removal.', 'error')
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return jsonify({'ok': False, 'error': 'Invalid user'}), 400
         return redirect(url_for('main.index'))
     ms = MemberStatus.query.filter_by(name=name).first()
+    removed = False
     if ms:
         db.session.delete(ms)
         db.session.commit()
-        flash('Status removed.', 'success')
+        removed = True
+        if request.headers.get('X-Requested-With') != 'fetch':
+            flash('Status removed.', 'success')
     if request.headers.get('X-Requested-With') == 'fetch':
         who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
         member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
-        return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses})
+        return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses, 'result': 'removed' if removed else 'none'})
     return redirect(url_for('main.index'))

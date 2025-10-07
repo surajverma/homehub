@@ -114,12 +114,45 @@
                         {% endif %}
                     </div>
                 </div>
-                {% include "_flash.html" %}
+                <div id="globalFlashWrap" class="hidden">{% include "_flash.html" %}</div>
                 {% block content %}{% endblock %}
             </div>
         </main>
     </div>
     <script>
+        // Provide a global toast utility (single reusable toast element)
+        (function(){
+            if(window.globalToast) return;
+            const hostId='toastHost';
+            let toastEl=null; let hideTimer=null;
+            function ensure(){ let h=document.getElementById(hostId); if(!h){ h=document.createElement('div'); h.id=hostId; h.className='fixed top-4 right-4 z-50 pointer-events-none'; document.body.appendChild(h);} return h; }
+            function classFor(type){ return type==='error'?['bg-red-600']:(type==='success'?['bg-green-600']:(type==='info'?['bg-blue-600']:['bg-gray-800'])); }
+            window.globalToast=function(msg,type){ const host=ensure(); if(!toastEl){ toastEl=document.createElement('div'); host.appendChild(toastEl);} if(hideTimer){ clearTimeout(hideTimer); hideTimer=null; }
+                toastEl.className='pointer-events-auto inline-block px-3 py-2 rounded shadow text-sm text-white transition-opacity duration-200 '+classFor(type).join(' ');
+                toastEl.style.opacity='1'; toastEl.textContent=msg; 
+                hideTimer=setTimeout(()=>{ toastEl.style.opacity='0'; }, 2600); // fade start
+            };
+        })();
+        // Convert any server-rendered flash messages into toasts and remove the message box entirely
+        (function(){
+            const wrap = document.getElementById('globalFlashWrap');
+            if(!wrap) return;
+            const msgs = Array.from(wrap.querySelectorAll('.px-3, .flash-msg'));
+            if(!msgs.length){ wrap.remove(); return; }
+            const classify = (el)=>{
+                const cls = el.className;
+                if(/green/i.test(cls)) return 'success';
+                if(/red/i.test(cls)) return 'error';
+                if(/yellow|amber/i.test(cls)) return 'info';
+                return 'info';
+            };
+            msgs.forEach((el,i)=>{
+                const text = (el.textContent||'').trim();
+                setTimeout(()=>{ if(window.globalToast && text) globalToast(text, classify(el)); }, i*60);
+            });
+            // Remove box to prevent layout shift / duplication
+            setTimeout(()=>wrap.remove(), msgs.length*70 + 200);
+        })();
         // First-visit user selection helper
         function showUserSelectModal(users){
             const modal = document.getElementById('userSelectModal');
