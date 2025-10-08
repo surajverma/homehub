@@ -392,7 +392,46 @@ window.REMINDERS_CAL_START = (function(){
 		catSummaryEl.dataset.clickReady='1';
 		catSummaryEl.addEventListener('click', e=>{ const b=e.target.closest('button[data-cat]'); if(!b) return; const val=b.getAttribute('data-cat'); activeCategory = (val===activeCategory)?'ALL':val; renderList(); });
 	}
-	function updateCategorySummary(scopeList){ const wrap=document.getElementById('reminderCategorySummary'); if(!scopeList.length){ wrap.innerHTML=''; return;} const counts={}; scopeList.forEach(r=>{ if(r.category) counts[r.category]=(counts[r.category]||0)+1; }); const ordered=Object.entries(counts).sort((a,b)=>b[1]-a[1]); let html=`<button type="button" data-cat="ALL" class="rem-cat-pill ${activeCategory==='ALL'?'ring-1 ring-blue-500 bg-blue-50':''} inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50">All: ${scopeList.length}</button>`; ordered.forEach(([k,v])=>{ const act=activeCategory===k; html+=`<button type="button" data-cat="${k}" class="rem-cat-pill ${act?'ring-1 ring-blue-500 bg-blue-50':''} inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50"><span class="w-2 h-2 rounded-full rem-cat-dot-${k}"></span>${escapeHtml(k)}: ${v}</button>`; }); wrap.innerHTML=html; }
+	function updateCategorySummary(scopeList){
+		const wrap = document.getElementById('reminderCategorySummary');
+		if (!scopeList.length) {
+			wrap.innerHTML = '';
+			return;
+		}
+		const counts = {};
+		scopeList.forEach(r => {
+			if (r.category) counts[r.category] = (counts[r.category] || 0) + 1;
+		});
+		const ordered = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+		// Clear previous content
+		wrap.innerHTML = '';
+		// Create "All" button
+		const allBtn = document.createElement('button');
+		allBtn.type = "button";
+		allBtn.setAttribute('data-cat', 'ALL');
+		allBtn.className = 'rem-cat-pill inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50' +
+			(activeCategory === 'ALL' ? ' ring-1 ring-blue-500 bg-blue-50' : '');
+		allBtn.textContent = `All: ${scopeList.length}`;
+		wrap.appendChild(allBtn);
+		// Create category buttons
+		ordered.forEach(([k, v]) => {
+			const act = activeCategory === k;
+			const btn = document.createElement('button');
+			btn.type = "button";
+			btn.setAttribute('data-cat', k);
+			btn.className = 'rem-cat-pill inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50' +
+				(act ? ' ring-1 ring-blue-500 bg-blue-50' : '');
+			// Create dot span
+			const dot = document.createElement('span');
+			dot.className = `w-2 h-2 rounded-full rem-cat-dot-${k}`;
+			btn.appendChild(dot);
+			// Add category name and count
+			const label = document.createElement('span');
+			label.innerHTML = `${escapeHtml(k)}: ${v}`;
+			btn.appendChild(label);
+			wrap.appendChild(btn);
+		});
+	}
 	function paintItems(list){ const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); const selections=new Set(); listWrap.innerHTML=''; bulkBar.classList.add('hidden'); bulkCount.textContent='0'; if(!list.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; return;} list.sort((a,b)=> (a.date.localeCompare(b.date)) || ((a.time||'~').localeCompare(b.time||'~')) || (a.id-b.id));
 	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
 	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\">✎</button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast('Deleted (undo available)','success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent='Undo delete'; undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast('Delete failed','error');}); }); }
