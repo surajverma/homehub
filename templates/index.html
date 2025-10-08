@@ -413,6 +413,13 @@ window.REMINDERS_CAL_START = (function(){
 			(activeCategory === 'ALL' ? ' ring-1 ring-blue-500 bg-blue-50' : '');
 		allBtn.textContent = `All: ${scopeList.length}`;
 		wrap.appendChild(allBtn);
+		// Build key→label lookup from reminderCategoriesData
+		let catDataEl = document.getElementById('reminderCategoriesData');
+		let catLabelMap = {};
+		try {
+			const cats = JSON.parse(catDataEl?.textContent || '[]');
+			cats.forEach(c => { if(c && c.key) catLabelMap[c.key] = c.label || c.key; });
+		} catch(e) {}
 		// Create category buttons
 		ordered.forEach(([k, v]) => {
 			const act = activeCategory === k;
@@ -425,9 +432,9 @@ window.REMINDERS_CAL_START = (function(){
 			const dot = document.createElement('span');
 			dot.className = `w-2 h-2 rounded-full rem-cat-dot-${k}`;
 			btn.appendChild(dot);
-			// Add category name and count
+			// Add category label and count
 			const label = document.createElement('span');
-			label.innerHTML = `${escapeHtml(k)}: ${v}`;
+			label.innerHTML = `${escapeHtml(catLabelMap[k] || k)}: ${v}`;
 			btn.appendChild(label);
 			wrap.appendChild(btn);
 		});
