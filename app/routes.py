@@ -1263,7 +1263,20 @@ def qr():
     if request.method == 'POST':
         qrtext = bleach.clean(request.form['qrtext'])
         creator = bleach.clean(request.form['creator'])
-        qr_code = qrcode.make(qrtext)
+        # WiFi QR code parsing
+        import re
+        wifi_match = re.search(r'ssid:(?P<ssid>[^ ]+) pass:(?P<pass>[^ ]+)(?: type:(?P<type>[^ ]+))?(?: hidden:(?P<hidden>[^ ]+))?', qrtext, re.IGNORECASE)
+        if wifi_match:
+            ssid = wifi_match.group('ssid')
+            password = wifi_match.group('pass')
+            enc_type = wifi_match.group('type') or 'WPA'
+            hidden = wifi_match.group('hidden') or 'false'
+            enc_type = enc_type.upper() if enc_type else 'WPA'
+            wifi_str = f"WIFI:S:{ssid};T:{enc_type};P:{password};H:{hidden};"
+            qrtext_for_qr = wifi_str
+        else:
+            qrtext_for_qr = qrtext
+        qr_code = qrcode.make(qrtext_for_qr)
         from io import BytesIO
         buf = BytesIO()
         qr_code.save(buf, format='PNG')
