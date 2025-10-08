@@ -2,6 +2,19 @@
 {% block content %}
 <div class="mx-auto">
     <h2 class="text-xl font-bold mb-4">QR Code Generator</h2>
+    <div class="mb-4 p-4 card bg-gray-50 border border-gray-200">
+        <h3 class="font-semibold mb-2">WiFi QR Code Instructions</h3>
+        <p>To generate a QR code for your wireless network, enter your details in the following format:</p>
+        <pre class="bg-gray-100 p-2 rounded text-sm overflow-x-auto"><code>ssid:mywifiname pass:123456789 type:wpa hidden:false</code></pre>
+        <ul class="list-disc ml-6 text-sm">
+            <li><b>ssid</b>: your WiFi network name</li>
+            <li><b>pass</b>: your WiFi password</li>
+            <li><b>type</b>: encryption type (<code>wpa</code>, <code>wep</code>, or <code>nopass</code>), default is <code>wpa</code></li>
+            <li><b>hidden</b>: <code>true</code> if the network is hidden, <code>false</code> otherwise (default is <code>false</code>)</li>
+        </ul>
+        <p class="mt-2 text-xs text-gray-600">You can copy and edit the code block above for your network. The minimum required information is ssid:your_network_name pass:your_wifi_password</p>
+        <p class="mt-2 text-xs text-gray-600">For other QR codes, enter any text or URL as usual.</p>
+    </div>
     <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
         <input type="text" name="qrtext" class="md:col-span-9 w-full p-2 border rounded" placeholder="Text to encode..." required>
         <input type="hidden" name="creator" id="creator">
