@@ -18,6 +18,13 @@ def load_config():
     config.setdefault('feature_toggles', {})
     # Ensure Who is Home widget is enabled by default unless explicitly disabled in config.yml
     config['feature_toggles'].setdefault('who_is_home', True)
+    # Personal status feature toggle (new)
+    config['feature_toggles'].setdefault('personal_status', True)
+    # Reminders defaults & calendar start day (supports sunday..saturday or 0-6)
+    rem = config.setdefault('reminders', {})
+    # Do not overwrite existing user value
+    if 'calendar_start_day' not in rem or rem.get('calendar_start_day') in (None, ''):
+        rem.setdefault('calendar_start_day', 'sunday')  # default Sunday to align with expense tracker
     # Admin name default
     config.setdefault('admin_name', 'Administrator')
     # Family members default list
