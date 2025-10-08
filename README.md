@@ -4,6 +4,13 @@
 [![GitHub issues](https://img.shields.io/github/issues/surajverma/homehub)](https://github.com/surajverma/homehub/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/surajverma/homehub?style=social)](https://github.com/surajverma/homehub/stargazers)
 
+> **Maintainer Note**  
+> Thank you for your interest in this project! I originally started it as a personal utility and never expected it to grow so quickly—I’m genuinely thrilled and grateful that it’s become helpful to you and your family.  
+>  
+> Please note that I am currently the sole maintainer and manage this repository alongside a full-time job, which means the time I can give to this project is somewhat limited. Responses to issues, pull requests, or questions may be delayed, especially during busy periods at work or at home.  
+>  
+> I typically work on the project after office hours or on weekends, depending on my availability and energy. Your patience, understanding, and support mean a lot—thank you for helping make this project better!
+
 
 # 🏡 HomeHub: Your All-In-One Family Dashboard
 
