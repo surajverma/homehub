@@ -352,7 +352,31 @@ window.REMINDERS_CAL_START = (function(){
 	}
 	function updateCalendarBadges(){ // ensure counts are in sync for currently loaded months
 	Object.keys(monthCache).forEach(recalcMonth); renderCalendar(); }
-	try { const legacy=JSON.parse(legacyDataEl?.textContent||'{}'); const today=new Date(); const mk=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0'); monthCache[mk]={reminders:[], counts:{}, categories_counts:{}}; Object.entries(legacy).forEach(([d,arr])=>{ if(d.startsWith(mk+'-')){ monthCache[mk].counts[d]=arr.length; monthCache[mk].reminders.push(...arr.map(r=>({id:r.id,title:r.title,description:r.description,creator:r.creator,date:d,time:r.time||null,category:r.category||null}))); }}); recalcMonth(mk); }catch(e){}
+	// Extract mapping logic for legacy reminders
+	function mapLegacyReminder(r, d) {
+	    return {
+	        id: r.id,
+	        title: r.title,
+	        description: r.description,
+	        creator: r.creator,
+	        date: d,
+	        time: r.time || null,
+	        category: r.category || null
+	    };
+	}
+	try {
+	    const legacy = JSON.parse(legacyDataEl?.textContent || '{}');
+	    const today = new Date();
+	    const mk = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+	    monthCache[mk] = { reminders: [], counts: {}, categories_counts: {} };
+	    Object.entries(legacy).forEach(([d, arr]) => {
+	        if (d.startsWith(mk + '-')) {
+	            monthCache[mk].counts[d] = arr.length;
+	            monthCache[mk].reminders.push(...arr.map(r => mapLegacyReminder(r, d)));
+	        }
+	    });
+	    recalcMonth(mk);
+	} catch (e) {}
 	let activeCategory = 'ALL';
 	function renderList(){ const dateStr=getSelectedDate(); const dObj=new Date(dateStr); const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]; if(!cache){ listWrap.innerHTML='<div class="text-xs text-gray-400">Loading...</div>'; fetchMonth(dateStr).then(()=>{ renderCalendar(); renderList(); }); return;} let baseItems=[]; // Unfiltered items for current scope
 	if(currentScope==='day'){ baseItems=cache.reminders.filter(r=>r.date===dateStr);} else if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); baseItems=cache.reminders.filter(r=>{ const rd=new Date(r.date); return rd>=mon && rd<=end; }); } else { baseItems=cache.reminders.slice(); }
