@@ -79,8 +79,8 @@ reminders:
   time_format: 12h
 
   # calendar_start_day controls which day the reminders calendar starts on.
-  # Accepts full weekday names (sunday..saturday) or numeric 0-6 where 0=Sunday.  
-  calendar_start_day: sunday #default is Sunday
+  # Accepts full weekday names (sunday, saturday).  
+  calendar_start_day: monday #default is Sunday, comment this line to switch to default
 
   # Example reminder categories (keys lowercase no spaces recommended)
   categories:
