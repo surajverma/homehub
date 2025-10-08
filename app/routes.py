@@ -1259,19 +1259,20 @@ def delete_pdf(pdf_id):
 def qr():
     import qrcode
     import base64
+    import re
     qr_img = None
     if request.method == 'POST':
         qrtext = bleach.clean(request.form['qrtext'])
         creator = bleach.clean(request.form['creator'])
-        # WiFi QR code parsing
-        import re
-        wifi_match = re.search(r'ssid:(?P<ssid>[^ ]+) pass:(?P<pass>[^ ]+)(?: type:(?P<type>[^ ]+))?(?: hidden:(?P<hidden>[^ ]+))?', qrtext, re.IGNORECASE)
-        if wifi_match:
-            ssid = wifi_match.group('ssid')
-            password = wifi_match.group('pass')
-            enc_type = wifi_match.group('type') or 'WPA'
-            hidden = wifi_match.group('hidden') or 'false'
-            enc_type = enc_type.upper() if enc_type else 'WPA'
+        ssid_match = re.search(r'ssid:([^ ]+)', qrtext, re.IGNORECASE)
+        pass_match = re.search(r'pass:([^ ]+)', qrtext, re.IGNORECASE)
+        type_match = re.search(r'type:([^ ]+)', qrtext, re.IGNORECASE)
+        hidden_match = re.search(r'hidden:([^ ]+)', qrtext, re.IGNORECASE)
+        if ssid_match and pass_match:
+            ssid = bleach.clean(ssid_match.group(1))
+            password = bleach.clean(pass_match.group(1))
+            enc_type = (type_match.group(1) if type_match else 'WPA').upper()
+            hidden = hidden_match.group(1) if hidden_match else 'false'
             wifi_str = f"WIFI:S:{ssid};T:{enc_type};P:{password};H:{hidden};"
             qrtext_for_qr = wifi_str
         else:
