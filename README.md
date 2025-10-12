@@ -2,6 +2,7 @@
 ![Latest Release](https://img.shields.io/github/v/release/surajverma/homehub?include_prereleases)
 [![GitHub last commit](https://img.shields.io/github/last-commit/surajverma/homehub)](https://github.com/surajverma/homehub/commits/main)
 [![GitHub issues](https://img.shields.io/github/issues/surajverma/homehub)](https://github.com/surajverma/homehub/issues)
+[![GitHub issues by-label](https://img.shields.io/github/issues/surajverma/homehub/in%20progress)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aopen+label%3A"in+progress")
 [![GitHub Stars](https://img.shields.io/github/stars/surajverma/homehub?style=social)](https://github.com/surajverma/homehub/stargazers)
 
 > **Maintainer Note**  
