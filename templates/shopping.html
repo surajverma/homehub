@@ -26,7 +26,7 @@
         <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
             <form method="POST" action="/shopping/check/{{ item.id }}">
                 <button type="submit" class="mr-2 btn {{ 'btn-success' if item.checked else 'btn-secondary' }}">
-                    {{ 'Purchased' if item.checked else 'Mark Purchased' }}
+                    {{ 'Purchased · Undo' if item.checked else 'Mark Purchased' }}
                 </button>
             </form>
             <span class="flex-1 {% if item.checked %}line-through text-gray-400{% endif %}">{{ item.item }}</span>

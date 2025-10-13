@@ -10,6 +10,11 @@ pdfs/
 # Python cache files
 *.pyc
 __pycache__/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
 
 # Environment variables
 .env
@@ -20,3 +25,4 @@ node_modules/
 package-lock.json
 static/output.css
 static/custom.css
+tests/__pycache__/

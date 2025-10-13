@@ -8,3 +8,4 @@ Pillow
 gunicorn
 Flask-WTF
 bleach
+pytest

@@ -9,10 +9,27 @@
         <button type="submit" class="md:col-span-3 btn btn-primary">Add Item</button>
     </form>
     <ul>
-        {% for item in items %}
+        {% for item, days_left in items %}
         <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
             <span class="flex-1">{{ item.name }}</span>
-            <span class="font-semibold {% if item.expiry_date < today %}text-red-600{% else %}text-green-600{% endif %}">{{ item.expiry_date.strftime('%Y-%m-%d') }}</span>
+            {% set badge = 'bg-gray-100 text-gray-700 border-gray-300' %}
+            {% if days_left is not none %}
+                {% if days_left < 0 %}
+                    {% set badge = 'bg-red-600 text-white border-red-700' %}
+                {% elif days_left <= 7 %}
+                    {% set badge = 'bg-red-100 text-red-700 border-red-300' %}
+                {% elif days_left <= 15 %}
+                    {% set badge = 'bg-amber-100 text-amber-700 border-amber-300' %}
+                {% elif days_left >= 30 %}
+                    {% set badge = 'bg-green-100 text-green-700 border-green-300' %}
+                {% endif %}
+            {% endif %}
+            <span class="inline-flex items-center px-2 py-1 rounded border {{ badge }}" title="{{ days_left if days_left is not none else '' }} days left">
+                {{ item.expiry_date.strftime('%Y-%m-%d') }}
+                {% if days_left is not none %}
+                    <span class="ml-2 text-xs">({{ 'Expired' if days_left < 0 else days_left ~ ' days left' }})</span>
+                {% endif %}
+            </span>
             <div class="text-xs text-gray-500">By {{ item.creator }} at {{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/expiry/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}">
                 <input type="hidden" name="user">

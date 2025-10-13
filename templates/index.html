@@ -138,8 +138,28 @@ window.REMINDERS_CAL_START = (function(){
 						</div>
 					</div>
 					<div id="categorySelectRow" class="hidden">
-						<label class="block text-xs font-semibold mb-1">Category</label>
-						<select name="category" class="h-10 w-full border rounded p-2 text-sm"></select>
+						<div class="flex items-end justify-between gap-3">
+							<div class="flex-1">
+								<label class="block text-xs font-semibold mb-1">Category</label>
+								<select name="category" class="h-10 w-full border rounded p-2 text-sm"></select>
+							</div>
+							<label class="inline-flex items-center gap-2 text-xs flex-shrink-0 mb-1">
+								<input type="checkbox" name="is_recurring" class="rounded">
+								<span>Recurring</span>
+							</label>
+						</div>
+					</div>
+					<!-- Recurrence controls: hidden until Recurring is checked -->
+					<div id="recurrenceControls" class="hidden grid grid-cols-1 md:grid-cols-[auto_1fr_auto_auto] md:grid-cols-4 gap-3 items-end">
+						<label class="text-xs text-gray-700">Every</label>
+						<input name="rec_interval" type="number" min="1" step="1" value="1" class="h-10 w-full border rounded p-2 text-sm" aria-label="Recurrence interval">
+						<select name="rec_unit" class="h-10 w-full border rounded p-2 text-sm" aria-label="Recurrence unit">
+							<option value="day">day</option>
+							<option value="week">week</option>
+							<option value="month">month</option>
+							<option value="year">year</option>
+						</select>
+						<input name="rec_end_date" type="date" class="h-10 w-full border rounded p-2 text-sm" placeholder="End date (optional)" aria-label="End date (optional)">
 					</div>
 					<div>
 						<label class="block text-xs font-semibold mb-1">Description</label>
@@ -170,7 +190,7 @@ window.REMINDERS_CAL_START = (function(){
 		</div>
 
 
-		<script id="legacyRemindersData" type="application/json">{{ reminders_json|safe }}</script>
+		<script id="legacyRemindersData" type="application/json">{% if reminders_data is defined %}{{ reminders_data|tojson }}{% else %}{{ reminders_json|safe }}{% endif %}</script>
 		<script id="reminderCategoriesData" type="application/json">{{ reminder_categories|tojson }}</script>
 		<script>
 // Inject category color classes immediately after data is available
@@ -251,9 +271,34 @@ window.REMINDERS_CAL_START = (function(){
 	function closeForm(){ inlineWrap.classList.add('hidden'); editingId=null; }
 	cancelBtn.addEventListener('click', closeForm);
 	document.getElementById('openAdd').addEventListener('click', ()=> openForm('create', getSelectedDate(), null));
+	// Recurring controls (enable/disable dependent fields)
+	const recChk = inlineForm ? inlineForm.querySelector('[name=is_recurring]') : null;
+	const recControls = document.getElementById('recurrenceControls');
+	function toggleRecurringFields(){
+		const on = !!(recChk && recChk.checked);
+		if(recControls){ recControls.classList.toggle('hidden', !on); }
+		['rec_interval','rec_unit','rec_end_date'].forEach(n=>{
+			const el = inlineForm ? inlineForm.querySelector(`[name=${n}]`) : null;
+			if(el){ el.disabled = !on; }
+		});
+	}
+	if(recChk){ recChk.addEventListener('change', toggleRecurringFields); toggleRecurringFields(); }
+
 	// Recalculate counts & category aggregates for a month key (YYYY-M)
 	function recalcMonth(key){ const bucket=monthCache[key]; if(!bucket) return; const counts={}; const catsCounts={}; bucket.reminders.forEach(r=>{ counts[r.date]=(counts[r.date]||0)+1; if(r.category){ if(!catsCounts[r.date]) catsCounts[r.date]={}; catsCounts[r.date][r.category]=(catsCounts[r.date][r.category]||0)+1; } }); bucket.counts=counts; bucket.categories_counts=catsCounts; }
-	inlineForm.addEventListener('submit', async e=>{ e.preventDefault(); const fd=new FormData(inlineForm); const data=Object.fromEntries(fd.entries()); const creator=localStorage.getItem('username')||''; const payload={title:data.title, date:data.date, time:data.time||undefined, description:data.description, creator, category:data.category||undefined}; let res; const touchedMonths=new Set(); if(data.id){ // update existing
+	inlineForm.addEventListener('submit', async e=>{ e.preventDefault(); const fd=new FormData(inlineForm); const data=Object.fromEntries(fd.entries()); const creator=localStorage.getItem('username')||''; const payload={title:data.title, date:data.date, time:data.time||undefined, description:data.description, creator, category:data.category||undefined};
+		// include recurring payload when checkbox checked (interval+unit)
+		if(recChk && recChk.checked){
+			let interval = parseInt(data.rec_interval, 10);
+			if(!Number.isFinite(interval) || interval < 1){ interval = 1; }
+			const unit = (data.rec_unit||'day');
+			payload.recurring = {
+				interval,
+				unit,
+				end_date: data.rec_end_date || undefined
+			};
+		}
+		let res; const touchedMonths=new Set(); if(data.id){ // update existing
 		const id=parseInt(data.id);
 		res=await window.remindersApi.update(id,payload);
 		if(res.ok){ Object.entries(monthCache).forEach(([k,mc])=>{ const before=mc.reminders.length; mc.reminders=mc.reminders.filter(r=>r.id!==id); if(before!==mc.reminders.length) touchedMonths.add(k); }); await fetchMonth(res.reminder.date, true); const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key); }

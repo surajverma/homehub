@@ -82,6 +82,7 @@ class QRCode(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)
     filename = db.Column(db.String(256), nullable=False)
+    original_input = db.Column(db.Text)  # what user typed (for history display)
     creator = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -103,6 +104,8 @@ class Reminder(db.Model):
     category = db.Column(db.String(64))  # key referencing configured category
     color = db.Column(db.String(16))     # optional override hex color
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Tie back to a recurring rule (if generated)
+    recurring_id = db.Column(db.Integer)
 
 class MemberStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -121,7 +124,28 @@ class RecurringExpense(db.Model):
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     last_generated_date = db.Column(db.Date)
+    effective_from = db.Column(db.Date)  # apply changes from this date forward
     creator = db.Column(db.String(64))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class RecurringReminder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(256), nullable=False)
+    description = db.Column(db.Text)
+    creator = db.Column(db.String(64))
+    # Legacy fields kept for backward compatibility
+    frequency = db.Column(db.String(16), default='daily')  # daily|weekly|monthly (legacy)
+    monthly_mode = db.Column(db.String(16), default='day_of_month')  # calendar|day_of_month (legacy)
+    # New flexible recurrence
+    interval = db.Column(db.Integer, default=1)  # e.g., 1,2,3
+    unit = db.Column(db.String(8), default='day')  # 'day'|'week'|'month'|'year'
+    time = db.Column(db.String(5))  # optional HH:MM
+    category = db.Column(db.String(64))
+    color = db.Column(db.String(16))
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    last_generated_date = db.Column(db.Date)
+    effective_from = db.Column(db.Date)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ExpenseEntry(db.Model):
