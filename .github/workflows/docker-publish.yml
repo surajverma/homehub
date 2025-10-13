@@ -41,10 +41,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract version
+        id: vars
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == v* ]]; then
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+          else
+            echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64,linux/arm/v7
-          tags: ghcr.io/${{ github.repository_owner }}/homehub:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/homehub:latest
+            ghcr.io/${{ github.repository_owner }}/homehub:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/homehub:${{ env.VERSION }}
