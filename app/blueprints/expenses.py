@@ -14,10 +14,7 @@ def expenses():
     recs = RecurringExpense.query.all()
     for r in recs:
         start = r.start_date or today
-        # Respect effective_from when generating forward
-        if getattr(r, 'effective_from', None):
-            if r.effective_from and r.effective_from > start:
-                start = r.effective_from
+        # Generate from rule start date; don't clamp to effective_from so rule owns entire range
         base_day = (r.start_date or today).day
         last = r.last_generated_date
 
@@ -175,7 +172,10 @@ def edit_recurring_expense(rid):
         return redirect(url_for('main.expenses'))
     # Update fields
     r.title = bleach.clean(request.form.get('title', r.title))
-    r.category = bleach.clean(request.form.get('category', r.category or '') or None)
+    cat_raw = request.form.get('category')
+    if cat_raw is not None:
+        cat_val = bleach.clean(cat_raw or '')
+        r.category = cat_val or None
     up = request.form.get('unit_price'); dq = request.form.get('default_quantity')
     r.unit_price = float(up) if up not in (None, '') else r.unit_price
     r.default_quantity = float(dq) if dq not in (None, '') else r.default_quantity
@@ -186,11 +186,31 @@ def edit_recurring_expense(rid):
     sd = request.form.get('start_date'); ed = request.form.get('end_date')
     r.start_date = datetime.strptime(sd, '%Y-%m-%d').date() if sd else r.start_date
     r.end_date = datetime.strptime(ed, '%Y-%m-%d').date() if ed else r.end_date
-    # Set effective_from to today for forward-only changes
+    # Do not force effective_from to today; edits are authoritative for full rule window
     today = date.today()
-    r.effective_from = today
     db.session.commit()
-    flash('Recurring rule updated. Changes apply going forward.', 'success')
+    # Authoritative pruning: remove entries outside [start_date, end_date]
+    try:
+        if r.start_date:
+            ExpenseEntry.query.filter(ExpenseEntry.recurring_id==r.id, ExpenseEntry.date < r.start_date).delete()
+        if r.end_date:
+            ExpenseEntry.query.filter(ExpenseEntry.recurring_id==r.id, ExpenseEntry.date > r.end_date).delete()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Update all in-range entries to reflect new rule (title/category/prices/qty)
+    try:
+        entries = ExpenseEntry.query.filter(ExpenseEntry.recurring_id==r.id).all()
+        for e in entries:
+            e.title = r.title
+            e.category = getattr(r, 'category', None)
+            e.unit_price = r.unit_price
+            e.quantity = r.default_quantity
+            e.amount = (r.unit_price or 0.0) * (r.default_quantity or 1.0)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    flash('Recurring rule updated. Entries pruned/updated to match.', 'success')
     # Preserve view state
     y = request.args.get('y') or today.year
     m = request.args.get('m') or today.month

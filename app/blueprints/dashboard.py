@@ -96,8 +96,30 @@ def _serialize_reminder(r: Reminder):
         'creator': r.creator or '',
         'category': getattr(r, 'category', None),
         'color': getattr(r, 'color', None),
+        'recurring_id': getattr(r, 'recurring_id', None),
         'timestamp': r.timestamp.isoformat() if r.timestamp else None,
         'updated_at': getattr(r, 'updated_at', None).isoformat() if getattr(r, 'updated_at', None) else None,
+    }
+
+def _serialize_recurring_rule(rr: RecurringReminder):
+    interval = getattr(rr, 'interval', None) or 1
+    unit = (getattr(rr, 'unit', None) or '').lower()
+    if not unit:
+        if rr.frequency == 'daily': unit = 'day'
+        elif rr.frequency == 'weekly': unit = 'week'
+        else: unit = 'month'
+    return {
+        'id': rr.id,
+        'title': rr.title,
+        'description': rr.description or '',
+        'creator': rr.creator or '',
+        'interval': int(interval),
+        'unit': unit,
+        'time': rr.time,
+        'category': rr.category,
+        'color': rr.color,
+        'start_date': rr.start_date.strftime('%Y-%m-%d') if rr.start_date else None,
+        'end_date': rr.end_date.strftime('%Y-%m-%d') if rr.end_date else None,
     }
 
 
@@ -136,6 +158,7 @@ def api_reminders_list():
     except Exception:
         rules = []
     gen_rows = []
+    rule_dates = {}  # rr.id -> list of dates within window
     if scope == 'month':
         window_start = start
         window_end = end
@@ -185,8 +208,6 @@ def api_reminders_list():
         return d + timedelta(days=interval)
     for rr in rules:
         rs = rr.start_date or window_start
-        if rr.effective_from and rr.effective_from > rs:
-            rs = rr.effective_from
         d = rs
         # advance d to window_start if needed
         while d < window_start:
@@ -201,6 +222,7 @@ def api_reminders_list():
                 temp.id = -(1000000 + rr.id)  # ephemeral negative ID
                 temp.recurring_id = rr.id
                 gen_rows.append(temp)
+            rule_dates.setdefault(rr.id, []).append(d)
             d = next_date_rule(rr, d)
     combined = rows + gen_rows
     # Sort combined
@@ -212,13 +234,38 @@ def api_reminders_list():
     counts = {}
     categories_counts = {}
     if scope == 'month':
-        for r in rows:
+        # Include stored and synthesized rows in counts for calendar dots
+        for r in (rows + gen_rows):
             k = r.date.strftime('%Y-%m-%d')
             counts[k] = counts.get(k, 0) + 1
             cat = getattr(r, 'category', None) or '_uncategorized'
             if k not in categories_counts:
                 categories_counts[k] = {}
             categories_counts[k][cat] = categories_counts[k].get(cat, 0) + 1
+
+    # Build recurring rules summary for UI compression
+    recurring_rules = []
+    for rr in rules:
+        # Determine interval/unit from new fields or legacy frequency
+        interval = getattr(rr, 'interval', None) or 1
+        unit = (getattr(rr, 'unit', None) or '').lower()
+        if not unit:
+            if rr.frequency == 'daily': unit = 'day'
+            elif rr.frequency == 'weekly': unit = 'week'
+            else: unit = 'month'
+        recurring_rules.append({
+            'id': rr.id,
+            'title': rr.title,
+            'description': rr.description or '',
+            'creator': rr.creator or '',
+            'interval': int(interval),
+            'unit': unit,
+            'time': rr.time,
+            'category': rr.category,
+            'color': rr.color,
+            'end_date': rr.end_date.strftime('%Y-%m-%d') if rr.end_date else None,
+            'dates': [d.strftime('%Y-%m-%d') for d in rule_dates.get(rr.id, [])],
+        })
     return jsonify({
         'ok': True,
         'scope': scope,
@@ -226,7 +273,67 @@ def api_reminders_list():
         'reminders': data,
         'counts': counts,
         'categories_counts': categories_counts,
+        'recurring_rules': recurring_rules,
     })
+
+
+@main_bp.route('/api/recurring_rules/<int:rid>', methods=['PATCH', 'DELETE'])
+def api_recurring_rules_update_delete(rid):
+    rr = RecurringReminder.query.get_or_404(rid)
+    if request.method == 'DELETE':
+        payload = request.get_json(silent=True) or {}
+        user = sanitize_text(payload.get('creator', ''))
+        admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+        admin_aliases = {admin_name, 'Administrator', 'admin'}
+        if not (user in admin_aliases or user == (rr.creator or '')):
+            return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+        db.session.delete(rr)
+        db.session.commit()
+        return jsonify({'ok': True})
+    # PATCH
+    payload = request.get_json(silent=True) or {}
+    user = sanitize_text(payload.get('creator', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if not (user in admin_aliases or user == (rr.creator or '')):
+        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+    # Updatable fields
+    if 'title' in payload: rr.title = sanitize_text(payload.get('title') or rr.title)
+    if 'description' in payload: rr.description = sanitize_html(payload.get('description') or '')
+    if 'time' in payload:
+        time_raw = payload.get('time')
+        tval = None
+        if isinstance(time_raw, str) and len(time_raw) == 5 and time_raw[2] == ':':
+            hh, mm = time_raw.split(':', 1)
+            if hh.isdigit() and mm.isdigit():
+                hhi, mmi = int(hh), int(mm)
+                if 0 <= hhi < 24 and 0 <= mmi < 60:
+                    tval = f"{hhi:02d}:{mmi:02d}"
+        rr.time = tval
+    if 'category' in payload: rr.category = sanitize_text(payload.get('category')) or None
+    if 'color' in payload: rr.color = sanitize_text(payload.get('color')) or None
+    # interval/unit/end_date/start_date
+    interval = payload.get('interval')
+    try:
+        interval = int(interval) if interval is not None else None
+    except Exception:
+        interval = None
+    if interval and interval >= 1: rr.interval = interval
+    unit = (payload.get('unit') or '').lower()
+    if unit in {'day','week','month','year'}: rr.unit = unit
+    def _pd(s):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date() if s else None
+        except Exception:
+            return None
+    if 'start_date' in payload:
+        sd = _pd(payload.get('start_date'))
+        if sd: rr.start_date = sd
+    if 'end_date' in payload:
+        rr.end_date = _pd(payload.get('end_date'))
+    # Do not force effective_from to today; allow full-rule edits including anchor changes
+    db.session.commit()
+    return jsonify({'ok': True, 'rule': _serialize_recurring_rule(rr)})
 
 
 @main_bp.route('/api/reminders', methods=['POST'])

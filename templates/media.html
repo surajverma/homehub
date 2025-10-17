@@ -24,7 +24,7 @@
         <span class="px-2 py-1 rounded bg-yellow-100 text-yellow-800 status-chip">Starting…</span>
         <span class="text-xs text-gray-500 progress-line">{{ media.progress or 'Will take a while…' }}</span>
                         {% elif media.filepath %}
-                <a href="/media/{{ media.filepath }}" class="btn">Open</a>
+                <a href="/media/{{ media.filepath }}" class="btn btn-success">Open</a>
                         {% else %}
                 <span class="px-2 py-1 rounded bg-red-100 text-red-800">Not available</span>
                         {% endif %}

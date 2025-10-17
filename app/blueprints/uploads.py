@@ -31,7 +31,7 @@ def upload():
 
 @main_bp.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 
 @main_bp.route('/upload/delete/<int:file_id>', methods=['POST'])

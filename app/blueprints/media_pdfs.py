@@ -93,7 +93,7 @@ def media_status(media_id):
 
 @main_bp.route('/media/<filename>')
 def serve_media(filename):
-    return send_from_directory(MEDIA_FOLDER, filename)
+    return send_from_directory(MEDIA_FOLDER, filename, as_attachment=True)
 
 
 @main_bp.route('/media/delete/<int:media_id>', methods=['POST'])
@@ -124,6 +124,10 @@ def pdfs():
         filename = pdf_file.filename
         if not filename:
             return redirect(url_for('main.pdfs'))
+        # Only allow .pdf uploads
+        if not filename.lower().endswith('.pdf'):
+            flash('Only PDF files are allowed.', 'error')
+            return redirect(url_for('main.pdfs'))
         filename = filename.replace('..', '_')
         input_path = os.path.join(PDF_FOLDER, filename)
         pdf_file.save(input_path)
@@ -149,7 +153,7 @@ def pdfs():
 
 @main_bp.route('/pdfs/<filename>')
 def serve_pdf(filename):
-    return send_from_directory(PDF_FOLDER, filename)
+    return send_from_directory(PDF_FOLDER, filename, as_attachment=True)
 
 
 @main_bp.route('/pdfs/delete/<int:pdf_id>', methods=['POST'])
