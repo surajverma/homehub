@@ -9,3 +9,11 @@ __pycache__/
 *.git
 *.gitignore
 *.DS_Store
+.venv/
+.pytest_cache/
+tests/
+htmlcov/
+.coverage
+coverage.xml
+node_modules/
+package-lock.json

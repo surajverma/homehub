@@ -14,7 +14,7 @@
             <div class="text-xs text-gray-500">By {{ chore.creator }} at {{ chore.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/chores/toggle/{{ chore.id }}">
                 <button type="submit" class="btn {{ 'btn-secondary' if chore.done else 'btn-success' }}">
-                    {{ 'Mark Undone' if chore.done else 'Mark Done' }}
+                    {{ 'Completed · Undo' if chore.done else 'Mark Completed' }}
                 </button>
             </form>
             <form method="POST" action="/chores/delete/{{ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}">

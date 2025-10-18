@@ -141,7 +141,10 @@
 <!-- Recurring rules & Config Modal (tabbed) -->
 <div id="recurring-modal" class="modal fixed inset-0 z-40 bg-black bg-opacity-50 items-center justify-center p-4 hidden">
   <div class="modal-content card w-full max-w-4xl p-6 transform scale-95">
-    <h2 class="text-2xl font-bold mb-4">Expense Settings</h2>
+    <div class="flex justify-between">
+      <h2 class="text-2xl font-bold mb-4">Expense Settings</h2>
+      <button type="button" id="close-recurring" class="btn btn-secondary"><i class="fa fa-close"></i></button>
+    </div>
     <!-- Tabs -->
     <div class="border-b border-gray-200 mb-4">
       <nav class="-mb-px flex space-x-6" id="settings-tabs">
@@ -266,9 +269,6 @@
           </div>
         </form>
       </div>
-    </div>
-    <div class="mt-6 flex justify-end space-x-3">
-      <button type="button" id="close-recurring" class="btn">Close</button>
     </div>
   </div>
 </div>

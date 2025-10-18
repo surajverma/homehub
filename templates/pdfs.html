@@ -11,7 +11,7 @@
         {% for pdf in pdfs %}
         <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
             <span class="flex-1"><i class="fa-solid fa-file text-gray-500 mr-2"></i>{{ pdf.filename }}</span>
-            <a href="/pdfs/{{ pdf.compressed_path }}" class="btn"><i class="fa-solid fa-download mr-1"></i>Download</a>
+            <a href="/pdfs/{{ pdf.compressed_path }}" class="btn btn-success"><i class="fa-solid fa-download mr-1"></i>Download</a>
             <div class="text-xs text-gray-500">By {{ pdf.creator }} at {{ pdf.upload_time.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/pdfs/delete/{{ pdf.id }}" class="delete-form" data-creator="{{ pdf.creator }}">
                 <input type="hidden" name="user">

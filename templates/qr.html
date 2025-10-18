@@ -29,9 +29,14 @@
     <ul>
         {% for q in history %}
         <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
-            <span class="flex-1 truncate">{{ q.text }}</span>
-            <a class="btn" href="/static/{{ q.filename }}" target="_blank">View</a>
-            <a class="btn" href="/static/{{ q.filename }}" download>Download</a>
+            <span class="flex-1 truncate">
+                {{ q.original_input or q.text }}
+                {% if q.original_input and q.original_input != q.text %}
+                <details class="text-xs text-gray-500"><summary class="cursor-pointer inline text-gray-500">Generated</summary><span class="break-all">{{ q.text }}</span></details>
+                {% endif %}
+            </span>
+            <a class="btn btn-primary" href="/static/{{ q.filename }}" target="_blank">View</a>
+            <a class="btn btn-success" href="/static/{{ q.filename }}" download>Download</a>
             <span class="text-xs text-gray-500">By {{ q.creator }} at {{ q.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
             <form method="POST" action="/qr/delete/{{ q.id }}" class="delete-form" data-creator="{{ q.creator }}">
                 <input type="hidden" name="user">

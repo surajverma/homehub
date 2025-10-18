@@ -138,8 +138,33 @@ window.REMINDERS_CAL_START = (function(){
 						</div>
 					</div>
 					<div id="categorySelectRow" class="hidden">
-						<label class="block text-xs font-semibold mb-1">Category</label>
-						<select name="category" class="h-10 w-full border rounded p-2 text-sm"></select>
+						<div class="flex items-end justify-between gap-3">
+							<div class="flex-1">
+								<label class="block text-xs font-semibold mb-1">Category</label>
+								<select name="category" class="h-10 w-full border rounded p-2 text-sm"></select>
+							</div>
+							<label class="inline-flex items-center gap-2 text-xs flex-shrink-0 mb-1">
+								<input type="checkbox" name="is_recurring" class="rounded">
+								<span>Recurring</span>
+							</label>
+						</div>
+					</div>
+					<!-- Recurrence controls: hidden until Recurring is checked -->
+					<div id="recurrenceControls" class="hidden space-y-2">
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+							<label class="text-xs text-gray-700 self-center">Repeat this every</label>
+							<input name="rec_interval" type="number" min="1" step="1" value="1" class="h-10 w-full border rounded p-2 text-sm" aria-label="Recurrence interval">
+							<select name="rec_unit" class="h-10 w-full border rounded p-2 text-sm" aria-label="Recurrence unit">
+								<option value="day">day</option>
+								<option value="week">week</option>
+								<option value="month">month</option>
+								<option value="year">year</option>
+							</select>
+						</div>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+							<label class="text-xs text-gray-700 self-center">till</label>
+							<input name="rec_end_date" type="date" class="h-10 w-full border rounded p-2 text-sm" placeholder="End date (optional)" aria-label="End date (optional)">
+						</div>
 					</div>
 					<div>
 						<label class="block text-xs font-semibold mb-1">Description</label>
@@ -170,7 +195,7 @@ window.REMINDERS_CAL_START = (function(){
 		</div>
 
 
-		<script id="legacyRemindersData" type="application/json">{{ reminders_json|safe }}</script>
+		<script id="legacyRemindersData" type="application/json">{% if reminders_data is defined %}{{ reminders_data|tojson }}{% else %}{{ reminders_json|safe }}{% endif %}</script>
 		<script id="reminderCategoriesData" type="application/json">{{ reminder_categories|tojson }}</script>
 		<script>
 // Inject category color classes immediately after data is available
@@ -247,23 +272,103 @@ window.REMINDERS_CAL_START = (function(){
 	const scopeBar=document.createElement('div'); scopeBar.className='flex gap-1'; scopeBar.innerHTML=['day','week','month'].map(s=>`<button type="button" data-scope="${s}" class="px-2 py-0.5 text-xs rounded border scopeBtn ${s===currentScope?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'}">${s[0].toUpperCase()+s.slice(1)}</button>`).join(''); scopeBarWrap.appendChild(scopeBar);
 	scopeBar.addEventListener('click', e=>{ const b=e.target.closest('button[data-scope]'); if(!b)return; currentScope=b.getAttribute('data-scope'); localStorage.setItem('remindersScope', currentScope); scopeBar.querySelectorAll('.scopeBtn').forEach(btn=>{ const act=btn.getAttribute('data-scope')===currentScope; btn.className='px-2 py-0.5 text-xs rounded border scopeBtn '+(act?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'); }); renderList(); });
 	function openForm(mode,dateStr,data){ inlineForm.reset(); editingId=null; inlineForm.querySelector('[name=id]').value=''; inlineForm.querySelector('[name=date]').value=dateStr; if(mode==='edit'&&data){ editingId=data.id; inlineForm.querySelector('[name=id]').value=data.id; inlineForm.querySelector('[name=title]').value=data.title; inlineForm.querySelector('[name=description]').value=data.description||''; if(data.category && categorySelect) categorySelect.value=data.category; if(data.time) inlineForm.querySelector('[name=time]').value=data.time; }
+		// reset recurring toggle state each time the form opens
+		if(recChk){ recChk.checked = false; }
+		toggleRecurringFields();
 		inlineWrap.classList.remove('hidden'); setTimeout(()=>inlineForm.querySelector('[name=title]').focus(),30); }
-	function closeForm(){ inlineWrap.classList.add('hidden'); editingId=null; }
+	function closeForm(){ inlineWrap.classList.add('hidden'); editingId=null; if(typeof window.__editingRuleId!== 'undefined'){ window.__editingRuleId=null; } if(inlineForm){ inlineForm.reset(); } if(recChk){ recChk.checked=false; } toggleRecurringFields(); }
 	cancelBtn.addEventListener('click', closeForm);
 	document.getElementById('openAdd').addEventListener('click', ()=> openForm('create', getSelectedDate(), null));
-	// Recalculate counts & category aggregates for a month key (YYYY-M)
-	function recalcMonth(key){ const bucket=monthCache[key]; if(!bucket) return; const counts={}; const catsCounts={}; bucket.reminders.forEach(r=>{ counts[r.date]=(counts[r.date]||0)+1; if(r.category){ if(!catsCounts[r.date]) catsCounts[r.date]={}; catsCounts[r.date][r.category]=(catsCounts[r.date][r.category]||0)+1; } }); bucket.counts=counts; bucket.categories_counts=catsCounts; }
-	inlineForm.addEventListener('submit', async e=>{ e.preventDefault(); const fd=new FormData(inlineForm); const data=Object.fromEntries(fd.entries()); const creator=localStorage.getItem('username')||''; const payload={title:data.title, date:data.date, time:data.time||undefined, description:data.description, creator, category:data.category||undefined}; let res; const touchedMonths=new Set(); if(data.id){ // update existing
+	// Recurring controls (enable/disable dependent fields)
+	const recChk = inlineForm ? inlineForm.querySelector('[name=is_recurring]') : null;
+	const recControls = document.getElementById('recurrenceControls');
+	function toggleRecurringFields(){
+		const on = !!(recChk && recChk.checked);
+		if(recControls){ recControls.classList.toggle('hidden', !on); }
+		['rec_interval','rec_unit','rec_end_date'].forEach(n=>{
+			const el = inlineForm ? inlineForm.querySelector(`[name=${n}]`) : null;
+			if(el){ el.disabled = !on; }
+		});
+	}
+	if(recChk){ recChk.addEventListener('change', toggleRecurringFields); toggleRecurringFields(); }
+
+	// Recalculate counts & category aggregates for a month key (YYYY-M), including recurring rule dates
+	function recalcMonth(key){
+		const bucket = monthCache[key];
+		if(!bucket) return;
+		const counts = {};
+		const catsCounts = {};
+		const reminders = bucket.reminders || [];
+		// Count actual reminders first
+		reminders.forEach(r => {
+			const k = r.date;
+			counts[k] = (counts[k] || 0) + 1;
+			const c = r.category || '_uncategorized';
+			if(!catsCounts[k]) catsCounts[k] = {};
+			catsCounts[k][c] = (catsCounts[k][c] || 0) + 1;
+		});
+		// For recurring rules, only add dates that are NOT already represented by a reminder for that rule/date
+		(bucket.recurring_rules || []).forEach(rr => {
+			const c = rr.category || '_uncategorized';
+			(rr.dates || []).forEach(dstr => {
+				const exists = reminders.some(r => (r.recurring_id == rr.id || String(r.recurring_id) === String(rr.id)) && r.date === dstr);
+				if(!exists){
+					counts[dstr] = (counts[dstr] || 0) + 1;
+					if(!catsCounts[dstr]) catsCounts[dstr] = {};
+					catsCounts[dstr][c] = (catsCounts[dstr][c] || 0) + 1;
+				}
+			});
+		});
+		bucket.counts = counts;
+		bucket.categories_counts = catsCounts;
+	}
+	inlineForm.addEventListener('submit', async e=>{ e.preventDefault(); const fd=new FormData(inlineForm); const data=Object.fromEntries(fd.entries()); const creator=localStorage.getItem('username')||''; const payload={title:data.title, date:data.date, time:data.time||undefined, description:data.description, creator, category:data.category||undefined};
+		// include recurring payload when checkbox checked (interval+unit)
+		if(recChk && recChk.checked){
+			let interval = parseInt(data.rec_interval, 10);
+			if(!Number.isFinite(interval) || interval < 1){ interval = 1; }
+			const unit = (data.rec_unit||'day');
+			payload.recurring = {
+				interval,
+				unit,
+				end_date: data.rec_end_date || undefined
+			};
+		}
+		// If editing a recurring rule, call rule PATCH instead of reminder create/update
+		let res; const touchedMonths=new Set(); if(window.__editingRuleId){
+			const rid = window.__editingRuleId; const rulePayload = { creator, title: data.title, description: data.description, time: data.time||undefined, category: data.category||undefined };
+			if(data.date) rulePayload.start_date = data.date;
+			if(recChk && recChk.checked){ let interval=parseInt(data.rec_interval,10); if(!Number.isFinite(interval)||interval<1) interval=1; rulePayload.interval=interval; rulePayload.unit=(data.rec_unit||'day'); rulePayload.end_date=(data.rec_end_date||undefined); }
+			res = await window.remindersApi.updateRule(rid, rulePayload);
+			if(res && res.ok){
+				// Refresh the displayed month so calendar badges update correctly
+				const dispKey = display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0');
+				await fetchMonth(dispKey+'-01', true);
+				touchedMonths.add(dispKey);
+				// Also refresh the form date's month if different (rule anchor changed)
+				if(data.date){ const d=new Date(data.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(key!==dispKey){ await fetchMonth(key+'-01', true); touchedMonths.add(key); } }
+			}
+		}
+		else if(data.id){ // update existing single reminder
 		const id=parseInt(data.id);
 		res=await window.remindersApi.update(id,payload);
-		if(res.ok){ Object.entries(monthCache).forEach(([k,mc])=>{ const before=mc.reminders.length; mc.reminders=mc.reminders.filter(r=>r.id!==id); if(before!==mc.reminders.length) touchedMonths.add(k); }); await fetchMonth(res.reminder.date, true); const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key); }
+			if(res.ok){ Object.entries(monthCache).forEach(([k,mc])=>{ const before=mc.reminders.length; mc.reminders=mc.reminders.filter(r=>r.id!==id); if(before!==mc.reminders.length) touchedMonths.add(k); }); if(res.reminder && res.reminder.date){ await fetchMonth(res.reminder.date, true); const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key); } }
 	} else { // create
 		res=await window.remindersApi.create(payload);
-		if(res.ok){ await fetchMonth(res.reminder.date, true); const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key); }
+			if(res.ok){
+				if(res.reminder && res.reminder.date){
+					await fetchMonth(res.reminder.date, true);
+					const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key);
+				} else if(res.recurring_id){
+					// For recurring rules, just refresh the month of the selected date to synthesize occurrences
+					await fetchMonth(data.date, true);
+					const d=new Date(data.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key);
+				}
+			}
 	}
-	if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); updateCalendarBadges(); closeForm(); renderList(); toast(data.id?'Reminder updated':'Reminder added','success'); } else { toast((res&&res.error)||'Save failed','error'); }
+		if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); updateCalendarBadges(); closeForm(); renderList(); let msg='Saved'; if(window.__editingRuleId) msg='Recurring rule updated'; else if(data.id) msg='Reminder updated'; else if(res.recurring_id) msg='Recurring rule saved'; else msg='Reminder added'; toast(msg,'success'); } else { toast((res&&res.error)||'Save failed','error'); }
 	});
-	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast('Network error','error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{}}; }
+	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast('Network error','error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{},recurring_rules:[]}; }
 	function buildWeekdayHeader(){
 		const row=document.getElementById('reminderWeekdayRow'); if(!row) return; const base=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 		// Convert config start day to index
@@ -379,11 +484,45 @@ window.REMINDERS_CAL_START = (function(){
 	} catch (e) {}
 	let activeCategory = 'ALL';
 	function renderList(){ const dateStr=getSelectedDate(); const dObj=new Date(dateStr); const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]; if(!cache){ listWrap.innerHTML='<div class="text-xs text-gray-400">Loading...</div>'; fetchMonth(dateStr).then(()=>{ renderCalendar(); renderList(); }); return;} let baseItems=[]; // Unfiltered items for current scope
-	if(currentScope==='day'){ baseItems=cache.reminders.filter(r=>r.date===dateStr);} else if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); baseItems=cache.reminders.filter(r=>{ const rd=new Date(r.date); return rd>=mon && rd<=end; }); } else { baseItems=cache.reminders.slice(); }
+	// Filter baseItems to non-recurring generated occurrences (skip those with recurring_id)
+	if(currentScope==='day'){ baseItems=cache.reminders.filter(r=>r.date===dateStr && !r.recurring_id);} else if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); baseItems=cache.reminders.filter(r=>{ const rd=new Date(r.date); return !r.recurring_id && rd>=mon && rd<=end; }); } else { baseItems=cache.reminders.filter(r=>!r.recurring_id); }
 	// If activeCategory no longer present in this scope, reset to ALL
-	if(activeCategory!=='ALL' && !baseItems.some(r=>r.category===activeCategory)) activeCategory='ALL';
-	let items = activeCategory==='ALL'? baseItems : baseItems.filter(r=> r.category===activeCategory);
-	paintItems(items);
+	const rulesCats = (cache.recurring_rules||[]).map(rr=>rr.category).filter(Boolean);
+	if(activeCategory!=='ALL' && !baseItems.some(r=>r.category===activeCategory) && !rulesCats.includes(activeCategory)) activeCategory='ALL';
+
+	function formatRepeat(n, unit, endDate){ const label = (n||1)===1? unit : unit+'s'; return 'Repeats every '+(n||1)+' '+label+(endDate? (' till '+endDate):''); }
+	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
+
+	// Build compressed list = recurring rules intersecting scope + singles
+	const out=[];
+	const addRule = (rr)=>{ out.push({isRule:true, id: rr.id, title: rr.title, description: rr.description, creator: rr.creator, time: rr.time, category: rr.category, interval: rr.interval, unit: rr.unit, end_date: rr.end_date}); };
+	if(cache.recurring_rules && cache.recurring_rules.length){
+		const within = (ds)=>{ if(currentScope==='day') return ds===dateStr; if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); const rd=new Date(ds); return rd>=mon && rd<=end; } return true; };
+		for(const rr of cache.recurring_rules){ if(activeCategory!=='ALL' && rr.category!==activeCategory) continue; if((rr.dates||[]).some(within)) addRule(rr); }
+	}
+	const singles = (activeCategory==='ALL'? baseItems : baseItems.filter(r=> r.category===activeCategory));
+	out.push(...singles);
+
+	// Render compressed list
+	listWrap.innerHTML=''; if(!out.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; } else {
+		out.sort((a,b)=>{ if(a.isRule && !b.isRule) return -1; if(!a.isRule && b.isRule) return 1; if(a.isRule && b.isRule) return (a.title||'').localeCompare(b.title||''); return (a.date||'').localeCompare(b.date||'') || ((a.time||'~').localeCompare(b.time||'~')) || ((a.id||0)-(b.id||0)); });
+		const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser);
+		out.forEach(r=>{
+			if(r.isRule){ const row=document.createElement('div'); row.className='group p-2 rounded border bg-white dark:bg-slate-800'; const meta = (r.time? ('at '+escapeHtml(fmtTime(r.time))+' · ') : '')+escapeHtml(r.creator||''); const canEdit = (function(){ const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); return isAdmin || (r.creator && r.creator===currentUser); })(); const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; row.innerHTML = `<div class="font-semibold flex items-center">${dot}${escapeHtml(r.title)}<span class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 text-gray-600">Recurring</span>${canEdit?`<button type="button" data-edit-rule="${r.id}" class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600" aria-label="Edit recurring">✎</button>`:''}${canEdit?`<button type="button" data-delete-rule="${r.id}" class="ml-1 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" aria-label="Delete recurring">✕</button>`:''}</div><div class="text-xs text-gray-500">${escapeHtml(formatRepeat(r.interval, r.unit, r.end_date))}${meta? ' · '+meta:''}${r.category? ' · '+escapeHtml(r.category):''}</div>`; listWrap.appendChild(row); }
+			else { const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\"><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`; listWrap.appendChild(row); }
+		});
+		// bind rule edit/delete
+		bindRuleEdits();
+		listWrap.querySelectorAll('[data-delete-rule]')?.forEach(btn=>{
+			btn.addEventListener('click', async ()=>{
+				const rid=parseInt(btn.getAttribute('data-delete-rule')); const creator=localStorage.getItem('username')||'';
+				const res = await window.remindersApi.deleteRule(rid, creator);
+				if(res && res.ok){ const dateStr=getSelectedDate(); await fetchMonth(dateStr, true); const d=new Date(dateStr); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); recalcMonth(key); updateCalendarBadges(); renderList(); toast('Recurring rule deleted','success'); }
+				else { toast((res&&res.error)||'Delete failed','error'); }
+			});
+		});
+	}
+
 	if(currentScope==='month'){ const prev=new Date(dObj.getFullYear(), dObj.getMonth()-1,1); const next=new Date(dObj.getFullYear(), dObj.getMonth()+1,1); fetchMonth(prev.toISOString().slice(0,10)); fetchMonth(next.toISOString().slice(0,10)); }
 	updateCategorySummary(baseItems); }
 	// Category summary pills (buttons) click handler using data-cat attribute
@@ -395,23 +534,29 @@ window.REMINDERS_CAL_START = (function(){
 	function updateCategorySummary(scopeList){
 		const wrap = document.getElementById('reminderCategorySummary');
 		if (!scopeList.length) {
-			wrap.innerHTML = '';
-			return;
+			// still consider recurring rules in scope
+			const mkey=(new Date(getSelectedDate())).getFullYear()+'-'+String((new Date(getSelectedDate())).getMonth()+1).padStart(2,'0');
+			const cache=monthCache[mkey]||{}; const rules=cache.recurring_rules||[];
+			if(!rules.length){ wrap.innerHTML=''; return; }
 		}
 		const counts = {};
-		scopeList.forEach(r => {
-			if (r.category) counts[r.category] = (counts[r.category] || 0) + 1;
-		});
+		scopeList.forEach(r => { if (r.category) counts[r.category] = (counts[r.category] || 0) + 1; });
+		// include recurring rules in-scope
+		const dateStr=getSelectedDate(); const dObj=new Date(dateStr);
+		const within = (ds)=>{ if(currentScope==='day') return ds===dateStr; if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); const rd=new Date(ds); return rd>=mon && rd<=end; } return true; };
+		const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]||{};
+		(cache.recurring_rules||[]).forEach(rr=>{ if(!rr.category) return; const inScope = (rr.dates||[]).filter(within).length; if(inScope){ counts[rr.category]=(counts[rr.category]||0)+inScope; } });
 		const ordered = Object.entries(counts).sort((a, b) => b[1] - a[1]);
 		// Clear previous content
 		wrap.innerHTML = '';
-		// Create "All" button
+		// Create "All" button (count includes singles + recurring-in-scope)
 		const allBtn = document.createElement('button');
 		allBtn.type = "button";
 		allBtn.setAttribute('data-cat', 'ALL');
 		allBtn.className = 'rem-cat-pill inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50' +
 			(activeCategory === 'ALL' ? ' ring-1 ring-blue-500 bg-blue-50' : '');
-		allBtn.textContent = `All: ${scopeList.length}`;
+		const totalCount = Object.values(counts).reduce((a,b)=>a+b, 0);
+		allBtn.textContent = `All: ${totalCount}`;
 		wrap.appendChild(allBtn);
 		// Build key→label lookup from reminderCategoriesData
 		let catDataEl = document.getElementById('reminderCategoriesData');
@@ -443,6 +588,32 @@ window.REMINDERS_CAL_START = (function(){
 	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
 	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\">✎</button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast('Deleted (undo available)','success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent='Undo delete'; undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast('Delete failed','error');}); }); }
 	listWrap.appendChild(row); }); function updateBulk(){ bulkCount.textContent=selections.size; bulkIds.value=Array.from(selections).join(','); bulkBar.classList.toggle('hidden', !selections.size); } listWrap.querySelectorAll('.reminderChk').forEach(cb=>cb.addEventListener('change',()=>{ const id=parseInt(cb.value); if(cb.checked) selections.add(id); else selections.delete(id); updateBulk(); })); document.getElementById('bulkClearSel').onclick=()=>{ selections.clear(); listWrap.querySelectorAll('.reminderChk').forEach(c=>c.checked=false); updateBulk(); }; const bulkForm=document.getElementById('bulkDeleteForm'); if(bulkForm && !bulkForm.dataset.ajax){ bulkForm.dataset.ajax='1'; bulkForm.addEventListener('submit', e=>{ e.preventDefault(); const ids=Array.from(selections); if(!ids.length) return; const creator=localStorage.getItem('username')||''; window.remindersApi.removeMany(ids,creator).then(resp=>{ if(!resp.ok){ toast('Delete failed','error'); return;} Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(r=>!ids.includes(r.id)); }); toast('Deleted '+ids.length,'success'); selections.clear(); bulkCount.textContent='0'; bulkBar.classList.add('hidden'); renderList(); updateCalendarBadges(); }); }); }
+	}
+
+	// Add edit handling for recurring rule cards
+	function bindRuleEdits(){
+		listWrap.querySelectorAll('[data-edit-rule]')?.forEach(btn=>{
+			btn.addEventListener('click', ()=>{
+				const rid = parseInt(btn.getAttribute('data-edit-rule'));
+				const mkey=display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0');
+				const cache=monthCache[mkey]||{}; const rr=(cache.recurring_rules||[]).find(x=>x.id===rid);
+				if(!rr) return;
+				// Populate form for rule editing
+				inlineForm.reset(); editingId=null; window.__editingRuleId = rid;
+				inlineForm.querySelector('[name=title]').value = rr.title||'';
+				inlineForm.querySelector('[name=description]').value = rr.description||'';
+				if(rr.time) inlineForm.querySelector('[name=time]').value = rr.time;
+				if(categorySelect && rr.category) categorySelect.value = rr.category;
+				if(recChk){ recChk.checked = true; }
+				inlineForm.querySelector('[name=rec_interval]').value = rr.interval||1;
+				inlineForm.querySelector('[name=rec_unit]').value = rr.unit||'day';
+				if(rr.end_date) inlineForm.querySelector('[name=rec_end_date]').value = rr.end_date;
+				// set date field to rule start_date so user can change anchor
+				inlineForm.querySelector('[name=date]').value = rr.start_date || getSelectedDate();
+				toggleRecurringFields();
+				inlineWrap.classList.remove('hidden');
+			});
+		});
 	}
 	function onMonthChange(delta){ 
 		const oldMonth = display.getMonth(); 
@@ -479,7 +650,7 @@ window.REMINDERS_CAL_START = (function(){
 	}
 	prevBtn.addEventListener('click', ()=> onMonthChange(-1));
 	nextBtn.addEventListener('click', ()=> onMonthChange(1));
-	function buildAndEnsure(){ const mk=display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0'); if(!monthCache[mk]){ fetchMonth(mk+'-01').then(()=>{ renderCalendar(); }); } renderCalendar(); }
+	function buildAndEnsure(){ const mk=display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0'); const have = monthCache[mk]; if(!have || !have.recurring_rules){ fetchMonth(mk+'-01', true).then(()=>{ renderCalendar(); renderList(); }); } renderCalendar(); }
 	const startDate = getSelectedDate(); setSelectedDate(startDate); buildAndEnsure(); normalizeAfterInitialLoad(); renderList();
 	// No dropdown filter now
 	bulkUser.value = localStorage.getItem('username')||'';

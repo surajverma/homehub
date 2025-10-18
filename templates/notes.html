@@ -6,7 +6,7 @@
         <textarea name="content" class="md:col-span-9 w-full p-2 border rounded" placeholder="Write a note..." required></textarea>
         <div class="md:col-span-3 flex gap-2">
             <button type="submit" class="btn btn-primary flex-1">Save</button>
-            <button type="button" id="cancelEdit" class="btn hidden">Cancel</button>
+            <button type="button" id="cancelEdit" class="btn hidden btn-secondary">Cancel</button>
         </div>
         <input type="hidden" name="note_id" value="">
         <input type="hidden" name="creator" id="creator">
@@ -19,7 +19,7 @@
                 <div class="text-xs text-gray-500">By {{ note.creator }} at {{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
             </div>
             <div class="flex items-center gap-2">
-                <button type="button" class="btn edit-btn" data-id="{{ note.id }}" data-content="{{ note.content|e }}" data-creator="{{ note.creator }}">Edit</button>
+                <button type="button" class="btn btn-secondary edit-btn" data-id="{{ note.id }}" data-content="{{ note.content|e }}" data-creator="{{ note.creator }}">Edit</button>
                 <form method="POST" action="/notes/delete/{{ note.id }}" class="delete-form" data-creator="{{ note.creator }}">
                     <input type="hidden" name="user">
                     <button type="submit" class="btn btn-danger">Delete</button>
