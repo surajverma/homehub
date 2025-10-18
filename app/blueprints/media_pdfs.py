@@ -5,6 +5,7 @@ from datetime import datetime
 from ..models import db, Media, PDF
 from ..blueprints import main_bp
 from ..security import sanitize_text, is_url_safe_for_fetch
+from werkzeug.utils import secure_filename
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -128,10 +129,14 @@ def pdfs():
         if not filename.lower().endswith('.pdf'):
             flash('Only PDF files are allowed.', 'error')
             return redirect(url_for('main.pdfs'))
-        filename = filename.replace('..', '_')
-        input_path = os.path.join(PDF_FOLDER, filename)
+        # Normalize and secure the user-provided filename to avoid traversal or odd chars
+        safe_name = secure_filename(os.path.basename(filename))
+        if not safe_name:
+            flash('Invalid filename.', 'error')
+            return redirect(url_for('main.pdfs'))
+        input_path = os.path.join(PDF_FOLDER, safe_name)
         pdf_file.save(input_path)
-        compressed_path = f"compressed_{filename}"
+        compressed_path = f"compressed_{safe_name}"
         output_path = os.path.join(PDF_FOLDER, compressed_path)
         try:
             gs_cmd = [
@@ -142,7 +147,7 @@ def pdfs():
             subprocess.run(gs_cmd, check=True)
         except Exception:
             shutil.copy(input_path, output_path)
-        pdf_obj = PDF(filename=filename, creator=creator, compressed_path=compressed_path)
+        pdf_obj = PDF(filename=safe_name, creator=creator, compressed_path=compressed_path)
         db.session.add(pdf_obj)
         db.session.commit()
         return redirect(url_for('main.pdfs'))

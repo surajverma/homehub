@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, c
 from datetime import datetime, date, timedelta
 from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringReminder
 from ..blueprints import main_bp
-from ..security import sanitize_html, sanitize_text, ALLOWED_HTML_TAGS, ALLOWED_HTML_ATTRS
+from ..security import sanitize_html, sanitize_text
 import json
 
 

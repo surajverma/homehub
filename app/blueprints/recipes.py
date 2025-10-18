@@ -2,7 +2,6 @@ from flask import render_template, request, redirect, url_for, current_app, flas
 from ..models import db, Recipe
 from ..blueprints import main_bp
 from ..security import sanitize_text, sanitize_html, is_http_url
-from datetime import datetime
 
 
 @main_bp.route('/recipes', methods=['GET', 'POST'])
