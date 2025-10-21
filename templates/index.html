@@ -294,8 +294,12 @@ window.REMINDERS_CAL_START = (function(){
 				window.remindersApi.removeMany([id], creator).then(resp=>{
 					if(resp && resp.ok){
 						Object.values(monthCache).forEach(mc=>{ mc.reminders = (mc.reminders||[]).filter(x=>x.id!==id); });
+						// If this id was selected, uncheck and update bulk bar
+						const selCb = listWrap.querySelector(`.reminderChk[value="${id}"]`);
+						if(selCb){ selCb.checked = false; }
 						toast('Deleted','success');
 						renderList();
+						updateBulkUI();
 						updateCalendarBadges();
 					}else{
 						toast('Delete failed','error');
@@ -323,6 +327,9 @@ window.REMINDERS_CAL_START = (function(){
 					if(!resp || !resp.ok){ toast('Delete failed','error'); return; }
 					Object.values(monthCache).forEach(mc=>{ mc.reminders = (mc.reminders||[]).filter(r=>!ids.includes(r.id)); });
 					toast('Deleted '+ids.length,'success');
+					// Clear any selections and hide the bulk bar
+					listWrap.querySelectorAll('.reminderChk').forEach(c=>{ c.checked=false; });
+					updateBulkUI();
 					renderList();
 					updateCalendarBadges();
 				});
@@ -390,27 +397,27 @@ window.REMINDERS_CAL_START = (function(){
 		const fd=new FormData(inlineForm);
 		const data=Object.fromEntries(fd.entries());
 		const creator=localStorage.getItem('username')||'';
-		const payload={title:data.title, date:data.date, time:(data.time||undefined), description:data.description, creator: creator, category:(data.category||undefined)};
+		const payload={title:data.title, date:data.date, time:data.time||undefined, description:data.description, creator: creator, category:data.category||undefined};
 		// include recurring payload when checkbox checked (interval+unit)
 		if(recChk && recChk.checked){
 			let interval = parseInt(data.rec_interval, 10);
 			if(!Number.isFinite(interval) || interval < 1){ interval = 1; }
 			const unit = (data.rec_unit||'day');
 			payload.recurring = {
-				interval: interval,
-				unit: unit,
+				interval,
+				unit,
 				end_date: data.rec_end_date || undefined
 			};
 		}
 		// If editing a recurring rule, call rule PATCH instead of reminder create/update
 		let res; const touchedMonths=new Set();
 		if(window.__editingRuleId){
-			const rid = window.__editingRuleId; const rulePayload = { creator: creator, title: data.title, description: data.description, time: (data.time||undefined), category: (data.category||undefined) };
+			const rid = window.__editingRuleId; const rulePayload = { creator: creator, title: data.title, description: data.description, time: data.time||undefined, category: data.category||undefined };
 			if(data.date) rulePayload.start_date = data.date;
 			// If user unchecked recurring for a rule, convert rule -> single reminder
 			if(recChk && !recChk.checked){
 				// Create a single reminder using the current form date
-				const createSingle = await window.remindersApi.create({ title: data.title, date: data.date, time: (data.time||undefined), description: data.description, creator: creator, category: (data.category||undefined) });
+				const createSingle = await window.remindersApi.create({ title: data.title, date: data.date, time: data.time||undefined, description: data.description, creator: creator, category: data.category||undefined });
 				if(createSingle && createSingle.ok){
 					// Delete the recurring rule
 					const del = await window.remindersApi.deleteRule(rid, creator);
@@ -624,7 +631,7 @@ window.REMINDERS_CAL_START = (function(){
 	out.push(...singles);
 
 	// Render compressed list
-	listWrap.innerHTML=''; if(!out.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; } else {
+	listWrap.innerHTML=''; if(!out.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; updateBulkUI(); } else {
 		out.sort((a,b)=>{ if(a.isRule && !b.isRule) return -1; if(!a.isRule && b.isRule) return 1; if(a.isRule && b.isRule) return (a.title||'').localeCompare(b.title||''); return (a.date||'').localeCompare(b.date||'') || ((a.time||'~').localeCompare(b.time||'~')) || ((a.id||0)-(b.id||0)); });
 		const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser);
 		out.forEach(r=>{
@@ -633,6 +640,9 @@ window.REMINDERS_CAL_START = (function(){
 					const canEdit = isAdmin || (r.creator && r.creator===currentUser);
 					const row=document.createElement('div');
 					row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700';
+					row.setAttribute('data-reminder-row','');
+					row.setAttribute('data-id', r.id);
+					row.setAttribute('data-date', r.date);
 					const catClass = r.category?('rem-cat-dot-'+r.category):'';
 					const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`;
 					const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:'';
@@ -645,43 +655,12 @@ window.REMINDERS_CAL_START = (function(){
 						</div>
 						${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`;
 					listWrap.appendChild(row);
-					// Bind single-item edit/delete when allowed
+					// Bind single-item edit when allowed (delete handled by delegated listener)
 					if(canEdit){
 						const editTarget = row.querySelector('[data-edit]');
 						const editBtn = row.querySelector('.editBtn');
-						const delBtn = row.querySelector('.deleteOne');
 						if(editTarget){ editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); }
 						if(editBtn){ editBtn.addEventListener('click',()=> openForm('edit', r.date, r)); }
-						if(delBtn){ delBtn.addEventListener('click',()=>{
-							const creator=currentUser;
-							const snapshot=JSON.parse(JSON.stringify(r));
-							window.remindersApi.removeMany([r.id],creator).then(resp=>{
-								if(resp.ok){
-									Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); });
-									toast('Deleted (undo available)','success');
-									const host=document.getElementById('toastHost');
-									if(host){
-										const undo=document.createElement('div');
-										undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer';
-										undo.textContent='Undo delete';
-										undo.onclick=()=>{
-											const d=new Date(snapshot.date);
-											const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-											if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}};
-											monthCache[key].reminders.push(snapshot);
-											renderList();
-											updateCalendarBadges();
-										};
-										host.appendChild(undo);
-										setTimeout(()=>undo.remove(),6000);
-									}
-									renderList();
-									updateCalendarBadges();
-								}else{
-									toast('Delete failed','error');
-								}
-							});
-						}); }
 					}
 				}
 		});
