@@ -267,6 +267,75 @@ window.REMINDERS_CAL_START = (function(){
 	try{ const cats=JSON.parse(catDataEl?.textContent||'[]'); if(cats.length){ categoryRow.classList.remove('hidden'); categorySelect.innerHTML='<option value="">(No category)</option>'+cats.map(c=>`<option value="${c.key}">${c.label||c.key}</option>`).join(''); cats.forEach(c=>{ catPalette[c.key]=c.color||'#2563eb'; }); } }catch(e){}
 	function categoryColor(k){ return catPalette[k]; }
 	function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+	// Unified bulk bar updater (delegated-safe)
+	function updateBulkUI(){
+		const checked = Array.from(listWrap.querySelectorAll('.reminderChk:checked'));
+		bulkCount.textContent = String(checked.length);
+		bulkIds.value = checked.map(cb=>cb.value).join(',');
+		bulkBar.classList.toggle('hidden', checked.length===0);
+	}
+	// One-time delegated listeners for checkbox changes and single-delete
+	if(!listWrap.dataset.delegated){
+		listWrap.dataset.delegated = '1';
+		listWrap.addEventListener('change', (e)=>{
+			if(e.target && e.target.matches && e.target.matches('.reminderChk')){
+				updateBulkUI();
+			}
+		});
+		listWrap.addEventListener('click', (e)=>{
+			const delBtn = e.target && e.target.closest ? e.target.closest('.deleteOne') : null;
+			if(delBtn){
+				const row = delBtn.closest('[data-reminder-row]');
+				if(!row) return;
+				const id = parseInt(row.getAttribute('data-id'));
+				const dateStr = row.getAttribute('data-date')||'';
+				if(!id) return;
+				const creator = localStorage.getItem('username')||'';
+				window.remindersApi.removeMany([id], creator).then(resp=>{
+					if(resp && resp.ok){
+						Object.values(monthCache).forEach(mc=>{ mc.reminders = (mc.reminders||[]).filter(x=>x.id!==id); });
+						// If this id was selected, uncheck and update bulk bar
+						const selCb = listWrap.querySelector(`.reminderChk[value="${id}"]`);
+						if(selCb){ selCb.checked = false; }
+						toast('Deleted','success');
+						renderList();
+						updateBulkUI();
+						updateCalendarBadges();
+					}else{
+						toast('Delete failed','error');
+					}
+				});
+			}
+		});
+		const bulkForm = document.getElementById('bulkDeleteForm');
+		const clearBtn = document.getElementById('bulkClearSel');
+		if(clearBtn){
+			clearBtn.addEventListener('click', ()=>{
+				listWrap.querySelectorAll('.reminderChk').forEach(c=>{ c.checked=false; });
+				updateBulkUI();
+			});
+		}
+		if(bulkForm && !bulkForm._delegated){
+			bulkForm._delegated = true;
+			bulkForm.addEventListener('submit', (e)=>{
+				e.preventDefault();
+				const checked = Array.from(listWrap.querySelectorAll('.reminderChk:checked'));
+				if(!checked.length){ return; }
+				const ids = checked.map(cb=>parseInt(cb.value));
+				const creator = localStorage.getItem('username')||'';
+				window.remindersApi.removeMany(ids, creator).then(resp=>{
+					if(!resp || !resp.ok){ toast('Delete failed','error'); return; }
+					Object.values(monthCache).forEach(mc=>{ mc.reminders = (mc.reminders||[]).filter(r=>!ids.includes(r.id)); });
+					toast('Deleted '+ids.length,'success');
+					// Clear any selections and hide the bulk bar
+					listWrap.querySelectorAll('.reminderChk').forEach(c=>{ c.checked=false; });
+					updateBulkUI();
+					renderList();
+					updateCalendarBadges();
+				});
+			});
+		}
+	}
 	function setSelectedDate(d){ header.setAttribute('data-selected-date', d); selectedDateDisplay.textContent=d; localStorage.setItem('remindersSelectedDate', d); }
 	function getSelectedDate(){ return header.getAttribute('data-selected-date') || localStorage.getItem('remindersSelectedDate') || new Date().toISOString().slice(0,10); }
 	const scopeBar=document.createElement('div'); scopeBar.className='flex gap-1'; scopeBar.innerHTML=['day','week','month'].map(s=>`<button type="button" data-scope="${s}" class="px-2 py-0.5 text-xs rounded border scopeBtn ${s===currentScope?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'}">${s[0].toUpperCase()+s.slice(1)}</button>`).join(''); scopeBarWrap.appendChild(scopeBar);
@@ -322,7 +391,13 @@ window.REMINDERS_CAL_START = (function(){
 		bucket.counts = counts;
 		bucket.categories_counts = catsCounts;
 	}
-	inlineForm.addEventListener('submit', async e=>{ e.preventDefault(); const fd=new FormData(inlineForm); const data=Object.fromEntries(fd.entries()); const creator=localStorage.getItem('username')||''; const payload={title:data.title, date:data.date, time:data.time||undefined, description:data.description, creator, category:data.category||undefined};
+
+	inlineForm.addEventListener('submit', async e=>{
+		e.preventDefault();
+		const fd=new FormData(inlineForm);
+		const data=Object.fromEntries(fd.entries());
+		const creator=localStorage.getItem('username')||'';
+		const payload={title:data.title, date:data.date, time:data.time||undefined, description:data.description, creator: creator, category:data.category||undefined};
 		// include recurring payload when checkbox checked (interval+unit)
 		if(recChk && recChk.checked){
 			let interval = parseInt(data.rec_interval, 10);
@@ -335,11 +410,31 @@ window.REMINDERS_CAL_START = (function(){
 			};
 		}
 		// If editing a recurring rule, call rule PATCH instead of reminder create/update
-		let res; const touchedMonths=new Set(); if(window.__editingRuleId){
-			const rid = window.__editingRuleId; const rulePayload = { creator, title: data.title, description: data.description, time: data.time||undefined, category: data.category||undefined };
+		let res; const touchedMonths=new Set();
+		if(window.__editingRuleId){
+			const rid = window.__editingRuleId; const rulePayload = { creator: creator, title: data.title, description: data.description, time: data.time||undefined, category: data.category||undefined };
 			if(data.date) rulePayload.start_date = data.date;
-			if(recChk && recChk.checked){ let interval=parseInt(data.rec_interval,10); if(!Number.isFinite(interval)||interval<1) interval=1; rulePayload.interval=interval; rulePayload.unit=(data.rec_unit||'day'); rulePayload.end_date=(data.rec_end_date||undefined); }
-			res = await window.remindersApi.updateRule(rid, rulePayload);
+			// If user unchecked recurring for a rule, convert rule -> single reminder
+			if(recChk && !recChk.checked){
+				// Create a single reminder using the current form date
+				const createSingle = await window.remindersApi.create({ title: data.title, date: data.date, time: data.time||undefined, description: data.description, creator: creator, category: data.category||undefined });
+				if(createSingle && createSingle.ok){
+					// Delete the recurring rule
+					const del = await window.remindersApi.deleteRule(rid, creator);
+					if(del && del.ok){
+						res = { ok: true, converted: 'rule-to-single', reminder: createSingle.reminder };
+					}else{
+						res = { ok: false, error: (del && del.error) || 'Failed to delete rule after creating single' };
+					}
+				}else{
+					res = { ok: false, error: (createSingle && createSingle.error) || 'Failed to create single reminder' };
+				}
+			}
+			else {
+				// Regular rule update path
+				if(recChk && recChk.checked){ let interval=parseInt(data.rec_interval,10); if(!Number.isFinite(interval)||interval<1) interval=1; rulePayload.interval=interval; rulePayload.unit=(data.rec_unit||'day'); rulePayload.end_date=(data.rec_end_date||undefined); }
+				res = await window.remindersApi.updateRule(rid, rulePayload);
+			}
 			if(res && res.ok){
 				// Refresh the displayed month so calendar badges update correctly
 				const dispKey = display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0');
@@ -350,11 +445,43 @@ window.REMINDERS_CAL_START = (function(){
 			}
 		}
 		else if(data.id){ // update existing single reminder
-		const id=parseInt(data.id);
-		res=await window.remindersApi.update(id,payload);
-			if(res.ok){ Object.entries(monthCache).forEach(([k,mc])=>{ const before=mc.reminders.length; mc.reminders=mc.reminders.filter(r=>r.id!==id); if(before!==mc.reminders.length) touchedMonths.add(k); }); if(res.reminder && res.reminder.date){ await fetchMonth(res.reminder.date, true); const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key); } }
-	} else { // create
-		res=await window.remindersApi.create(payload);
+			const id=parseInt(data.id);
+			// If user checked recurring on a single reminder, convert single -> recurring rule
+			if(recChk && recChk.checked && payload.recurring){
+				const makeRule = await window.remindersApi.create(payload);
+				if(makeRule && makeRule.ok){
+					// Remove the original single reminder
+					const del = await window.remindersApi.removeMany([id], creator);
+					if(del && del.ok){
+						res = { ok: true, converted: 'single-to-rule', recurring_id: makeRule.recurring_id };
+						// Update local caches: remove old single, refresh month(s) for new rule
+						let origMonthKey = null;
+						Object.entries(monthCache).forEach(([k,mc])=>{
+							const before = (mc.reminders||[]).length;
+							mc.reminders = (mc.reminders||[]).filter(r=>r.id!==id);
+							if(before !== (mc.reminders||[]).length){ origMonthKey = k; }
+						});
+						// Fetch the month for the selected/form date to pick up the new rule
+						if(data.date){
+							await fetchMonth(data.date, true);
+						}
+						// Also refresh current display month if different
+						const dispKey = display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0');
+						const formKey = (function(){ const d=new Date(data.date); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })();
+						if(formKey !== dispKey){ await fetchMonth(dispKey+'-01', true); }
+					}else{
+						res = { ok: false, error: (del && del.error) || 'Failed to delete original reminder after creating recurring rule' };
+					}
+				}else{
+					res = { ok: false, error: (makeRule && makeRule.error) || 'Failed to create recurring rule' };
+				}
+			} else {
+				// Normal update of single reminder
+				res=await window.remindersApi.update(id,payload);
+				if(res.ok){ Object.entries(monthCache).forEach(([k,mc])=>{ const before=mc.reminders.length; mc.reminders=mc.reminders.filter(r=>r.id!==id); if(before!==mc.reminders.length) touchedMonths.add(k); }); if(res.reminder && res.reminder.date){ await fetchMonth(res.reminder.date, true); const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key); } }
+			}
+		} else { // create
+			res=await window.remindersApi.create(payload);
 			if(res.ok){
 				if(res.reminder && res.reminder.date){
 					await fetchMonth(res.reminder.date, true);
@@ -365,7 +492,7 @@ window.REMINDERS_CAL_START = (function(){
 					const d=new Date(data.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key);
 				}
 			}
-	}
+		}
 		if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); updateCalendarBadges(); closeForm(); renderList(); let msg='Saved'; if(window.__editingRuleId) msg='Recurring rule updated'; else if(data.id) msg='Reminder updated'; else if(res.recurring_id) msg='Recurring rule saved'; else msg='Reminder added'; toast(msg,'success'); } else { toast((res&&res.error)||'Save failed','error'); }
 	});
 	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast('Network error','error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{},recurring_rules:[]}; }
@@ -504,12 +631,38 @@ window.REMINDERS_CAL_START = (function(){
 	out.push(...singles);
 
 	// Render compressed list
-	listWrap.innerHTML=''; if(!out.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; } else {
+	listWrap.innerHTML=''; if(!out.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; updateBulkUI(); } else {
 		out.sort((a,b)=>{ if(a.isRule && !b.isRule) return -1; if(!a.isRule && b.isRule) return 1; if(a.isRule && b.isRule) return (a.title||'').localeCompare(b.title||''); return (a.date||'').localeCompare(b.date||'') || ((a.time||'~').localeCompare(b.time||'~')) || ((a.id||0)-(b.id||0)); });
 		const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser);
 		out.forEach(r=>{
 			if(r.isRule){ const row=document.createElement('div'); row.className='group p-2 rounded border bg-white dark:bg-slate-800'; const meta = (r.time? ('at '+escapeHtml(fmtTime(r.time))+' · ') : '')+escapeHtml(r.creator||''); const canEdit = (function(){ const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); return isAdmin || (r.creator && r.creator===currentUser); })(); const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; row.innerHTML = `<div class="font-semibold flex items-center">${dot}${escapeHtml(r.title)}<span class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 text-gray-600">Recurring</span>${canEdit?`<button type="button" data-edit-rule="${r.id}" class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600" aria-label="Edit recurring">✎</button>`:''}${canEdit?`<button type="button" data-delete-rule="${r.id}" class="ml-1 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" aria-label="Delete recurring">✕</button>`:''}</div><div class="text-xs text-gray-500">${escapeHtml(formatRepeat(r.interval, r.unit, r.end_date))}${meta? ' · '+meta:''}${r.category? ' · '+escapeHtml(r.category):''}</div>`; listWrap.appendChild(row); }
-			else { const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\"><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`; listWrap.appendChild(row); }
+				else {
+					const canEdit = isAdmin || (r.creator && r.creator===currentUser);
+					const row=document.createElement('div');
+					row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700';
+					row.setAttribute('data-reminder-row','');
+					row.setAttribute('data-id', r.id);
+					row.setAttribute('data-date', r.date);
+					const catClass = r.category?('rem-cat-dot-'+r.category):'';
+					const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`;
+					const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:'';
+					const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`;
+					row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}
+						<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit>
+							<div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\">✎</button>`:''}</div>
+							<div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>
+							${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}
+						</div>
+						${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`;
+					listWrap.appendChild(row);
+					// Bind single-item edit when allowed (delete handled by delegated listener)
+					if(canEdit){
+						const editTarget = row.querySelector('[data-edit]');
+						const editBtn = row.querySelector('.editBtn');
+						if(editTarget){ editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); }
+						if(editBtn){ editBtn.addEventListener('click',()=> openForm('edit', r.date, r)); }
+					}
+				}
 		});
 		// bind rule edit/delete
 		bindRuleEdits();
@@ -521,6 +674,8 @@ window.REMINDERS_CAL_START = (function(){
 				else { toast((res&&res.error)||'Delete failed','error'); }
 			});
 		});
+			// Initialize bulk bar visibility on render
+			updateBulkUI();
 	}
 
 	if(currentScope==='month'){ const prev=new Date(dObj.getFullYear(), dObj.getMonth()-1,1); const next=new Date(dObj.getFullYear(), dObj.getMonth()+1,1); fetchMonth(prev.toISOString().slice(0,10)); fetchMonth(next.toISOString().slice(0,10)); }
