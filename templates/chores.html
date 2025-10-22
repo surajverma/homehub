@@ -224,7 +224,7 @@ function refreshFiltersAndLibrary(){
     });
     T.getAllKnownTags().forEach(t=> allTags.add(t));
     filterHost.innerHTML='';
-      [...allTags].sort((a,b)=>a.localeCompare(b)).forEach(t=>{
+    [...allTags].sort((a,b)=>a.localeCompare(b)).forEach(t=>{
           const pill = T.makeFilledPill(t, null, false);
             filterHost.appendChild(pill);
     });
