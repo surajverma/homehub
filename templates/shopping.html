@@ -271,7 +271,6 @@ const T = Tags.scoped('shopping');
     input.addEventListener('input', render);
     input.addEventListener('focus', render);
     document.addEventListener('click', (e)=>{ if(!box.contains(e.target) && e.target!==input){ box.classList.add('hidden'); }});
-    
     // Expose render globally so delete actions can refresh autofill
     window.refreshShoppingAutofill = render;
 })();
