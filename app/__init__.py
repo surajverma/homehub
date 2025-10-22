@@ -70,6 +70,11 @@ def create_app(test_config: dict | None = None):
                 # Add 'done' to chore
                 if not has_column('chore', 'done'):
                     cur.execute("ALTER TABLE chore ADD COLUMN done INTEGER DEFAULT 0")
+                # Add 'tags' to shoppingitem and chore for multi-tag feature
+                if not has_column('shopping_item', 'tags'):
+                    cur.execute("ALTER TABLE shopping_item ADD COLUMN tags TEXT DEFAULT '[]'")
+                if not has_column('chore', 'tags'):
+                    cur.execute("ALTER TABLE chore ADD COLUMN tags TEXT DEFAULT '[]'")
                 # Add 'status' to media
                 if not has_column('media', 'status'):
                     cur.execute("ALTER TABLE media ADD COLUMN status TEXT DEFAULT 'done'")
