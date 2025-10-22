@@ -226,7 +226,7 @@ function refreshFiltersAndLibrary(){
     filterHost.innerHTML='';
     [...allTags].sort((a,b)=>a.localeCompare(b)).forEach(t=>{
           const pill = T.makeFilledPill(t, null, false);
-            filterHost.appendChild(pill);
+          filterHost.appendChild(pill);
     });
     const lib = document.getElementById('tagLibrary');
     T.renderLibrary(lib, (t)=>{
