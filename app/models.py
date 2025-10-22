@@ -36,6 +36,8 @@ class ShoppingItem(db.Model):
     checked = db.Column(db.Boolean, default=False)
     creator = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    # JSON-encoded list of tags (e.g., ["Costco", "Dairy"]) for filtering/grouping
+    tags = db.Column(db.Text, default='[]')
 
 class GroceryHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,6 +56,8 @@ class Chore(db.Model):
     creator = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     done = db.Column(db.Boolean, default=False)
+    # JSON-encoded list of tags (e.g., ["Alice", "Weekend"]) for assignment/filtering
+    tags = db.Column(db.Text, default='[]')
 
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
