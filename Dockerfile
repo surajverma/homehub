@@ -23,6 +23,10 @@ FROM python:3.12-alpine
 
 WORKDIR /app
 
+# Build argument for app version (injected by CI) and environment variable for runtime
+ARG APP_VERSION=dev
+ENV SW_CACHE_VERSION=$APP_VERSION
+
 # Runtime-only packages
 RUN apk add --no-cache \
     ffmpeg \

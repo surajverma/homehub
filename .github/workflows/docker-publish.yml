@@ -58,6 +58,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64,linux/arm/v7
+          build-args: |
+            APP_VERSION=${{ env.VERSION }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/homehub:latest
             ghcr.io/${{ github.repository_owner }}/homehub:${{ github.ref_name }}

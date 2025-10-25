@@ -40,6 +40,17 @@
     .btn-success:hover { filter:brightness(.95); }
     .btn-secondary { background:#e5e7eb; color:#111827; }
     .btn-secondary:hover { filter:brightness(.97); }
+    /* Sidebar collapse styles (desktop-only) + root hint to avoid flash */
+    @media (min-width: 768px){
+        .sidebar.collapsed,
+        .prefers-sidebar-collapsed .sidebar{ width: 4rem; }
+        .sidebar.collapsed .brand-name,
+        .prefers-sidebar-collapsed .sidebar .brand-name{ display:none; }
+        .sidebar.collapsed .nav-label,
+        .prefers-sidebar-collapsed .sidebar .nav-label{ display:none; }
+        .sidebar.collapsed #sidebarNav a,
+        .prefers-sidebar-collapsed .sidebar #sidebarNav a{ padding-left: 1rem; padding-right: 1rem; justify-content: center; }
+    }
     /* Ensure dark theme variable overrides reassert after config injection */
     [data-theme="dark"] {
         --background-color: #0f172a;
@@ -47,8 +58,46 @@
         --text-color: #e5e7eb;
     }
     </style>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="{{ config.theme.primary_color }}">
+    <!-- App icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512.png">
+    <!-- iOS PWA hints -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     {% block extra_head %}{% endblock %}
     <script>
+        // Apply saved sidebar collapsed state ASAP to avoid flash before main JS runs
+        (function(){
+            try{
+                var saved = localStorage.getItem('ui:sidebarCollapsed');
+                var collapsed = (saved==='1' || saved==='true');
+                if(collapsed){
+                    document.documentElement.classList.add('prefers-sidebar-collapsed');
+                }
+                // Also set initial icon/title when DOM is ready, using the same preference
+                function setInitialIcon(){
+                    var icon = document.getElementById('collapseIcon');
+                    if(icon){ icon.className = 'fa-solid '+(collapsed ? 'fa-angle-right' : 'fa-angles-left'); }
+                    var btn = document.getElementById('toggleCollapse');
+                    if(btn){ btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar'; }
+                }
+                document.addEventListener('DOMContentLoaded', setInitialIcon, { once: true });
+            }catch(e){}
+        })();
+    </script>
+    <script>
+                // Apply saved sidebar collapsed state ASAP to avoid flash before main JS runs
+        (function(){
+            try{
+                var saved = localStorage.getItem('ui:sidebarCollapsed');
+                if(saved==='1' || saved==='true'){
+                    document.documentElement.classList.add('prefers-sidebar-collapsed');
+                }
+            }catch(e){}
+        })();
         (function() {
             const mq = window.matchMedia('(prefers-color-scheme: dark)');
             const apply = () => document.documentElement.setAttribute('data-theme', mq.matches ? 'dark' : 'light');
@@ -64,23 +113,27 @@
         <!-- Sidebar -->
         <aside id="sidebar" class="sidebar w-64 text-white flex flex-col fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 z-40">
             <div class="p-6 text-2xl font-bold border-b border-white/20 flex items-center justify-between" style="color: var(--sidebar-text-color);">
-                <span>{{ config.instance_name }}</span>
-                <button id="closeSidebar" class="md:hidden text-white/90 hover:text-white" aria-label="Close">✕</button>
+                <span class="brand-name">{{ config.instance_name }}</span>
+                <div class="flex items-center gap-2">
+                    <button id="toggleCollapse" class="hidden md:inline-flex text-white/90 hover:text-white" title="Collapse sidebar" aria-label="Collapse">
+                        <i id="collapseIcon" class="fa-solid fa-angles-left"></i>
+                    </button>
+                    <button id="closeSidebar" class="md:hidden text-white/90 hover:text-white" aria-label="Close">✕</button>
+                </div>
             </div>
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="sidebarNav">
-                <a href="/" class="block py-2 px-4 rounded sidebar-link">Welcome</a>
-                {% if config.feature_toggles.get('notes') %}<a href="/notes" class="block py-2 px-4 rounded sidebar-link">Shared Notes</a>{% endif %}
-                {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="block py-2 px-4 rounded sidebar-link">Shared Cloud</a>{% endif %}
-                {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="block py-2 px-4 rounded sidebar-link">Shopping List</a>{% endif %}
-                {# Removed standalone Who is Home link; dashboard section covers it #}
-                {% if config.feature_toggles.get('chores') %}<a href="/chores" class="block py-2 px-4 rounded sidebar-link">To-Do/Chores</a>{% endif %}
-                {% if config.feature_toggles.get('recipes') %}<a href="/recipes" class="block py-2 px-4 rounded sidebar-link">Recipe Book</a>{% endif %}
-                {% if config.feature_toggles.get('expiry_tracker') %}<a href="/expiry" class="block py-2 px-4 rounded sidebar-link">Expiry Tracker</a>{% endif %}
-                {% if config.feature_toggles.get('url_shortener') %}<a href="/shorten" class="block py-2 px-4 rounded sidebar-link">URL Shortener</a>{% endif %}
-                {% if config.feature_toggles.get('media_downloader') %}<a href="/media" class="block py-2 px-4 rounded sidebar-link">Media Downloader</a>{% endif %}
-                {% if config.feature_toggles.get('pdf_compressor') %}<a href="/pdfs" class="block py-2 px-4 rounded sidebar-link">PDF Compressor</a>{% endif %}
-                {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="block py-2 px-4 rounded sidebar-link">QR Generator</a>{% endif %}
-                {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="block py-2 px-4 rounded sidebar-link">Expense Tracker</a>{% endif %}
+                <a href="/" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Welcome"><i class="fa-solid fa-house w-5 text-center"></i><span class="nav-label">Welcome</span></a>
+                {% if config.feature_toggles.get('notes') %}<a href="/notes" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Shared Notes"><i class="fa-solid fa-note-sticky w-5 text-center"></i><span class="nav-label">Shared Notes</span></a>{% endif %}
+                {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Shared Cloud"><i class="fa-solid fa-cloud w-5 text-center"></i><span class="nav-label">Shared Cloud</span></a>{% endif %}
+                {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Shopping List"><i class="fa-solid fa-cart-shopping w-5 text-center"></i><span class="nav-label">Shopping List</span></a>{% endif %}
+                {% if config.feature_toggles.get('chores') %}<a href="/chores" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="To-Do/Chores"><i class="fa-solid fa-list-check w-5 text-center"></i><span class="nav-label">To-Do/Chores</span></a>{% endif %}
+                {% if config.feature_toggles.get('recipes') %}<a href="/recipes" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Recipe Book"><i class="fa-solid fa-utensils w-5 text-center"></i><span class="nav-label">Recipe Book</span></a>{% endif %}
+                {% if config.feature_toggles.get('expiry_tracker') %}<a href="/expiry" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Expiry Tracker"><i class="fa-solid fa-hourglass-half w-5 text-center"></i><span class="nav-label">Expiry Tracker</span></a>{% endif %}
+                {% if config.feature_toggles.get('url_shortener') %}<a href="/shorten" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="URL Shortener"><i class="fa-solid fa-link w-5 text-center"></i><span class="nav-label">URL Shortener</span></a>{% endif %}
+                {% if config.feature_toggles.get('media_downloader') %}<a href="/media" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Media Downloader"><i class="fa-solid fa-download w-5 text-center"></i><span class="nav-label">Media Downloader</span></a>{% endif %}
+                {% if config.feature_toggles.get('pdf_compressor') %}<a href="/pdfs" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="PDF Compressor"><i class="fa-solid fa-file-pdf w-5 text-center"></i><span class="nav-label">PDF Compressor</span></a>{% endif %}
+                {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="QR Generator"><i class="fa-solid fa-qrcode w-5 text-center"></i><span class="nav-label">QR Generator</span></a>{% endif %}
+                {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Expense Tracker"><i class="fa-solid fa-wallet w-5 text-center"></i><span class="nav-label">Expense Tracker</span></a>{% endif %}
             </nav>
             <script>
             // Highlight active sidebar link
@@ -124,21 +177,26 @@
             </div>
         </main>
     </div>
-    <script>
-        // Provide a global toast utility (single reusable toast element)
+    <script>        
         (function(){
             if(window.globalToast) return;
             const hostId='toastHost';
-            let toastEl=null; let hideTimer=null;
+            let toastEl=null; let hideTimer=null; let hideEndTimer=null;
             function ensure(){ let h=document.getElementById(hostId); if(!h){ h=document.createElement('div'); h.id=hostId; h.className='fixed top-4 right-4 z-50 pointer-events-none'; document.body.appendChild(h);} return h; }
             function classFor(type){ return type==='error'?['bg-red-600']:(type==='success'?['bg-green-600']:(type==='info'?['bg-blue-600']:['bg-gray-800'])); }
-            window.globalToast=function(msg,type){ const host=ensure(); if(!toastEl){ toastEl=document.createElement('div'); host.appendChild(toastEl);} if(hideTimer){ clearTimeout(hideTimer); hideTimer=null; }
+            window.globalToast=function(msg,type){ const host=ensure(); if(!toastEl){ toastEl=document.createElement('div'); host.appendChild(toastEl);} if(hideTimer){ clearTimeout(hideTimer); hideTimer=null; } if(hideEndTimer){ clearTimeout(hideEndTimer); hideEndTimer=null; }
                 toastEl.className='pointer-events-auto inline-block px-3 py-2 rounded shadow text-sm text-white transition-opacity duration-200 '+classFor(type).join(' ');
-                toastEl.style.opacity='1'; toastEl.textContent=msg; 
-                hideTimer=setTimeout(()=>{ toastEl.style.opacity='0'; }, 2600); // fade start
+                toastEl.style.display='';
+                toastEl.style.opacity='1';
+                toastEl.style.pointerEvents='auto';
+                toastEl.textContent=msg; 
+                hideTimer=setTimeout(()=>{                     
+                    toastEl.style.opacity='0'; 
+                    toastEl.style.pointerEvents='none';                    
+                    hideEndTimer=setTimeout(()=>{ toastEl && (toastEl.style.display='none'); }, 240);
+                }, 2600); // fade start
             };
-        })();
-        // Convert any server-rendered flash messages into toasts and remove the message box entirely
+        })();        
         (function(){
             const wrap = document.getElementById('globalFlashWrap');
             if(!wrap) return;
@@ -154,11 +212,9 @@
             msgs.forEach((el,i)=>{
                 const text = (el.textContent||'').trim();
                 setTimeout(()=>{ if(window.globalToast && text) globalToast(text, classify(el)); }, i*60);
-            });
-            // Remove box to prevent layout shift / duplication
+            });            
             setTimeout(()=>wrap.remove(), msgs.length*70 + 200);
-        })();
-        // First-visit user selection helper
+        })();        
         function showUserSelectModal(users){
             const modal = document.getElementById('userSelectModal');
             const input = document.getElementById('userSelectInput');
@@ -218,8 +274,32 @@
             applyUserContext();
             // Sidebar toggles
             const sidebar = document.getElementById('sidebar');
+            const COLLAPSE_KEY = 'ui:sidebarCollapsed';
+            const rootEl = document.documentElement;
             document.getElementById('openSidebar')?.addEventListener('click', ()=> sidebar.classList.remove('-translate-x-full'));
             document.getElementById('closeSidebar')?.addEventListener('click', ()=> sidebar.classList.add('-translate-x-full'));
+            // Desktop collapse/expand
+            const collapseIcon = document.getElementById('collapseIcon');
+            function applyCollapsedState(collapsed){
+                const isCollapsed = !!collapsed;
+                if(window.matchMedia('(min-width: 768px)').matches){
+                    sidebar.classList.toggle('collapsed', isCollapsed);
+                }
+                // Keep root hint in sync for next load (used to avoid flash)
+                rootEl.classList.toggle('prefers-sidebar-collapsed', isCollapsed);
+                if(collapseIcon){ collapseIcon.className = 'fa-solid '+(isCollapsed ? 'fa-angles-right' : 'fa-angles-left'); }
+                const btn = document.getElementById('toggleCollapse');
+                if(btn){ btn.title = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'; }
+            }
+            // Initialize from saved preference
+            try{ const saved = localStorage.getItem(COLLAPSE_KEY); applyCollapsedState(saved==='1'||saved==='true'); }catch(e){}
+            document.getElementById('toggleCollapse')?.addEventListener('click', ()=>{
+                if(window.matchMedia('(min-width: 768px)').matches){
+                    const willCollapse = !sidebar.classList.contains('collapsed');
+                    applyCollapsedState(willCollapse);
+                    try{ localStorage.setItem(COLLAPSE_KEY, willCollapse ? '1' : '0'); }catch(e){}
+                }
+            });
         });
         function renderWelcome(){
             const name = localStorage.getItem('username') || '';
@@ -268,4 +348,15 @@
 </body>
 <!-- Phase 2 reminders API helper (progressive enhancement) -->
 <script src="/static/js/reminders_api.js"></script>
+<script>
+// Register Service Worker for PWA
+(function(){
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function(){
+            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                .catch(function(err){ console.warn('SW registration failed', err); });
+        });
+    }
+})();
+</script>
 </html>
