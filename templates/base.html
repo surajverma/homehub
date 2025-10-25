@@ -80,7 +80,7 @@
                 // Also set initial icon/title when DOM is ready, using the same preference
                 function setInitialIcon(){
                     var icon = document.getElementById('collapseIcon');
-                    if(icon){ icon.className = 'fa-solid '+(collapsed ? 'fa-angle-right' : 'fa-angles-left'); }
+                    if(icon){ icon.className = 'fa-solid '+(collapsed ? 'fa-angles-right' : 'fa-angles-left'); }
                     var btn = document.getElementById('toggleCollapse');
                     if(btn){ btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar'; }
                 }
