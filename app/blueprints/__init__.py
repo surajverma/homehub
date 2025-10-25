@@ -25,8 +25,8 @@ def manifest_webmanifest():
         "background_color": theme.get('background_color', '#ffffff'),
         "theme_color": theme.get('primary_color', '#2563eb'),
         "icons": [
-            {"src": "/static/icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable"},
-            {"src": "/static/icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable"},
+            {"src": "/static/icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any"},
+            {"src": "/static/icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any"},
             {"src": "/static/icons/homehub.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any"}
         ]
     }
