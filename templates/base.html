@@ -89,15 +89,6 @@
         })();
     </script>
     <script>
-                // Apply saved sidebar collapsed state ASAP to avoid flash before main JS runs
-        (function(){
-            try{
-                var saved = localStorage.getItem('ui:sidebarCollapsed');
-                if(saved==='1' || saved==='true'){
-                    document.documentElement.classList.add('prefers-sidebar-collapsed');
-                }
-            }catch(e){}
-        })();
         (function() {
             const mq = window.matchMedia('(prefers-color-scheme: dark)');
             const apply = () => document.documentElement.setAttribute('data-theme', mq.matches ? 'dark' : 'light');
