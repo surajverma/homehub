@@ -78,16 +78,17 @@ def service_worker():
           );
         });
 
-          // Bypass caching for dynamic API endpoints to avoid stale data
-          if (url.pathname.startsWith('/api/')) {
-            event.respondWith(fetch(req));
-            return;
-          }
         self.addEventListener('fetch', (event) => {
           const req = event.request;
           const url = new URL(req.url);
           // Only handle GET
           if (req.method !== 'GET') return;
+
+          // Bypass caching for dynamic API endpoints to avoid stale data
+          if (url.pathname.startsWith('/api/')) {
+            event.respondWith(fetch(req));
+            return;
+          }
 
           // Navigation requests: try network, fallback to cache, then to '/'
           if (req.mode === 'navigate') {
