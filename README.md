@@ -40,8 +40,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **Family-Focused**: Designed to be intuitive for users of all technical skill levels.
 * **Customizable**: Toggle features on or off and even change the color theme right from the `config.yml` file.
 
-![homehub](https://github.com/user-attachments/assets/0a170e1c-d21d-4902-ba3d-c0c58bbccbee)
-
+![homehub](https://github.com/user-attachments/assets/55b1c580-8897-4073-9e51-2a892a2bdcd4)
 
 ## Getting Started is Easy
 
