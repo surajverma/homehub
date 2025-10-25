@@ -87,7 +87,13 @@ def service_worker():
           // Navigation requests: try network, fallback to cache, then to '/'
           if (req.mode === 'navigate') {
             event.respondWith(
-              fetch(req).catch(() => caches.match(req)).then(res => res || caches.match('/'))
+              fetch(req)
+                .catch(() => caches.match(req))
+                .then(res => res || caches.match('/'))
+                .then(res => res || new Response(
+                  '<!DOCTYPE html><title>Offline</title><h1>You are offline</h1><p>This page is not available offline.</p>',
+                  { status: 503, headers: { 'Content-Type': 'text/html' } }
+                ))
             );
             return;
           }
