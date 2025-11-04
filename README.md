@@ -47,6 +47,10 @@ HomeHub is packed with useful tools to make family life a little more organized:
 The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
 
 1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub and add family members. You can also set an optional password to protect the whole site.
+<details>
+  <summary>Click to see an example config.yml</summary>
+
+
 
 ```yaml
 instance_name: "My Home Hub"
@@ -109,6 +113,8 @@ theme:
   sidebar_link_border_color: "rgba(255,255,255,0.18)"
   sidebar_active_color: "#3b82f6"
 ```
+
+</details>
 
 **2. Run with Docker Compose**
 
@@ -220,6 +226,17 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 Contributions are always welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request.
 
+## Disclaimer & Security Notice
+
+This software is being provided to the community "as is." This means it comes **without any warranty or guarantee of any kind.** While I've done my best to build it, I can't promise it will be perfect, fit your exact needs, or be 100% free of bugs.
+
+**Please be aware that you are using this software at your own risk.** The authors and contributors are not responsible for any problems, damages, or data loss that might occur from using it.
+
+### 🛡️ Important Security Notice
+
+This project is built for use on a **local or trusted network** (like your home).
+
+It is **not designed or hardened to be safely exposed to the public internet.** If you choose to host this software publicly, you are solely responsible for performing a full security review and adding the necessary protections before you do so.
 
 ## Have Fun!
 
