@@ -305,8 +305,8 @@ def expenses_settings():
 @main_bp.route('/api/expenses/month', methods=['GET'])
 def api_expenses_month():
     # Keep recurring data up-to-date before answering
-    _generate_recurring_entries_until(date.today())
     today = date.today()
+    _generate_recurring_entries_until(today)
     try:
         y = int(request.args.get('year') or today.year)
         m = int(request.args.get('month') or today.month)
