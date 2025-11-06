@@ -81,7 +81,8 @@ def _load_expense_settings() -> dict:
         if data.get('categories'):
             settings['categories'] = [c.strip() for c in data['categories'].split(',') if c.strip()]
     except Exception:
-        pass
+        # Best-effort: fall back to default settings but log for diagnostics
+        current_app.logger.exception('Failed to load expense settings; using defaults')
     return settings
 
 
@@ -305,15 +306,26 @@ def expenses_settings():
 @main_bp.route('/api/expenses/month', methods=['GET'])
 def api_expenses_month():
     # Keep recurring data up-to-date before answering
+    _generate_recurring_entries_until(date.today())
     today = date.today()
-    _generate_recurring_entries_until(today)
+    # Parse query params with clear validation and logging
+    y, m = today.year, today.month
+    year_q = request.args.get('year')
+    month_q = request.args.get('month')
     try:
-        y = int(request.args.get('year') or today.year)
-        m = int(request.args.get('month') or today.month)
-        # Basic clamp for month values
-        if m < 1 or m > 12:
-            raise ValueError('month out of range')
-    except Exception:
-        y, m = today.year, today.month
+        if year_q is not None:
+            y = int(year_q)
+        if month_q is not None:
+            m = int(month_q)
+    except (ValueError, TypeError):
+        current_app.logger.warning('Invalid year/month query params', extra={'year': year_q, 'month': month_q})
+        # Keep defaults y, m
+    # Validate month range; return helpful 400 if invalid
+    if m < 1 or m > 12:
+        return jsonify({
+            'error': 'Invalid month parameter. Must be an integer between 1 and 12.',
+            'year': year_q if year_q is not None else y,
+            'month': month_q if month_q is not None else m,
+        }), 400
     payload = _build_month_payload(y, m)
     return jsonify(payload)
