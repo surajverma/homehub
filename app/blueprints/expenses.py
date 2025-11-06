@@ -8,9 +8,8 @@ from ..blueprints import main_bp
 import bleach
 
 
-@main_bp.route('/expenses', methods=['GET', 'POST'])
-def expenses():
-    today = date.today()
+def _generate_recurring_entries_until(today: date | None = None) -> None:
+    today = today or date.today()
     recs = RecurringExpense.query.all()
     for r in recs:
         start = r.start_date or today
@@ -18,7 +17,7 @@ def expenses():
         base_day = (r.start_date or today).day
         last = r.last_generated_date
 
-        def next_date(d):
+        def next_date(d: date) -> date:
             if r.frequency == 'daily':
                 return d + timedelta(days=1)
             if r.frequency == 'weekly':
@@ -51,15 +50,100 @@ def expenses():
                     d = start
         else:
             d = next_date(last)
+
         while d <= today and (not r.end_date or d <= r.end_date):
             exists = ExpenseEntry.query.filter_by(date=d, recurring_id=r.id).first()
             if not exists:
                 qty = r.default_quantity or 1.0
                 amt = (r.unit_price or 0.0) * qty
-                db.session.add(ExpenseEntry(date=d, title=r.title, category=getattr(r, 'category', None), unit_price=r.unit_price, quantity=qty, amount=amt, payer=r.creator, recurring_id=r.id))
+                db.session.add(ExpenseEntry(
+                    date=d,
+                    title=r.title,
+                    category=getattr(r, 'category', None),
+                    unit_price=r.unit_price,
+                    quantity=qty,
+                    amount=amt,
+                    payer=r.creator,
+                    recurring_id=r.id
+                ))
             r.last_generated_date = d
             d = next_date(d)
     db.session.commit()
+
+
+def _load_expense_settings() -> dict:
+    settings = {'currency': '\u20b9', 'categories': []}
+    try:
+        rows = db.session.execute(db.text("SELECT key, value FROM app_setting WHERE key IN ('currency','categories')"))
+        data = {k: v for k, v in rows}
+        if data.get('currency'):
+            settings['currency'] = data['currency']
+        if data.get('categories'):
+            settings['categories'] = [c.strip() for c in data['categories'].split(',') if c.strip()]
+    except Exception:
+        pass
+    return settings
+
+
+def _build_month_payload(y: int, m: int) -> dict:
+    month_start = date(y, m, 1)
+    last_day = _calendar.monthrange(y, m)[1]
+    month_end = date(y, m, last_day)
+
+    q_entries = (
+        ExpenseEntry.query
+        .filter(ExpenseEntry.date >= month_start, ExpenseEntry.date <= month_end)
+        .order_by(ExpenseEntry.date.asc(), ExpenseEntry.timestamp.asc())
+        .all()
+    )
+    by_date: dict[str, dict] = {}
+    total = 0.0
+    per_payer: dict[str, float] = {}
+    per_category: dict[str, float] = {}
+    for e in q_entries:
+        ds = e.date.strftime('%Y-%m-%d')
+        by_date.setdefault(ds, {'total': 0.0, 'entries': []})
+        by_date[ds]['total'] += float(e.amount or 0)
+        total += float(e.amount or 0)
+        per_payer[e.payer or ''] = per_payer.get(e.payer or '', 0.0) + float(e.amount or 0)
+        if e.category:
+            per_category[e.category] = per_category.get(e.category, 0.0) + float(e.amount or 0)
+        by_date[ds]['entries'].append({
+            'id': e.id,
+            'title': e.title,
+            'category': e.category,
+            'unit_price': float(e.unit_price) if e.unit_price is not None else None,
+            'amount': float(e.amount or 0),
+            'quantity': float(e.quantity or 0) if e.quantity is not None else None,
+            'recurring': bool(e.recurring_id),
+            'payer': e.payer or ''
+        })
+
+    top_category = None
+    if per_category:
+        top_category = max(per_category.items(), key=lambda kv: kv[1])[0]
+
+    settings = _load_expense_settings()
+    payload = {
+        'by_date': by_date,
+        'summary': {
+            'total_this_month': total,
+            'per_payer': per_payer,
+            'per_category': per_category,
+            'top_category': top_category,
+        },
+        'year': y,
+        'month': m,
+        'settings': settings,
+    }
+    return payload
+
+
+@main_bp.route('/expenses', methods=['GET', 'POST'])
+def expenses():
+    today = date.today()
+    # Ensure recurring entries are generated up to today for a consistent view
+    _generate_recurring_entries_until(today)
 
     if request.method == 'POST':
         form_type = request.form.get('form_type')
@@ -105,59 +189,10 @@ def expenses():
         m = int(request.args.get('m') or today.month)
     except Exception:
         y, m = today.year, today.month
-    month_start = date(y, m, 1)
-    last_day = _calendar.monthrange(y, m)[1]
-    month_end = date(y, m, last_day)
 
-    q_entries = ExpenseEntry.query.filter(ExpenseEntry.date >= month_start, ExpenseEntry.date <= month_end).order_by(ExpenseEntry.date.asc(), ExpenseEntry.timestamp.asc()).all()
-    by_date = {}
-    total = 0.0
-    per_payer = {}
-    per_category = {}
-    for e in q_entries:
-        ds = e.date.strftime('%Y-%m-%d')
-        by_date.setdefault(ds, {'total': 0.0, 'entries': []})
-        by_date[ds]['total'] += float(e.amount or 0)
-        total += float(e.amount or 0)
-        per_payer[e.payer or ''] = per_payer.get(e.payer or '', 0.0) + float(e.amount or 0)
-        if e.category:
-            per_category[e.category] = per_category.get(e.category, 0.0) + float(e.amount or 0)
-        by_date[ds]['entries'].append({
-            'id': e.id,
-            'title': e.title,
-            'category': e.category,
-            'unit_price': float(e.unit_price) if e.unit_price is not None else None,
-            'amount': float(e.amount or 0),
-            'quantity': float(e.quantity or 0) if e.quantity is not None else None,
-            'recurring': bool(e.recurring_id),
-            'payer': e.payer or ''
-        })
-    top_category = None
-    if per_category:
-        top_category = max(per_category.items(), key=lambda kv: kv[1])[0]
-
+    payload = _build_month_payload(y, m)
     rules = RecurringExpense.query.order_by(RecurringExpense.timestamp.desc()).all()
     config = current_app.config['HOMEHUB_CONFIG']
-    settings = {'currency': '\u20b9', 'categories': []}
-    try:
-        rows = db.session.execute(db.text("SELECT key, value FROM app_setting WHERE key IN ('currency','categories')"))
-        data = {k: v for k, v in rows}
-        if data.get('currency'): settings['currency'] = data['currency']
-        if data.get('categories'): settings['categories'] = [c.strip() for c in data['categories'].split(',') if c.strip()]
-    except Exception:
-        pass
-    payload = {
-        'by_date': by_date,
-        'summary': {
-            'total_this_month': total,
-            'per_payer': per_payer,
-            'per_category': per_category,
-            'top_category': top_category
-        },
-        'year': y,
-        'month': m,
-        'settings': settings
-    }
     return render_template('expenses.html', rules=rules, config=config, expenses_json=json.dumps(payload))
 
 
@@ -265,3 +300,20 @@ def expenses_settings():
     m = request.args.get('m') or today.month
     sel = request.args.get('sel')
     return redirect(url_for('main.expenses', y=y, m=m, sel=sel, open='recurring'))
+
+
+@main_bp.route('/api/expenses/month', methods=['GET'])
+def api_expenses_month():
+    # Keep recurring data up-to-date before answering
+    _generate_recurring_entries_until(date.today())
+    today = date.today()
+    try:
+        y = int(request.args.get('year') or today.year)
+        m = int(request.args.get('month') or today.month)
+        # Basic clamp for month values
+        if m < 1 or m > 12:
+            raise ValueError('month out of range')
+    except Exception:
+        y, m = today.year, today.month
+    payload = _build_month_payload(y, m)
+    return jsonify(payload)
