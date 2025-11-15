@@ -34,6 +34,12 @@ def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 
+@main_bp.route('/uploads/preview/<filename>')
+def preview_file(filename):
+    """Serve file for preview (inline) instead of download"""
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=False)
+
+
 @main_bp.route('/upload/delete/<int:file_id>', methods=['POST'])
 def delete_file(file_id):
     db_file = File.query.get_or_404(file_id)
