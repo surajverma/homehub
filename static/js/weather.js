@@ -47,6 +47,8 @@
 		`;
 	}
 
+	const TTL_MS = 15 * 60 * 1000; // fixed 15 minutes cache window
+
 	function displayWeather(container, data, units, cfg) {
 		const current = data.current;
 		
@@ -59,13 +61,20 @@
 		const temp = current.temperature_2m;
 		const weatherCode = current.weather_code || 0;
 		const windSpeed = current.wind_speed_10m || 0;
+		const windGust = current.wind_gusts_10m || null;
+		const windDir = current.wind_direction_10m;
 		const humidity = current.relative_humidity_2m ?? null;
 		const feelsLike = current.apparent_temperature ?? null;
 		const precipitation = current.precipitation ?? null;
 		const rain = current.rain ?? null;
-		const weather = getWeatherIcon(weatherCode);
+		let weather = getWeatherIcon(weatherCode);
 		const tempUnit = units === 'imperial' ? '°F' : '°C';
 		const speedUnit = units === 'imperial' ? 'mph' : 'km/h';
+
+		// Night clear icon adjustment
+		if (current.is_day === 0 && [0,1].includes(weatherCode)) {
+			weather = { desc: 'Clear sky', icon: 'fa-moon', color: 'text-indigo-400' };
+		}
 
 		let precipLabel = 'No rain';
 		const amount = rain ?? precipitation;
@@ -94,6 +103,49 @@
 			}
 		}
 
+		// Map wind direction degrees to compass text (e.g., NE)
+		function degToCompass(deg){
+			if (typeof deg !== 'number' || isNaN(deg)) return '';
+			const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+			return dirs[Math.round(deg/22.5)%16];
+		}
+
+		const windDirText = degToCompass(windDir);
+		const windLine = `${Math.round(windSpeed)} ${speedUnit}${windDirText ? ' ' + windDirText : ''}${(typeof windGust==='number' && windGust>0) ? `, gusts ${Math.round(windGust)} ${speedUnit}` : ''}`;
+
+		// Prepare daily (detailed) data when available
+		let dailyHtml = '';
+		const daily = data.daily || null;
+		if (cfg && cfg.view === 'detailed' && daily) {
+			function fmtTime(s){
+				try{
+					const d=new Date(s);
+					const opts={hour:'2-digit',minute:'2-digit'}; if(cfg.timezone) opts.timeZone=cfg.timezone; return d.toLocaleTimeString(undefined, opts);
+				}catch(e){ return String(s).split('T')[1]||String(s); }
+			}
+			const uv = (daily.uv_index_max && daily.uv_index_max.length) ? daily.uv_index_max[0] : null;
+			const rainProb = (daily.precipitation_probability_max && daily.precipitation_probability_max.length) ? daily.precipitation_probability_max[0] : null;
+			const tMax = (daily.temperature_2m_max && daily.temperature_2m_max.length) ? daily.temperature_2m_max[0] : null;
+			const tMin = (daily.temperature_2m_min && daily.temperature_2m_min.length) ? daily.temperature_2m_min[0] : null;
+			const sunrise = (daily.sunrise && daily.sunrise.length) ? fmtTime(daily.sunrise[0]) : '—';
+			const sunset = (daily.sunset && daily.sunset.length) ? fmtTime(daily.sunset[0]) : '—';
+
+			dailyHtml = `
+				<div class="pt-3 mt-3 border-t">
+					<div class="flex items-center justify-between mb-2">
+						<div class="text-base font-semibold">Today's Forecast</div>
+						<div class="text-sm text-gray-700 flex items-center gap-2"><i class="fa-solid fa-arrow-up-long text-gray-500"></i> H: <span class="font-semibold">${tMax!=null?Math.round(tMax)+tempUnit:'—'}</span> <i class="fa-solid fa-arrow-down-long text-gray-500 ml-3"></i> L: <span class="font-semibold">${tMin!=null?Math.round(tMin)+tempUnit:'—'}</span></div>
+					</div>
+					<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-700">
+						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-amber-500"></i><span>Sunrise: <span class="font-semibold text-gray-900">${sunrise}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-moon text-indigo-400"></i><span>Sunset: <span class="font-semibold text-gray-900">${sunset}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-yellow-500"></i><span>UV Index: <span class="font-semibold text-gray-900">${uv!=null?uv:'—'}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-cloud text-gray-500"></i><span>Rain: <span class="font-semibold text-gray-900">${rainProb!=null?rainProb+'%':'—'}</span></span></div>
+					</div>
+				</div>
+			`;
+		}
+
 		// Responsive layout: desktop = left (icon+temp), right (stats). Mobile = stacked.
 		container.innerHTML = `
 			<div class="flex flex-col md:flex-row items-center md:items-start justify-between gap-4 md:gap-6">
@@ -114,7 +166,7 @@
 					</div>
 					<div class="flex items-center gap-2">
 						<i class="fa-solid fa-wind text-gray-500"></i>
-						<span>Wind: <span class="font-semibold text-gray-900">${Math.round(windSpeed)} ${speedUnit}</span></span>
+						<span>Wind: <span class="font-semibold text-gray-900">${windLine}</span></span>
 					</div>
 					<div class="flex items-center gap-2">
 						<i class="fa-solid fa-droplet text-gray-500"></i>
@@ -126,29 +178,43 @@
 					</div>
 				</div>
 			</div>
+			${dailyHtml}
 			${ lastUpdated ? `<div class="text-[11px] text-gray-500 mt-3 md:mt-4 text-right">Last updated: ${lastUpdated}</div>` : ''}
 		`;
 	}
 
 	async function fetchWeather(lat, lon, config, cache) {
-		// Check cache
 		const now = Date.now();
-		if (cache.data && cache.time && (now - cache.time) < config.cache * 60 * 1000) {
-			return cache.data;
-		}
+		// cross-session cache via localStorage
+		const tzKey = config.timezone ? config.timezone : 'auto';
+		const viewKey = config.view || 'compact';
+		const unitsKey = (config.units || 'metric');
+		const storageKey = `weatherCache:v1:${lat},${lon}:${unitsKey}:${viewKey}:${tzKey}`;
+		try{
+			const raw = localStorage.getItem(storageKey);
+			if (raw) {
+				const obj = JSON.parse(raw);
+				if (obj && obj.time && obj.data && (now - obj.time) < TTL_MS) {
+					cache.data = obj.data; cache.time = obj.time; // hydrate in-memory cache
+					return obj.data;
+				}
+			}
+		}catch(_){}
 
 		const params = new URLSearchParams({
 			latitude: lat,
 			longitude: lon,
-			current: 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m',
+			current: 'is_day,apparent_temperature,relative_humidity_2m,temperature_2m,precipitation,rain,weather_code,wind_gusts_10m,wind_speed_10m,wind_direction_10m',
 			temperature_unit: config.units === 'imperial' ? 'fahrenheit' : 'celsius',
 			windspeed_unit: config.units === 'imperial' ? 'mph' : 'kmh',
 			precipitation_unit: 'mm'
 		});
 
-		if (config.timezone) {
-			params.append('timezone', config.timezone);
+		if ((config.view || 'compact') === 'detailed') {
+			params.append('daily', 'sunrise,sunset,uv_index_max,precipitation_probability_max,temperature_2m_max,temperature_2m_min');
 		}
+
+		params.append('timezone', config.timezone ? config.timezone : 'auto');
 
 		const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
 		if (!response.ok) {
@@ -158,6 +224,7 @@
 		const data = await response.json();
 		cache.data = data;
 		cache.time = now;
+		try{ localStorage.setItem(storageKey, JSON.stringify({ time: now, data })); }catch(_){ /* ignore quota */ }
 		return data;
 	}
 
@@ -174,7 +241,7 @@
 		// Ensure defaults
 		config = config || {};
 		config.units = config.units || 'metric';
-		config.cache = config.cache || 5;
+		config.view = config.view || 'compact';
 
 		const cache = { data: null, time: null };
 
@@ -198,10 +265,21 @@
 			};
 
 			await loadAndRender();
-			// Periodic refresh based on cache minutes
-			const intervalMs = Math.max(1, Number(config.cache || 5)) * 60 * 1000;
-			if (!window.__weatherRefreshTimer) {
-				window.__weatherRefreshTimer = setInterval(loadAndRender, intervalMs);
+			// Schedule refresh aligned to 15-min TTL
+			// After loadAndRender, cache.time will be set (either from localStorage or fresh fetch)
+			const now = Date.now();
+			const age = cache.time ? (now - cache.time) : TTL_MS;
+			const firstDelay = Math.max(1000, TTL_MS - age);
+			
+			if (window.__weatherRefreshTimer) { clearInterval(window.__weatherRefreshTimer); }
+			if (window.__weatherRefreshKickoff) { clearTimeout(window.__weatherRefreshKickoff); }
+			
+			// Only schedule refresh if data is still fresh; otherwise it will refresh on next load
+			if (age < TTL_MS) {
+				window.__weatherRefreshKickoff = setTimeout(()=>{
+					loadAndRender();
+					window.__weatherRefreshTimer = setInterval(loadAndRender, TTL_MS);
+				}, firstDelay);
 			}
 		}
 

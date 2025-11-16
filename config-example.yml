@@ -49,12 +49,12 @@ reminders:
 
 weather:
   enabled: false
-  label: "Delhi" # optional location label
-  latitude: "28.70" # optional, leave empty to use browser geolocation
-  longitude: "77.10" # optional, leave empty to use browser geolocation
-  timezone: "Asia/Kolkata" # optional, e.g., "Europe/Kiev" or "America/New_York"
+  label: "" # optional location label (appears on right of header). Leave blank to hide.
+  latitude: "" # optional, leave empty to use browser geolocation
+  longitude: "" # optional, leave empty to use browser geolocation
+  timezone: "" # optional, e.g., "Europe/Kiev" or "America/New_York"; if unset, API uses timezone=auto
   units: metric # metric or imperial (default: metric)
-  cache: 5 # Time in minutes to cache API responses (default: 5)
+  view: compact # compact or detailed (detailed also shows today's forecast: sunrise, sunset, UV, rain %, highs/lows)
 
 theme:
   primary_color: "#1d4ed8"

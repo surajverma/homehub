@@ -48,5 +48,5 @@ def load_config():
     weather.setdefault('longitude', '')
     weather.setdefault('timezone', '')
     weather.setdefault('units', 'metric')
-    weather.setdefault('cache', 5)
+    weather.setdefault('view', 'compact')
     return config
