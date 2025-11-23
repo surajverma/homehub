@@ -2,6 +2,7 @@ from flask import render_template, request, redirect, url_for, current_app, flas
 from ..models import db, Recipe
 from ..blueprints import main_bp
 from ..security import sanitize_text, sanitize_html, is_http_url
+from recipe_scrapers import scrape_me
 
 
 @main_bp.route('/recipes', methods=['GET', 'POST'])
@@ -72,3 +73,30 @@ def delete_recipe(recipe_id):
         db.session.delete(recipe)
         db.session.commit()
     return redirect(url_for('main.recipes'))
+
+@main_bp.route('/recipes/scrape', methods=['POST'])
+def scrape_recipe():
+    link = sanitize_text(request.form.get('link'))
+
+    recipes = Recipe.query.order_by(Recipe.timestamp.desc()).all()
+    config = current_app.config['HOMEHUB_CONFIG']
+    
+    current_title = sanitize_text(request.form.get('title'))
+
+    if not link:
+        flash('Please enter a URL to scrape.', 'error')
+        return render_template('recipes.html', recipes=recipes, config=config, form_title=current_title)
+
+    try:
+        scraper = scrape_me(link)
+        scraped_title = scraper.title()
+        scraped_ingredients = '\n'.join(scraper.ingredients())
+        scraped_instructions = scraper.instructions()
+        
+        flash(f'Successfully scraped: {scraped_title}', 'success')
+        
+        return render_template('recipes.html', recipes=recipes, config=config, form_title=scraped_title, form_link=link,form_ingredients=scraped_ingredients,                              form_instructions=scraped_instructions)
+
+    except Exception as e:
+        flash(f'Scraping failed: {str(e)}', 'error')
+        return render_template('recipes.html', recipes=recipes, config=config, form_title=current_title, form_link=link)
