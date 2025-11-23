@@ -95,7 +95,7 @@ def scrape_recipe():
         
         flash(f'Successfully scraped: {scraped_title}', 'success')
         
-        return render_template('recipes.html', recipes=recipes, config=config, form_title=scraped_title, form_link=link,form_ingredients=scraped_ingredients,                              form_instructions=scraped_instructions)
+        return render_template('recipes.html', recipes=recipes, config=config, form_title=scraped_title, form_link=link,form_ingredients=scraped_ingredients, form_instructions=scraped_instructions)
 
     except Exception as e:
         flash(f'Scraping failed: {str(e)}', 'error')
