@@ -89,7 +89,7 @@
 		}
 		const windDirText = degToCompass(windDir);
 		const windLine = `${Math.round(windSpeed)} ${speedUnit} ${windDirText}`;
-		const gustLine = (typeof windGust === 'number' && windGust > 0) ? `${Math.round(windGust)} ${speedUnit}` : '—';
+		const gustLine = (windGust !== null && windGust !== undefined) ? `${Math.round(windGust)} ${speedUnit}` : '—';
 
 		// --- Daily data (if available) ---
 		let dailyHtml = '';
