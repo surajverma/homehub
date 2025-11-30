@@ -201,10 +201,13 @@
 	async function fetchWeather(lat, lon, config, cache, retryCount = 0) {
 		const now = Date.now();
 		// cross-session cache via localStorage with version migration
+		// Round coordinates to 3 decimal places (~100m precision) to prevent cache bloat from geolocation variance
+		const latKey = lat.toFixed(3);
+		const lonKey = lon.toFixed(3);
 		const tzKey = config.timezone ? config.timezone : 'auto';
 		const viewKey = config.view || 'compact';
 		const unitsKey = (config.units || 'metric');
-		const storageKey = `weatherCache:${CACHE_VERSION}:${lat},${lon}:${unitsKey}:${viewKey}:${tzKey}`;
+		const storageKey = `weatherCache:${CACHE_VERSION}:${latKey},${lonKey}:${unitsKey}:${viewKey}:${tzKey}`;
 		
 		// Clear old cache versions
 		try {

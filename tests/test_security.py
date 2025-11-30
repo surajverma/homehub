@@ -110,3 +110,63 @@ def test_shortener_allows_only_http_https(client):
         'creator': 'Alice'
     })
     assert resp2.status_code in (302, 303)
+
+
+def test_upload_preview_endpoint_security(client):
+    """Test that preview endpoint properly validates file paths and prevents directory traversal"""
+    # Test 1: Attempt directory traversal
+    res = client.get('/uploads/preview/../config.yml')
+    assert res.status_code in (404, 400), "Should not allow directory traversal"
+    
+    # Test 2: Attempt absolute path
+    res = client.get('/uploads/preview//etc/passwd')
+    assert res.status_code == 404, "Should not allow absolute paths"
+    
+    # Test 3: Safe file types (images, PDFs) can be previewed with security headers
+    import io
+    
+    # Upload a safe image file
+    img_data = {
+        'file': (io.BytesIO(b'fake image content'), 'test.jpg'),
+        'creator': 'testuser'
+    }
+    client.post('/upload', data=img_data, content_type='multipart/form-data')
+    
+    preview_res = client.get('/uploads/preview/test.jpg')
+    assert preview_res.status_code == 200
+    # Should have security headers
+    assert 'Content-Security-Policy' in preview_res.headers
+    assert 'X-Content-Type-Options' in preview_res.headers
+    assert preview_res.headers.get('X-Content-Type-Options') == 'nosniff'
+    assert 'X-Frame-Options' in preview_res.headers
+    # Should be inline (not attachment)
+    disposition = preview_res.headers.get('Content-Disposition', '')
+    assert 'attachment' not in disposition.lower(), "Safe files should be inline"
+    
+    # Test 4: Dangerous file types (HTML, SVG) are forced to download
+    html_data = {
+        'file': (io.BytesIO(b'<script>alert("xss")</script>'), 'malicious.html'),
+        'creator': 'testuser'
+    }
+    client.post('/upload', data=html_data, content_type='multipart/form-data')
+    
+    html_preview = client.get('/uploads/preview/malicious.html')
+    # Should force download (attachment) instead of inline preview
+    html_disposition = html_preview.headers.get('Content-Disposition', '')
+    assert 'attachment' in html_disposition.lower(), "HTML files must be downloaded, not previewed"
+    
+    # Test 5: SVG files (can contain scripts) are forced to download
+    svg_data = {
+        'file': (io.BytesIO(b'<svg><script>alert(1)</script></svg>'), 'malicious.svg'),
+        'creator': 'testuser'
+    }
+    client.post('/upload', data=svg_data, content_type='multipart/form-data')
+    
+    svg_preview = client.get('/uploads/preview/malicious.svg')
+    svg_disposition = svg_preview.headers.get('Content-Disposition', '')
+    assert 'attachment' in svg_disposition.lower(), "SVG files must be downloaded, not previewed"
+    
+    # Test 6: Regular download endpoint still forces attachment for all files
+    download_res = client.get('/uploads/test.jpg')
+    download_disposition = download_res.headers.get('Content-Disposition', '')
+    assert 'attachment' in download_disposition.lower(), "Download endpoint should force attachment"
