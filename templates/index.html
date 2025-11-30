@@ -39,7 +39,7 @@ window.REMINDERS_CAL_START = (function(){
 		<div class="card p-6" id="weatherWidget">
 			<div class="flex items-center justify-between mb-3">
 				<h2 class="text-xl font-bold flex items-center">
-					<i class="fa-solid fa-cloud-sun text-sky-500 mr-2"></i>
+					<i class="fa-solid fa-cloud-sun text-blue-500 mr-2"></i>
 					Weather
 				</h2>
 				<span id="weatherLocation" class="text-sm text-gray-500"></span>
@@ -50,6 +50,7 @@ window.REMINDERS_CAL_START = (function(){
 					<p class="mt-2">Loading weather data...</p>
 				</div>
 			</div>
+			<div id="last-updated" class="text-xs text-gray-400 dark:text-gray-500 mt-3 text-right"></div>
 		</div>
 		{% endif %}
 

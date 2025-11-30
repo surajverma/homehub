@@ -101,6 +101,8 @@ reminders:
     - key: family
       label: Family
       color: "#2563eb"
+
+#Optional settings
 theme:
   primary_color: "#1d4ed8"
   secondary_color: "#a0aec0"
@@ -171,6 +173,34 @@ Tips:
 - Prefer lighter/darker accents? Tweak `primary_color` and `secondary_color`.
 - Dark mode palette adapts automatically; the variables above apply to light mode, while dark mode uses tuned counterparts for good contrast.
 
+## Weather Widget
+
+HomeHub includes an optional weather widget powered by [Open-Meteo](https://open-meteo.com/), a free weather API. The widget displays current weather conditions and optionally today's forecast on your dashboard.
+
+**By default, the weather widget is hidden.** You can enable it through `config.yml`:
+
+```yaml
+weather:
+  enabled: true # set to true to show the widget
+  label: "" # optional location label (e.g., "Kolkata"). Leave blank to hide.
+  latitude: "" # optional, leave empty to use browser geolocation
+  longitude: "" # optional, leave empty to use browser geolocation
+  timezone: "" # optional, e.g., "Asia/Kolkata" or "America/New_York"; if unset, API uses timezone=auto
+  units: metric # metric or imperial (default: metric)
+  view: compact # compact or detailed (detailed shows today's forecast: sunrise, sunset, UV, rain %, highs/lows)
+```
+
+**Features:**
+- **Two view modes:**
+  - `compact`: Shows current temperature, weather condition, feels like, wind (with direction and gusts), humidity, and recent precipitation
+  - `detailed`: Adds today's forecast with sunrise/sunset times, UV index, precipitation probability, and daily high/low temperatures
+- **Smart caching:** Weather data is cached for 15 minutes to respect API rate limits and improve performance
+- **Flexible location:** Use configured coordinates or browser geolocation
+- **Timezone support:** Displays times in your configured timezone, or uses automatic detection
+- **Unit selection:** Choose between metric (°C, km/h, mm) or imperial (°F, mph, mm) units
+
+**Privacy Note:** When enabled, the widget makes API requests to Open-Meteo's servers. Please review [Open-Meteo's privacy policy](https://open-meteo.com/en/terms) for details on their data handling practices.
+
 ## Development Setup
 
 To contribute or run & build HomeHub locally, follow these steps:
@@ -237,6 +267,15 @@ This software is being provided to the community "as is." This means it comes **
 This project is built for use on a **local or trusted network** (like your home).
 
 It is **not designed or hardened to be safely exposed to the public internet.** If you choose to host this software publicly, you are solely responsible for performing a full security review and adding the necessary protections before you do so.
+
+### 🌤️ Weather Data & Third-Party Services
+
+The optional weather widget uses [Open-Meteo](https://open-meteo.com/), a free weather API service. When the weather widget is enabled:
+- Your browser makes requests to Open-Meteo's servers to fetch weather data
+- Location coordinates (latitude/longitude) are sent to their API
+- Open-Meteo has its own [privacy policy](https://open-meteo.com/en/terms) and terms of service
+
+By enabling the weather widget, you acknowledge that weather data is provided by a third-party service and is subject to their policies. HomeHub itself does not store or process weather data beyond local browser caching.
 
 ## Have Fun!
 

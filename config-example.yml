@@ -56,6 +56,7 @@ weather:
   units: metric # metric or imperial (default: metric)
   view: compact # compact or detailed (detailed also shows today's forecast: sunrise, sunset, UV, rain %, highs/lows)
 
+#Optional
 theme:
   primary_color: "#1d4ed8"
   secondary_color: "#a0aec0"
