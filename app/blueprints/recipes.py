@@ -89,9 +89,9 @@ def scrape_recipe():
 
     try:
         scraper = scrape_me(link)
-        scraped_title = scraper.title()
-        scraped_ingredients = '\n'.join(scraper.ingredients())
-        scraped_instructions = scraper.instructions()
+        scraped_title = sanitize_text(scraper.title())
+        scraped_ingredients = sanitize_html('\n'.join(scraper.ingredients()))
+        scraped_instructions = sanitize_html(scraper.instructions())
         
         flash(f'Successfully scraped: {scraped_title}', 'success')
         
