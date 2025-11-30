@@ -7,7 +7,7 @@
         <input type="text" name="title" value="{{ form_title if form_title is defined else '' }}" class="w-full p-2 border rounded mb-2" placeholder="Recipe title..." required>
         <div class="flex gap-2 mb-2">
             <input type="url" name="link" id="link-input" value="{{ form_link if form_link is defined else '' }}" class="flex-1 p-2 border rounded" placeholder="Link (optional)">
-            <button type="submit" formaction="/recipes/scrape" formnovalidate id="scrape-btn" class="btn btn-secondary px-4" title="Enter a URL and click here to auto-fill the recipe details"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+            <button type="submit" formaction="/recipes/scrape" formnovalidate id="scrape-btn" class="btn btn-secondary px-4" title="Enter a URL and click here to auto-fill the recipe details" aria-label="Scrape recipe from URL"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
         </div>
         <textarea name="ingredients" class="w-full p-2 border rounded mb-2" placeholder="Ingredients...">{{ form_ingredients if form_ingredients is defined else '' }}</textarea>
         <textarea name="instructions" class="w-full p-2 border rounded mb-2" placeholder="Instructions...">{{ form_instructions if form_instructions is defined else '' }}</textarea>
