@@ -76,7 +76,9 @@
 		}
 
 		// --- Labels and text formatting ---
-		const precipLabel = (rain ?? precipitation) > 0 ? `${(rain ?? precipitation).toFixed(1)} mm` : 'No rain';
+		const precipLabel = ((rain !== null && rain !== undefined ? rain : precipitation) || 0) > 0 
+			? `${(rain ?? precipitation).toFixed(1)} mm` 
+			: 'No rain';
 		const feelsLikeText = typeof feelsLike === 'number' ? `${Math.round(feelsLike)}${tempUnit}` : '—';
 		const humidityText = typeof humidity === 'number' ? `${Math.round(humidity)}%` : '—';
 
