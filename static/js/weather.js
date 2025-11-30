@@ -345,7 +345,7 @@
 				}
 			);
 		} else {
-			displayError(weatherContent, 'Geolocation not available. Please configure coordinates in config.yml');
+			displayError(weatherContent, 'Geolocation is not available in this context. This may be because the site is not served over HTTPS, or your browser does not support it. Please configure coordinates in config.yml');
 		}
 	};
 })();
