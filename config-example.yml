@@ -52,7 +52,7 @@ weather:
   label: "" # optional location label (appears on right of header). Leave blank to hide.
   latitude: "" # optional, leave empty to use browser geolocation
   longitude: "" # optional, leave empty to use browser geolocation
-  timezone: "" # optional, e.g., "Europe/Kiev" or "America/New_York"; if unset, API uses timezone=auto
+  timezone: "" # optional, e.g., "Europe/Kyiv" or "America/New_York"; if unset, API uses timezone=auto
   units: metric # metric or imperial (default: metric)
   view: compact # compact or detailed (detailed also shows today's forecast: sunrise, sunset, UV, rain %, highs/lows)
 
