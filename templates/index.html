@@ -45,8 +45,8 @@ window.REMINDERS_CAL_START = (function(){
 				<span id="weatherLocation" class="text-sm text-gray-500"></span>
 			</div>
 			<div id="weatherContent">
-				<div class="text-center text-gray-500 py-4">
-					<i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+				<div class="text-center text-gray-500 py-4" role="status" aria-live="polite">
+					<i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
 					<p class="mt-2">Loading weather data...</p>
 				</div>
 			</div>
