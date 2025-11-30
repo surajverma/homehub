@@ -40,4 +40,13 @@ def load_config():
     theme.setdefault('sidebar_text_color', '#ffffff')
     theme.setdefault('sidebar_link_color', 'rgba(255,255,255,0.95)')
     theme.setdefault('sidebar_link_border_color', 'rgba(255,255,255,0.18)')
+    # Weather widget defaults
+    weather = config.setdefault('weather', {})
+    weather.setdefault('enabled', False)
+    weather.setdefault('label', '')
+    weather.setdefault('latitude', '')
+    weather.setdefault('longitude', '')
+    weather.setdefault('timezone', '')
+    weather.setdefault('units', 'metric')
+    weather.setdefault('view', 'compact')
     return config

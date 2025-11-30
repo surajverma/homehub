@@ -13,16 +13,45 @@ window.REMINDERS_CAL_START = (function(){
 	return 'sunday';
 })();
 </script>
+{% if config.weather and config.weather.enabled %}
+<script id="weatherConfigData" type="application/json">{{ config.weather|tojson }}</script>
+<script src="{{ url_for('static', filename='js/weather.js') }}"></script>
+{% endif %}
 {% endblock %}
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 	<div class="lg:col-span-2 space-y-6">
 		<script id="familyMembersData" type="application/json">{{ config.family_members|tojson }}</script>
 		<div class="card p-6">
-			<h1 class="text-3xl font-bold mb-2"><i class="fa-solid fa-house text-blue-600 mr-2"></i>Welcome to {{ config.instance_name }}!</h1>
-			<p class="mb-4 text-gray-600">Pick a tool from the left to get started.</p>
-			<div class="text-sm text-gray-500" id="today"></div>
+			<div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
+				<div class="flex-1">
+					<h1 class="text-2xl md:text-3xl font-bold mb-2"><i class="fa-solid fa-house text-blue-600 mr-2"></i>Welcome to {{ config.instance_name }}!</h1>
+					<p class="text-sm md:text-base text-gray-600">Pick a tool from the left to get started.</p>
+				</div>
+				<div class="flex flex-col items-start text-left gap-0.5 md:flex-col md:items-end md:text-right md:gap-1 flex-shrink-0">
+					<div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-200" id="currentTime">--:--:--</div>
+					<div class="text-xs md:text-sm text-gray-500" id="currentDate"></div>
+				</div>
+			</div>
 		</div>
+
+		{% if config.weather and config.weather.enabled %}
+		<div class="card p-6" id="weatherWidget">
+			<div class="flex items-center justify-between mb-3">
+				<h2 class="text-xl font-bold flex items-center">
+					<i class="fa-solid fa-cloud-sun text-blue-500 mr-2"></i>
+					Weather
+				</h2>
+				<span id="weatherLocation" class="text-sm text-gray-500"></span>
+			</div>
+			<div id="weatherContent">
+				<div class="text-center text-gray-500 py-4" role="status" aria-live="polite">
+					<i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
+					<p class="mt-2">Loading weather data...</p>
+				</div>
+			</div>
+		</div>
+		{% endif %}
 
 			<div class="card p-6">
 				<h2 class="text-xl font-bold mb-3"><i class="fa-solid fa-bullhorn text-amber-600 mr-2"></i>Family Notice Board</h2>
@@ -821,8 +850,26 @@ window.REMINDERS_CAL_START = (function(){
 	</div> <!-- /right col -->
 </div> <!-- /grid -->
 <script>
-	const d = new Date();
-	document.getElementById('today').textContent = d.toLocaleString();
+	// Live updating time and date
+	(function updateDateTime() {
+		const timeEl = document.getElementById('currentTime');
+		const dateEl = document.getElementById('currentDate');
+		if (!timeEl || !dateEl) return;
+		
+		function update() {
+			const now = new Date();
+			timeEl.textContent = now.toLocaleTimeString();
+			dateEl.textContent = now.toLocaleDateString(undefined, { 
+				weekday: 'long', 
+				year: 'numeric', 
+				month: 'long', 
+				day: 'numeric' 
+			});
+		}
+		
+		update(); // Initial update
+		setInterval(update, 1000); // Update every second
+	})();
 		// Toggle visibility of Notice form based on current user (admin)
 		(function(){
 			const nf = document.getElementById('noticeForm');
@@ -1012,6 +1059,17 @@ window.REMINDERS_CAL_START = (function(){
 	document.getElementById('whoName')?.setAttribute('value', cur);
 	document.getElementById('memberStatusName')?.setAttribute('value', cur);
 	document.getElementById('memberStatusDeleteName')?.setAttribute('value', cur);
+
+	// Initialize weather widget if enabled
+	const weatherConfigElement = document.getElementById('weatherConfigData');
+	if (typeof window.initWeatherWidget === 'function' && weatherConfigElement) {
+		try {
+			const weatherConfig = JSON.parse(weatherConfigElement.textContent);
+			window.initWeatherWidget(weatherConfig);
+		} catch (e) {
+			console.error('Failed to parse weather config:', e);
+		}
+	}
 })();
 </script>
 {% endblock %}
