@@ -15,8 +15,8 @@
                 <div class="text-xs text-gray-500">By {{ file.creator }} at {{ file.upload_time.strftime('%Y-%m-%d %H:%M') }}</div>
             </div>
             <div class="flex gap-2">
-                <a href="/uploads/preview/{{ file.filename }}" target="_blank" class="btn btn-success" title="Preview in new tab">
-                    <i class="fa-solid fa-eye"></i> Preview
+                <a href="/uploads/preview/{{ file.filename }}" target="_blank" rel="noopener noreferrer" class="btn btn-success" aria-label="Preview {{ file.filename }} in new tab">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i> Preview
                 </a>
                 <form method="POST" action="/upload/delete/{{ file.id }}" class="delete-form" data-creator="{{ file.creator }}">
                     <input type="hidden" name="user">
