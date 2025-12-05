@@ -32,7 +32,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **👋 Who's Home?**: See at a glance who is currently home.
 * **💰 Expense Tracker**: A powerful tool to track family spending, with support for recurring bills like newspapers, milk, or subscriptions.
 * **🎬 Media Downloader**: Save videos or music from popular sites directly to your server.
-* ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, and **QR Code Generator**!
+* ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, **Weather Updates** and **QR Code Generator**!
 
 ## Salient Features
 * **Private & Self-Hosted**: All your data stays on your network. No cloud, no tracking.
