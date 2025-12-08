@@ -67,6 +67,8 @@ class Recipe(db.Model):
     instructions = db.Column(db.Text)
     creator = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    # JSON-encoded list of tags (e.g., ["Dessert", "Quick", "Vegetarian"]) for filtering/grouping
+    tags = db.Column(db.Text, default='[]')
 
 class ExpiryItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)

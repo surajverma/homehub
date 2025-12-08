@@ -9,3 +9,4 @@ gunicorn
 Flask-WTF
 bleach
 pytest
+requests

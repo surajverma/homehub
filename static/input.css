@@ -201,6 +201,15 @@ textarea::placeholder {
 }
 .btn-danger:hover { filter: brightness(0.9); }
 
+/* Recipe page styles */
+.ql-editor { min-height: 150px; max-height: 300px; overflow-y: auto; }
+.ql-container { font-size: 14px; }
+.recipe-card { transition: all 0.2s; }
+.recipe-card:hover { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+.recipe-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+.recipe-content.expanded { max-height: none; transition: max-height 0.5s ease-in; }
+.recipe-header { cursor: pointer; }
+
 /* Cards */
 .card {
     background-color: var(--card-background-color);

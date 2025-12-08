@@ -1,64 +1,321 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="mx-auto">
-    <h2 class="text-xl font-bold mb-4">Recipe Book</h2>
-    <form method="POST" action="/recipes" class="mb-4 card p-4">
-        <input type="hidden" name="recipe_id" value="{{ form_recipe_id if form_recipe_id is defined else '' }}">
-        <input type="text" name="title" value="{{ form_title if form_title is defined else '' }}" class="w-full p-2 border rounded mb-2" placeholder="Recipe title..." required>
-        <input type="url" name="link" value="{{ form_link if form_link is defined else '' }}" class="w-full p-2 border rounded mb-2" placeholder="Link (optional)">
-        <textarea name="ingredients" class="w-full p-2 border rounded mb-2" placeholder="Ingredients...">{{ form_ingredients if form_ingredients is defined else '' }}</textarea>
-        <textarea name="instructions" class="w-full p-2 border rounded mb-2" placeholder="Instructions...">{{ form_instructions if form_instructions is defined else '' }}</textarea>
-    <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="btn btn-primary">{{ 'Save' if form_recipe_id is defined else 'Add Recipe' }}</button>
-    </form>
-    <ul>
-        {% for recipe in recipes %}
-        <li class="card p-4 mb-2">
-            <div class="font-semibold text-lg">{{ recipe.title }}</div>
-            {% if recipe.link %}
-            <a href="{{ recipe.link }}" class="text-blue-600 underline" rel="noopener noreferrer" target="_blank">Link</a>
+<!-- Quill Editor CSS (local) -->
+<link href="{{ url_for('static', filename='quill/quill.snow.css') }}" rel="stylesheet">
+
+<div class="max-w-screen-xl mx-auto">
+    <h2 class="text-2xl font-bold mb-4"><i class="fa-solid fa-book text-orange-600 mr-2"></i>Recipe Book</h2>
+    
+    <!-- Add/Edit Form -->
+    <form method="POST" action="/recipes" class="mb-4 card p-4" id="recipeForm">
+        <input type="hidden" name="recipe_id" id="recipeId" value="{{ form_recipe_id if form_recipe_id is defined else '' }}">
+        <input type="hidden" name="creator" id="creator">
+        
+        <div class="mb-3">
+            <label class="block text-sm font-semibold mb-1">Recipe Title</label>
+            <input type="text" name="title" id="recipeTitle" value="{{ form_title if form_title is defined else '' }}" class="w-full p-2 border rounded" placeholder="Chocolate Chip Cookies" required>
+        </div>
+        
+        <div class="mb-3">
+            <label class="block text-sm font-semibold mb-1">Link (optional)</label>
+            <input type="url" name="link" id="recipeLink" value="{{ form_link if form_link is defined else '' }}" class="w-full p-2 border rounded" placeholder="https://example.com/recipe">
+        </div>
+        
+        <div class="mb-3">
+            <label class="block text-sm font-semibold mb-1">Tags</label>
+            <div class="flex flex-wrap gap-2 rounded focus-within:ring-1 focus-within:ring-blue-500 items-start h-11" id="tagInputWrap">
+                <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Add tag and press Enter">
+            </div>
+            <input type="hidden" name="tags" id="tagsInput" value="{{ form_tags if form_tags is defined else '[]' }}">
+            <div class="mt-2 flex flex-wrap gap-2 text-xs" id="tagLibrary"></div>
+        </div>
+        
+        <div class="mb-3">
+            <label class="block text-sm font-semibold mb-1">Ingredients</label>
+            <div id="ingredientsEditor" class="mb-4"></div>
+            <textarea name="ingredients" id="ingredientsHidden" style="display:none;"></textarea>
+        </div>
+        
+        <div class="mb-3">
+            <label class="block text-sm font-semibold mb-1">Instructions</label>
+            <div id="instructionsEditor" class="mb-4"></div>
+            <textarea name="instructions" id="instructionsHidden" style="display:none;"></textarea>
+        </div>
+        
+        <div class="flex gap-2 mt-8">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save mr-1"></i>{{ 'Update Recipe' if form_recipe_id is defined else 'Add Recipe' }}</button>
+            {% if form_recipe_id is defined %}
+            <a href="/recipes" class="btn btn-secondary">Cancel</a>
             {% endif %}
-            <div class="text-xs text-gray-500">By {{ recipe.creator }} at {{ recipe.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
-            <div class="mt-2"><strong>Ingredients:</strong>
-                <div class="prose max-w-none whitespace-pre-wrap">{{ recipe.ingredients }}</div>
+        </div>
+    </form>
+    
+    {% if form_ingredients is defined %}
+    <script id="formIngredientsJSON" type="application/json">{{ form_ingredients|tojson|safe }}</script>
+    {% endif %}
+    {% if form_instructions is defined %}
+    <script id="formInstructionsJSON" type="application/json">{{ form_instructions|tojson|safe }}</script>
+    {% endif %}
+    
+    <!-- Filter by Tags -->
+    <div class="mb-4 flex flex-wrap gap-2 items-center" id="filterSection">
+        <span class="text-sm text-gray-600 dark:text-gray-300">Filter by tag:</span>
+        <div id="filterTags" class="flex flex-wrap gap-2"></div>
+        <button id="clearTagFilters" class="btn btn-secondary text-xs">Clear</button>
+    </div>
+    
+    <!-- Recipes List -->
+    <div id="recipesList">
+        {% for recipe in recipes %}
+        <div class="card mb-3 recipe-card" data-recipe-id="{{ recipe.id }}">
+            <!-- Recipe Header (Collapsed View) -->
+            <div class="p-4 flex justify-between items-start recipe-header" data-recipe-id="{{ recipe.id }}">
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold text-gray-800">{{ recipe.title }}</h3>
+                    <div class="text-xs text-gray-500 mt-1">
+                        By {{ recipe.creator }} • {{ recipe.timestamp.strftime('%b %d, %Y') }}
+                    </div>
+                    <div class="mt-2 recipe-tags-display" id="tags-recipe-{{ recipe.id }}" data-tags='{{ recipe.tags|safe }}'></div>
+                </div>
+                <div class="flex items-center gap-2 ml-4">
+                    <i class="fa-solid fa-chevron-down transition-transform" id="chevron-{{ recipe.id }}"></i>
+                </div>
             </div>
-            <div class="mt-2"><strong>Instructions:</strong>
-                <div class="prose max-w-none whitespace-pre-wrap">{{ recipe.instructions }}</div>
+            
+            <!-- Recipe Content (Expanded View) -->
+            <div class="recipe-content border-t" id="content-{{ recipe.id }}">
+                <div class="p-4 grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ul text-green-600"></i>Ingredients
+                        </h4>
+                        <div class="ql-editor prose prose-sm max-w-none">{{ recipe.ingredients|safe }}</div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-utensils text-orange-600"></i>Instructions
+                        </h4>
+                        <div class="ql-editor prose prose-sm max-w-none">{{ recipe.instructions|safe }}</div>
+                    </div>
+                </div>
+                {% if recipe.link %}
+                <div class="px-4 pb-2">
+                    <a href="{{ recipe.link }}" class="text-blue-600 hover:underline text-sm" target="_blank" rel="noopener noreferrer">
+                        <i class="fa-solid fa-external-link mr-1"></i>View Original Recipe
+                    </a>
+                </div>
+                {% endif %}
+                <div class="px-4 pb-4 flex gap-2">
+                    <a href="/recipes/edit/{{ recipe.id }}" class="btn btn-secondary btn-sm">
+                        <i class="fa-solid fa-edit mr-1"></i>Edit
+                    </a>
+                    <form method="POST" action="/recipes/delete/{{ recipe.id }}" class="delete-form inline" data-creator="{{ recipe.creator }}">
+                        <input type="hidden" name="user">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this recipe?')">
+                            <i class="fa-solid fa-trash mr-1"></i>Delete
+                        </button>
+                    </form>
+                </div>
             </div>
-            <div class="mt-2 flex gap-2">
-                <a class="btn btn-secondary" href="/recipes/edit/{{ recipe.id }}">Edit</a>
-                <form method="POST" action="/recipes/delete/{{ recipe.id }}" class="delete-form" data-creator="{{ recipe.creator }}">
-                    <input type="hidden" name="user">
-                    <button type="submit" class="btn btn-danger">Delete</button>
-                </form>
-            </div>
-        </li>
+        </div>
         {% endfor %}
-    </ul>
+    </div>
 </div>
+
+<!-- Quill Editor JS -->
+<script src="{{ url_for('static', filename='quill/quill.js') }}"></script>
+<!-- Tag Management JS (reuse from shopping/chores) -->
+<script src="{{ url_for('static', filename='js/tags.js') }}"></script>
+<script src="{{ url_for('static', filename='js/form_tags.js') }}"></script>
+
 <script>
-document.getElementById('creator').value = localStorage.getItem('username');
-document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
-// Client-side validation: require ingredients or instructions
-(function(){
-    const form = document.querySelector('form[method="POST"]');
-    form.addEventListener('submit', function(e){
-        const ing = (form.querySelector('textarea[name="ingredients"]').value||'').trim();
-        const ins = (form.querySelector('textarea[name="instructions"]').value||'').trim();
-        if(!ing && !ins){
-            e.preventDefault();
-            alert('Please add ingredients or instructions (or both).');
+document.addEventListener('DOMContentLoaded', function() {
+    const adminName = '{{ config.admin_name }}';
+    const currentUser = () => localStorage.getItem('username') || '';
+    
+    // Set creator
+    document.getElementById('creator').value = currentUser();
+    document.querySelectorAll('input[name="user"]').forEach(i => i.value = currentUser());
+    
+    // Hide delete buttons for non-owners
+    document.querySelectorAll('.delete-form').forEach(f => {
+        const creator = f.getAttribute('data-creator');
+        if (!(currentUser() === creator || currentUser() === adminName || currentUser() === 'Administrator' || currentUser() === 'admin')) {
+            f.style.display = 'none';
         }
     });
-})();
-// Hide delete for non-owners
-(function(){
-    const adminName='{{ config.admin_name }}';
-    const current=localStorage.getItem('username');
-    document.querySelectorAll('.delete-form').forEach(f=>{
-        const c=f.getAttribute('data-creator');
-        if(!(current===c||current===adminName||current==='Administrator'||current==='admin')) f.style.display='none';
+    
+    // Initialize Quill editors
+    const quillConfig = {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline'],
+                [{ 'header': [2, 3, false] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link'],
+                ['clean']
+            ],
+            clipboard: {
+                matchVisual: false  // Better paste from Word
+            }
+        },
+        placeholder: 'Type here...'
+    };
+    
+    const ingredientsQuill = new Quill('#ingredientsEditor', quillConfig);
+    const instructionsQuill = new Quill('#instructionsEditor', quillConfig);
+    
+    // Load existing content if editing (read from JSON script tags)
+    const ingNode = document.getElementById('formIngredientsJSON');
+    const insNode = document.getElementById('formInstructionsJSON');
+    if (ingNode) {
+        try { ingredientsQuill.root.innerHTML = JSON.parse(ingNode.textContent || '""'); } catch(e) {}
+    }
+    if (insNode) {
+        try { instructionsQuill.root.innerHTML = JSON.parse(insNode.textContent || '""'); } catch(e) {}
+    }
+    
+    // Form submission - convert Quill content to HTML
+    document.getElementById('recipeForm').addEventListener('submit', function(e) {
+        const ingredientsHTML = ingredientsQuill.root.innerHTML;
+        const instructionsHTML = instructionsQuill.root.innerHTML;
+        
+        // Check if both are empty (Quill adds <p><br></p> for empty content)
+        const ingText = ingredientsQuill.getText().trim();
+        const insText = instructionsQuill.getText().trim();
+        
+        if (!ingText && !insText) {
+            e.preventDefault();
+            alert('Please add ingredients or instructions (or both).');
+            return false;
+        }
+        
+        document.getElementById('ingredientsHidden').value = ingredientsHTML;
+        document.getElementById('instructionsHidden').value = instructionsHTML;
     });
-})();
+    
+    // Tag Management using FormTags (same as shopping/chores)
+    const T = Tags.scoped('recipes');
+    
+    FormTags.initTagInputForm(T, {
+        formId: 'recipeForm',
+        wrapId: 'tagInputWrap',
+        inputId: 'tagInput',
+        hiddenId: 'tagsInput',
+        libraryId: 'tagLibrary'
+    });
+    
+    // Accordion functionality
+    window.toggleRecipe = function(id) {
+        const content = document.getElementById('content-' + id);
+        const chevron = document.getElementById('chevron-' + id);
+        
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            chevron.style.transform = 'rotate(0deg)';
+        } else {
+            // Close all others
+            document.querySelectorAll('.recipe-content').forEach(c => c.classList.remove('expanded'));
+            document.querySelectorAll('[id^="chevron-"]').forEach(ch => ch.style.transform = 'rotate(0deg)');
+            
+            // Open this one
+            content.classList.add('expanded');
+            chevron.style.transform = 'rotate(180deg)';
+        }
+    };
+    
+    // Add click handlers to recipe headers
+    document.querySelectorAll('.recipe-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const recipeId = this.getAttribute('data-recipe-id');
+            toggleRecipe(recipeId);
+        });
+    });
+    
+    // Tag filtering (same pattern as shopping/chores)
+    (function(){
+        const filterHost = document.getElementById('filterTags');
+        const clearBtn = document.getElementById('clearTagFilters');
+        const filterSection = document.getElementById('filterSection');
+        const selected = new Set();
+        
+        function collectTags(){
+            const set = new Set();
+            document.querySelectorAll('.recipe-card').forEach(card=>{
+                try{ 
+                    const tagsData = card.querySelector('.recipe-tags-display').dataset.tags;
+                    (JSON.parse(tagsData||'[]')||[]).forEach(t=> set.add(t)); 
+                }catch(e){}
+            });
+            T.getAllKnownTags().forEach(t=> set.add(t));
+            return [...set].sort((a,b)=> a.localeCompare(b));
+        }
+        
+        function apply(){
+            const tags = [...selected];
+            document.querySelectorAll('.recipe-card').forEach(card=>{
+                if(!tags.length){ card.classList.remove('hidden'); return; }
+                let matched=false; 
+                try{ 
+                    const tagsData = card.querySelector('.recipe-tags-display').dataset.tags;
+                    const cardTags = JSON.parse(tagsData||'[]')||[]; 
+                    matched = cardTags.some(t=>tags.includes(t)); 
+                }catch(e){}
+                card.classList.toggle('hidden', !matched);
+            });
+        }
+        
+        function render(){
+            const all = collectTags();
+            filterHost.innerHTML='';
+            if(all.length === 0){
+                filterSection.style.display = 'none';
+                return;
+            }
+            filterSection.style.display = 'flex';
+            all.forEach(t=>{
+                const pill = T.makePill(t, ()=>{ 
+                    if(selected.has(t)) selected.delete(t); 
+                    else selected.add(t); 
+                    render(); 
+                    apply(); 
+                }, selected.has(t));
+                filterHost.appendChild(pill);
+            });
+            clearBtn.style.display = selected.size > 0 ? 'inline-block' : 'none';
+        }
+        
+        clearBtn.addEventListener('click', ()=>{ selected.clear(); render(); apply(); });
+        T.onChange(()=> render());
+        render();
+    })();
+    
+    // Display recipe tags with colors
+    document.querySelectorAll('.recipe-tags-display').forEach(el => {
+        const tags = JSON.parse(el.dataset.tags || '[]');
+        el.innerHTML = '';
+        tags.forEach(t => {
+            const bg = T.colorFor(t);
+            // Calculate text color for contrast
+            const getTextColor = (bgColor) => {
+                if(/^hsl\(/i.test(bgColor)){
+                    try{
+                        const parts = bgColor.match(/hsl\(([^)]+)\)/i)[1].trim().split(/\s+/);
+                        const l = parseInt(parts[2]);
+                        return l < 60 ? '#fff' : '#111827';
+                    }catch(e){ return '#fff'; }
+                }
+                return '#fff';
+            };
+            const fg = getTextColor(bg);
+            const pill = document.createElement('span');
+            pill.className = 'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs';
+            pill.setAttribute('style', `background: ${bg}; color: ${fg};`);
+            pill.textContent = t;
+            el.appendChild(pill);
+        });
+    });
+});
 </script>
 {% endblock %}

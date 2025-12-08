@@ -24,7 +24,12 @@
         <span class="px-2 py-1 rounded bg-yellow-100 text-yellow-800 status-chip">Starting…</span>
         <span class="text-xs text-gray-500 progress-line">{{ media.progress or 'Will take a while…' }}</span>
                         {% elif media.filepath %}
-                <a href="/media/{{ media.filepath }}" class="btn btn-success">Open</a>
+                <a href="/media/preview/{{ media.filepath }}" target="_blank" rel="noopener noreferrer" class="btn btn-success" aria-label="Preview {{ media.filepath }} in new tab">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i> Preview
+                </a>
+                <a href="/media/{{ media.filepath }}" class="btn btn-primary">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i> Download
+                </a>
                         {% else %}
                 <span class="px-2 py-1 rounded bg-red-100 text-red-800">Not available</span>
                         {% endif %}
@@ -70,9 +75,18 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
                 }
                 setTimeout(()=>poll(item), 2500);
             } else if (d.status === 'done' && d.filepath){
-                // replace chip with Open link
+                // replace chip with Preview and Download links
                 const chip = item.querySelector('.status-chip');
-                if (chip){ chip.outerHTML = `<a href="/media/${d.filepath}" class="btn">Open</a>`; }
+                if (chip){ 
+                    chip.outerHTML = `
+                        <a href="/media/preview/${d.filepath}" target="_blank" rel="noopener noreferrer" class="btn btn-success" aria-label="Preview ${d.filepath} in new tab">
+                            <i class="fa-solid fa-eye" aria-hidden="true"></i> Preview
+                        </a>
+                        <a href="/media/${d.filepath}" class="btn btn-primary">
+                            <i class="fa-solid fa-download" aria-hidden="true"></i> Download
+                        </a>
+                    `; 
+                }
                 const p = item.querySelector('.progress-line');
                 if (p) p.textContent = '';
             } else if (d.status === 'error'){

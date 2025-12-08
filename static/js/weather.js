@@ -223,9 +223,16 @@
 			const raw = localStorage.getItem(storageKey);
 			if (raw) {
 				const obj = JSON.parse(raw);
-				if (obj && obj.time && obj.data && (now - obj.time) < TTL_MS) {
-					cache.data = obj.data; cache.time = obj.time; // hydrate in-memory cache
-					return obj.data;
+				if (obj && obj.data && obj.data.current && obj.data.current.time) {
+					// Use API's timestamp instead of cache storage time
+					const apiTime = new Date(obj.data.current.time).getTime();
+					const ageMs = now - apiTime;
+					
+					if (ageMs < TTL_MS && ageMs >= 0) { // ageMs >= 0 prevents future timestamps
+						cache.data = obj.data; 
+						cache.time = apiTime; // Store API time, not cache time
+						return obj.data;
+					}
 				}
 			}
 		}catch(_){}
@@ -246,15 +253,18 @@
 		params.append('timezone', config.timezone ? config.timezone : 'auto');
 
 		try {
-			const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+			// Use server-side proxy to avoid CORS issues
+			const response = await fetch(`/api/weather?${params}`);
 			if (!response.ok) {
 				throw new Error(`Weather API returned ${response.status}`);
 			}
 
 			const data = await response.json();
+			// Use API's timestamp for cache management
+			const apiTime = data.current && data.current.time ? new Date(data.current.time).getTime() : now;
 			cache.data = data;
-			cache.time = now;
-			try{ localStorage.setItem(storageKey, JSON.stringify({ time: now, data })); }catch(_){ /* ignore quota */ }
+			cache.time = apiTime;
+			try{ localStorage.setItem(storageKey, JSON.stringify({ data })); }catch(_){ /* ignore quota */ }
 			return data;
 		} catch (error) {
 			// Retry with exponential backoff (max 3 attempts)

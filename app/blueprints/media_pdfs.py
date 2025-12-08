@@ -97,6 +97,18 @@ def serve_media(filename):
     return send_from_directory(MEDIA_FOLDER, filename, as_attachment=True)
 
 
+@main_bp.route('/media/preview/<filename>')
+def preview_media(filename):
+    """Serve media file for preview (inline) with security headers"""
+    # Add security headers to prevent script execution
+    from flask import make_response
+    response = make_response(send_from_directory(MEDIA_FOLDER, filename, as_attachment=False))
+    response.headers['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; media-src 'self'"
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    return response
+
+
 @main_bp.route('/media/delete/<int:media_id>', methods=['POST'])
 def delete_media(media_id):
     m = Media.query.get_or_404(media_id)
@@ -159,6 +171,17 @@ def pdfs():
 @main_bp.route('/pdfs/<filename>')
 def serve_pdf(filename):
     return send_from_directory(PDF_FOLDER, filename, as_attachment=True)
+
+
+@main_bp.route('/pdfs/preview/<filename>')
+def preview_pdf(filename):
+    """Serve PDF file for preview (inline) with security headers"""
+    from flask import make_response
+    response = make_response(send_from_directory(PDF_FOLDER, filename, as_attachment=False))
+    response.headers['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'"
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    return response
 
 
 @main_bp.route('/pdfs/delete/<int:pdf_id>', methods=['POST'])

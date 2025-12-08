@@ -303,6 +303,88 @@ def expenses_settings():
     return redirect(url_for('main.expenses', y=y, m=m, sel=sel, open='recurring'))
 
 
+@main_bp.route('/expenses/delete/<int:entry_id>', methods=['POST'])
+def delete_expense_entry(entry_id):
+    entry = ExpenseEntry.query.get_or_404(entry_id)
+    user = sanitize_text(request.form.get('user', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if not (user in admin_aliases or user == (entry.payer or '')):
+        flash('Not allowed to delete entry.', 'error')
+        return redirect(url_for('main.expenses'))
+    db.session.delete(entry)
+    db.session.commit()
+    flash('Expense deleted.', 'success')
+    # Preserve view
+    today = date.today()
+    y = request.args.get('y') or today.year
+    m = request.args.get('m') or today.month
+    sel = request.args.get('sel')
+    return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
+
+
+@main_bp.route('/expenses/edit/<int:entry_id>', methods=['POST'])
+def edit_expense_entry(entry_id):
+    entry = ExpenseEntry.query.get_or_404(entry_id)
+    user = sanitize_text(request.form.get('user', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if not (user in admin_aliases or user == (entry.payer or '')):
+        flash('Not allowed to edit entry.', 'error')
+        return redirect(url_for('main.expenses'))
+    # Update fields
+    entry.title = bleach.clean(request.form.get('title', entry.title))
+    date_s = request.form.get('date')
+    if date_s:
+        entry.date = datetime.strptime(date_s, '%Y-%m-%d').date()
+    cat_raw = request.form.get('category')
+    if cat_raw is not None:
+        entry.category = bleach.clean(cat_raw or '') or None
+    entry.payer = bleach.clean(request.form.get('payer', entry.payer or ''))
+    up = request.form.get('unit_price')
+    q = request.form.get('quantity')
+    amt = request.form.get('amount')
+    entry.unit_price = float(up) if up not in (None, '') else entry.unit_price
+    entry.quantity = float(q) if q not in (None, '') else entry.quantity
+    entry.amount = float(amt) if amt not in (None, '') else entry.amount
+    db.session.commit()
+    flash('Expense updated.', 'success')
+    # Preserve view
+    today = date.today()
+    y = request.args.get('y') or entry.date.year
+    m = request.args.get('m') or entry.date.month
+    sel = request.args.get('sel') or entry.date.strftime('%Y-%m-%d')
+    return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
+
+
+@main_bp.route('/expenses/bulk-delete', methods=['POST'])
+def bulk_delete_expenses():
+    user = sanitize_text(request.form.get('user', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    ids = request.form.getlist('ids')
+    if not ids:
+        flash('No entries selected.', 'warning')
+        return redirect(url_for('main.expenses'))
+    deleted = 0
+    for entry_id in ids:
+        try:
+            entry = ExpenseEntry.query.get(int(entry_id))
+            if entry and (user in admin_aliases or user == (entry.payer or '')):
+                db.session.delete(entry)
+                deleted += 1
+        except Exception:
+            continue
+    db.session.commit()
+    flash(f'{deleted} expense(s) deleted.', 'success')
+    # Preserve view
+    today = date.today()
+    y = request.args.get('y') or today.year
+    m = request.args.get('m') or today.month
+    sel = request.args.get('sel')
+    return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
+
+
 @main_bp.route('/api/expenses/month', methods=['GET'])
 def api_expenses_month():
     # Keep recurring data up-to-date before answering
