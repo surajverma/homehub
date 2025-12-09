@@ -110,6 +110,7 @@ const T = Tags.scoped('chores');
             const pill = T.makePill(t, ()=>{ if(selected.has(t)) selected.delete(t); else selected.add(t); render(); apply(); }, selected.has(t));
             filterHost.appendChild(pill);
         });
+        clearBtn.style.display = selected.size > 0 ? 'inline-block' : 'none';
     }
     clearBtn.addEventListener('click', ()=>{ selected.clear(); render(); apply(); });
     T.onChange(()=> render());

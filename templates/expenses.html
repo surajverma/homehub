@@ -278,6 +278,9 @@ document.addEventListener('DOMContentLoaded', function(){
   const adminName = '{{ config.admin_name }}';
   const currentUser = () => localStorage.getItem('username') || '';
 
+  // HTML escaping to prevent XSS
+  function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
   // Modal helpers
   const expenseModal = document.getElementById('expense-modal');
   const recurringModal = document.getElementById('recurring-modal');
@@ -370,8 +373,8 @@ document.addEventListener('DOMContentLoaded', function(){
       <label class="flex items-center justify-between p-2 border-b gap-2">
         <input type="checkbox" class="entry-select" name="ids" value="${e.id}">
         <div>
-          <div class="font-medium">${e.title}${e.quantity? ` (${e.quantity})` : ''}</div>
-          <div class="text-xs text-gray-500">${dateFromYmd(e.date).toLocaleDateString()} — ${e.category || ''} ${e.payer? `• by ${e.payer}`:''}</div>
+          <div class="font-medium">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
+          <div class="text-xs text-gray-500">${dateFromYmd(e.date).toLocaleDateString()} — ${escapeHtml(e.category || '')} ${e.payer? `• by ${escapeHtml(e.payer)}`:''}</div>
         </div>
         <div class="font-semibold">${fmt(e.amount)}</div>
       </label>
@@ -404,15 +407,15 @@ document.addEventListener('DOMContentLoaded', function(){
       return `
       <div class="flex items-start justify-between p-2 border rounded mb-2">
         <div>
-          <div class="font-medium">${e.title}${e.quantity? ` (${e.quantity})` : ''}</div>
-          <div class="text-xs text-gray-500">${e.category || ''} ${e.payer? `• by ${e.payer}`:''}</div>
+          <div class="font-medium">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
+          <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• by ${escapeHtml(e.payer)}`:''}</div>
         </div>
         <div class="text-right">
           <div class="font-semibold">${fmt(e.amount)}</div>
           <div class="text-xs mt-1 space-x-2 ${allowed? '' : 'hidden'}">
             <button class="text-blue-600 hover:underline edit-expense" data-id="${e.id}" data-date="${ds}">Edit</button>
-            <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${e.payer||''}">
-              <input type="hidden" name="user" value="${currentUser()}">
+            <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${escapeHtml(e.payer||'')}">
+              <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
               <button type="submit" class="text-red-600 hover:underline">Delete</button>
             </form>
           </div>
@@ -593,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('currency-input').value = settings.currency || '₹';
   document.getElementById('categories-input').value = (settings.categories||[]).join(', ');
   const chips = document.getElementById('category-chips');
-  chips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${c}">${c}</button>`).join('');
+  chips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
   chips.addEventListener('click', (e)=>{
     const btn = e.target.closest('button.add-cat'); if(!btn) return;
     const cat = btn.getAttribute('data-cat') || '';
@@ -604,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // Also render category chips inside the modal for quick-pick
   const modalChips = document.getElementById('modal-category-chips');
   if (modalChips){
-    modalChips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${c}">${c}</button>`).join('');
+    modalChips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
     modalChips.addEventListener('click', (e)=>{
       const btn = e.target.closest('button.add-cat'); if(!btn) return;
       const cat = btn.getAttribute('data-cat') || '';
@@ -615,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // Chips for recurring add form
   const recChips = document.getElementById('recurring-category-chips');
   if (recChips){
-    recChips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${c}">${c}</button>`).join('');
+    recChips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
     recChips.addEventListener('click', (e)=>{
       const btn = e.target.closest('button.add-cat'); if(!btn) return;
       const cat = btn.getAttribute('data-cat') || '';
@@ -626,7 +629,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Enable category chips on each recurring edit form
   document.querySelectorAll('.edit-category-chips').forEach(container => {
-    container.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${c}">${c}</button>`).join('');
+    container.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
     container.addEventListener('click', (e)=>{
       const btn = e.target.closest('button.add-cat'); if(!btn) return;
       const cat = btn.getAttribute('data-cat') || '';

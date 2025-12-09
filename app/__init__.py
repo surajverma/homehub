@@ -112,6 +112,9 @@ def create_app(test_config: dict | None = None):
                 # New columns for QRCode and Reminder
                 ensure_column(_QRCode.__tablename__, 'original_input', 'TEXT', None)
                 ensure_column(_Reminder.__tablename__, 'recurring_id', 'INTEGER', None)
+                # Add 'tags' to recipe for multi-tag feature
+                if not has_column('recipe', 'tags'):
+                    cur.execute("ALTER TABLE recipe ADD COLUMN tags TEXT DEFAULT '[]'")
                 # Ensure recurring_reminder table exists (if not created by SQLAlchemy create_all)
                 cur.execute("""
                 CREATE TABLE IF NOT EXISTS recurring_reminder (
@@ -163,6 +166,7 @@ def create_app(test_config: dict | None = None):
     from .blueprints import expenses  # noqa: F401
     from .blueprints import chores  # noqa: F401
     from .blueprints import qr  # noqa: F401
+    from .blueprints import weather  # noqa: F401
     app.register_blueprint(main_bp)
 
     @app.context_processor
@@ -170,5 +174,14 @@ def create_app(test_config: dict | None = None):
         return {
             'is_authed': bool(session.get('authed'))
         }
+    
+    # Add Jinja2 filter for JSON parsing
+    @app.template_filter('from_json')
+    def from_json_filter(s):
+        import json
+        try:
+            return json.loads(s) if s else []
+        except (ValueError, TypeError):
+            return []
 
     return app
