@@ -3,8 +3,7 @@
 <style>
   .modal { transition: opacity 0.2s ease; }
   .modal-content { transition: transform 0.2s ease; max-height: 80vh; overflow-y: auto; }
-  .monthly-summary-container { display:flex; flex-direction:column; height:80vh; }
-  .calendar-cell { min-height: 5rem; }
+  .monthly-summary-container { display:flex; flex-direction:column; }
   .no-scrollbar::-webkit-scrollbar { display:none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
@@ -55,7 +54,7 @@
     <div class="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-1">
         <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
       </div>
-      <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
+      <div id="calendar-grid" class="grid grid-cols-7 gap-1 pb-4"></div>
     </div>
 
     <!-- Side Panel -->
@@ -67,7 +66,7 @@
     <div class="lg:col-span-4 card p-4 monthly-summary-container relative z-0">
       <div class="flex-shrink-0 flex items-center justify-between mb-3">
         <h3 class="text-lg font-bold">Entries This Month</h3>
-        <label class="text-sm flex items-center gap-2"><input type="checkbox" id="select-all-month" class="rounded"> Select all</label>
+        <label id="select-all-label" class="text-sm flex items-center gap-2" style="display: none;"><input type="checkbox" id="select-all-month" class="rounded"> Select all</label>
       </div>
       <form id="bulk-delete-form" method="POST" action="/expenses/bulk-delete" class="flex-grow overflow-y-auto pr-2 no-scrollbar">
         <input type="hidden" name="user" id="bulk-user">
@@ -75,7 +74,7 @@
       </form>
       <div id="monthly-total-footer" class="flex-shrink-0 border-t pt-3 mt-3 flex justify-between items-center">
         <div class="flex items-center gap-3">
-          <button id="bulk-delete-btn" class="btn btn-danger" disabled>Delete Selected</button>
+          <button id="bulk-delete-btn" class="btn btn-danger" style="display: none;">Delete Selected</button>
         </div>
         <div class="flex items-center gap-2">
           <span class="font-semibold">Month Total:</span>
@@ -310,6 +309,7 @@ document.addEventListener('DOMContentLoaded', function(){
   const monthlyList = document.getElementById('monthly-entries-list');
   const bulkForm = document.getElementById('bulk-delete-form');
   const bulkBtn = document.getElementById('bulk-delete-btn');
+  const selectAllLabel = document.getElementById('select-all-label');
   const monthlyTotalAmount = document.getElementById('monthly-total-amount');
 
   // Settings bootstrap
@@ -367,8 +367,11 @@ document.addEventListener('DOMContentLoaded', function(){
   items.sort((a,b)=> b.date.localeCompare(a.date));
     if(items.length===0){
       monthlyList.innerHTML = '<div class="text-gray-500">No entries this month.</div>';
+      bulkBtn.style.display = 'none';
+      if (selectAllLabel) selectAllLabel.style.display = 'none';
       return;
     }
+    if (selectAllLabel) selectAllLabel.style.display = '';
     monthlyList.innerHTML = items.map(e=> `
       <label class="flex items-center justify-between p-2 border-b gap-2">
         <input type="checkbox" class="entry-select" name="ids" value="${e.id}">
@@ -383,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function(){
     bulkForm.querySelectorAll('input.entry-select').forEach(cb=>{
       cb.addEventListener('change', ()=>{
         const any = [...bulkForm.querySelectorAll('input.entry-select')].some(x=> x.checked);
-        bulkBtn.disabled = !any;
+        bulkBtn.style.display = any ? '' : 'none';
       });
     });
     // Reset select-all based on current items
@@ -654,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function(){
       const boxes = bulkForm.querySelectorAll('input.entry-select');
       boxes.forEach(b=> b.checked = selAll.checked);
       const any = [...boxes].some(x=> x.checked);
-      bulkBtn.disabled = !any;
+      bulkBtn.style.display = any ? '' : 'none';
     });
     // Keep indeterminate state in sync when user toggles individual boxes
     bulkForm.addEventListener('change', (e)=>{
