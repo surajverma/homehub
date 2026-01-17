@@ -1059,8 +1059,12 @@ window.REMINDERS_CAL_START = (function(){
 	document.getElementById('whoName')?.setAttribute('value', cur);
 	document.getElementById('memberStatusName')?.setAttribute('value', cur);
 	document.getElementById('memberStatusDeleteName')?.setAttribute('value', cur);
+})();
+</script>
 
-	// Initialize weather widget if enabled
+<!-- Initialize weather widget independently (outside who_is_home IIFE) -->
+<script>
+(function() {
 	const weatherConfigElement = document.getElementById('weatherConfigData');
 	if (typeof window.initWeatherWidget === 'function' && weatherConfigElement) {
 		try {
