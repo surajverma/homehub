@@ -3,7 +3,7 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/surajverma/homehub)](https://github.com/surajverma/homehub/commits/main)
 [![GitHub issues](https://img.shields.io/github/issues/surajverma/homehub)](https://github.com/surajverma/homehub/issues)
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/surajverma/homehub?color=brightgreen)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aclosed)
-[![GitHub issues by-label](https://img.shields.io/github/issues/surajverma/homehub/in%20progress?color=darkgreen)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aopen+label%3A"in+progress")
+[![GitHub issues by-label](https://img.shields.io/github/issues/surajverma/homehub/feature%20request?color=blue)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request)
 [![GitHub Stars](https://img.shields.io/github/stars/surajverma/homehub?style=social)](https://github.com/surajverma/homehub/stargazers)
 
 > **Maintainer Note**  
