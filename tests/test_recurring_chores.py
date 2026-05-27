@@ -174,3 +174,130 @@ def test_delete_recurring_chore_from_instance_deletes_rule(client):
     with client.application.app_context():
         assert RecurringChore.query.get(rid) is None
         assert Chore.query.filter_by(recurring_id=rid).count() == 0
+
+
+def test_update_chore_requires_admin_or_creator(client):
+    create = client.post('/chores', data={
+        'description': 'Owner chore',
+        'creator': 'Alice',
+        'tags': '[]',
+    }, follow_redirects=False)
+    assert create.status_code == 302
+
+    with client.application.app_context():
+        chore = Chore.query.filter_by(description='Owner chore').first()
+        assert chore is not None
+        cid = chore.id
+
+    update = client.post('/chores', data={
+        'chore_id': str(cid),
+        'description': 'Hacked chore',
+        'creator': 'Bob',
+        'user': 'Bob',
+        'tags': '[]',
+    }, follow_redirects=False)
+    assert update.status_code == 302
+
+    with client.application.app_context():
+        refreshed = Chore.query.get(cid)
+        assert refreshed.description == 'Owner chore'
+        assert refreshed.creator == 'Alice'
+
+
+def test_update_recurring_rule_requires_admin_or_creator(client):
+    today = date.today().strftime('%Y-%m-%d')
+    create = client.post('/chores', data={
+        'description': 'Rule owner',
+        'creator': 'Alice',
+        'tags': '[]',
+        'is_recurring': 'on',
+        'rec_interval': '1',
+        'rec_unit': 'day',
+        'rec_start_date': today,
+    }, follow_redirects=False)
+    assert create.status_code == 302
+
+    with client.application.app_context():
+        rule = RecurringChore.query.filter_by(description='Rule owner').first()
+        assert rule is not None
+        rid = rule.id
+
+    update = client.post('/chores', data={
+        'recurring_rule_id': str(rid),
+        'description': 'Rule hacked',
+        'creator': 'Bob',
+        'user': 'Bob',
+        'tags': '[]',
+        'is_recurring': 'on',
+        'rec_interval': '1',
+        'rec_unit': 'day',
+        'rec_start_date': today,
+    }, follow_redirects=False)
+    assert update.status_code == 302
+
+    with client.application.app_context():
+        refreshed = RecurringChore.query.get(rid)
+        assert refreshed.description == 'Rule owner'
+        assert refreshed.creator == 'Alice'
+
+
+def test_non_recurring_branch_delete_rule_requires_permission(client):
+    today = date.today().strftime('%Y-%m-%d')
+    create = client.post('/chores', data={
+        'description': 'Rule delete target',
+        'creator': 'Alice',
+        'tags': '[]',
+        'is_recurring': 'on',
+        'rec_interval': '1',
+        'rec_unit': 'day',
+        'rec_start_date': today,
+    }, follow_redirects=False)
+    assert create.status_code == 302
+
+    with client.application.app_context():
+        rule = RecurringChore.query.filter_by(description='Rule delete target').first()
+        assert rule is not None
+        rid = rule.id
+
+    delete_attempt = client.post('/chores', data={
+        'recurring_rule_id': str(rid),
+        'description': 'Irrelevant',
+        'creator': 'Bob',
+        'user': 'Bob',
+        'tags': '[]',
+    }, follow_redirects=False)
+    assert delete_attempt.status_code == 302
+
+    with client.application.app_context():
+        assert RecurringChore.query.get(rid) is not None
+        assert Chore.query.filter_by(recurring_id=rid).count() > 0
+
+
+def test_delete_recurring_endpoint_removes_completed_chores(client):
+    today = date.today().strftime('%Y-%m-%d')
+    create = client.post('/chores', data={
+        'description': 'Delete all recurring rows',
+        'creator': 'Alice',
+        'tags': '[]',
+        'is_recurring': 'on',
+        'rec_interval': '1',
+        'rec_unit': 'day',
+        'rec_start_date': today,
+    }, follow_redirects=False)
+    assert create.status_code == 302
+
+    with client.application.app_context():
+        rule = RecurringChore.query.filter_by(description='Delete all recurring rows').first()
+        assert rule is not None
+        chore = Chore.query.filter_by(recurring_id=rule.id).first()
+        assert chore is not None
+        chore.done = True
+        db.session.commit()
+        rid = rule.id
+
+    delete = client.post(f'/chores/recurring/delete/{rid}', data={'user': 'Alice'}, follow_redirects=False)
+    assert delete.status_code == 302
+
+    with client.application.app_context():
+        assert RecurringChore.query.get(rid) is None
+        assert Chore.query.filter_by(recurring_id=rid).count() == 0

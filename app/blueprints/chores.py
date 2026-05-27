@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, current_app, jsonify, flash
+from flask import render_template, request, redirect, url_for, current_app, jsonify, flash, session
 from datetime import datetime, date, timedelta
 from ..models import db, Chore, RecurringChore
 from ..blueprints import main_bp
@@ -65,19 +65,43 @@ def _next_due_on_or_after(rule: RecurringChore, target: date) -> date | None:
 def _ensure_current_recurring_chores(today: date | None = None):
     today = today or date.today()
     rules = RecurringChore.query.all()
+    active_rows = (
+        Chore.query
+        .filter(Chore.recurring_id.isnot(None))
+        .order_by(Chore.recurring_id.asc(), Chore.due_date.asc(), Chore.timestamp.desc())
+        .all()
+    )
+    active_by_rule: dict[int, Chore] = {}
+    for row in active_rows:
+        if row.recurring_id is None or row.recurring_id in active_by_rule:
+            continue
+        active_by_rule[row.recurring_id] = row
+    changed = False
     for rule in rules:
         next_due = _next_due_on_or_after(rule, today)
-        active = Chore.query.filter_by(recurring_id=rule.id).order_by(Chore.due_date.asc(), Chore.timestamp.desc()).first()
+        active = active_by_rule.get(rule.id)
         if next_due is None:
-            if active:
+            if active and not active.done:
                 active.done = True
+                changed = True
             continue
         if active:
-            active.description = rule.description
-            active.creator = rule.creator
-            active.tags = rule.tags or '[]'
-            active.due_date = next_due
-            active.done = False
+            if active.description != rule.description:
+                active.description = rule.description
+                changed = True
+            if active.creator != rule.creator:
+                active.creator = rule.creator
+                changed = True
+            rule_tags = rule.tags or '[]'
+            if active.tags != rule_tags:
+                active.tags = rule_tags
+                changed = True
+            if active.due_date != next_due:
+                active.due_date = next_due
+                changed = True
+            if active.done:
+                active.done = False
+                changed = True
         else:
             db.session.add(Chore(
                 description=rule.description,
@@ -87,8 +111,21 @@ def _ensure_current_recurring_chores(today: date | None = None):
                 recurring_id=rule.id,
                 done=False,
             ))
-        rule.last_generated_date = next_due
-    db.session.commit()
+            changed = True
+        if rule.last_generated_date != next_due:
+            rule.last_generated_date = next_due
+            changed = True
+    if changed:
+        db.session.commit()
+
+
+def _admin_aliases() -> set[str]:
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    return {admin_name, 'Administrator', 'admin'}
+
+
+def _request_user() -> str:
+    return sanitize_text(request.form.get('user', ''))
 
 
 def _ensure_app_setting_table():
@@ -153,6 +190,8 @@ def chores():
         recurring_rule_id = request.form.get('recurring_rule_id')
         description = sanitize_text(request.form['description'])
         creator = sanitize_text(request.form['creator'])
+        user = _request_user()
+        admin_aliases = _admin_aliases()
         raw_tags = request.form.get('tags', '').strip()
         tags_list = []
         if raw_tags:
@@ -202,8 +241,10 @@ def chores():
                 )
             if recurring_rule_id:
                 rule = RecurringChore.query.get_or_404(int(recurring_rule_id))
+                if not (user in admin_aliases or user == (rule.creator or '')):
+                    flash('Not allowed to update recurring rule.', 'error')
+                    return redirect(url_for('main.chores'))
                 rule.description = description
-                rule.creator = creator
                 rule.tags = json.dumps(tags_list)
                 rule.interval = interval
                 rule.unit = unit
@@ -213,7 +254,7 @@ def chores():
                 active = Chore.query.filter_by(recurring_id=rule.id).order_by(Chore.timestamp.desc()).first()
                 if active and next_due is not None:
                     active.description = description
-                    active.creator = creator
+                    active.creator = rule.creator
                     active.tags = json.dumps(tags_list)
                     active.due_date = next_due
                     active.done = False
@@ -248,13 +289,18 @@ def chores():
         else:
             if recurring_rule_id:
                 rule = RecurringChore.query.get_or_404(int(recurring_rule_id))
+                if not (user in admin_aliases or user == (rule.creator or '')):
+                    flash('Not allowed to delete recurring rule.', 'error')
+                    return redirect(url_for('main.chores'))
                 Chore.query.filter_by(recurring_id=rule.id).delete()
                 db.session.delete(rule)
                 db.session.commit()
             if chore_id:
                 chore = Chore.query.get_or_404(int(chore_id))
+                if not (user in admin_aliases or user == (chore.creator or '')):
+                    flash('Not allowed to update chore.', 'error')
+                    return redirect(url_for('main.chores'))
                 chore.description = description
-                chore.creator = creator
                 chore.tags = json.dumps(tags_list)
                 db.session.commit()
                 flash('Chore updated.', 'success')
@@ -299,10 +345,7 @@ def edit_chore(chore_id):
 
 @main_bp.route('/chores/settings', methods=['POST'])
 def chores_settings():
-    user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if user not in admin_aliases:
+    if current_app.config['HOMEHUB_CONFIG'].get('password_hash') and not session.get('authed'):
         flash('Only admin can update chore settings.', 'error')
         return redirect(url_for('main.chores'))
     enabled = request.form.get('show_chores_on_homepage') in ('1', 'on', 'true', 'yes')
@@ -314,13 +357,12 @@ def chores_settings():
 @main_bp.route('/chores/recurring/delete/<int:rule_id>', methods=['POST'])
 def delete_recurring_chore(rule_id):
     rule = RecurringChore.query.get_or_404(rule_id)
-    user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    user = _request_user()
+    admin_aliases = _admin_aliases()
     if not (user in admin_aliases or user == (rule.creator or '')):
         flash('Not allowed to delete recurring rule.', 'error')
         return redirect(url_for('main.chores'))
-    Chore.query.filter(Chore.recurring_id == rule.id, Chore.done == False).delete()  # noqa: E712
+    Chore.query.filter_by(recurring_id=rule.id).delete()
     db.session.delete(rule)
     db.session.commit()
     flash('Recurring chore rule deleted.', 'success')

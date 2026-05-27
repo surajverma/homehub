@@ -34,6 +34,7 @@
             <div class="md:col-span-3">
                 <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1 opacity-0">Action</label>
                 <input type="hidden" name="creator" id="creator">
+                <input type="hidden" name="user" id="choreUser">
                 <div class="flex gap-2 h-11">
                     <button type="submit" class="flex-1 btn btn-primary h-11">{{ 'Update' if form_chore_id is defined and form_chore_id else 'Add' }}</button>
                     {% if form_chore_id is defined and form_chore_id %}

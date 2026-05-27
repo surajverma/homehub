@@ -17,8 +17,6 @@ def _parse_date_param(value, default=None):
 
 def _show_chores_on_homepage() -> bool:
     try:
-        db.session.execute(db.text("CREATE TABLE IF NOT EXISTS app_setting (key TEXT PRIMARY KEY, value TEXT)"))
-        db.session.commit()
         row = db.session.execute(db.text("SELECT value FROM app_setting WHERE key='show_chores_on_homepage'"))
         val = row.scalar()
         if val is None:
