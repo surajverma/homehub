@@ -4,7 +4,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/surajverma/homehub)](https://github.com/surajverma/homehub/issues)
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/surajverma/homehub?color=brightgreen)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aclosed)
 [![GitHub issues by-label](https://img.shields.io/github/issues/surajverma/homehub/feature%20request?color=blue)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request)
-[![GitHub Stars](https://img.shields.io/github/stars/surajverma/homehub?style=social)](https://github.com/surajverma/homehub/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/surajverma/homehub)](https://github.com/surajverma/homehub/stargazers)
 
 > **Maintainer Note**  
 > Thank you for your interest in this project! I originally started it as a personal utility and never expected it to grow so quickly—I’m genuinely thrilled and grateful that it’s become helpful to you and your family.  
