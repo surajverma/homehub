@@ -129,6 +129,33 @@ window.REMINDERS_CAL_START = (function(){
 			</div>
 			{% endif %}
 		</div>
+
+		{% if show_chores_on_homepage and config.feature_toggles.get('chores', True) %}
+		<div class="card p-4" id="homeChoresCard">
+			<div class="flex items-center justify-between mb-3">
+				<h3 class="text-lg font-semibold flex items-center gap-2"><i class="fa-solid fa-list-check text-indigo-600"></i> Chores</h3>
+				<a href="/chores" class="text-sm text-blue-600 hover:underline">Open full list</a>
+			</div>
+			{% if home_chores and home_chores|length %}
+			<ul class="space-y-2">
+				{% for chore in home_chores %}
+				<li class="flex items-center justify-between gap-3 text-sm border rounded px-3 py-2 bg-white">
+					<div class="min-w-0">
+						<div class="font-medium truncate">{{ chore.description }}</div>
+						<div class="text-xs text-gray-500">
+							{{ chore.creator or 'Unknown' }}
+							{% if chore.due_date %} • Due {{ chore.due_date.strftime('%Y-%m-%d') }}{% endif %}
+						</div>
+					</div>
+					{% if chore.recurring_id %}<span class="text-[10px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">Recurring</span>{% endif %}
+				</li>
+				{% endfor %}
+			</ul>
+			{% else %}
+			<div class="text-sm text-gray-500">No open chores right now.</div>
+			{% endif %}
+		</div>
+		{% endif %}
 	</div><!-- /left col -->
 
 	<div class="space-y-6">

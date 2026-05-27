@@ -28,7 +28,14 @@
       });
     }
     if(wrap){ wrap.addEventListener('click', ()=> input && input.focus()); }
-    if(library){ T.renderLibrary(library, (t)=>{ if(!tags.includes(t)){ tags.push(t); render(); }}); }
+    function renderLibrary(){
+      if(!library) return;
+      T.renderLibrary(library, (t)=>{ if(!tags.includes(t)){ tags.push(t); render(); }});
+    }
+    renderLibrary();
+    if(typeof T.onChange === 'function'){
+      T.onChange(()=> renderLibrary());
+    }
     if(form){
       form.addEventListener('submit', ()=>{
         if(!input) return;
@@ -40,6 +47,21 @@
           setHidden();
         }
       });
+    }
+    if(hidden && hidden.value){
+      try{
+        const parsed = JSON.parse(hidden.value);
+        if(Array.isArray(parsed)){
+          tags = parsed.filter(Boolean);
+          render();
+        }
+      }catch(e){
+        const parsed = parseTokens(hidden.value);
+        if(parsed.length){
+          tags = parsed;
+          render();
+        }
+      }
     }
     // initialize hidden on load so server sees []
     setHidden();

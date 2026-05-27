@@ -12,19 +12,104 @@
   function setStore(key, value){
     try { localStorage.setItem(key, JSON.stringify(value)); } catch(e){}
   }
-  function _randHue(){ return Math.floor(Math.random()*360); }
+  function _hashString(value){
+    let h = 0;
+    const s = String(value || '');
+    for(let i = 0; i < s.length; i++){
+      h = ((h << 5) - h) + s.charCodeAt(i);
+      h |= 0;
+    }
+    return Math.abs(h);
+  }
+  function _hueDistance(a, b){
+    const d = Math.abs(a - b) % 360;
+    return Math.min(d, 360 - d);
+  }
+  function _extractHues(map){
+    return Object.values(map || {})
+      .map(c=>{ const m = /hsl\((\d+)\s/i.exec(c); return m ? parseInt(m[1], 10) : null; })
+      .filter(v=> Number.isInteger(v));
+  }
+  function _pickDistinctHue(existingHues, preferredHue, minDist){
+    const target = Number.isFinite(preferredHue) ? ((preferredHue % 360) + 360) % 360 : 0;
+    if(!existingHues.length) return target;
+    const step = 137.508; // golden-angle spacing
+    let bestHue = target;
+    let bestScore = -1;
+    for(let i = 0; i < 72; i++){
+      const cand = Math.round((target + (i * step)) % 360);
+      const nearest = existingHues.reduce((acc, h)=> Math.min(acc, _hueDistance(cand, h)), 360);
+      if(nearest > bestScore){
+        bestScore = nearest;
+        bestHue = cand;
+      }
+      if(bestScore >= minDist) break;
+    }
+    return bestHue;
+  }
+  function _ensureColorInMap(tag, map){
+    if(map[tag]) return map[tag];
+    const existingHues = _extractHues(map);
+    const preferredHue = _hashString(tag) % 360;
+    const minDist = 36;
+    const pick = _pickDistinctHue(existingHues, preferredHue, minDist);
+    map[tag] = _colorFromHue(pick);
+    return map[tag];
+  }
   function _colorFromHue(h){
     const sat = 65; // tighter range for visual consistency
     const light = 52; // balanced for dark/light text contrast
     return `hsl(${h} ${sat}% ${light}%)`;
   }
+  function _hslToRgb(h, s, l){
+    const hh = ((h % 360) + 360) % 360;
+    const ss = Math.max(0, Math.min(100, s)) / 100;
+    const ll = Math.max(0, Math.min(100, l)) / 100;
+    const c = (1 - Math.abs((2 * ll) - 1)) * ss;
+    const x = c * (1 - Math.abs(((hh / 60) % 2) - 1));
+    const m = ll - (c / 2);
+    let r = 0, g = 0, b = 0;
+    if(hh < 60){ r = c; g = x; b = 0; }
+    else if(hh < 120){ r = x; g = c; b = 0; }
+    else if(hh < 180){ r = 0; g = c; b = x; }
+    else if(hh < 240){ r = 0; g = x; b = c; }
+    else if(hh < 300){ r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+    return [
+      Math.round((r + m) * 255),
+      Math.round((g + m) * 255),
+      Math.round((b + m) * 255)
+    ];
+  }
+  function _relativeLuminance(rgb){
+    const chan = (v)=>{
+      const c = v / 255;
+      return c <= 0.03928 ? (c / 12.92) : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+    const [r, g, b] = rgb.map(chan);
+    return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+  }
+  function _contrastRatio(rgbA, rgbB){
+    const l1 = _relativeLuminance(rgbA);
+    const l2 = _relativeLuminance(rgbB);
+    const light = Math.max(l1, l2);
+    const dark = Math.min(l1, l2);
+    return (light + 0.05) / (dark + 0.05);
+  }
   function textColorFor(bg){
-    // crude HSL parse to pick white/black for contrast
+    // Pick foreground by actual contrast against white and dark text.
     if(/^hsl\(/i.test(bg)){
       try{
         const parts = bg.match(/hsl\(([^)]+)\)/i)[1].trim().split(/\s+/);
-        const l = parseInt(parts[2]);
-        return l < 60 ? '#fff' : '#111827';
+        const h = parseFloat(parts[0]);
+        const s = parseFloat(parts[1]);
+        const l = parseFloat(parts[2]);
+        const bgRgb = _hslToRgb(h, s, l);
+        const white = [255, 255, 255];
+        const dark = [17, 24, 39];
+        const cWhite = _contrastRatio(bgRgb, white);
+        const cDark = _contrastRatio(bgRgb, dark);
+        return cWhite >= cDark ? '#fff' : '#111827';
       }catch(e){ return '#fff'; }
     }
     return '#fff';
@@ -37,16 +122,7 @@
     function ensureColor(tag){
       const map = getStore(KEYS.COLORS, {});
       if(!map[tag]){
-        // Pick a hue sufficiently distinct from existing hues in this scope
-        const existingHues = Object.values(map)
-          .map(c=>{ const m=/hsl\((\d+)\s/i.exec(c); return m?parseInt(m[1]):null; })
-          .filter(v=> v!==null);
-        const minDist = 28; // degrees separation
-        let pick = _randHue();
-        let tries = 0;
-        function farEnough(h){ return existingHues.every(eh=> Math.min(Math.abs(eh-h), 360-Math.abs(eh-h)) >= minDist); }
-        while(existingHues.length && !farEnough(pick) && tries < 32){ pick = _randHue(); tries++; }
-        map[tag] = _colorFromHue(pick);
+        _ensureColorInMap(tag, map);
         setStore(KEYS.COLORS, map);
         recordTags([tag]);
       }
@@ -54,8 +130,11 @@
     }
     function colorFor(tag){
       const map = getStore(KEYS.COLORS, {});
-      // Only return existing color; don't create new one
-      return map[tag] || 'hsl(200 65% 52%)'; // default blue if no color exists
+      if(!map[tag]){
+        _ensureColorInMap(tag, map);
+        setStore(KEYS.COLORS, map);
+      }
+      return map[tag];
     }
     function recordTags(tags){
       const known = new Set(getStore(KEYS.KNOWN, []));

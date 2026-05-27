@@ -1,28 +1,76 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="mx-auto">
-    <h2 class="text-xl font-bold mb-4">To-Do / Chores</h2>
-    <form method="POST" id="choreForm" class="mb-2">
+    <div class="flex items-start justify-between gap-4 mb-4">
+        <h2 class="text-xl font-bold">To-Do / Chores</h2>
+        <form method="POST" action="/chores/settings" class="flex items-center gap-2 text-sm hidden" id="homepageToggleForm">
+            <input type="hidden" name="user" id="settingsUser">
+            <label class="inline-flex items-center gap-2 hidden" id="homepageToggleWrap">
+                <input type="checkbox" name="show_chores_on_homepage" class="rounded" {% if show_chores_on_homepage %}checked{% endif %}>
+                <span class="text-gray-600 dark:text-gray-300">Show on welcome page</span>
+            </label>
+            <button type="submit" class="btn btn-secondary hidden" id="homepageSaveBtn">Save</button>
+        </form>
+    </div>
+    <form method="POST" action="/chores" id="choreForm" class="mb-2">
+        <input type="hidden" name="chore_id" id="choreId" value="{{ form_chore_id if form_chore_id is defined else '' }}">
+        <input type="hidden" name="recurring_rule_id" id="recurringRuleId" value="{{ form_recurring_rule_id if form_recurring_rule_id is defined else '' }}">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div class="md:col-span-5">
                 <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Chore</label>
                 <div class="relative h-11">
-                    <input type="text" name="description" id="choreInput" class="w-full h-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Add a chore..." required autocomplete="off">
+                    <input type="text" name="description" id="choreInput" value="{{ form_description if form_description is defined else '' }}" class="w-full h-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Add a chore..." required autocomplete="off">
                     <div id="choreSuggestions" class="absolute left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow hidden max-h-72 overflow-auto"></div>
                 </div>
             </div>
             <div class="md:col-span-4">
                 <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Tags (assignees, context)</label>
-                <div class="flex flex-wrap gap-2 rounded  focus-within:ring-1 focus-within:ring-blue-500 items-start h-11" id="tagInputWrap">
+                <div class="flex flex-wrap gap-2 rounded focus-within:ring-1 focus-within:ring-blue-500 items-start h-11" id="tagInputWrap">
                     <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Add tag and press Enter">
                 </div>
-                <input type="hidden" name="tags" id="tagsField" value="[]">
+                <input type="hidden" name="tags" id="tagsField" value="{{ form_tags if form_tags is defined else '[]' }}">
                 <div class="mt-2 flex flex-wrap gap-2 text-xs" id="tagLibrary"></div>
             </div>
             <div class="md:col-span-3">
                 <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1 opacity-0">Action</label>
                 <input type="hidden" name="creator" id="creator">
-                <button type="submit" class="w-full btn btn-primary h-11">Add</button>
+                <div class="flex gap-2 h-11">
+                    <button type="submit" class="flex-1 btn btn-primary h-11">{{ 'Update' if form_chore_id is defined and form_chore_id else 'Add' }}</button>
+                    {% if form_chore_id is defined and form_chore_id %}
+                    <a href="/chores" class="btn btn-secondary h-11 inline-flex items-center">Cancel</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="md:col-span-12 flex justify-start pt-1">
+                <label class="inline-flex items-center gap-2 text-sm">
+                    <input type="checkbox" id="isRecurringChore" name="is_recurring" class="rounded" {% if form_is_recurring is defined and form_is_recurring %}checked{% endif %}>
+                    <span>Recurring chore</span>
+                </label>
+            </div>
+            <div class="md:col-span-12 hidden" id="recurringChoreControls">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end rounded p-1">
+                    <div class="md:col-span-3">
+                        <label class="block text-xs text-gray-600 mb-1">Repeat this every</label>
+                        <input type="number" min="1" max="999" step="1" name="rec_interval" value="{{ form_rec_interval if form_rec_interval is defined else 1 }}" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs text-gray-600 mb-1">Unit</label>
+                        <select name="rec_unit" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
+                            <option value="day" {% if form_rec_unit is defined and form_rec_unit == 'day' %}selected{% endif %}>day</option>
+                            <option value="week" {% if form_rec_unit is defined and form_rec_unit == 'week' %}selected{% endif %}>week</option>
+                            <option value="month" {% if form_rec_unit is defined and form_rec_unit == 'month' %}selected{% endif %}>month</option>
+                            <option value="year" {% if form_rec_unit is defined and form_rec_unit == 'year' %}selected{% endif %}>year</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs text-gray-600 mb-1">Starting from</label>
+                        <input type="date" name="rec_start_date" value="{{ form_rec_start_date.strftime('%Y-%m-%d') if form_rec_start_date is defined and form_rec_start_date else '' }}" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs text-gray-600 mb-1">Till</label>
+                        <input type="date" name="rec_end_date" value="{{ form_rec_end_date.strftime('%Y-%m-%d') if form_rec_end_date is defined and form_rec_end_date else '' }}" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
+                    </div>
+                </div>
             </div>
         </div>
     </form>
@@ -45,14 +93,26 @@
                         {{ 'Completed · Undo' if chore.done else 'Mark Completed' }}
                     </button>
                 </form>
-                <button type="button" class="btn btn-secondary edit-btn" data-id="{{ chore.id }}">Edit</button>
-                <form method="POST" action="/chores/delete/{{ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}">
+                <a href="/chores/edit/{{ chore.id }}" class="btn btn-secondary">Edit</a>
+                <form method="POST" action="{{ '/chores/recurring/delete/' ~ chore.recurring_id if chore.recurring_id else '/chores/delete/' ~ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}">
                     <input type="hidden" name="user">
                     <button type="submit" class="btn btn-danger" title="Delete"><i class="fa fa-times"></i></button>
                 </form>
             </div>
             <div class="flex flex-wrap gap-2 items-center justify-between text-xs text-gray-500">
-                <div>By {{ chore.creator }} at {{ chore.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+                <div>
+                    By {{ chore.creator }} at {{ chore.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                    {% if chore.recurring_id %}
+                        • <span class="font-medium text-indigo-600">Recurring chore</span>
+                        {% if chore.due_date %}
+                            {% set is_overdue = today_date and chore.due_date < today_date %}
+                            {% set is_today = today_date and chore.due_date == today_date %}
+                            • <span class="font-semibold {% if is_overdue %}text-red-600{% elif is_today %}text-amber-600{% else %}text-green-600{% endif %}">Next due on {{ chore.due_date.strftime('%Y-%m-%d') }}</span>
+                        {% endif %}
+                    {% elif chore.due_date %}
+                        • Due {{ chore.due_date.strftime('%Y-%m-%d') }}
+                    {% endif %}
+                </div>
                 <div class="flex-1"></div>
             </div>
             <div class="md:hidden flex flex-wrap gap-2 items-center item-tags" data-id="{{ chore.id }}"></div>
@@ -66,7 +126,52 @@
 <script>
 // Initialize creator
 document.getElementById('creator').value = localStorage.getItem('username') || '';
+document.getElementById('settingsUser').value = localStorage.getItem('username') || '';
 document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username') || '');
+
+(function(){
+    const adminName = '{{ config.admin_name }}';
+    const current = localStorage.getItem('username') || '';
+    const wrap = document.getElementById('homepageToggleWrap');
+    const btn = document.getElementById('homepageSaveBtn');
+    const form = document.getElementById('homepageToggleForm');
+    const allowed = current === adminName || current === 'Administrator' || current === 'admin';
+    if (wrap) wrap.classList.toggle('hidden', !allowed);
+    if (btn) btn.classList.toggle('hidden', !allowed);
+    if (form) form.classList.toggle('hidden', !allowed);
+})();
+
+(function(){
+    const recurringToggle = document.getElementById('isRecurringChore');
+    const recurringControls = document.getElementById('recurringChoreControls');
+    if (!recurringToggle || !recurringControls) return;
+    const sync = ()=> recurringControls.classList.toggle('hidden', !recurringToggle.checked);
+    recurringToggle.addEventListener('change', sync);
+    sync();
+})();
+
+(function(){
+    const form = document.getElementById('choreForm');
+    const recurringToggle = document.getElementById('isRecurringChore');
+    if (!form || !recurringToggle) return;
+    form.addEventListener('submit', (e)=>{
+        if (!recurringToggle.checked) return;
+        const endInput = form.querySelector('input[name="rec_end_date"]');
+        const endVal = endInput && endInput.value;
+        if (!endVal) return;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const endDate = new Date(endVal + 'T00:00:00');
+        if (endDate < today) {
+            e.preventDefault();
+            if (window.globalToast) {
+                globalToast('Recurring chore ends in the past. Choose a future end date.', 'error');
+            } else {
+                alert('Recurring chore ends in the past. Choose a future end date.');
+            }
+        }
+    });
+})();
 
 // Scoped Tags for chores
 const T = Tags.scoped('chores');
@@ -143,105 +248,6 @@ const T = Tags.scoped('chores');
     });
 })();
 
-// Edit modal for chore + tags
-(function(){
-        const modal = document.createElement('div');
-        modal.id = 'editModal';
-        modal.className = 'fixed inset-0 hidden items-center justify-center bg-black/50 z-50';
-        modal.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded shadow max-w-lg w-full p-4">
-                <h3 class="text-lg font-semibold mb-3">Edit Chore</h3>
-                <div class="mb-3">
-                    <label class="block text-sm mb-1">Chore</label>
-                    <input type="text" id="editDescInput" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                </div>
-                <div>
-                    <label class="block text-sm mb-1">Tags</label>
-                    <div id="editTagWrap" class="flex flex-wrap gap-2 border border-gray-300 dark:border-gray-600 rounded p-2 focus-within:ring-1 focus-within:ring-blue-500">
-                        <input type="text" id="editTagInput" class="flex-1 min-w-[140px] outline-none bg-transparent" placeholder="Add tag and press Enter" />
-                    </div>
-                            <div class="mt-2 flex flex-wrap gap-2 text-xs" id="editTagLibrary"></div>
-                </div>
-                <div class="mt-4 flex justify-end gap-2">
-                    <button type="button" id="editCancel" class="btn btn-secondary">Cancel</button>
-                    <button type="button" id="editSave" class="btn btn-primary">Save</button>
-                </div>
-            </div>`;
-        document.body.appendChild(modal);
-        const editBtns = document.querySelectorAll('.edit-btn');
-        let currentId = null; let tags = [];
-        const descInput = document.getElementById('editDescInput');
-        const tagWrap = document.getElementById('editTagWrap');
-        const tagInput = document.getElementById('editTagInput');
-        function render(){ T.renderPills(tagWrap, tags, (t)=>{ tags = tags.filter(x=>x!==t); render(); }); }
-        tagInput.addEventListener('keydown', (e)=>{
-            if(e.key==='Enter' || e.key===','){ e.preventDefault(); const v=tagInput.value.trim(); if(v && !tags.includes(v)){ tags.push(v); T.ensureColor(v); render(); } tagInput.value=''; }
-            if(e.key==='Backspace' && !tagInput.value && tags.length){ tags.pop(); render(); }
-        });
-            function open(id){
-            currentId = id;
-            const li = document.querySelector(`#choreList li[data-id="${id}"]`);
-            if(!li) return;
-            let tg=[]; try{ tg = JSON.parse(li.dataset.tags||'[]')||[]; }catch(e){}
-            tags = tg.slice(); render();
-            descInput.value = li.querySelector('span.flex-1').textContent.trim();
-                const lib = document.getElementById('editTagLibrary');
-                T.renderLibrary(lib, (t)=>{ if(!tags.includes(t)){ tags.push(t); render(); }});
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            descInput.focus();
-        }
-        async function save(){
-            if(!currentId) return;
-            FormTags.harvestPendingInto(T, tagInput, tags);
-            const payload = { description: descInput.value.trim(), tags: tags };
-            try{
-                const res = await fetch(`/api/chores/${currentId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-                const data = await res.json();
-                if(data.ok){
-                    const li = document.querySelector(`#choreList li[data-id="${currentId}"]`);
-                    if(li){
-                        li.dataset.tags = JSON.stringify(data.item.tags||[]);
-                        li.querySelector('span.flex-1').textContent = data.item.description;
-                        const hosts = li.querySelectorAll('.item-tags');
-                        hosts.forEach(host=>{ host.innerHTML=''; (data.item.tags||[]).forEach(t=> host.appendChild(T.makePill(t))); });
-                                    T.recordTags(data.item.tags||[]);
-                                    refreshFiltersAndLibrary();
-                    }
-                    close();
-                }
-            }catch(e){ console.error(e); }
-        }
-        function close(){ modal.classList.add('hidden'); modal.classList.remove('flex'); currentId=null; }
-        document.getElementById('editCancel').addEventListener('click', close);
-        document.getElementById('editSave').addEventListener('click', save);
-        editBtns.forEach(btn=> btn.addEventListener('click', ()=> open(btn.dataset.id)));
-})();
-
-function refreshFiltersAndLibrary(){
-    const filterHost = document.getElementById('tagFilters');
-    const allTags = new Set();
-    document.querySelectorAll('#choreList li').forEach(li=>{
-        try{ (JSON.parse(li.dataset.tags||'[]')||[]).forEach(t=>allTags.add(t)); }catch(e){}
-    });
-    T.getAllKnownTags().forEach(t=> allTags.add(t));
-    filterHost.innerHTML='';
-    [...allTags].sort((a,b)=>a.localeCompare(b)).forEach(t=>{
-          const pill = T.makeFilledPill(t, null, false);
-          filterHost.appendChild(pill);
-    });
-    const lib = document.getElementById('tagLibrary');
-    T.renderLibrary(lib, (t)=>{
-        const hidden = document.getElementById('tagsField');
-        let tags=[]; try{ tags = JSON.parse(hidden.value||'[]'); }catch(e){}
-        if(!tags.includes(t)){
-            tags.push(t); hidden.value = JSON.stringify(tags);
-            const wrap = document.getElementById('tagInputWrap');
-            T.renderPills(wrap, tags, (rm)=>{ tags = tags.filter(x=>x!==rm); hidden.value=JSON.stringify(tags); T.renderPills(wrap, tags, ()=>{}); });
-        }
-    });
-}
-
-T.onChange(()=> refreshFiltersAndLibrary());
 </script>
 <script>
 // Chore suggestions (mirror shopping): use persisted history + hide list

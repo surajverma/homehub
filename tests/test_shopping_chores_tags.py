@@ -25,7 +25,10 @@ def make_app():
 @pytest.fixture()
 def client():
     app = make_app()
-    return app.test_client()
+    c = app.test_client()
+    with c.session_transaction() as sess:
+        sess['authed'] = True
+    return c
 
 
 def test_create_items_and_filter_and_edit(client):

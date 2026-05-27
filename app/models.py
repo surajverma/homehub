@@ -56,8 +56,23 @@ class Chore(db.Model):
     creator = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     done = db.Column(db.Boolean, default=False)
+    due_date = db.Column(db.Date)
+    recurring_id = db.Column(db.Integer)
     # JSON-encoded list of tags (e.g., ["Alice", "Weekend"]) for assignment/filtering
     tags = db.Column(db.Text, default='[]')
+
+
+class RecurringChore(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.Text, nullable=False)
+    creator = db.Column(db.String(64))
+    tags = db.Column(db.Text, default='[]')
+    interval = db.Column(db.Integer, default=1)
+    unit = db.Column(db.String(8), default='day')  # day|week|month|year
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    last_generated_date = db.Column(db.Date)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)

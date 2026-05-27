@@ -6,7 +6,28 @@
   .monthly-summary-container { display:flex; flex-direction:column; }
   .no-scrollbar::-webkit-scrollbar { display:none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .expense-tab {
+    border-bottom: 2px solid transparent;
+    color: #6b7280;
+    border-radius: 0.5rem 0.5rem 0 0;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .expense-tab:hover,
+  .expense-tab:focus-visible {
+    color: #1f2937;
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    outline: none;
+  }
+  .expense-tab.active {
+    background: #e5e7eb;
+    color: #111827;
+    border-color: var(--primary-color);
+    font-weight: 600;
+  }
 </style>
+
+{% set expense_precision = (expense_settings.fraction_precision if expense_settings is defined and expense_settings.fraction_precision is defined else 2) %}
 
 <!-- Bootstrap data for the month -->
 <script id="expensesData" type="application/json">{{ expenses_json | safe }}</script>
@@ -147,8 +168,8 @@
     <!-- Tabs -->
     <div class="border-b border-gray-200 mb-4">
       <nav class="-mb-px flex space-x-6" id="settings-tabs">
-        <button class="tab-button py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 active" data-tab="recurring-rules">Recurring Rules</button>
-        <button class="tab-button py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="general-settings">General Settings</button>
+        <button class="tab-button expense-tab py-3 px-3 font-medium text-sm active" data-tab="recurring-rules">Recurring Rules</button>
+        <button class="tab-button expense-tab py-3 px-3 font-medium text-sm" data-tab="general-settings">General Settings</button>
       </nav>
     </div>
     <!-- Tab Content -->
@@ -161,7 +182,7 @@
             <summary class="cursor-pointer flex items-center justify-between gap-4">
               <div class="min-w-0">
                 <div class="font-medium">{{ r.title }} — {{ r.frequency }}{% if r.frequency=='monthly' %} ({{ r.monthly_mode or 'day_of_month' }}){% endif %}</div>
-                <div class="text-xs text-gray-500">{{ r.default_quantity }} × {{ '%.2f'|format(r.unit_price or 0) }} • {{ r.start_date }}{% if r.end_date %} → {{ r.end_date }}{% endif %} • by {{ r.creator }}</div>
+                <div class="text-xs text-gray-500">{{ r.default_quantity }} × {{ ('%.' ~ expense_precision ~ 'f')|format(r.unit_price or 0) }} • {{ r.start_date }}{% if r.end_date %} → {{ r.end_date }}{% endif %} • by {{ r.creator }}</div>
               </div>
               <div class="flex items-center gap-3 shrink-0">
                 <button type="button" class="btn btn-secondary" onclick="this.closest('details').open=true">Edit</button>
@@ -185,7 +206,7 @@
               </div>
               <div>
                 <label class="text-sm text-gray-600">Unit Price</label>
-                <input type="number" step="0.01" name="unit_price" class="w-full border rounded p-2" value="{{ '%.2f'|format(r.unit_price or 0) }}">
+                <input type="number" step="0.01" name="unit_price" class="w-full border rounded p-2" value="{{ ('%.' ~ expense_precision ~ 'f')|format(r.unit_price or 0) }}">
               </div>
               <div>
                 <label class="text-sm text-gray-600">Default Qty</label>
@@ -259,6 +280,11 @@
             <input type="text" name="currency" id="currency-input" class="w-full border rounded p-2" placeholder="₹">
           </div>
           <div>
+            <label class="text-sm text-gray-600">Fraction factor</label>
+            <input type="number" min="1" step="1" name="fraction_factor" id="fraction-factor-input" class="w-full border rounded p-2" value="{{ expense_settings.fraction_factor if expense_settings is defined and expense_settings.fraction_factor is defined else 100 }}" placeholder="100">
+            <p class="text-xs text-gray-500 mt-1">How many lower currency units make one main unit, like ₹1 contain 100 paise. Common values: 1, 100, 1000.</p>
+          </div>
+          <div>
             <label class="text-sm text-gray-600">Categories (comma separated)</label>
             <input type="text" name="categories" id="categories-input" class="w-full border rounded p-2" placeholder="Groceries, Utilities, Housing">
             <div id="category-chips" class="mt-2 flex flex-wrap gap-2"></div>
@@ -314,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Settings bootstrap
   let settings = (payload.settings||{currency:'₹', categories:[]});
-  function fmt(amount){ return (settings.currency||'₹') + (Number(amount)||0).toFixed(2); }
+  function fmt(amount){ return (settings.currency||'₹') + (Number(amount)||0).toFixed(settings.fraction_precision ?? 2); }
 
   function updateSummaryCards(){
     document.getElementById('total-this-month').textContent = fmt(summary.total_this_month||0);
@@ -360,27 +386,37 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function renderMonthlySidebar(){
-    const items = [];
+    const groups = [];
     Object.keys(byDate).sort().forEach(ds=>{
-      (byDate[ds].entries||[]).forEach(e=> items.push({date: ds, ...e}));
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return;
+      const entries = (byDate[ds] && Array.isArray(byDate[ds].entries)) ? byDate[ds].entries.filter(e=> e && e.id) : [];
+      if (!entries.length) return;
+      groups.push({date: ds, entries});
     });
-  items.sort((a,b)=> b.date.localeCompare(a.date));
-    if(items.length===0){
+    groups.sort((a,b)=> b.date.localeCompare(a.date));
+    if(groups.length===0){
       monthlyList.innerHTML = '<div class="text-gray-500">No entries this month.</div>';
       bulkBtn.style.display = 'none';
       if (selectAllLabel) selectAllLabel.style.display = 'none';
       return;
     }
     if (selectAllLabel) selectAllLabel.style.display = '';
-    monthlyList.innerHTML = items.map(e=> `
-      <label class="flex items-center justify-between p-2 border-b gap-2">
-        <input type="checkbox" class="entry-select" name="ids" value="${e.id}">
+    monthlyList.innerHTML = groups.map(group => `
+      <div class="mb-4 last:mb-0 border rounded">
+        <div class="px-3 py-2 text-sm font-semibold bg-gray-50 border-b">${dateFromYmd(group.date).toLocaleDateString()}</div>
         <div>
-          <div class="font-medium">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
-          <div class="text-xs text-gray-500">${dateFromYmd(e.date).toLocaleDateString()} — ${escapeHtml(e.category || '')} ${e.payer? `• by ${escapeHtml(e.payer)}`:''}</div>
+          ${group.entries.map(e=> `
+            <label class="flex items-center justify-between p-2 border-b last:border-b-0 gap-2">
+              <input type="checkbox" class="entry-select" name="ids" value="${e.id}">
+              <div>
+                <div class="font-medium">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
+                <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• by ${escapeHtml(e.payer)}`:''}</div>
+              </div>
+              <div class="font-semibold">${fmt(e.amount)}</div>
+            </label>
+          `).join('')}
         </div>
-        <div class="font-semibold">${fmt(e.amount)}</div>
-      </label>
+      </div>
     `).join('');
     // Hookup selection change
     bulkForm.querySelectorAll('input.entry-select').forEach(cb=>{
@@ -473,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Tabs in recurring/config modal
   if (settingsTabs){
-    settingsTabs.addEventListener('click', (e)=>{
+      settingsTabs.addEventListener('click', (e)=>{
       const btn = e.target.closest('.tab-button');
       if (!btn) return;
       settingsTabs.querySelectorAll('.tab-button').forEach(b=> b.classList.remove('active'));
@@ -588,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const q = parseFloat(document.getElementById('expense-quantity').value || '0');
     const up = parseFloat(document.getElementById('expense-unit-price').value || '0');
     if (!isNaN(q) && !isNaN(up) && (q>0 || up>0)){
-      document.getElementById('expense-amount').value = (q*up).toFixed(2);
+      document.getElementById('expense-amount').value = (q*up).toFixed(settings.fraction_precision ?? 2);
     }
   }
   ['expense-quantity','expense-unit-price'].forEach(id=>{
@@ -597,6 +633,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Pre-fill settings UI (both settings tab and category chips usability)
   document.getElementById('currency-input').value = settings.currency || '₹';
+  const fractionFactorInput = document.getElementById('fraction-factor-input');
+  if (fractionFactorInput) fractionFactorInput.value = settings.fraction_factor || 100;
   document.getElementById('categories-input').value = (settings.categories||[]).join(', ');
   const chips = document.getElementById('category-chips');
   chips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
