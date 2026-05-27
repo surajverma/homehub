@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, current_app
 from datetime import datetime, date, timedelta
-from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringReminder
+from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringReminder, Chore
 from ..blueprints import main_bp
 from ..security import sanitize_html, sanitize_text
 import json
@@ -15,10 +15,23 @@ def _parse_date_param(value, default=None):
         return default
 
 
+def _show_chores_on_homepage() -> bool:
+    try:
+        row = db.session.execute(db.text("SELECT value FROM app_setting WHERE key='show_chores_on_homepage'"))
+        val = row.scalar()
+        if val is None:
+            cfg = current_app.config.get('HOMEHUB_CONFIG', {})
+            return bool((cfg.get('feature_toggles') or {}).get('show_chores_on_homepage', False))
+        return str(val).strip().lower() in ('1', 'true', 'yes', 'on')
+    except Exception:
+        return False
+
+
 @main_bp.route('/')
 def index():
     config = current_app.config['HOMEHUB_CONFIG']
     notice = Notice.query.order_by(Notice.updated_at.desc()).first()
+    show_chores_on_homepage = _show_chores_on_homepage()
     # Calendar: gather reminders grouped by date
     try:
         rows = Reminder.query.with_entities(
@@ -73,6 +86,18 @@ def index():
         reminders_json = json.dumps(by_date)
     except Exception:
         reminders_json = '{}'
+    home_chores = []
+    if show_chores_on_homepage and config.get('feature_toggles', {}).get('chores', True):
+        try:
+            home_chores = (
+                Chore.query
+                .filter(Chore.done == False)  # noqa: E712
+                .order_by(Chore.due_date.asc(), Chore.timestamp.desc())
+                .limit(8)
+                .all()
+            )
+        except Exception:
+            home_chores = []
     # Pass Python object; template will use |tojson safely
     return render_template(
         'index.html',
@@ -83,6 +108,8 @@ def index():
         who_statuses=who_statuses,
         member_statuses=member_statuses,
         reminder_categories=reminder_categories,
+        home_chores=home_chores,
+        show_chores_on_homepage=show_chores_on_homepage,
     )
 
 

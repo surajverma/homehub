@@ -20,6 +20,8 @@ def load_config():
     config['feature_toggles'].setdefault('who_is_home', True)
     # Personal status feature toggle (new)
     config['feature_toggles'].setdefault('personal_status', True)
+    # Homepage chores widget toggle (runtime value may be overridden in app_setting)
+    config['feature_toggles'].setdefault('show_chores_on_homepage', False)
     # Reminders defaults & calendar start day (supports sunday..saturday or 0-6)
     rem = config.setdefault('reminders', {})
     # Do not overwrite existing user value

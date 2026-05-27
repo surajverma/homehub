@@ -70,6 +70,10 @@ def create_app(test_config: dict | None = None):
                 # Add 'done' to chore
                 if not has_column('chore', 'done'):
                     cur.execute("ALTER TABLE chore ADD COLUMN done INTEGER DEFAULT 0")
+                if not has_column('chore', 'due_date'):
+                    cur.execute("ALTER TABLE chore ADD COLUMN due_date DATE")
+                if not has_column('chore', 'recurring_id'):
+                    cur.execute("ALTER TABLE chore ADD COLUMN recurring_id INTEGER")
                 # Add 'tags' to shoppingitem and chore for multi-tag feature
                 if not has_column('shopping_item', 'tags'):
                     cur.execute("ALTER TABLE shopping_item ADD COLUMN tags TEXT DEFAULT '[]'")
@@ -133,6 +137,21 @@ def create_app(test_config: dict | None = None):
                     end_date DATE,
                     last_generated_date DATE,
                     effective_from DATE,
+                    timestamp TIMESTAMP
+                )
+                """)
+                # Ensure recurring_chore table exists
+                cur.execute("""
+                CREATE TABLE IF NOT EXISTS recurring_chore (
+                    id INTEGER PRIMARY KEY,
+                    description TEXT NOT NULL,
+                    creator TEXT,
+                    tags TEXT,
+                    interval INTEGER,
+                    unit TEXT,
+                    start_date DATE,
+                    end_date DATE,
+                    last_generated_date DATE,
                     timestamp TIMESTAMP
                 )
                 """)

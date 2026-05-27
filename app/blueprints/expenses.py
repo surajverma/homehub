@@ -8,6 +8,20 @@ from ..blueprints import main_bp
 import bleach
 
 
+def _fraction_factor_precision(value) -> int:
+    try:
+        factor = int(value)
+    except Exception:
+        return 2
+    if factor <= 1:
+        return 0
+    precision = 0
+    while factor % 10 == 0:
+        factor //= 10
+        precision += 1
+    return precision if factor == 1 else 2
+
+
 def _generate_recurring_entries_until(today: date | None = None) -> None:
     today = today or date.today()
     recs = RecurringExpense.query.all()
@@ -72,17 +86,23 @@ def _generate_recurring_entries_until(today: date | None = None) -> None:
 
 
 def _load_expense_settings() -> dict:
-    settings = {'currency': '\u20b9', 'categories': []}
+    settings = {'currency': '\u20b9', 'categories': [], 'fraction_factor': 100, 'fraction_precision': 2}
     try:
-        rows = db.session.execute(db.text("SELECT key, value FROM app_setting WHERE key IN ('currency','categories')"))
+        rows = db.session.execute(db.text("SELECT key, value FROM app_setting WHERE key IN ('currency','categories','fraction_factor')"))
         data = {k: v for k, v in rows}
         if data.get('currency'):
             settings['currency'] = data['currency']
         if data.get('categories'):
             settings['categories'] = [c.strip() for c in data['categories'].split(',') if c.strip()]
+        if data.get('fraction_factor'):
+            try:
+                settings['fraction_factor'] = max(1, int(data['fraction_factor']))
+            except Exception:
+                settings['fraction_factor'] = 100
     except Exception:
         # Best-effort: fall back to default settings but log for diagnostics
         current_app.logger.exception('Failed to load expense settings; using defaults')
+    settings['fraction_precision'] = _fraction_factor_precision(settings.get('fraction_factor'))
     return settings
 
 
@@ -194,7 +214,7 @@ def expenses():
     payload = _build_month_payload(y, m)
     rules = RecurringExpense.query.order_by(RecurringExpense.timestamp.desc()).all()
     config = current_app.config['HOMEHUB_CONFIG']
-    return render_template('expenses.html', rules=rules, config=config, expenses_json=json.dumps(payload))
+    return render_template('expenses.html', rules=rules, config=config, expenses_json=json.dumps(payload), expense_settings=payload.get('settings') or {})
 
 
 @main_bp.route('/expenses/recurring/edit/<int:rid>', methods=['POST'])
@@ -289,9 +309,15 @@ def expenses_settings():
         return redirect(url_for('main.expenses'))
     currency = sanitize_text(request.form.get('currency', ''))
     categories = sanitize_text(request.form.get('categories', ''))
+    fraction_factor_raw = sanitize_text(request.form.get('fraction_factor', '100'))
+    try:
+        fraction_factor = max(1, int(fraction_factor_raw or '100'))
+    except Exception:
+        fraction_factor = 100
     try:
         db.session.execute(db.text("INSERT INTO app_setting(key,value) VALUES('currency', :v) ON CONFLICT(key) DO UPDATE SET value=excluded.value"), {"v": currency})
         db.session.execute(db.text("INSERT INTO app_setting(key,value) VALUES('categories', :v) ON CONFLICT(key) DO UPDATE SET value=excluded.value"), {"v": categories})
+        db.session.execute(db.text("INSERT INTO app_setting(key,value) VALUES('fraction_factor', :v) ON CONFLICT(key) DO UPDATE SET value=excluded.value"), {"v": str(fraction_factor)})
         db.session.commit()
         flash('Settings saved.', 'success')
     except Exception:
