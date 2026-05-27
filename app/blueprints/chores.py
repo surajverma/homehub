@@ -319,8 +319,6 @@ def edit_chore(chore_id):
     user = request.args.get('user')
     if not user:
         user = request.args.get('creator')
-    if not user:
-        user = request.cookies.get('username')
     user = sanitize_text(user or '')
     admin_aliases = _admin_aliases()
     creator = (chore.creator or '')
