@@ -185,7 +185,7 @@
                 <div class="text-xs text-gray-500">{{ r.default_quantity }} × {{ ('%.' ~ expense_precision ~ 'f')|format(r.unit_price or 0) }} • {{ r.start_date }}{% if r.end_date %} → {{ r.end_date }}{% endif %} • by {{ r.creator }}</div>
               </div>
               <div class="flex items-center gap-3 shrink-0">
-                <button type="button" class="btn btn-secondary" onclick="this.closest('details').open=true">Edit</button>
+                <button type="button" class="btn btn-secondary edit-btn" data-creator="{{ r.creator }}" onclick="this.closest('details').open=true">Edit</button>
                 <form method="POST" action="/expenses/recurring/delete/{{ r.id }}" class="delete-form flex items-center gap-3" data-creator="{{ r.creator }}">
                   <input type="hidden" name="user">
                   <label class="text-sm text-gray-600 inline-flex items-center gap-1"><input type="checkbox" name="delete_entries" value="1" class="rounded align-middle"> delete generated entries</label>
@@ -193,7 +193,7 @@
                 </form>
               </div>
             </summary>
-            <form method="POST" action="/expenses/recurring/edit/{{ r.id }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+            <form method="POST" action="/expenses/recurring/edit/{{ r.id }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 editable-owner-only" data-creator="{{ r.creator }}">
               <input type="hidden" name="user" value="">
               <div>
                 <label class="text-sm text-gray-600">Title</label>

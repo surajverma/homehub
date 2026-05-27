@@ -168,12 +168,8 @@
             </div>
         </main>
     </div>
-    <footer class="border-t border-gray-200/70 bg-white/70 dark:bg-slate-900/60 dark:border-slate-700 text-center text-xs text-gray-500 px-4 py-3">
-        <a href="https://ko-fi.com/skv" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-red-600 hover:underline">
-            <i class="fa-solid fa-heart"></i>
-            Donate
-        </a>
-        if you found this useful.
+    <footer class="border-t border-gray-200/70 bg-white/70 dark:bg-slate-900/60 dark:border-slate-700 text-center text-xs text-gray-500 px-4 py-3">                    
+        if you found this useful, consider <a href="https://ko-fi.com/skv" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-red-600 hover:underline">buying me a coffee ☕</a>
     </footer>
     <script>        
         (function(){
@@ -310,14 +306,19 @@
         function applyUserContext(){
             const current = localStorage.getItem('username') || '';
             const adminName = '{{ config.admin_name }}';
+            const allowed = (creator) => (current === creator || current === adminName || current === 'Administrator' || current === 'admin');
             // hidden inputs
             document.querySelectorAll('input[name="creator"]').forEach(function(i){ i.value = current; });
             document.querySelectorAll('input[name="user"]').forEach(function(i){ i.value = current; });
             // delete button visibility where data-creator is available
             document.querySelectorAll('.delete-form').forEach(f => {
                 const creator = f.getAttribute('data-creator');
-                const allowed = (current === creator || current === adminName || current === 'Administrator' || current === 'admin');
-                f.style.display = allowed ? '' : 'none';
+                f.style.display = allowed(creator) ? '' : 'none';
+            });
+            // edit controls visibility where data-creator is available
+            document.querySelectorAll('.edit-btn[data-creator], .editable-owner-only[data-creator]').forEach(el => {
+                const creator = el.getAttribute('data-creator');
+                el.style.display = allowed(creator) ? '' : 'none';
             });
             // Notice editor visibility if present
             const nf = document.getElementById('noticeForm');

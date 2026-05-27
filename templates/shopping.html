@@ -46,7 +46,7 @@
                         {{ 'Purchased · Undo' if item.checked else 'Mark Purchased' }}
                     </button>
                 </form>
-                <button type="button" class="btn btn-secondary edit-btn" data-id="{{ item.id }}">Edit</button>
+                <button type="button" class="btn btn-secondary edit-btn" data-id="{{ item.id }}" data-creator="{{ item.creator }}">Edit</button>
                 <form method="POST" action="/shopping/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}">
                     <input type="hidden" name="user">
                     <button type="submit" class="btn btn-danger" title="Delete"><i class="fa fa-times"></i></button>
@@ -139,15 +139,20 @@ const T = Tags.scoped('shopping');
     });
 })();
 
-// Hide delete for non-owners (fallback; base template also handles)
-(function(){
+// Hide edit/delete for non-owners (fallback; base template also handles)
+function applyShoppingUserContext(){
     const adminName='{{ config.admin_name }}';
-    const current=localStorage.getItem('username');
+    const current=localStorage.getItem('username')||'';
+    const allowed=(creator)=> (current===creator || current===adminName || current==='Administrator' || current==='admin');
     document.querySelectorAll('.delete-form').forEach(f=>{
-        const c=f.getAttribute('data-creator');
-        if(!(current===c||current===adminName||current==='Administrator'||current==='admin')) f.style.display='none';
+        f.style.display = allowed(f.getAttribute('data-creator')) ? '' : 'none';
     });
-})();
+    document.querySelectorAll('.edit-btn[data-creator]').forEach(b=>{
+        b.style.display = allowed(b.getAttribute('data-creator')) ? '' : 'none';
+    });
+}
+applyShoppingUserContext();
+document.addEventListener('user-switched', applyShoppingUserContext);
 // Attach current user to suggestion buttons
 (function(){
     const current = localStorage.getItem('username') || '';
@@ -207,7 +212,7 @@ const T = Tags.scoped('shopping');
             if(!currentId) return;
             // Harvest any pending comma-separated tokens in the edit input
             FormTags.harvestPendingInto(T, tagInput, tags);
-            const payload = { item: itemInput.value.trim(), tags: tags };
+            const payload = { item: itemInput.value.trim(), tags: tags, user: (localStorage.getItem('username') || '') };
             try{
                 const res = await fetch(`/api/shopping/${currentId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 const data = await res.json();

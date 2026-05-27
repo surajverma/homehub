@@ -106,7 +106,7 @@
                 </div>
                 {% endif %}
                 <div class="px-4 pb-4 flex gap-2">
-                    <a href="/recipes/edit/{{ recipe.id }}" class="btn btn-secondary btn-sm">
+                    <a href="/recipes/edit/{{ recipe.id }}" class="btn btn-secondary btn-sm edit-btn" data-creator="{{ recipe.creator }}">
                         <i class="fa-solid fa-edit mr-1"></i>Edit
                     </a>
                     <form method="POST" action="/recipes/delete/{{ recipe.id }}" class="delete-form inline" data-creator="{{ recipe.creator }}">
@@ -132,17 +132,37 @@
 document.addEventListener('DOMContentLoaded', function() {
     const adminName = '{{ config.admin_name }}';
     const currentUser = () => localStorage.getItem('username') || '';
+    const isAllowed = (creator) => (
+        currentUser() === creator ||
+        currentUser() === adminName ||
+        currentUser() === 'Administrator' ||
+        currentUser() === 'admin'
+    );
     
     // Set creator
     document.getElementById('creator').value = currentUser();
     document.querySelectorAll('input[name="user"]').forEach(i => i.value = currentUser());
-    
-    // Hide delete buttons for non-owners
-    document.querySelectorAll('.delete-form').forEach(f => {
-        const creator = f.getAttribute('data-creator');
-        if (!(currentUser() === creator || currentUser() === adminName || currentUser() === 'Administrator' || currentUser() === 'admin')) {
-            f.style.display = 'none';
-        }
+
+    function applyRecipeUserContext() {
+        document.querySelectorAll('input[name="user"]').forEach(i => i.value = currentUser());
+        document.querySelectorAll('.delete-form').forEach(f => {
+            f.style.display = isAllowed(f.getAttribute('data-creator')) ? '' : 'none';
+        });
+        document.querySelectorAll('.edit-btn[data-creator]').forEach(a => {
+            const allowed = isAllowed(a.getAttribute('data-creator'));
+            a.style.display = allowed ? '' : 'none';
+            if (allowed) {
+                const baseHref = (a.getAttribute('data-base-href') || a.getAttribute('href') || '').split('?')[0];
+                if (baseHref) {
+                    a.setAttribute('data-base-href', baseHref);
+                    a.setAttribute('href', `${baseHref}?user=${encodeURIComponent(currentUser())}`);
+                }
+            }
+        });
+    }
+    applyRecipeUserContext();
+    document.addEventListener('user-switched', () => {
+        applyRecipeUserContext();
     });
     
     // Initialize Quill editors

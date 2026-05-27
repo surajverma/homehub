@@ -96,6 +96,12 @@ def recipes():
 @main_bp.route('/recipes/edit/<int:recipe_id>')
 def edit_recipe(recipe_id):
     rec = Recipe.query.get_or_404(recipe_id)
+    user = sanitize_text(request.args.get('user', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if not (user in admin_aliases or user == (rec.creator or '')):
+        flash('Not allowed to edit recipe.', 'error')
+        return redirect(url_for('main.recipes'))
     recipes_list = Recipe.query.order_by(Recipe.timestamp.desc()).all()
     
     # Convert Recipe objects to dictionaries for JSON serialization
@@ -146,6 +152,11 @@ def update_recipe_tags(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     try:
         data = request.get_json(force=True) or {}
+        user = sanitize_text(str(data.get('user', '')))
+        admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+        admin_aliases = {admin_name, 'Administrator', 'admin'}
+        if not (user in admin_aliases or user == (recipe.creator or '')):
+            return jsonify({"ok": False, "error": "not allowed"}), 403
         tags = data.get('tags', [])
         if not isinstance(tags, list):
             tags = []

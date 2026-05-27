@@ -316,6 +316,17 @@ def chores():
 @main_bp.route('/chores/edit/<int:chore_id>')
 def edit_chore(chore_id):
     chore = Chore.query.get_or_404(chore_id)
+    user = request.args.get('user')
+    if not user:
+        user = request.args.get('creator')
+    if not user:
+        user = request.cookies.get('username')
+    user = sanitize_text(user or '')
+    admin_aliases = _admin_aliases()
+    creator = (chore.creator or '')
+    if not (user in admin_aliases or user == creator):
+        flash('Not allowed to edit chore.', 'error')
+        return redirect(url_for('main.chores'))
     form_state = {
         'form_description': chore.description,
         'form_tags': chore.tags or '[]',
@@ -424,6 +435,10 @@ def update_chore_tags(chore_id):
     chore = Chore.query.get_or_404(chore_id)
     try:
         data = request.get_json(force=True) or {}
+        user = sanitize_text(str(data.get('user', '')))
+        admin_aliases = _admin_aliases()
+        if not (user in admin_aliases or user == (chore.creator or '')):
+            return jsonify({"ok": False, "error": "not allowed"}), 403
         tags = data.get('tags', [])
         if not isinstance(tags, list):
             tags = []
@@ -479,6 +494,10 @@ def api_update_chore(chore_id):
     chore = Chore.query.get_or_404(chore_id)
     try:
         data = request.get_json(force=True) or {}
+        user = sanitize_text(str(data.get('user', '')))
+        admin_aliases = _admin_aliases()
+        if not (user in admin_aliases or user == (chore.creator or '')):
+            return jsonify({"ok": False, "error": "not allowed"}), 403
         desc = data.get('description')
         raw_tags = data.get('tags', [])
         if isinstance(desc, str):

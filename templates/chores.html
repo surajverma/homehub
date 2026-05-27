@@ -94,7 +94,7 @@
                         {{ 'Completed · Undo' if chore.done else 'Mark Completed' }}
                     </button>
                 </form>
-                <a href="/chores/edit/{{ chore.id }}" class="btn btn-secondary">Edit</a>
+                <a href="/chores/edit/{{ chore.id }}" class="btn btn-secondary edit-btn" data-creator="{{ chore.creator }}">Edit</a>
                 <form method="POST" action="{{ '/chores/recurring/delete/' ~ chore.recurring_id if chore.recurring_id else '/chores/delete/' ~ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}">
                     <input type="hidden" name="user">
                     <button type="submit" class="btn btn-danger" title="Delete"><i class="fa fa-times"></i></button>
@@ -239,15 +239,28 @@ const T = Tags.scoped('chores');
     });
 })();
 
-// Hide delete for non-owners (fallback)
-(function(){
+// Hide delete for non-owners; re-apply on user switch
+function applyChoreUserContext(){
     const adminName='{{ config.admin_name }}';
-    const current=localStorage.getItem('username');
+    const current=localStorage.getItem('username')||'';
+    const allowed = (creator) => (current===creator || current===adminName || current==='Administrator' || current==='admin');
     document.querySelectorAll('.delete-form').forEach(f=>{
-        const c=f.getAttribute('data-creator');
-        if(!(current===c||current===adminName||current==='Administrator'||current==='admin')) f.style.display='none';
+        f.style.display = allowed(f.getAttribute('data-creator')) ? '' : 'none';
     });
-})();
+    document.querySelectorAll('.edit-btn[data-creator]').forEach(a=>{
+        const canEdit = allowed(a.getAttribute('data-creator'));
+        a.style.display = canEdit ? '' : 'none';
+        if (canEdit) {
+            const baseHref = a.getAttribute('data-base-href') || a.getAttribute('href') || '';
+            if (baseHref) {
+                a.setAttribute('data-base-href', baseHref.split('?')[0]);
+                a.setAttribute('href', `${baseHref.split('?')[0]}?user=${encodeURIComponent(current)}`);
+            }
+        }
+    });
+}
+applyChoreUserContext();
+document.addEventListener('user-switched', applyChoreUserContext);
 
 </script>
 <script>

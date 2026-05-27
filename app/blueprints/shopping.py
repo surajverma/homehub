@@ -86,6 +86,11 @@ def update_shopping_tags(item_id):
     item = ShoppingItem.query.get_or_404(item_id)
     try:
         data = request.get_json(force=True) or {}
+        user = sanitize_text(str(data.get('user', '')))
+        admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+        admin_aliases = {admin_name, 'Administrator', 'admin'}
+        if not (user in admin_aliases or user == (item.creator or '')):
+            return jsonify({"ok": False, "error": "not allowed"}), 403
         tags = data.get('tags', [])
         if not isinstance(tags, list):
             tags = []
@@ -132,6 +137,11 @@ def api_update_shopping(item_id):
     item = ShoppingItem.query.get_or_404(item_id)
     try:
         data = request.get_json(force=True) or {}
+        user = sanitize_text(str(data.get('user', '')))
+        admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+        admin_aliases = {admin_name, 'Administrator', 'admin'}
+        if not (user in admin_aliases or user == (item.creator or '')):
+            return jsonify({"ok": False, "error": "not allowed"}), 403
         new_item = data.get('item')
         raw_tags = data.get('tags', [])
         if isinstance(new_item, str):
