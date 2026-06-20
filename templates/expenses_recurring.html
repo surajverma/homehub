@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .recurring-page-tabs {
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 2rem;
+  }
+  .tab-button {
+    border-bottom: 3px solid transparent;
+    color: #6b7280;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .tab-button:hover {
+    color: #1f2937;
+    background: #f9fafb;
+    border-color: #e5e7eb;
+  }
+  .tab-button.active {
+    color: var(--primary-color, #3b82f6);
+    border-color: var(--primary-color, #3b82f6);
+  }
+  .tab-content {
+    display: none;
+  }
+  .tab-content.active {
+    display: block;
+  }
+  .rules-container {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .rule-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: white;
+  }
+  .rule-card details {
+    margin: 0;
+  }
+  .rule-card summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.5rem;
+    user-select: none;
+  }
+  .rule-card summary:hover {
+    background: #f9fafb;
+    border-radius: 0.25rem;
+  }
+  .rule-metadata {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+  .rule-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  /* Normalise input/select heights so dropdowns match text boxes */
+  .rule-card input:not([type="checkbox"]):not([type="hidden"]),
+  .rule-card select,
+  #recurring-form input:not([type="checkbox"]):not([type="hidden"]),
+  #recurring-form select {
+    height: 2.5rem; /* 40px — same as Tailwind h-10 */
+    box-sizing: border-box;
+  }
+</style>
+
+{% set expense_precision = (expense_settings.fraction_precision if expense_settings is defined and expense_settings.fraction_precision is defined else 2) %}
+
+<div class="max-w-4xl mx-auto space-y-6">
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-4">
+      <a href="/expenses" class="text-blue-600 hover:underline flex items-center gap-2">
+        <i class="fas fa-arrow-left"></i> Back to Calendar
+      </a>
+      <h1 class="text-3xl font-bold text-gray-800">Recurring Expense Rules</h1>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="recurring-page-tabs flex border-b border-gray-200">
+    <button class="tab-button {% if active_tab == 'recurring-rules' %}active{% endif %}" data-tab="recurring-rules">
+      <i class="fas fa-repeat mr-2"></i>Recurring Rules
+    </button>
+    <button class="tab-button {% if active_tab == 'general-settings' %}active{% endif %}" data-tab="general-settings">
+      <i class="fas fa-cog mr-2"></i>General Settings
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content-container">
+    <!-- Recurring Rules Tab -->
+    <div id="recurring-rules" class="tab-content {% if active_tab == 'recurring-rules' %}active{% endif %}">
+      <div class="space-y-4">
+        <h2 class="text-xl font-semibold">Active Rules</h2>
+        
+        {% if rules %}
+        <div class="rules-container">
+          {% for r in rules %}
+          <div class="rule-card">
+            <details>
+              <summary>
+                <div class="flex items-center justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="font-medium">{{ r.title }} — {{ r.frequency }}{% if r.frequency=='monthly' %} ({{ r.monthly_mode or 'day_of_month' }}){% endif %}</div>
+                    <div class="rule-metadata">
+                      {{ r.default_quantity }} × {{ ('%.' ~ expense_precision ~ 'f')|format(r.unit_price or 0) }} 
+                      • {{ r.start_date }}{% if r.end_date %} → {{ r.end_date }}{% endif %} 
+                      • by {{ r.creator }}
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" class="btn btn-secondary edit-btn" data-creator="{{ r.creator }}" onclick="this.closest('details').open=true">
+                      <i class="fas fa-edit mr-1"></i>Edit
+                    </button>
+                  </div>
+                </div>
+              </summary>
+
+              <!-- Edit Form -->
+              <form method="POST" action="/expenses/recurring/edit/{{ r.id }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 pt-4 border-t recurring-edit-form" data-creator="{{ r.creator }}">
+                <input type="hidden" name="user" value="">
+                <div class="md:col-span-3 p-3 rounded border bg-amber-50 text-amber-800 text-xs">
+                  Editing a recurring rule can affect generated entries. Choose a strategy to avoid accidental history loss.
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600">Title</label>
+                  <input type="text" name="title" class="w-full border rounded p-2" value="{{ r.title }}">
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600">Category</label>
+                  <input type="text" name="category" class="w-full border rounded p-2" value="{{ r.category or '' }}">
+                  <div class="edit-category-chips mt-2 flex flex-wrap gap-2"></div>
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600">Unit Price</label>
+                  <input type="number" step="0.01" name="unit_price" class="w-full border rounded p-2" value="{{ ('%.' ~ expense_precision ~ 'f')|format(r.unit_price or 0) }}">
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600">Default Qty</label>
+                  <input type="number" step="0.01" name="default_quantity" class="w-full border rounded p-2" value="{{ r.default_quantity }}">
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600">Frequency</label>
+                  <select name="frequency" class="w-full border rounded p-2">
+                    <option value="daily" {% if r.frequency=='daily' %}selected{% endif %}>Daily</option>
+                    <option value="weekly" {% if r.frequency=='weekly' %}selected{% endif %}>Weekly</option>
+                    <option value="monthly" {% if r.frequency=='monthly' %}selected{% endif %}>Monthly</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600">Monthly Mode</label>
+                  <select name="monthly_mode" class="w-full border rounded p-2">
+                    <option value="day_of_month" {% if (r.monthly_mode or 'day_of_month')=='day_of_month' %}selected{% endif %}>Same day-of-month</option>
+                    <option value="calendar" {% if (r.monthly_mode or 'day_of_month')=='calendar' %}selected{% endif %}>Calendar month</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600">Start Date</label>
+                  <input type="date" name="start_date" class="w-full border rounded p-2" value="{{ r.start_date }}">
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600">End Date</label>
+                  <input type="date" name="end_date" class="w-full border rounded p-2" value="{{ r.end_date or '' }}">
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600">Edit Strategy</label>
+                  <select name="edit_strategy" class="w-full border rounded p-2">
+                    <option value="apply_from" selected>Keep history, apply changes from effective date</option>
+                    <option value="split_rule">Create new rule from effective date (split)</option>
+                    <option value="rewrite_all">Rewrite entire rule history (destructive)</option>
+                  </select>
+                </div>
+                <div class="effective-from-group">
+                  <label class="text-sm text-gray-600">Effective From</label>
+                  <input type="date" name="effective_from" class="w-full border rounded p-2" value="{{ (r.start_date or '') }}">
+                  <p class="text-xs text-gray-500 mt-1">Used by apply/split strategies.</p>
+                </div>
+                <div class="md:col-span-3 flex justify-end gap-2">
+                  <button type="button" class="btn btn-secondary cancel-edit" onclick="this.closest('details').open=false">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+              </form>
+
+              <!-- Delete Form -->
+              <form method="POST" action="/expenses/recurring/delete/{{ r.id }}" class="mt-3 pt-3 border-t flex items-center gap-3 delete-form" data-creator="{{ r.creator }}">
+                <input type="hidden" name="user">
+                <label class="text-sm text-gray-600 inline-flex items-center gap-2">
+                  <input type="checkbox" name="delete_entries" value="1" class="rounded"> Delete generated entries (unchecked = keep history)
+                </label>
+                <span class="text-xs text-red-600">This permanently removes linked generated entries.</span>
+                <button type="submit" class="btn btn-danger">Delete Rule</button>
+              </form>
+            </details>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-4 bg-gray-50 rounded border">
+          <p class="text-gray-500">No recurring rules yet. Add one below.</p>
+        </div>
+        {% endif %}
+
+        <!-- Add New Rule Form -->
+        <div class="border rounded p-6 bg-blue-50 mt-6">
+          <h3 class="text-lg font-semibold mb-4">Add New Rule</h3>
+          <form id="recurring-form" method="POST" action="/expenses" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+            <input type="hidden" name="form_type" value="recurring">
+            <input type="text" name="title" class="md:col-span-4 p-2 border rounded" placeholder="Title (e.g., Milk)" required>
+            <div class="md:col-span-4">
+              <div id="recurring-category-chips" class="mb-2 flex flex-wrap gap-2"></div>
+              <input type="text" name="category" class="w-full p-2 border rounded" placeholder="Category (opt)">
+            </div>
+            <input type="number" step="0.01" name="unit_price" class="md:col-span-4 p-2 border rounded" placeholder="Unit price" required>
+            <input type="number" step="0.01" name="default_quantity" class="md:col-span-4 p-2 border rounded" placeholder="Default qty" required>
+            <select name="frequency" class="md:col-span-4 p-2 border rounded">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+            <select name="monthly_mode" class="md:col-span-4 p-2 border rounded">
+              <option value="day_of_month">Monthly mode: Same day-of-month</option>
+              <option value="calendar">Monthly mode: Calendar boundary</option>
+            </select>
+            <input type="date" name="start_date" class="md:col-span-6 p-2 border rounded" placeholder="Start">
+            <input type="date" name="end_date" class="md:col-span-6 p-2 border rounded" placeholder="End (optional)">
+            <input type="hidden" name="creator" id="recCreator">
+            <div class="md:col-span-12 flex justify-end">
+              <button type="submit" class="btn btn-primary">Add Recurring Rule</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- General Settings Tab -->
+    <div id="general-settings" class="tab-content {% if active_tab == 'general-settings' %}active{% endif %}">
+      <div class="space-y-6">
+        <h2 class="text-xl font-semibold">Expense Settings</h2>
+        
+        <form method="POST" action="/expenses/settings" class="space-y-4 max-w-md">
+          <input type="hidden" name="user" id="settings-user">
+          
+          <div>
+            <label class="text-sm text-gray-600 font-semibold">Currency symbol</label>
+            <input type="text" name="currency" id="currency-input" class="w-full border rounded p-2 mt-1" placeholder="₹">
+          </div>
+          
+          <div>
+            <label class="text-sm text-gray-600 font-semibold">Fraction factor</label>
+            <input type="number" min="1" step="1" name="fraction_factor" id="fraction-factor-input" class="w-full border rounded p-2 mt-1" value="{{ expense_settings.fraction_factor if expense_settings is defined and expense_settings.fraction_factor is defined else 100 }}" placeholder="100">
+            <p class="text-xs text-gray-500 mt-2">How many lower currency units make one main unit, like ₹1 contains 100 paise. Common values: 1, 100, 1000.</p>
+          </div>
+          
+          <div>
+            <label class="text-sm text-gray-600 font-semibold">Categories (comma separated)</label>
+            <input type="text" name="categories" id="categories-input" class="w-full border rounded p-2 mt-1" placeholder="Groceries, Utilities, Housing">
+            <div id="category-chips" class="mt-3 flex flex-wrap gap-2"></div>
+          </div>
+          
+          <div class="flex justify-end pt-4">
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const adminName = '{{ config.admin_name }}';
+  const currentUser = () => localStorage.getItem('username') || '';
+
+  // HTML escaping to prevent XSS
+  function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+  // Tab switching
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-tab');
+      // Remove active from all buttons and contents
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      // Add active to clicked button and corresponding content
+      btn.classList.add('active');
+      const content = document.getElementById(tab);
+      if (content) content.classList.add('active');
+    });
+  });
+
+  // Load settings and populate UI
+  let settings = {currency: '₹', categories: [], fraction_factor: 100, fraction_precision: 2};
+  const settingsStr = '{{ expense_settings | tojson | safe }}';
+  try {
+    settings = JSON.parse(settingsStr);
+  } catch(e) { /* use defaults */ }
+
+  // Pre-fill settings form
+  document.getElementById('currency-input').value = settings.currency || '₹';
+  const fractionFactorInput = document.getElementById('fraction-factor-input');
+  if (fractionFactorInput) fractionFactorInput.value = settings.fraction_factor || 100;
+  document.getElementById('categories-input').value = (settings.categories||[]).join(', ');
+
+  // Render category chips
+  const chips = document.getElementById('category-chips');
+  chips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+  chips.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button.add-cat'); if(!btn) return;
+    const cat = btn.getAttribute('data-cat') || '';
+    document.getElementById('categories-input').value = cat;
+  });
+
+  // Recurring category chips for add form
+  const recChips = document.getElementById('recurring-category-chips');
+  if (recChips){
+    recChips.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+    recChips.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button.add-cat'); if(!btn) return;
+      const cat = btn.getAttribute('data-cat') || '';
+      const field = document.querySelector('#recurring-form input[name="category"]');
+      if (field) field.value = cat;
+    });
+  }
+
+  // Edit category chips
+  document.querySelectorAll('.edit-category-chips').forEach(container => {
+    container.innerHTML = (settings.categories||[]).map(c=> `<button type="button" class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 add-cat" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+    container.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button.add-cat'); if(!btn) return;
+      const cat = btn.getAttribute('data-cat') || '';
+      const field = container.closest('form')?.querySelector('input[name="category"]');
+      if (field) field.value = cat;
+    });
+  });
+
+  // Set user on forms
+  function applyUserVisibility(){
+    document.querySelectorAll('form.delete-form input[name="user"]').forEach(i=> i.value = currentUser());
+    document.querySelectorAll('form.recurring-edit-form input[name="user"]').forEach(i=> i.value = currentUser());
+    document.getElementById('settings-user').value = currentUser();
+    document.getElementById('recCreator').value = currentUser();
+  }
+
+  // Recurring edit safety: default effective date and destructive confirmations
+  document.querySelectorAll('form.recurring-edit-form').forEach(form => {
+    const strategy = form.querySelector('select[name="edit_strategy"]');
+    const effective = form.querySelector('input[name="effective_from"]');
+    const startDate = form.querySelector('input[name="start_date"]');
+    const endDate = form.querySelector('input[name="end_date"]');
+    const effectiveGroup = form.querySelector('.effective-from-group');
+
+    const syncEffectiveBounds = () => {
+      if (!effective) return;
+      const minDate = startDate && startDate.value ? startDate.value : '';
+      const maxDate = endDate && endDate.value ? endDate.value : '';
+      if (minDate) effective.min = minDate;
+      else effective.removeAttribute('min');
+      if (maxDate) effective.max = maxDate;
+      else effective.removeAttribute('max');
+
+      if (effective.value && minDate && effective.value < minDate) effective.value = minDate;
+      if (effective.value && maxDate && effective.value > maxDate) effective.value = maxDate;
+    };
+
+    const ensureEffectiveDate = () => {
+      if (!effective) return;
+      if (!effective.value) {
+        if (startDate && startDate.value) effective.value = startDate.value;
+        else {
+          const today = new Date();
+          effective.value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        }
+      }
+      syncEffectiveBounds();
+    };
+
+    const syncEffectiveVisibility = () => {
+      if (!strategy || !effective || !effectiveGroup) return;
+      const isDestructive = strategy.value === 'rewrite_all';
+      effectiveGroup.style.display = isDestructive ? 'none' : '';
+      effective.disabled = isDestructive;
+      if (!isDestructive) ensureEffectiveDate();
+    };
+
+    if (strategy) {
+      strategy.addEventListener('change', () => {
+        syncEffectiveVisibility();
+        syncEffectiveBounds();
+      });
+    }
+    if (startDate) startDate.addEventListener('change', syncEffectiveBounds);
+    if (endDate) endDate.addEventListener('change', syncEffectiveBounds);
+
+    syncEffectiveBounds();
+    syncEffectiveVisibility();
+
+    form.addEventListener('submit', (evt) => {
+      if (!effective || !effective.disabled) ensureEffectiveDate();
+      const selected = strategy ? strategy.value : 'apply_from';
+      if (selected === 'rewrite_all') {
+        const ok = window.confirm('Rewrite entire history can delete or overwrite older generated entries. Continue?');
+        if (!ok) {
+          evt.preventDefault();
+          return;
+        }
+      }
+      if (selected === 'split_rule') {
+        const ok = window.confirm('This will close the current rule and create a new one from Effective From date. Continue?');
+        if (!ok) {
+          evt.preventDefault();
+        }
+      }
+    });
+  });
+
+  // Initialize
+  applyUserVisibility();
+  document.addEventListener('user-switched', ()=>{ applyUserVisibility(); });
+});
+</script>
+{% endblock %}
