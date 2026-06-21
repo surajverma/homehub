@@ -1,7 +1,7 @@
 services:
   homehub:
     container_name: homehub
-    image: ghcr.io/surajverma/homehub:latest
+    image: ghcr.io/zarvelionzynji/homehub:latest
     # build: .
     ports:
       - "5000:5000"
