@@ -276,14 +276,33 @@ def api_reminders_list():
     import calendar as _calendar
     try:
         from ..models import ExpenseEntry
+        from datetime import timedelta
+        # Broaden search window to catch early/late payments
+        search_start = window_start - timedelta(days=30)
+        search_end = window_end + timedelta(days=30)
         expense_entries = ExpenseEntry.query.filter(
             ExpenseEntry.recurring_id.isnot(None),
-            ExpenseEntry.date >= window_start,
-            ExpenseEntry.date <= window_end
+            ExpenseEntry.date >= search_start,
+            ExpenseEntry.date <= search_end
         ).all()
-        exp_status = {(e.recurring_id, e.date): getattr(e, 'is_paid', True) for e in expense_entries}
+        
+        exp_entries_by_rule = {}
+        for e in expense_entries:
+            exp_entries_by_rule.setdefault(e.recurring_id, []).append(e)
+            
+        def is_exp_paid(rid, due_date, freq):
+            entries = exp_entries_by_rule.get(rid, [])
+            for e in entries:
+                if not getattr(e, 'is_paid', True):
+                    continue
+                diff = abs((e.date - due_date).days)
+                if freq == 'daily' and diff == 0: return True
+                elif freq == 'weekly' and diff <= 3: return True
+                elif freq not in ('daily', 'weekly') and diff <= 20: return True
+            return False
+
     except Exception:
-        exp_status = {}
+        def is_exp_paid(rid, due_date, freq): return False
         
     for er in expense_rules:
         rs = er.start_date or window_start
@@ -313,7 +332,7 @@ def api_reminders_list():
             d = nd
             
         while d <= window_end and (not er.end_date or d <= er.end_date):
-            is_paid = exp_status.get((er.id, d), False)
+            is_paid = is_exp_paid(er.id, d, er.frequency)
             if is_paid:
                 title = f"[Lunas] {er.title}"
                 color = "#16a34a" # green
