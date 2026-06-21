@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy package files and build Tailwind CSS
 COPY package.json tailwind.config.js ./
 COPY static/input.css ./static/
+COPY static/js ./static/js
 COPY templates ./templates
 RUN npm install && npm run build:css
 

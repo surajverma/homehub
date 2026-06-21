@@ -113,6 +113,10 @@ def create_app(test_config: dict | None = None):
                 ensure_column(_RecurringExpense.__tablename__, 'effective_from', 'DATE', None)
                 ensure_column(_RecurringExpense.__tablename__, 'attachment_path', 'TEXT', None)
                 ensure_column(_ExpenseEntry.__tablename__, 'attachment_path', 'TEXT', None)
+                ensure_column(_ExpenseEntry.__tablename__, 'is_paid', 'BOOLEAN', 1) # Default to true for existing
+                from .models import QuickLink as _QuickLink
+                ensure_column(_QuickLink.__tablename__, 'order_index', 'INTEGER', 0)
+                cur.execute("CREATE TABLE IF NOT EXISTS quick_link_category (name TEXT PRIMARY KEY, order_index INTEGER)")
                 # Basic settings table (key/value) for currency and categories
                 cur.execute("CREATE TABLE IF NOT EXISTS app_setting (key TEXT PRIMARY KEY, value TEXT)")
                 # New columns for QRCode and Reminder

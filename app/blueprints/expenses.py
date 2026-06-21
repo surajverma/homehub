@@ -89,7 +89,8 @@ def _generate_recurring_entries_until(today: date | None = None) -> None:
 
 
 def _load_expense_settings() -> dict:
-    settings = {'currency': '\u20b9', 'categories': [], 'fraction_factor': 100, 'fraction_precision': 2}
+    # Fallback default configuration
+    settings = {'currency': 'Rp', 'categories': [], 'fraction_factor': 1, 'fraction_precision': 0}
     try:
         rows = db.session.execute(db.text("SELECT key, value FROM app_setting WHERE key IN ('currency','categories','fraction_factor')"))
         data = {k: v for k, v in rows}
