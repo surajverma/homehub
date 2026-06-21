@@ -283,11 +283,15 @@ def edit_recurring_expense(rid):
 
         deleted = 0
         if r.start_date:
-            deleted += ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id, ExpenseEntry.date < r.start_date).count()
-            ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id, ExpenseEntry.date < r.start_date).delete()
+            deleted += ExpenseEntry.query.filter(
+                ExpenseEntry.recurring_id == r.id,
+                ExpenseEntry.date < r.start_date
+            ).delete(synchronize_session=False)
         if r.end_date:
-            deleted += ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id, ExpenseEntry.date > r.end_date).count()
-            ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id, ExpenseEntry.date > r.end_date).delete()
+            deleted += ExpenseEntry.query.filter(
+                ExpenseEntry.recurring_id == r.id,
+                ExpenseEntry.date > r.end_date
+            ).delete(synchronize_session=False)
         updated = 0
         entries = ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id).all()
         for e in entries:
@@ -295,7 +299,8 @@ def edit_recurring_expense(rid):
             e.category = r.category
             e.unit_price = r.unit_price
             e.quantity = r.default_quantity
-            e.amount = (r.unit_price or 0.0) * (r.default_quantity or 1.0)
+            qty = r.default_quantity if r.default_quantity is not None else 1.0
+            e.amount = (r.unit_price or 0.0) * qty
             updated += 1
         db.session.commit()
         flash(f'Recurring rule fully rewritten. Updated {updated} entry(ies), removed {deleted} outside rule range.', 'warning')

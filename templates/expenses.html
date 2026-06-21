@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function(){
           : `${count} entr${count>1?'ies':'y'}`;
         // Hidden checkboxes carry entry IDs for bulk-delete; toggled by the visible run-check
         const hiddenEntries = run.entries.map(e=>
-          `<input type="checkbox" class="entry-select" name="ids" value="${e.id}" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0">`
+          `<input type="checkbox" class="entry-select" name="ids" value="${e.id}" hidden tabindex="-1" aria-hidden="true">`
         ).join('');
         return `
           <div class="run-row flex items-center gap-2 px-3 py-2 border-b last:border-b-0 hover:bg-gray-50">

@@ -298,10 +298,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Load settings and populate UI
   let settings = {currency: '₹', categories: [], fraction_factor: 100, fraction_precision: 2};
-  const settingsStr = '{{ expense_settings | tojson | safe }}';
-  try {
-    settings = JSON.parse(settingsStr);
-  } catch(e) { /* use defaults */ }
+  const serverSettings = {{ expense_settings | tojson | safe }};
+  if (serverSettings && typeof serverSettings === 'object') {
+    settings = { ...settings, ...serverSettings };
+  }
 
   // Pre-fill settings form
   document.getElementById('currency-input').value = settings.currency || '₹';
