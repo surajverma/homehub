@@ -2,6 +2,18 @@
 
 Semua perubahan yang signifikan pada proyek HomeHub ini akan dicatat di file ini.
 Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
+## [v1.0.2] - 2026-06-22
+
+### Changed
+- **Premium UI/UX Refactoring**: Menyelesaikan seluruh 4 fase refaktor UI/UX berstandar tinggi (ui-ux-expert + ui-ux-pro-max) mencakup perbaikan aksesibilitas, konsistensi visual, kegunaan perangkat seluler (mobile), transisi halus, dan kelengkapan tema gelap (dark mode).
+- **A11y (Accessibility) Improvements**: Menambahkan tag `<label>` terikat untuk semua input form yang hilang (seperti User Switcher, status form, input catatan, modal pemilihan user). Menambahkan ikon pendamping visual untuk pill status "Who is Home" agar tidak bergantung pada warna saja. Menambahkan `:focus-visible` ring bergaya premium pada elemen interaktif yang bisa dinavigasi dengan keyboard.
+- **Mobile & Touch Optimization**: Memperbesar touch target (ukuran tap minimum 44x44px) untuk semua tombol filter rentang waktu (scope), filter kategori pengingat, navigasi bulan kalender, dan sel hari kalender. Menambahkan *backdrop overlay* interaktif pada menu sidebar seluler agar bisa ditutup dengan menyentuh area luar.
+- **Async Interaction State**: Menghindari double-submit pada aksi AJAX (Who is Home update/clear dan Personal Status save) dengan menambahkan status `disabled` dan ikon pemutar (*spinner animation*) pada tombol selama request berlangsung.
+- **Dark Mode Completion**: Mengisi celah contrast dan warna hardcoded pada modal pemilihan user awal, tab menu pengeluaran, dan latar belakang manajemen tautan cepat (*Quick Links*) agar menyatu sempurna dalam data-theme gelap.
+- **Micro-Animations & Motion**: Mengganti transition generik `all` dengan properti transisi spesifik (gpu-friendly) untuk card dan sidebar-link. Menerapkan hover efek mengangkat (`translateY(-2px)`) yang lebih premium pada kartu dasbor. Menghargai preferensi sistem reduced motion via `@media (prefers-reduced-motion: reduce)`.
+- **Icon Standardization**: Menghapus penggunaan emoji unicode `🧾 ◀ ▶ ✕ ✎` di seluruh layout dan menggantinya dengan ikon Font Awesome (chevron, trash-can, pen, receipt) yang konsisten.
+- **Heading Hierarchy Fixes**: Menata ulang struktur heading (`h2` ke `h1`) pada sub-halaman Shopping List, Chores, Recipe Book, dan Quick Links untuk mematuhi SEO best practices.
+- **Script & Layout Consolidation**: Merapikan peletakan tag `<script>` ke dalam batas tag `<body>` sebelum penutup dan menyatukan penulisan `.btn` ke dalam `static/input.css` (membersihkan style inline yang duplikat).
 
 ## [v1.0.1] - 2026-06-21
 

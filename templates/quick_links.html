@@ -3,11 +3,11 @@
 {% block title %}Quick Links - HomeHub{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto space-y-6">
+<div class="max-w-screen-2xl mx-auto space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <i class="fa-solid fa-link text-blue-500"></i> Quick Links
-        </h2>
+        </h1>
     </div>
 
     <!-- Add Link Form -->
@@ -66,8 +66,8 @@
                 <div class="links-container p-2 space-y-2 min-h-[50px]">
                     {% for link in items %}
                     <div class="link-item bg-white border border-gray-200 p-3 rounded shadow-sm flex items-center justify-between gap-4 cursor-move" data-id="{{ link.id }}">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-grip-vertical text-gray-300"></i>
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            <i class="fa-solid fa-grip-vertical text-gray-300 flex-shrink-0"></i>
                             <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-50 rounded border border-gray-100">
                                 {% if link.icon_keyword %}
                                 <img src="https://cdn.simpleicons.org/{{ link.icon_keyword }}" alt="{{ link.title }} icon" class="w-4 h-4 object-contain">
@@ -75,12 +75,12 @@
                                 <img src="https://www.google.com/s2/favicons?domain={{ link.url }}&sz=128" alt="{{ link.title }} icon" class="w-4 h-4 object-contain rounded-sm">
                                 {% endif %}
                             </div>
-                            <div class="min-w-0">
-                                <a href="{{ link.url }}" target="_blank" class="font-medium text-blue-600 hover:underline block truncate max-w-[200px]">{{ link.title }}</a>
-                                <span class="text-xs text-gray-500 block truncate max-w-[200px]">{{ link.url }}</span>
+                            <div class="min-w-0 flex-1">
+                                <a href="{{ link.url }}" target="_blank" class="font-medium text-blue-600 hover:underline block truncate">{{ link.title }}</a>
+                                <span class="text-xs text-gray-500 block truncate">{{ link.url }}</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                             <form action="{{ url_for('quick_links.manage_links') }}" method="POST" class="inline">
                                 <input type="hidden" name="action" value="toggle_dashboard">
                                 <input type="hidden" name="link_id" value="{{ link.id }}">
@@ -119,11 +119,11 @@
 </div>
 
 <!-- Edit Link Modal -->
-<div id="editLinkModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-800">Edit Quick Link</h3>
-            <button onclick="closeEditModal()" class="cursor-pointer text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded" aria-label="Close edit modal">
+<div id="editLinkModal" class="fixed inset-0 z-50 hidden bg-black/50 items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-[var(--card-background-color)] text-[var(--text-color)] border border-gray-200/20 rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200/10 flex justify-between items-center bg-[var(--secondary-bg)]">
+            <h3 class="text-lg font-semibold">Edit Quick Link</h3>
+            <button onclick="closeEditModal()" class="cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded" aria-label="Close edit modal">
                 <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
             </button>
         </div>
@@ -132,24 +132,24 @@
             <input type="hidden" name="link_id" id="editLinkId">
             
             <div>
-                <label for="editLinkTitle" class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-                <input type="text" name="title" id="editLinkTitle" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <label for="editLinkTitle" class="block text-sm font-medium mb-1">Title *</label>
+                <input type="text" name="title" id="editLinkTitle" required class="w-full px-3 py-2 border rounded bg-[var(--input-bg)] text-[var(--input-text)] border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
-                <label for="editLinkUrl" class="block text-sm font-medium text-gray-700 mb-1">URL *</label>
-                <input type="text" name="url" id="editLinkUrl" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <label for="editLinkUrl" class="block text-sm font-medium mb-1">URL *</label>
+                <input type="text" name="url" id="editLinkUrl" required class="w-full px-3 py-2 border rounded bg-[var(--input-bg)] text-[var(--input-text)] border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
-                <label for="editLinkCategory" class="block text-sm font-medium text-gray-700 mb-1">Category / Group</label>
-                <input type="text" name="category" id="editLinkCategory" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <label for="editLinkCategory" class="block text-sm font-medium mb-1">Category / Group</label>
+                <input type="text" name="category" id="editLinkCategory" class="w-full px-3 py-2 border rounded bg-[var(--input-bg)] text-[var(--input-text)] border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
-                <label for="editLinkIcon" class="block text-sm font-medium text-gray-700 mb-1">Icon Keyword</label>
-                <input type="text" name="icon_keyword" id="editLinkIcon" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <label for="editLinkIcon" class="block text-sm font-medium mb-1">Icon Keyword</label>
+                <input type="text" name="icon_keyword" id="editLinkIcon" class="w-full px-3 py-2 border rounded bg-[var(--input-bg)] text-[var(--input-text)] border-[var(--input-border)] focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="pt-4 flex justify-end gap-2">
-                <button type="button" onclick="closeEditModal()" class="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors">Cancel</button>
-                <button type="submit" class="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors">Save Changes</button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary px-4 py-2">Cancel</button>
+                <button type="submit" class="btn btn-primary px-4 py-2">Save Changes</button>
             </div>
         </form>
     </div>
@@ -171,15 +171,11 @@ function closeEditModal() {
 }
 
 function showToast(message) {
-    // A simple toast notification
-    const toast = document.createElement('div');
-    toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 text-sm transition-opacity duration-300';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 2000);
+    if (window.globalToast) {
+        window.globalToast(message, 'success');
+    } else {
+        console.log(message);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {

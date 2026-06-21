@@ -62,7 +62,8 @@ window.REMINDERS_CAL_START = (function(){
 				<div class="text-gray-500">No notices yet. Admin can post one below.</div>
 			{% endif %}
 			<form method="POST" action="/notice" class="mt-4 space-y-2" id="noticeForm">
-				<textarea name="content" rows="4" class="w-full p-2 border rounded" placeholder="Leave blank and submit to clear the notice"></textarea>
+				<label for="noticeContent" class="sr-only">Notice Content</label>
+				<textarea id="noticeContent" name="content" rows="4" class="w-full p-3 border rounded-lg bg-[var(--input-bg)] text-[var(--input-text)] border-[var(--input-border)] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none" placeholder="Leave blank and submit to clear the notice"></textarea>
 				<input type="hidden" name="user" value="">
 				<button type="submit" class="btn btn-primary">Update Notice (Admin)</button>
 			</form>
@@ -80,30 +81,37 @@ window.REMINDERS_CAL_START = (function(){
 				<div id="whoStatusList" class="flex flex-wrap gap-2 mb-3 text-xs">
 					{% for member in config.family_members %}
 						{% set st = who_statuses.get(member) %}
-						<span class="px-2 py-1 rounded border bg-white flex items-center gap-1" data-member="{{ member }}">
-							<span class="font-medium">{{ member }}</span>
-							<span class="status-pill px-1.5 py-0.5 rounded text-[10px] leading-none
+						<span class="px-3 py-1.5 rounded-lg border bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700 flex items-center gap-1.5" data-member="{{ member }}">
+							<span class="font-medium text-gray-800 dark:text-gray-200">{{ member }}</span>
+							<span class="status-pill px-1.5 py-0.5 rounded text-[10px] leading-none inline-flex items-center gap-1
 							{% if st == 'Home' %} bg-green-100 text-green-700 border border-green-300
 							{% elif st == 'Away' %} bg-gray-100 text-gray-600 border border-gray-300
 							{% elif st == 'Out' %} bg-amber-100 text-amber-700 border border-amber-300
 							{% elif st == 'Traveling' %} bg-indigo-100 text-indigo-700 border border-indigo-300
 							{% elif st %} bg-blue-100 text-blue-700 border border-blue-300
 							{% else %} bg-gray-100 text-gray-500 border border-gray-200
-							{% endif %}">{{ st or '—' }}</span>
+							{% endif %}">
+								{% if st == 'Home' %}<i class="fa-solid fa-house-user text-[9px]"></i>{% endif %}
+								{% if st == 'Away' %}<i class="fa-solid fa-arrow-right-from-bracket text-[9px]"></i>{% endif %}
+								{% if st == 'Out' %}<i class="fa-solid fa-location-dot text-[9px]"></i>{% endif %}
+								{% if st == 'Traveling' %}<i class="fa-solid fa-plane text-[9px]"></i>{% endif %}
+								<span>{{ st or '—' }}</span>
+							</span>
 						</span>
 					{% endfor %}
 				</div>
 				<form id="whoUnifiedForm" method="POST" action="/whoishome" onsubmit="return false" class="flex flex-wrap items-center gap-2 text-xs" data-ajax="1">
 					<input type="hidden" name="action" id="whoAction" value="update">
 					<input type="hidden" name="name" id="whoName" value="">
-					<select name="status" class="border rounded p-1 text-xs">
+					<label for="whoStatusSelect" class="sr-only">Status</label>
+					<select id="whoStatusSelect" name="status" class="border rounded p-1.5 text-xs bg-[var(--input-bg)] text-[var(--input-text)] border-[var(--input-border)] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none">
 						<option>Home</option>
 						<option>Away</option>
 						<option>Out</option>
 						<option>Traveling</option>
 					</select>
-					<button id="whoUpdateBtn" type="submit" class="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">Update</button>
-					<button id="whoClearBtn" type="button" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" title="Clear my status">Clear</button>
+					<button id="whoUpdateBtn" type="submit" class="btn btn-primary px-3 py-1.5 rounded-md text-xs font-semibold">Update</button>
+					<button id="whoClearBtn" type="button" class="btn btn-secondary px-3 py-1.5 rounded-md text-xs font-semibold" title="Clear my status">Clear</button>
 				</form>
             </div>
 			{% endif %}
@@ -119,8 +127,9 @@ window.REMINDERS_CAL_START = (function(){
 				</div>
 				<form id="memberStatusForm" action="/status/update" method="POST" class="flex items-center gap-2 text-xs">
 					<input type="hidden" name="name" id="memberStatusName" value="">
-					<input type="text" name="text" placeholder="My status" class="flex-1 border rounded p-1" />
-					<button type="submit" class="px-2 py-3 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+					<label for="memberStatusText" class="sr-only">My Status</label>
+					<input type="text" id="memberStatusText" name="text" placeholder="My status" class="flex-1 border rounded-md p-1.5 bg-[var(--input-bg)] text-[var(--input-text)] border-[var(--input-border)] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none" />
+					<button type="submit" class="btn btn-primary px-3 py-1.5 rounded-md text-xs font-semibold">Save</button>
 				</form>
 				<form id="memberStatusDelete" action="/status/delete" method="POST" class="mt-2 text-right">
 					<input type="hidden" name="name" id="memberStatusDeleteName" value="">
@@ -146,9 +155,9 @@ window.REMINDERS_CAL_START = (function(){
 						<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" title="{{ link.title }}" class="flex flex-col items-center p-2 rounded hover:bg-gray-50 hover:shadow-sm transition-all group w-16 cursor-pointer overflow-hidden">
 							<div class="w-10 h-10 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-200">
 								{% if link.icon_keyword %}
-								<img src="https://cdn.simpleicons.org/{{ link.icon_keyword }}" alt="{{ link.title }} icon" class="w-6 h-6 object-contain opacity-80 group-hover:opacity-100 transition-opacity">
+								<img src="https://cdn.simpleicons.org/{{ link.icon_keyword }}" alt="{{ link.title }} icon" class="w-6 h-6 object-contain opacity-80 group-hover:opacity-100 transition-opacity" loading="lazy">
 								{% else %}
-								<img src="https://www.google.com/s2/favicons?domain={{ link.url }}&sz=128" alt="{{ link.title }} icon" class="w-6 h-6 object-contain rounded opacity-80 group-hover:opacity-100 transition-opacity">
+								<img src="https://www.google.com/s2/favicons?domain={{ link.url }}&sz=128" alt="{{ link.title }} icon" class="w-6 h-6 object-contain rounded opacity-80 group-hover:opacity-100 transition-opacity" loading="lazy">
 								{% endif %}
 							</div>
 							<span class="text-[10px] text-center text-gray-500 truncate w-full group-hover:text-blue-600 font-medium">{{ link.title }}</span>
@@ -194,9 +203,9 @@ window.REMINDERS_CAL_START = (function(){
 		<div class="card p-6" id="remindersCard" style="min-height:520px">
 			<h2 class="text-xl font-bold flex items-center gap-2 mb-3"><i class="fa-solid fa-calendar-days text-blue-600"></i> Reminders</h2>
 			<div id="reminderMonthNav" class="flex items-center justify-between mb-2">
-				<button type="button" id="calPrev" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" aria-label="Previous Month">◀</button>
-				<div id="calLabel" class="font-semibold flex-1 text-center"></div>
-				<button type="button" id="calNext" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" aria-label="Next Month">▶</button>
+				<button type="button" id="calPrev" class="p-2.5 rounded-lg border bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none" aria-label="Previous Month"><i class="fa-solid fa-chevron-left"></i></button>
+				<div id="calLabel" class="font-semibold flex-1 text-center text-gray-800 dark:text-gray-100"></div>
+				<button type="button" id="calNext" class="p-2.5 rounded-lg border bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none" aria-label="Next Month"><i class="fa-solid fa-chevron-right"></i></button>
 			</div>
 			<div class="flex justify-end mb-2"><button id="backToToday" type="button" class="hidden text-xs text-blue-600 hover:underline">Back to Today</button></div>
 			<div id="reminderWeekdayRow" class="grid grid-cols-7 gap-1 text-xs font-semibold text-gray-600 mb-1"></div>
@@ -425,8 +434,8 @@ window.REMINDERS_CAL_START = (function(){
 	}
 	function setSelectedDate(d){ header.setAttribute('data-selected-date', d); selectedDateDisplay.textContent=d; localStorage.setItem('remindersSelectedDate', d); }
 	function getSelectedDate(){ return header.getAttribute('data-selected-date') || localStorage.getItem('remindersSelectedDate') || new Date().toISOString().slice(0,10); }
-	const scopeBar=document.createElement('div'); scopeBar.className='flex gap-1'; scopeBar.innerHTML=['day','week','month'].map(s=>`<button type="button" data-scope="${s}" class="px-2 py-0.5 text-xs rounded border scopeBtn ${s===currentScope?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'}">${s[0].toUpperCase()+s.slice(1)}</button>`).join(''); scopeBarWrap.appendChild(scopeBar);
-	scopeBar.addEventListener('click', e=>{ const b=e.target.closest('button[data-scope]'); if(!b)return; currentScope=b.getAttribute('data-scope'); localStorage.setItem('remindersScope', currentScope); scopeBar.querySelectorAll('.scopeBtn').forEach(btn=>{ const act=btn.getAttribute('data-scope')===currentScope; btn.className='px-2 py-0.5 text-xs rounded border scopeBtn '+(act?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'); }); renderList(); });
+	const scopeBar=document.createElement('div'); scopeBar.className='flex gap-1.5'; scopeBar.innerHTML=['day','week','month'].map(s=>`<button type="button" data-scope="${s}" class="px-3.5 py-2 text-xs font-semibold rounded-lg border scopeBtn ${s===currentScope?'border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300':'border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'}">${s[0].toUpperCase()+s.slice(1)}</button>`).join(''); scopeBarWrap.appendChild(scopeBar);
+	scopeBar.addEventListener('click', e=>{ const b=e.target.closest('button[data-scope]'); if(!b)return; currentScope=b.getAttribute('data-scope'); localStorage.setItem('remindersScope', currentScope); scopeBar.querySelectorAll('.scopeBtn').forEach(btn=>{ const act=btn.getAttribute('data-scope')===currentScope; btn.className='px-3.5 py-2 text-xs font-semibold rounded-lg border scopeBtn '+(act?'border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300':'border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'); }); renderList(); });
 	function openForm(mode,dateStr,data){ inlineForm.reset(); editingId=null; inlineForm.querySelector('[name=id]').value=''; inlineForm.querySelector('[name=date]').value=dateStr; if(mode==='edit'&&data){ editingId=data.id; inlineForm.querySelector('[name=id]').value=data.id; inlineForm.querySelector('[name=title]').value=data.title; inlineForm.querySelector('[name=description]').value=data.description||''; if(data.category && categorySelect) categorySelect.value=data.category; if(data.time) inlineForm.querySelector('[name=time]').value=data.time; }
 		// reset recurring toggle state each time the form opens
 		if(recChk){ recChk.checked = false; }
@@ -636,7 +645,7 @@ window.REMINDERS_CAL_START = (function(){
 	        btn.type = 'button';
 	        const isToday = dateStr === today.toISOString().slice(0, 10);
 	        const isSel = dateStr === selected;
-	        btn.className = 'calendar-day relative p-2 rounded border text-left focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 ' +
+	        btn.className = 'calendar-day relative p-2 rounded-lg border text-left min-h-[44px] aspect-square flex flex-col justify-between focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 ' +
 	            (isSel ? 'bg-blue-50 dark:bg-slate-700 border-blue-500' : '');
 	        btn.setAttribute('aria-pressed', isSel ? 'true' : 'false');
 	        btn.innerHTML = '<div class="font-semibold ' + (isToday ? 'text-blue-600' : '') + '">' + d + '</div>';
@@ -722,7 +731,7 @@ window.REMINDERS_CAL_START = (function(){
 		out.sort((a,b)=>{ if(a.isRule && !b.isRule) return -1; if(!a.isRule && b.isRule) return 1; if(a.isRule && b.isRule) return (a.title||'').localeCompare(b.title||''); return (a.date||'').localeCompare(b.date||'') || ((a.time||'~').localeCompare(b.time||'~')) || ((a.id||0)-(b.id||0)); });
 		const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser);
 		out.forEach(r=>{
-			if(r.isRule){ const row=document.createElement('div'); row.className='group p-2 rounded border bg-white dark:bg-slate-800'; const meta = (r.time? ('at '+escapeHtml(fmtTime(r.time))+' · ') : '')+escapeHtml(r.creator||''); const canEdit = (function(){ const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); return isAdmin || (r.creator && r.creator===currentUser); })(); const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; row.innerHTML = `<div class="font-semibold flex items-center">${dot}${escapeHtml(r.title)}<span class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 text-gray-600">Recurring</span>${canEdit?`<button type="button" data-edit-rule="${r.id}" class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600" aria-label="Edit recurring">✎</button>`:''}${canEdit?`<button type="button" data-delete-rule="${r.id}" class="ml-1 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" aria-label="Delete recurring">✕</button>`:''}</div><div class="text-xs text-gray-500">${escapeHtml(formatRepeat(r.interval, r.unit, r.end_date))}${meta? ' · '+meta:''}${r.category? ' · '+escapeHtml(r.category):''}</div>`; listWrap.appendChild(row); }
+			if(r.isRule){ const row=document.createElement('div'); row.className='group p-2 rounded border bg-white dark:bg-slate-800'; const meta = (r.time? ('at '+escapeHtml(fmtTime(r.time))+' · ') : '')+escapeHtml(r.creator||''); const canEdit = (function(){ const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); return isAdmin || (r.creator && r.creator===currentUser); })(); const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; row.innerHTML = `<div class="font-semibold flex items-center">${dot}${escapeHtml(r.title)}<span class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 text-gray-600">Recurring</span>${canEdit?`<button type="button" data-edit-rule="${r.id}" class="ml-2 text-xs p-1.5 rounded-lg border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Edit recurring"><i class="fa-solid fa-pen text-[10px]"></i></button>`:''}${canEdit?`<button type="button" data-delete-rule="${r.id}" class="ml-1 text-xs p-1.5 rounded-lg border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-red-400" aria-label="Delete recurring"><i class="fa-solid fa-xmark text-[10px]"></i></button>`:''}</div><div class="text-xs text-gray-500">${escapeHtml(formatRepeat(r.interval, r.unit, r.end_date))}${meta? ' · '+meta:''}${r.category? ' · '+escapeHtml(r.category):''}</div>`; listWrap.appendChild(row); }
 				else {
 					const isBill = (r.id <= -2000000);
 					let billHtml = '';
@@ -808,8 +817,8 @@ window.REMINDERS_CAL_START = (function(){
 		const allBtn = document.createElement('button');
 		allBtn.type = "button";
 		allBtn.setAttribute('data-cat', 'ALL');
-		allBtn.className = 'rem-cat-pill inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50' +
-			(activeCategory === 'ALL' ? ' ring-1 ring-blue-500 bg-blue-50' : '');
+		allBtn.className = 'rem-cat-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-white dark:bg-slate-800 text-xs hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400' +
+			(activeCategory === 'ALL' ? ' ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/30' : '');
 		const totalCount = Object.values(counts).reduce((a,b)=>a+b, 0);
 		allBtn.textContent = `All: ${totalCount}`;
 		wrap.appendChild(allBtn);
@@ -826,8 +835,8 @@ window.REMINDERS_CAL_START = (function(){
 			const btn = document.createElement('button');
 			btn.type = "button";
 			btn.setAttribute('data-cat', k);
-			btn.className = 'rem-cat-pill inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50' +
-				(act ? ' ring-1 ring-blue-500 bg-blue-50' : '');
+			btn.className = 'rem-cat-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-white dark:bg-slate-800 text-xs hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400' +
+				(act ? ' ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/30' : '');
 			// Create dot span
 			const dot = document.createElement('span');
 			dot.className = `w-2 h-2 rounded-full rem-cat-dot-${k}`;
@@ -841,8 +850,8 @@ window.REMINDERS_CAL_START = (function(){
 	}
 	function paintItems(list){ const currentUser=localStorage.getItem('username')||''; const adminName='{{ config.admin_name }}'; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); const selections=new Set(); listWrap.innerHTML=''; bulkBar.classList.add('hidden'); bulkCount.textContent='0'; if(!list.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; return;} list.sort((a,b)=> (a.date.localeCompare(b.date)) || ((a.time||'~').localeCompare(b.time||'~')) || (a.id-b.id));
 	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
-	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\">✎</button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast('Deleted (undo available)','success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent='Undo delete'; undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast('Delete failed','error');}); }); }
-	listWrap.appendChild(row); }); function updateBulk(){ bulkCount.textContent=selections.size; bulkIds.value=Array.from(selections).join(','); bulkBar.classList.toggle('hidden', !selections.size); } listWrap.querySelectorAll('.reminderChk').forEach(cb=>cb.addEventListener('change',()=>{ const id=parseInt(cb.value); if(cb.checked) selections.add(id); else selections.delete(id); updateBulk(); })); document.getElementById('bulkClearSel').onclick=()=>{ selections.clear(); listWrap.querySelectorAll('.reminderChk').forEach(c=>c.checked=false); updateBulk(); }; const bulkForm=document.getElementById('bulkDeleteForm'); if(bulkForm && !bulkForm.dataset.ajax){ bulkForm.dataset.ajax='1'; bulkForm.addEventListener('submit', e=>{ e.preventDefault(); const ids=Array.from(selections); if(!ids.length) return; const creator=localStorage.getItem('username')||''; window.remindersApi.removeMany(ids,creator).then(resp=>{ if(!resp.ok){ toast('Delete failed','error'); return;} Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(r=>!ids.includes(r.id)); }); toast('Deleted '+ids.length,'success'); selections.clear(); bulkCount.textContent='0'; bulkBar.classList.add('hidden'); renderList(); updateCalendarBadges(); }); }); }
+	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class=\"inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}\"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline-flex items-center justify-center p-1.5 rounded-lg border bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400\" aria-label=\"Edit\"><i class=\"fa-solid fa-pen text-[10px]\"></i></button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs p-1.5 rounded-lg border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-red-400 deleteOne\" aria-label=\"Delete\"><i class=\"fa-solid fa-xmark text-[10px]\"></i></button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click', async (e)=>{ const btn = e.target.closest('button'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px]"></i>'; const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast('Deleted (undo available)','success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent='Undo delete'; undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else { toast('Delete failed','error'); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-xmark text-[10px]"></i>'; }}); }); }
+	listWrap.appendChild(row); }); function updateBulk(){ bulkCount.textContent=selections.size; bulkIds.value=Array.from(selections).join(','); bulkBar.classList.toggle('hidden', !selections.size); } listWrap.querySelectorAll('.reminderChk').forEach(cb=>cb.addEventListener('change',()=>{ const id=parseInt(cb.value); if(cb.checked) selections.add(id); else selections.delete(id); updateBulk(); })); document.getElementById('bulkClearSel').onclick=()=>{ selections.clear(); listWrap.querySelectorAll('.reminderChk').forEach(c=>c.checked=false); updateBulk(); }; const bulkForm=document.getElementById('bulkDeleteForm'); if(bulkForm && !bulkForm.dataset.ajax){ bulkForm.dataset.ajax='1'; bulkForm.addEventListener('submit', e=>{ e.preventDefault(); const ids=Array.from(selections); if(!ids.length) return; const creator=localStorage.getItem('username')||''; const btn = bulkForm.querySelector('button[type="submit"]'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; window.remindersApi.removeMany(ids,creator).then(resp=>{ btn.disabled = false; btn.innerHTML = 'Delete Selected'; if(!resp.ok){ toast('Delete failed','error'); return;} Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(r=>!ids.includes(r.id)); }); toast('Deleted '+ids.length,'success'); selections.clear(); bulkCount.textContent='0'; bulkBar.classList.add('hidden'); renderList(); updateCalendarBadges(); }); }); }
 	}
 
 	// Add edit handling for recurring rule cards
@@ -1074,14 +1083,20 @@ window.REMINDERS_CAL_START = (function(){
 				// Compute new classes
 				const baseClasses=['px-1.5','py-0.5','rounded','text-[10px]','leading-none','status-pill'];
 				let colorClasses=[];
-				if(st==='Home'){ colorClasses=['bg-green-100','text-green-700','border','border-green-300']; }
-				else if(st==='Away'){ colorClasses=['bg-gray-100','text-gray-600','border','border-gray-300']; }
-				else if(st==='Out'){ colorClasses=['bg-amber-100','text-amber-700','border','border-amber-300']; }
-				else if(st==='Traveling'){ colorClasses=['bg-indigo-100','text-indigo-700','border','border-indigo-300']; }
+				let iconHtml = '';
+				if(st==='Home'){ colorClasses=['bg-green-100','text-green-700','border','border-green-300']; iconHtml = '<i class="fa-solid fa-house-user text-[9px]"></i>'; }
+				else if(st==='Away'){ colorClasses=['bg-gray-100','text-gray-600','border','border-gray-300']; iconHtml = '<i class="fa-solid fa-arrow-right-from-bracket text-[9px]"></i>'; }
+				else if(st==='Out'){ colorClasses=['bg-amber-100','text-amber-700','border','border-amber-300']; iconHtml = '<i class="fa-solid fa-location-dot text-[9px]"></i>'; }
+				else if(st==='Traveling'){ colorClasses=['bg-indigo-100','text-indigo-700','border','border-indigo-300']; iconHtml = '<i class="fa-solid fa-plane text-[9px]"></i>'; }
 				else if(st){ colorClasses=['bg-blue-100','text-blue-700','border','border-blue-300']; }
 				else{ colorClasses=['bg-gray-100','text-gray-500','border','border-gray-200']; }
+				// Update html to include icon and text
+				const newHtml = iconHtml + '<span>' + (st || '—') + '</span>';
+				if(pill.innerHTML !== newHtml) {
+					pill.innerHTML = newHtml;
+				}
 				// Replace className entirely to avoid classList manipulation overhead
-				pill.className=baseClasses.concat(colorClasses).join(' ');
+				pill.className=baseClasses.concat(['inline-flex', 'items-center', 'gap-1']).concat(colorClasses).join(' ');
 			});
 		});
 	}
@@ -1105,17 +1120,21 @@ window.REMINDERS_CAL_START = (function(){
 		const has=Array.from(memberChips.querySelectorAll('span[data-name]')).some(el=>el.dataset.name===user);
 		memberDel.classList.toggle('hidden', !has);
 	}
-		if(whoForm){ whoForm.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(whoForm); const payload=new URLSearchParams(fd); const actionField=document.getElementById('whoAction'); const actVal=actionField?.value; const targetUrl=whoForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:payload}).then(resp=>{ if(resp && resp.ok){ updateWhoDOM(resp); const resType = resp.result || (actVal==='clear'?'cleared':'updated'); if(resType==='cleared') toast('Status cleared','success'); else if(resType==='none') toast('No status to clear','info'); else toast('Status updated','success'); if(actionField) actionField.value='update'; } else toast(resp && resp.error || 'Update failed','error'); }); }); }
+		if(whoForm){ whoForm.addEventListener('submit', e=>{ e.preventDefault(); const updateBtn=document.getElementById('whoUpdateBtn'); if(updateBtn){ updateBtn.disabled=true; updateBtn.innerHTML='<i class="fa-solid fa-spinner animate-spin mr-1"></i>Updating...'; } const fd=new FormData(whoForm); const payload=new URLSearchParams(fd); const actionField=document.getElementById('whoAction'); const actVal=actionField?.value; const targetUrl=whoForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:payload}).then(resp=>{ if(updateBtn){ updateBtn.disabled=false; updateBtn.innerHTML='Update'; } if(resp && resp.ok){ updateWhoDOM(resp); const resType = resp.result || (actVal==='clear'?'cleared':'updated'); if(resType==='cleared') toast('Status cleared','success'); else if(resType==='none') toast('No status to clear','info'); else toast('Status updated','success'); if(actionField) actionField.value='update'; } else toast(resp && resp.error || 'Update failed','error'); }); }); }
 	const whoClear=document.getElementById('whoClearBtn');
 	if(whoClear){
 		whoClear.addEventListener('click', e=>{
 			e.preventDefault();
 			if(!whoForm) return;
+			whoClear.disabled = true;
+			whoClear.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-1"></i>Clearing...';
 			const nameVal = whoForm.querySelector('[name=name]')?.value || '';
 			const payload = new URLSearchParams();
 			payload.append('action','clear');
 			payload.append('name', nameVal);
 			fetchJson(whoForm.getAttribute('action'), { method:'POST', body: payload }).then(resp=>{
+				whoClear.disabled = false;
+				whoClear.innerHTML = 'Clear';
 				if(resp && resp.ok){
 					updateWhoDOM(resp);
 					if(resp.result==='cleared') toast('Status cleared','success');
@@ -1127,7 +1146,7 @@ window.REMINDERS_CAL_START = (function(){
 			});
 		});
 	}
-		if(memberForm){ memberForm.addEventListener('submit', e=>{ e.preventDefault(); const input=memberForm.querySelector('[name=text]'); const val=(input?.value||'').trim(); if(!val){ toast('Cannot save empty status','info'); return; } const fd=new FormData(memberForm); const qs=new URLSearchParams(fd); const targetUrl=memberForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); memberForm.reset(); memberForm.querySelector('[name=name]').value=currentUser(); toast('Status saved','success'); } else { if(resp && resp.error==='Empty status'){ toast('Cannot save empty status','info'); } else toast(resp && resp.error || 'Save failed','error'); } }); }); }
+		if(memberForm){ memberForm.addEventListener('submit', e=>{ e.preventDefault(); const input=memberForm.querySelector('[name=text]'); const val=(input?.value||'').trim(); if(!val){ toast('Cannot save empty status','info'); return; } const saveBtn=memberForm.querySelector('button[type=submit]'); if(saveBtn){ saveBtn.disabled=true; saveBtn.innerHTML='<i class="fa-solid fa-spinner animate-spin mr-1"></i>Saving...'; } const fd=new FormData(memberForm); const qs=new URLSearchParams(fd); const targetUrl=memberForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(saveBtn){ saveBtn.disabled=false; saveBtn.innerHTML='Save'; } if(resp && resp.ok){ updateMemberStatusDOM(resp); memberForm.reset(); memberForm.querySelector('[name=name]').value=currentUser(); toast('Status saved','success'); } else { if(resp && resp.error==='Empty status'){ toast('Cannot save empty status','info'); } else toast(resp && resp.error || 'Save failed','error'); } }); }); }
 		if(memberDel){ memberDel.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(memberDel); const qs=new URLSearchParams(fd); const targetUrl=memberDel.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); toast('Status removed','success'); } else toast(resp && resp.error || 'Remove failed','error'); }); }); }
 	// Initialize name fields
 	const cur=currentUser();

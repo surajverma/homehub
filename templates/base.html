@@ -30,16 +30,7 @@
     <style>:root { --primary-rgb: {{ pc[0:2]|int(base=16) }}, {{ pc[2:4]|int(base=16) }}, {{ pc[4:6]|int(base=16) }}; }</style>
     {% endif %}
     <style>
-    .btn, button.btn, a.btn { padding:0.5rem 0.75rem; font-size:0.875rem; font-weight:500; line-height:1.25rem; border-radius:0.375rem; display:inline-flex; align-items:center; gap:0.25rem; }
-    .btn-primary { background:var(--primary-color); color:#fff; }
-    .btn-primary:hover { filter:brightness(.92); }
-    .btn-danger { background:#dc2626; color:#fff; }
-    .btn-danger:hover { filter:brightness(.9); }
-    /* Add semantic success/secondary mapped to Tailwind-like colors (via fixed or theme vars) */
-    .btn-success { background:#16a34a; color:#fff; }
-    .btn-success:hover { filter:brightness(.95); }
-    .btn-secondary { background:#e5e7eb; color:#111827; }
-    .btn-secondary:hover { filter:brightness(.97); }
+    /* .btn classes moved/consolidated to input.css */
     /* Sidebar collapse styles (desktop-only) + root hint to avoid flash */
     @media (min-width: 768px){
         .sidebar.collapsed,
@@ -101,15 +92,17 @@
     <div class="flex min-h-screen">
         <!-- Global JSON data for client scripts -->
         <script id="familyData" type="application/json">{{ config.family_members | tojson }}</script>
+        <!-- Sidebar backdrop for mobile -->
+        <div id="sidebarBackdrop" class="fixed inset-0 bg-black/50 hidden z-30 md:hidden transition-opacity duration-200" aria-hidden="true"></div>
         <!-- Sidebar -->
         <aside id="sidebar" class="sidebar w-64 text-white flex flex-col fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 z-40">
             <div class="p-6 text-2xl font-bold border-b border-white/20 flex items-center justify-between" style="color: var(--sidebar-text-color);">
                 <span class="brand-name">{{ config.instance_name }}</span>
                 <div class="flex items-center gap-2">
-                    <button id="toggleCollapse" class="hidden md:inline-flex text-white/90 hover:text-white" title="Collapse sidebar" aria-label="Collapse">
+                    <button id="toggleCollapse" class="hidden md:inline-flex text-white/90 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none rounded" title="Collapse sidebar" aria-label="Collapse">
                         <i id="collapseIcon" class="fa-solid fa-angles-left"></i>
                     </button>
-                    <button id="closeSidebar" class="md:hidden text-white/90 hover:text-white" aria-label="Close">✕</button>
+                    <button id="closeSidebar" class="md:hidden text-white/90 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none rounded p-1" aria-label="Close Sidebar"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
             </div>
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="sidebarNav">
@@ -146,19 +139,19 @@
         </aside>
         <!-- Main Content -->
         <main class="main-content flex-1 p-4 md:p-8 overflow-y-auto md:ml-0 ml-0">
-            <div class="max-w-none md:max-w-none mx-auto">
-                <div class="sticky top-0 z-20 mb-4">
+            <div class="max-w-screen-2xl mx-auto w-full">
+                <div class="sticky top-0 z-20 mb-4 bg-[var(--background-color)] py-3 border-b border-gray-200/10 dark:border-gray-800/10 backdrop-blur-md bg-opacity-95">
                     <div class="flex items-center flex-wrap gap-2">
-                        <button id="openSidebar" class="md:hidden bg-blue-600 text-white px-3 py-2 rounded"><i class="fa-solid fa-bars"></i> Menu</button>
+                        <button id="openSidebar" class="md:hidden bg-blue-600 text-white px-3 py-2 rounded flex items-center gap-2 hover:bg-blue-700 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"><i class="fa-solid fa-bars"></i> Menu</button>
                         {% if not (hide_user_ui | default(false)) %}
                         <div class="ml-auto flex items-center gap-3 flex-wrap justify-end">
-                            <div id="welcome" class="text-sm text-gray-600 truncate max-w-[50vw]"></div>
-                            <div>
-                                <label class="text-sm text-gray-600 mr-2">User:</label>
-                                <select id="userSwitcher" class="border rounded p-1 text-sm"></select>
+                            <div id="welcome" class="text-sm text-gray-600 dark:text-slate-300 truncate max-w-[50vw]"></div>
+                            <div class="flex items-center">
+                                <label for="userSwitcher" class="text-sm text-gray-600 dark:text-slate-300 mr-2">User:</label>
+                                <select id="userSwitcher" class="border rounded p-1 text-sm bg-[var(--input-bg)] text-[var(--input-text)] border-[var(--input-border)] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"></select>
                             </div>
                             {% if is_authed %}
-                            <a href="/logout" class="px-2 py-1 rounded bg-gray-100 text-gray-800"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                            <a href="/logout" class="px-2 py-1 rounded bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -272,8 +265,19 @@
             const sidebar = document.getElementById('sidebar');
             const COLLAPSE_KEY = 'ui:sidebarCollapsed';
             const rootEl = document.documentElement;
-            document.getElementById('openSidebar')?.addEventListener('click', ()=> sidebar.classList.remove('-translate-x-full'));
-            document.getElementById('closeSidebar')?.addEventListener('click', ()=> sidebar.classList.add('-translate-x-full'));
+            // Mobile toggle with backdrop click-to-close
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            function openSidebarMobile() {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarBackdrop.classList.remove('hidden');
+            }
+            function closeSidebarMobile() {
+                sidebar.classList.add('-translate-x-full');
+                sidebarBackdrop.classList.add('hidden');
+            }
+            document.getElementById('openSidebar')?.addEventListener('click', openSidebarMobile);
+            document.getElementById('closeSidebar')?.addEventListener('click', closeSidebarMobile);
+            sidebarBackdrop?.addEventListener('click', closeSidebarMobile);
             // Desktop collapse/expand
             const collapseIcon = document.getElementById('collapseIcon');
             function applyCollapsedState(collapsed){
@@ -337,31 +341,31 @@
         // renderWelcome/applyUserContext are invoked from DOMContentLoaded
     </script>
     <!-- First-visit user selection modal -->
-    <div id="userSelectModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
-        <div class="bg-white w-full max-w-sm p-4 rounded shadow">
-            <h3 class="text-lg font-semibold mb-3">Select your user</h3>
-            <p class="text-sm text-gray-600 mb-3">Pick your name to personalize your HomeHub experience.</p>
-            <div class="mb-3">
-                <label class="block text-sm text-gray-700 mb-1" for="userSelectInput">User</label>
-                <select id="userSelectInput" class="w-full border rounded p-2"></select>
+    <div id="userSelectModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-[var(--card-background-color)] border border-gray-200/20 w-full max-w-sm p-6 rounded-lg shadow-xl text-[var(--text-color)]">
+            <h3 class="text-lg font-bold mb-2">Select your user</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Pick your name to personalize your HomeHub experience.</p>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1" for="userSelectInput">User</label>
+                <select id="userSelectInput" class="w-full border rounded-lg p-2 bg-[var(--input-bg)] text-[var(--input-text)] border-[var(--input-border)] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"></select>
             </div>
-            <div class="flex justify-end gap-2">
-                <button id="userSelectConfirm" class="px-3 py-2 rounded bg-blue-600 text-white">Continue</button>
+            <div class="flex justify-end">
+                <button id="userSelectConfirm" class="btn btn-primary px-4 py-2 rounded-lg text-sm font-semibold">Continue</button>
             </div>
         </div>
     </div>
-    
-</body>
-<script src="/static/js/reminders_api.js"></script>
-<script>
-// Register Service Worker for PWA
-(function(){
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function(){
-            navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                .catch(function(err){ console.warn('SW registration failed', err); });
+
+    <script src="/static/js/reminders_api.js"></script>
+    <script>
+    // Register Service Worker for PWA
+    (function(){
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function(){
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .catch(function(err){ console.warn('SW registration failed', err); });
         });
     }
-})();
-</script>
+    })();
+    </script>
+</body>
 </html>

@@ -1,7 +1,7 @@
 # HomeHub Project Blueprint
 
-**Version:** v1.0.1  
-**Last Updated:** 2026-06-21  
+**Version:** v1.0.2  
+**Last Updated:** 2026-06-22  
 
 Dokumen ini memetakan arsitektur dan modul utama dari proyek HomeHub, membantu *developer* memahami struktur fitur secara keseluruhan.
 
@@ -9,7 +9,7 @@ Dokumen ini memetakan arsitektur dan modul utama dari proyek HomeHub, membantu *
 HomeHub dibangun di atas *stack* teknologi berikut:
 - **Backend**: Python (Flask), menggunakan `Flask-SQLAlchemy` untuk interaksi *database*.
 - **Database**: SQLite (tersimpan di `data/app.db`).
-- **Frontend**: Vanilla JavaScript, Tailwind CSS (dibangun menggunakan `npm run build:css`), HTML + Jinja2 Templates.
+- **Frontend**: Vanilla JavaScript, Tailwind CSS (dibangun menggunakan `npm run build:css`), HTML + Jinja2 Templates. Baru saja diperbarui dengan refaktor UI/UX berstandar tinggi (aksesibilitas/A11y, touch targets 44px, transisi GPU-friendly, reduced-motion, standarisasi ikon Font Awesome).
 - **Penyebaran (Deployment)**: Docker / Docker Compose & Github Actions (GHCR).
 
 ## Feature Modules
