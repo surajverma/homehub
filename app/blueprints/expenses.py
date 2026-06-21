@@ -2,9 +2,11 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, c
 from datetime import datetime, date, timedelta
 import calendar as _calendar
 import json
+import os
 from ..models import db, RecurringExpense, ExpenseEntry
 from ..security import sanitize_text
 from ..blueprints import main_bp
+from ..utils import handle_expense_attachment
 import bleach
 
 
@@ -77,6 +79,7 @@ def _generate_recurring_entries_until(today: date | None = None) -> None:
                     unit_price=r.unit_price,
                     quantity=qty,
                     amount=amt,
+                    is_paid=False,
                     payer=r.creator,
                     recurring_id=r.id
                 ))
@@ -124,20 +127,25 @@ def _build_month_payload(y: int, m: int) -> dict:
     for e in q_entries:
         ds = e.date.strftime('%Y-%m-%d')
         by_date.setdefault(ds, {'total': 0.0, 'entries': []})
-        by_date[ds]['total'] += float(e.amount or 0)
-        total += float(e.amount or 0)
-        per_payer[e.payer or ''] = per_payer.get(e.payer or '', 0.0) + float(e.amount or 0)
-        if e.category:
-            per_category[e.category] = per_category.get(e.category, 0.0) + float(e.amount or 0)
+        amt = float(e.amount or 0)
+        is_paid = bool(getattr(e, 'is_paid', True))
+        if is_paid:
+            by_date[ds]['total'] += amt
+            total += amt
+            per_payer[e.payer or ''] = per_payer.get(e.payer or '', 0.0) + amt
+            if e.category:
+                per_category[e.category] = per_category.get(e.category, 0.0) + amt
         by_date[ds]['entries'].append({
             'id': e.id,
             'title': e.title,
             'category': e.category,
             'unit_price': float(e.unit_price) if e.unit_price is not None else None,
-            'amount': float(e.amount or 0),
+            'amount': amt,
             'quantity': float(e.quantity or 0) if e.quantity is not None else None,
             'recurring': bool(e.recurring_id),
-            'payer': e.payer or ''
+            'is_paid': is_paid,
+            'payer': e.payer or '',
+            'attachment_path': e.attachment_path
         })
 
     top_category = None
@@ -163,8 +171,17 @@ def _build_month_payload(y: int, m: int) -> dict:
 @main_bp.route('/expenses', methods=['GET', 'POST'])
 def expenses():
     today = date.today()
-    # Ensure recurring entries are generated up to today for a consistent view
-    _generate_recurring_entries_until(today)
+    try:
+        y = int(request.args.get('y') or today.year)
+        m = int(request.args.get('m') or today.month)
+    except Exception:
+        y, m = today.year, today.month
+        
+    # Ensure recurring entries are generated up to the end of the viewed month
+    import calendar
+    last_day = calendar.monthrange(y, m)[1]
+    target_date = date(y, m, last_day)
+    _generate_recurring_entries_until(max(today, target_date))
 
     if request.method == 'POST':
         form_type = request.form.get('form_type')
@@ -180,7 +197,13 @@ def expenses():
             creator = bleach.clean(request.form.get('creator',''))
             sd = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else date.today()
             ed = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
-            db.session.add(RecurringExpense(title=title, unit_price=unit_price, default_quantity=default_quantity, frequency=frequency, monthly_mode=monthly_mode, category=category, start_date=sd, end_date=ed, creator=creator, effective_from=sd))
+            
+            # Handle attachment
+            attachment = request.files.get('attachment')
+            upload_dir = os.path.abspath(os.path.join(current_app.root_path, '..', 'uploads'))
+            attachment_path = handle_expense_attachment(attachment, upload_dir) if attachment else None
+            
+            db.session.add(RecurringExpense(title=title, unit_price=unit_price, default_quantity=default_quantity, frequency=frequency, monthly_mode=monthly_mode, category=category, start_date=sd, end_date=ed, creator=creator, effective_from=sd, attachment_path=attachment_path))
             db.session.commit()
             flash('Recurring expense added.', 'success')
             y = request.args.get('y') or today.year
@@ -197,19 +220,20 @@ def expenses():
             unit_price = request.form.get('unit_price'); quantity = request.form.get('quantity')
             up = float(unit_price) if unit_price else None
             q = float(quantity) if quantity else None
-            db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer))
+            
+            # Handle attachment
+            attachment = request.files.get('attachment')
+            upload_dir = os.path.abspath(os.path.join(current_app.root_path, '..', 'uploads'))
+            attachment_path = handle_expense_attachment(attachment, upload_dir) if attachment else None
+            
+            is_paid = request.form.get('is_paid') == 'on'
+            db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer, attachment_path=attachment_path, is_paid=is_paid))
             db.session.commit()
             flash('Expense added.', 'success')
             y = request.args.get('y') or d.year
             m = request.args.get('m') or d.month
             sel = request.args.get('sel') or d.strftime('%Y-%m-%d')
             return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
-
-    try:
-        y = int(request.args.get('y') or today.year)
-        m = int(request.args.get('m') or today.month)
-    except Exception:
-        y, m = today.year, today.month
 
     payload = _build_month_payload(y, m)
     rules = RecurringExpense.query.order_by(RecurringExpense.timestamp.desc()).all()
@@ -242,6 +266,16 @@ def edit_recurring_expense(rid):
     sd = request.form.get('start_date'); ed = request.form.get('end_date')
     r.start_date = datetime.strptime(sd, '%Y-%m-%d').date() if sd else r.start_date
     r.end_date = datetime.strptime(ed, '%Y-%m-%d').date() if ed else r.end_date
+    
+    # Handle attachment update
+    attachment = request.files.get('attachment')
+    if attachment and attachment.filename:
+        # SQLAlchemy before_update will delete the old file automatically
+        upload_dir = os.path.abspath(os.path.join(current_app.root_path, '..', 'uploads'))
+        new_path = handle_expense_attachment(attachment, upload_dir)
+        if new_path:
+            r.attachment_path = new_path
+            
     # Do not force effective_from to today; edits are authoritative for full rule window
     today = date.today()
     db.session.commit()
@@ -373,6 +407,17 @@ def edit_expense_entry(entry_id):
     entry.unit_price = float(up) if up not in (None, '') else entry.unit_price
     entry.quantity = float(q) if q not in (None, '') else entry.quantity
     entry.amount = float(amt) if amt not in (None, '') else entry.amount
+    entry.is_paid = request.form.get('is_paid') == 'on'
+    
+    # Handle attachment update
+    attachment = request.files.get('attachment')
+    if attachment and attachment.filename:
+        # SQLAlchemy before_update will delete the old file automatically
+        upload_dir = os.path.abspath(os.path.join(current_app.root_path, '..', 'uploads'))
+        new_path = handle_expense_attachment(attachment, upload_dir)
+        if new_path:
+            entry.attachment_path = new_path
+            
     db.session.commit()
     flash('Expense updated.', 'success')
     # Preserve view
@@ -413,10 +458,8 @@ def bulk_delete_expenses():
 
 @main_bp.route('/api/expenses/month', methods=['GET'])
 def api_expenses_month():
-    # Keep recurring data up-to-date before answering
-    _generate_recurring_entries_until(date.today())
     today = date.today()
-    # Parse query params with clear validation and logging
+    # Parse query params
     y, m = today.year, today.month
     year_q = request.args.get('year')
     month_q = request.args.get('month')
@@ -433,7 +476,14 @@ def api_expenses_month():
         return jsonify({
             'error': 'Invalid month parameter. Must be an integer between 1 and 12.',
             'year': year_q if year_q is not None else y,
-            'month': month_q if month_q is not None else m,
+            'month': month_q if month_q is not None else m
         }), 400
+
+    # Generate recurring entries up to the end of the requested month
+    import calendar
+    last_day = calendar.monthrange(y, m)[1]
+    target_date = date(y, m, last_day)
+    _generate_recurring_entries_until(max(today, target_date))
+
     payload = _build_month_payload(y, m)
     return jsonify(payload)

@@ -112,7 +112,7 @@
 <div id="expense-modal" class="modal fixed inset-0 z-50 bg-black bg-opacity-50 items-center justify-center p-4 hidden">
   <div class="modal-content card w-full max-w-md p-6 transform scale-95">
     <h2 class="text-2xl font-bold mb-4" id="modal-title">Add Expense</h2>
-    <form id="expense-form" method="POST" action="/expenses">
+    <form id="expense-form" method="POST" action="/expenses" enctype="multipart/form-data">
       <input type="hidden" name="form_type" value="single">
       <input type="hidden" name="user" id="expense-user">
       <div class="space-y-3">
@@ -149,6 +149,14 @@
           <label class="text-sm text-gray-600">Payer</label>
           <input type="text" id="expense-payer" name="payer" class="mt-1 block w-full border rounded p-2" required>
         </div>
+        <div class="flex items-center gap-2 mt-2">
+          <input type="checkbox" id="expense-is-paid" name="is_paid" class="w-4 h-4 text-blue-600 rounded">
+          <label for="expense-is-paid" class="text-sm font-medium text-gray-700">Lunas / Sudah Dibayar</label>
+        </div>
+        <div>
+          <label class="text-sm text-gray-600">Attachment (Receipt/Proof)</label>
+          <input type="file" id="expense-attachment" name="attachment" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        </div>
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button type="button" id="cancel-expense" class="btn">Cancel</button>
@@ -182,7 +190,12 @@
             <summary class="cursor-pointer flex items-center justify-between gap-4">
               <div class="min-w-0">
                 <div class="font-medium">{{ r.title }} — {{ r.frequency }}{% if r.frequency=='monthly' %} ({{ r.monthly_mode or 'day_of_month' }}){% endif %}</div>
-                <div class="text-xs text-gray-500">{{ r.default_quantity }} × {{ ('%.' ~ expense_precision ~ 'f')|format(r.unit_price or 0) }} • {{ r.start_date }}{% if r.end_date %} → {{ r.end_date }}{% endif %} • by {{ r.creator }}</div>
+                <div class="text-xs text-gray-500 flex items-center gap-2">
+                  <span>{{ r.default_quantity }} × {{ "{:,.{}f}".format(r.unit_price or 0, expense_precision|int).replace(',', 'X').replace('.', ',').replace('X', '.') }} • {{ r.start_date }}{% if r.end_date %} → {{ r.end_date }}{% endif %} • by {{ r.creator }}</span>
+                  {% if r.attachment_path %}
+                  <button type="button" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="View attachment" onclick="event.stopPropagation(); showAttachment('/{{ r.attachment_path }}')"><i class="fa-solid fa-paperclip"></i></button>
+                  {% endif %}
+                </div>
               </div>
               <div class="flex items-center gap-3 shrink-0">
                 <button type="button" class="btn btn-secondary edit-btn" data-creator="{{ r.creator }}" onclick="this.closest('details').open=true">Edit</button>
@@ -193,7 +206,7 @@
                 </form>
               </div>
             </summary>
-            <form method="POST" action="/expenses/recurring/edit/{{ r.id }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 editable-owner-only" data-creator="{{ r.creator }}">
+            <form method="POST" action="/expenses/recurring/edit/{{ r.id }}" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 editable-owner-only" data-creator="{{ r.creator }}">
               <input type="hidden" name="user" value="">
               <div>
                 <label class="text-sm text-gray-600">Title</label>
@@ -235,6 +248,10 @@
                 <label class="text-sm text-gray-600">End Date</label>
                 <input type="date" name="end_date" class="w-full border rounded p-2" value="{{ r.end_date or '' }}">
               </div>
+              <div>
+                <label class="text-sm text-gray-600">Update Attachment (opt)</label>
+                <input type="file" name="attachment" accept="image/*" class="w-full text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+              </div>
               <div class="md:col-span-3 flex justify-end">
                 <button type="submit" class="btn btn-primary">Save</button>
               </div>
@@ -245,7 +262,7 @@
           {% endfor %}
         </div>
         <h3 class="font-semibold mb-2 border-t pt-4">Add New Rule</h3>
-        <form id="recurring-form" method="POST" action="/expenses" class="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+        <form id="recurring-form" method="POST" action="/expenses" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
           <input type="hidden" name="form_type" value="recurring">
           <input type="text" name="title" class="md:col-span-4 p-2 border rounded" placeholder="Title (e.g., Milk)" required>
           <div class="md:col-span-4">
@@ -264,8 +281,11 @@
             <option value="day_of_month">Monthly mode: Same day-of-month</option>
             <option value="calendar">Monthly mode: Calendar boundary</option>
           </select>
-          <input type="date" name="start_date" class="md:col-span-6 p-2 border rounded" placeholder="Start">
-          <input type="date" name="end_date" class="md:col-span-6 p-2 border rounded" placeholder="End (optional)">
+          <input type="date" name="start_date" class="md:col-span-4 p-2 border rounded" placeholder="Start">
+          <input type="date" name="end_date" class="md:col-span-4 p-2 border rounded" placeholder="End (optional)">
+          <div class="md:col-span-4">
+            <input type="file" name="attachment" accept="image/*" class="w-full text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" title="Proof of subscription/contract">
+          </div>
           <input type="hidden" name="creator" id="recCreator">
           <div class="md:col-span-12 flex justify-end">
             <button type="submit" class="btn btn-primary">Add Recurring</button>
@@ -298,6 +318,23 @@
   </div>
 </div>
 
+<!-- Attachment Viewer Modal -->
+<div id="attachment-modal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.92); align-items:center; justify-content:center;">
+  <!-- Close button: fixed to top-right corner, always on top -->
+  <button
+    type="button"
+    id="close-attachment"
+    aria-label="Close"
+    title="Close"
+    style="position:fixed; top:16px; right:16px; z-index:1000; width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.2); border:2px solid rgba(255,255,255,0.7); color:#fff; font-size:24px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);">
+    &times;
+  </button>
+  <!-- Image container -->
+  <div id="attachment-modal-content" style="max-width:95vw; max-height:95vh; display:flex; align-items:center; justify-content:center;">
+    <img id="attachment-image" src="" alt="Attachment Preview" style="max-width:95vw; max-height:90vh; object-fit:contain; border-radius:8px; box-shadow:0 25px 50px rgba(0,0,0,0.8);">
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function(){
   const adminName = '{{ config.admin_name }}';
@@ -309,6 +346,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // Modal helpers
   const expenseModal = document.getElementById('expense-modal');
   const recurringModal = document.getElementById('recurring-modal');
+  const attachmentModal = document.getElementById('attachment-modal');
   const settingsTabs = document.getElementById('settings-tabs');
   function openModal(m){ m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(()=> m.querySelector('.modal-content').classList.add('scale-100'), 10); }
   function closeModal(m){ const c=m.querySelector('.modal-content'); c.classList.remove('scale-100'); setTimeout(()=>{ m.classList.add('hidden'); m.classList.remove('flex'); }, 200); }
@@ -340,7 +378,12 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Settings bootstrap
   let settings = (payload.settings||{currency:'₹', categories:[]});
-  function fmt(amount){ return (settings.currency||'₹') + (Number(amount)||0).toFixed(settings.fraction_precision ?? 2); }
+  function fmt(amount){ 
+    const val = Number(amount)||0;
+    const precision = settings.fraction_precision ?? 2;
+    const formatted = new Intl.NumberFormat('id-ID', { minimumFractionDigits: precision, maximumFractionDigits: precision }).format(val);
+    return (settings.currency||'¤') + formatted; 
+  }
 
   function updateSummaryCards(){
     document.getElementById('total-this-month').textContent = fmt(summary.total_this_month||0);
@@ -376,10 +419,15 @@ document.addEventListener('DOMContentLoaded', function(){
       let cls = 'calendar-cell p-2 border rounded-md cursor-pointer flex flex-col text-left';
       if (isSelected) cls += ' bg-blue-500 text-white';
       else if (isToday) cls += ' bg-green-500';
+      let unpaid = 0;
+      if (data && data.entries) {
+        unpaid = data.entries.filter(e => !e.is_paid).reduce((sum, e) => sum + Number(e.amount||0), 0);
+      }
       grid.insertAdjacentHTML('beforeend', `
         <button class="${cls}" data-date="${ds}">
           <div class="font-semibold">${day}</div>
           ${data && data.total ? `<div class="text-xs mt-1 ${isSelected? 'text-white' : 'text-gray-600'}">${fmt(data.total)}</div>` : ''}
+          ${unpaid ? `<div class="text-[10px] mt-0.5 ${isSelected? 'text-red-200' : 'text-red-500'} flex items-center" title="Belum Dibayar"><i class="fa-solid fa-clock mr-1"></i>${fmt(unpaid)}</div>` : ''}
         </button>
       `);
     }
@@ -409,7 +457,11 @@ document.addEventListener('DOMContentLoaded', function(){
             <label class="flex items-center justify-between p-2 border-b last:border-b-0 gap-2">
               <input type="checkbox" class="entry-select" name="ids" value="${e.id}">
               <div>
-                <div class="font-medium">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
+                <div class="font-medium flex items-center">
+                  ${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}
+                  ${e.is_paid ? '<span class="ml-1 text-green-600" title="Paid"><i class="fa-solid fa-check-circle"></i></span>' : '<span class="ml-1 text-red-500" title="Unpaid"><i class="fa-solid fa-clock"></i></span>'}
+                  ${e.attachment_path ? `<button type="button" class="ml-1 text-blue-600 hover:text-blue-800 focus:outline-none" onclick="event.stopPropagation(); showAttachment('/${e.attachment_path}')"><i class="fa-solid fa-paperclip"></i></button>` : ''}
+                </div>
                 <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• by ${escapeHtml(e.payer)}`:''}</div>
               </div>
               <div class="font-semibold">${fmt(e.amount)}</div>
@@ -446,7 +498,11 @@ document.addEventListener('DOMContentLoaded', function(){
       return `
       <div class="flex items-start justify-between p-2 border rounded mb-2">
         <div>
-          <div class="font-medium">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
+          <div class="font-medium">
+            ${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}
+            ${e.is_paid ? '<span class="ml-2 text-green-700 text-xs font-semibold border border-green-200 bg-green-50 px-1 py-0.5 rounded" title="Paid"><i class="fa-solid fa-check-circle"></i> Lunas</span>' : '<span class="ml-2 text-red-600 text-xs font-semibold border border-red-200 bg-red-50 px-1 py-0.5 rounded" title="Unpaid"><i class="fa-solid fa-clock"></i> Belum Bayar</span>'}
+            ${e.attachment_path ? `<button type="button" class="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none" onclick="event.stopPropagation(); showAttachment('/${e.attachment_path}')"><i class="fa-solid fa-paperclip"></i> View Receipt</button>` : ''}
+          </div>
           <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• by ${escapeHtml(e.payer)}`:''}</div>
         </div>
         <div class="text-right">
@@ -574,6 +630,8 @@ document.addEventListener('DOMContentLoaded', function(){
       document.getElementById('expense-unit-price').value = '';
       document.getElementById('expense-amount').value = '';
       document.getElementById('expense-payer').value = currentUser();
+      const isPaidCheck = document.getElementById('expense-is-paid');
+      if(isPaidCheck) isPaidCheck.checked = true;
       openModal(expenseModal);
     }
     if (e.target && e.target.classList.contains('edit-expense')){
@@ -595,12 +653,40 @@ document.addEventListener('DOMContentLoaded', function(){
       document.getElementById('expense-unit-price').value = (entry.unit_price!=null? entry.unit_price : '');
       document.getElementById('expense-amount').value = entry.amount || '';
       document.getElementById('expense-payer').value = entry.payer || currentUser();
+      const isPaidCheck = document.getElementById('expense-is-paid');
+      if(isPaidCheck) isPaidCheck.checked = (typeof entry.is_paid !== 'undefined') ? entry.is_paid : true;
       openModal(expenseModal);
     }
   });
   document.getElementById('cancel-expense').addEventListener('click', ()=> closeModal(expenseModal));
   expenseModal.addEventListener('click', (e)=>{ if (e.target===expenseModal) closeModal(expenseModal); });
   recurringModal.addEventListener('click', (e)=>{ if (e.target===recurringModal) closeModal(recurringModal); });
+  
+  // Attachment Viewer Logic (uses plain style, not Tailwind classes)
+  function openAttachmentModal() {
+    attachmentModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeAttachmentModal() {
+    attachmentModal.style.display = 'none';
+    document.body.style.overflow = '';
+    document.getElementById('attachment-image').src = '';
+  }
+  document.getElementById('close-attachment').addEventListener('click', closeAttachmentModal);
+  attachmentModal.addEventListener('click', (e)=>{ 
+    // Close if clicking on the dark backdrop or the image container div
+    if(e.target === attachmentModal || e.target.id === 'attachment-modal-content') {
+      closeAttachmentModal(); 
+    }
+  });
+  // Also close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && attachmentModal.style.display === 'flex') closeAttachmentModal();
+  });
+  window.showAttachment = function(url) {
+    document.getElementById('attachment-image').src = url;
+    openAttachmentModal();
+  };
 
   // On load and on user switch, refresh UI bits that depend on user
   function applyUserVisibility(){

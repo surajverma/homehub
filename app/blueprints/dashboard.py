@@ -184,6 +184,13 @@ def api_reminders_list():
         rules = RecurringReminder.query.all()
     except Exception:
         rules = []
+        
+    try:
+        from ..models import RecurringExpense
+        expense_rules = RecurringExpense.query.all()
+    except Exception:
+        expense_rules = []
+
     gen_rows = []
     rule_dates = {}  # rr.id -> list of dates within window
     if scope == 'month':
@@ -251,6 +258,69 @@ def api_reminders_list():
                 gen_rows.append(temp)
             rule_dates.setdefault(rr.id, []).append(d)
             d = next_date_rule(rr, d)
+
+    # Synthesize RecurringExpense as 'Bills'
+    import calendar as _calendar
+    try:
+        from ..models import ExpenseEntry
+        expense_entries = ExpenseEntry.query.filter(
+            ExpenseEntry.recurring_id.isnot(None),
+            ExpenseEntry.date >= window_start,
+            ExpenseEntry.date <= window_end
+        ).all()
+        exp_status = {(e.recurring_id, e.date): getattr(e, 'is_paid', True) for e in expense_entries}
+    except Exception:
+        exp_status = {}
+        
+    for er in expense_rules:
+        rs = er.start_date or window_start
+        base_day = (er.start_date or window_start).day
+        def next_date_exp(d: date) -> date:
+            if er.frequency == 'daily':
+                return d + timedelta(days=1)
+            if er.frequency == 'weekly':
+                return d + timedelta(weeks=1)
+            mode = getattr(er, 'monthly_mode', 'day_of_month') or 'day_of_month'
+            if mode == 'calendar':
+                ny = d.year + (1 if d.month == 12 else 0)
+                nm = 1 if d.month == 12 else d.month + 1
+                return date(ny, nm, 1)
+            else:
+                ny = d.year + (1 if d.month == 12 else 0)
+                nm = 1 if d.month == 12 else d.month + 1
+                last_dom = _calendar.monthrange(ny, nm)[1]
+                day = min(base_day, last_dom)
+                return date(ny, nm, day)
+        
+        d = rs
+        while d < window_start:
+            nd = next_date_exp(d)
+            if nd == d:
+                break
+            d = nd
+            
+        while d <= window_end and (not er.end_date or d <= er.end_date):
+            is_paid = exp_status.get((er.id, d), False)
+            if is_paid:
+                title = f"[Lunas] {er.title}"
+                color = "#16a34a" # green
+            else:
+                title = f"[Belum Bayar] {er.title}"
+                color = "#dc2626" # red
+                
+            temp = Reminder(
+                date=d, 
+                title=title, 
+                description=f"Automated Bill from Expense Tracker", 
+                creator=er.creator or '', 
+                time=None, 
+                category="Bill", 
+                color=color
+            )
+            temp.id = -(2000000 + er.id)  # special range for Expense Bills
+            gen_rows.append(temp)
+            d = next_date_exp(d)
+
     combined = rows + gen_rows
     # Sort combined
     try:

@@ -34,6 +34,13 @@ def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 
+@main_bp.route('/uploads/expenses/<filename>')
+def expense_attachment(filename):
+    # Always serve inline for viewing receipts
+    expenses_dir = os.path.join(UPLOAD_FOLDER, 'expenses')
+    return send_from_directory(expenses_dir, filename, as_attachment=False)
+
+
 @main_bp.route('/uploads/preview/<filename>')
 def preview_file(filename):
     """Serve file for preview (inline) - restricted to safe types only"""

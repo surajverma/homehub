@@ -1,5 +1,7 @@
 from . import db
 from datetime import datetime
+import os
+from sqlalchemy import event
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -148,6 +150,7 @@ class RecurringExpense(db.Model):
     effective_from = db.Column(db.Date)  # apply changes from this date forward
     creator = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    attachment_path = db.Column(db.String(512))
 
 class RecurringReminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -175,8 +178,45 @@ class ExpenseEntry(db.Model):
     title = db.Column(db.String(256), nullable=False)
     category = db.Column(db.String(64))
     unit_price = db.Column(db.Float)
-    quantity = db.Column(db.Float)
+    quantity = db.Column(db.Float, default=1.0)
     amount = db.Column(db.Float, nullable=False)
+    is_paid = db.Column(db.Boolean, default=True)
     payer = db.Column(db.String(64))
     recurring_id = db.Column(db.Integer, db.ForeignKey('recurring_expense.id'))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    attachment_path = db.Column(db.String(512))
+
+# Event listeners for strict file CRUD
+
+def delete_attachment_file(attachment_path):
+    if attachment_path:
+        from flask import current_app
+        # Build the absolute path correctly based on the project root (one level up from app root)
+        project_root = os.path.abspath(os.path.join(current_app.root_path, '..'))
+        abs_path = os.path.join(project_root, attachment_path)
+        if os.path.exists(abs_path):
+            try:
+                os.remove(abs_path)
+            except OSError:
+                pass
+
+@event.listens_for(ExpenseEntry, 'after_delete')
+@event.listens_for(RecurringExpense, 'after_delete')
+def receive_after_delete(mapper, connection, target):
+    delete_attachment_file(target.attachment_path)
+
+@event.listens_for(ExpenseEntry, 'before_update')
+@event.listens_for(RecurringExpense, 'before_update')
+def receive_before_update(mapper, connection, target):
+    from sqlalchemy.orm import object_session
+    session = object_session(target)
+    
+    # Check if this object is modified and attachment_path changed
+    state = db.inspect(target)
+    history = state.get_history('attachment_path', True)
+    if history.has_changes():
+        # history.deleted is a list of old values
+        if history.deleted and history.deleted[0]:
+            # delete the old file
+            delete_attachment_file(history.deleted[0])
+

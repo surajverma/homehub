@@ -62,7 +62,7 @@ def create_app(test_config: dict | None = None):
                 conn = sqlite3.connect(db_path)
                 cur = conn.cursor()
                 # Import models to get actual table names
-                from .models import RecurringExpense as _RecurringExpense, QRCode as _QRCode, Reminder as _Reminder  # noqa: F401
+                from .models import RecurringExpense as _RecurringExpense, QRCode as _QRCode, Reminder as _Reminder, ExpenseEntry as _ExpenseEntry  # noqa: F401
                 # Helper to check column existence
                 def has_column(table, column):
                     cur.execute(f"PRAGMA table_info({table})")
@@ -111,6 +111,8 @@ def create_app(test_config: dict | None = None):
                 ensure_column(_RecurringExpense.__tablename__, 'monthly_mode', 'TEXT', 'day_of_month')
                 ensure_column(_RecurringExpense.__tablename__, 'category', 'TEXT', None)
                 ensure_column(_RecurringExpense.__tablename__, 'effective_from', 'DATE', None)
+                ensure_column(_RecurringExpense.__tablename__, 'attachment_path', 'TEXT', None)
+                ensure_column(_ExpenseEntry.__tablename__, 'attachment_path', 'TEXT', None)
                 # Basic settings table (key/value) for currency and categories
                 cur.execute("CREATE TABLE IF NOT EXISTS app_setting (key TEXT PRIMARY KEY, value TEXT)")
                 # New columns for QRCode and Reminder
