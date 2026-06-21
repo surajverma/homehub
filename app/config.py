@@ -52,3 +52,32 @@ def load_config():
     weather.setdefault('units', 'metric')
     weather.setdefault('view', 'compact')
     return config
+
+def update_config(new_data):
+    """
+    Updates config.yml preserving comments, and reloads it into the current app context.
+    """
+    from ruamel.yaml import YAML
+    yaml_rw = YAML()
+    yaml_rw.preserve_quotes = True
+    
+    with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+        data = yaml_rw.load(f)
+        
+    def deep_update(d, u):
+        for k, v in u.items():
+            if isinstance(v, dict) and k in d and isinstance(d[k], dict):
+                deep_update(d[k], v)
+            else:
+                d[k] = v
+                
+    deep_update(data, new_data)
+    
+    with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
+        yaml_rw.dump(data, f)
+        
+    # Reload the parsed config into memory
+    from flask import current_app
+    if current_app:
+        current_app.config['HOMEHUB_CONFIG'] = load_config()
+    return True

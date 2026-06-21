@@ -1,285 +1,54 @@
-[![CI/CD](https://github.com/surajverma/homehub/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/surajverma/homehub/actions/workflows/docker-publish.yml)
-![Latest Release](https://img.shields.io/github/v/release/surajverma/homehub?include_prereleases)
-[![GitHub last commit](https://img.shields.io/github/last-commit/surajverma/homehub)](https://github.com/surajverma/homehub/commits/main)
-[![GitHub issues](https://img.shields.io/github/issues/surajverma/homehub)](https://github.com/surajverma/homehub/issues)
-[![GitHub closed issues](https://img.shields.io/github/issues-closed/surajverma/homehub?color=brightgreen)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aclosed)
-[![GitHub issues by-label](https://img.shields.io/github/issues/surajverma/homehub/feature%20request?color=blue)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request)
-[![GitHub Stars](https://img.shields.io/github/stars/surajverma/homehub)](https://github.com/surajverma/homehub/stargazers)
-[![Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Fsurajverma%2Fhomehub&query=downloadCount&style=social&logo=github&label=Docker%20Pulls)](https://github.com/surajverma/homehub/pkgs/container/homehub)
+[![CI/CD](https://github.com/zarvelionzynji/homehub/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/zarvelionzynji/homehub/actions/workflows/docker-publish.yml)
+![Latest Release](https://img.shields.io/github/v/release/zarvelionzynji/homehub?include_prereleases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/zarvelionzynji/homehub)](https://github.com/zarvelionzynji/homehub/commits/main)
 
-> **Maintainer Note**  
-> Thank you for your interest in this project! I originally started it as a personal utility and never expected it to grow so quickly—I’m genuinely thrilled and grateful that it’s become helpful to you and your family.  
->  
-> Please note that I am currently the sole maintainer and manage this repository alongside a full-time job, which means the time I can give to this project is somewhat limited. Responses to issues, pull requests, or questions may be delayed, especially during busy periods at work or at home.  
->  
-> I typically work on the project after office hours or on weekends, depending on my availability and energy. Your patience, understanding, and support mean a lot—thank you for helping make this project better!
+# 🏡 HomeHub (Fork)
 
+> **Info Fork**: Proyek ini adalah versi modifikasi (fork) dari repositori asli [HomeHub buatan surajverma](https://github.com/surajverma/homehub). 
 
-# 🏡 HomeHub: Your All-In-One Family Dashboard
+HomeHub adalah aplikasi web ringan yang berjalan di server lokal (self-hosted) untuk menjadi pusat kegiatan digital harian keluarga Anda.
 
-Ever wanted a simple, private spot on your home network for your family's daily stuff? That's HomeHub. It's a lightweight, self-hosted web app that turns any computer (even a Raspberry Pi!) into a central hub for shared notes, shopping lists, chores, a media downloader, and even a family expense tracker.
+## ✨ Fitur Utama
+* **📝 Catatan & Cloud Bersama**: Tempat sederhana untuk menulis catatan cepat dan berbagi file di jaringan rumah.
+* **🛒 Daftar Belanja & Tugas (Chores)**: Daftar kolaboratif untuk melacak belanjaan dan tugas rumah tangga.
+* **🗓️ Kalender & Pengingat**: Kalender bersama untuk mengingat tanggal penting.
+* **💰 Pencatat Pengeluaran**: Lacak pengeluaran keluarga dan tagihan bulanan (mendukung status lunas/belum bayar).
+* **👋 Siapa di Rumah?**: Cek dengan cepat siapa anggota keluarga yang sedang berada di rumah.
+* **🎬 Pengunduh Media**: Simpan video atau musik langsung ke server Anda.
+* **🤖 AI Agent API (RESTful)**: Hubungkan HomeHub dengan asisten AI favorit Anda (seperti OpenClaw atau GPT). AI dapat mengontrol status rumah, membaca catatan, menyelesaikan tugas, hingga mengubah `config.yml` secara programatis via API terenkripsi.
+* **Privasi Penuh**: Semua data Anda tetap berada di jaringan Anda sendiri. Tidak ada pelacakan dari pihak ketiga.
 
-It’s designed to be easy to use for everyone in the family, with a clean interface that works great on any device.
+## 🚀 Cara Menjalankan dengan Docker
 
-## What Can It Do?
-
-HomeHub is packed with useful tools to make family life a little more organized:
-
-* **📝 Shared Notes**: A simple place to jot down quick notes for everyone to see.
-* **☁️ Shared Cloud**: Easily upload and share files across your home network.
-* **🛒 Shopping List**: A collaborative list so you never forget the milk again. Comes with suggestions based on your history!
-* **✅ Chore Tracker**: A simple to-do list for household tasks.
-* **🗓️ Calendar & Reminders**: A shared calendar to keep track of important dates.
-* **👋 Who's Home?**: See at a glance who is currently home.
-* **💰 Expense Tracker**: A powerful tool to track family spending, with support for recurring bills like newspapers, milk, or subscriptions.
-* **🎬 Media Downloader**: Save videos or music from popular sites directly to your server.
-* ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, **Weather Updates** and **QR Code Generator**!
-
-## Salient Features
-* **Private & Self-Hosted**: All your data stays on your network. No cloud, no tracking.
-* **Simple & Lightweight**: Runs smoothly on minimal hardware.
-* **Family-Focused**: Designed to be intuitive for users of all technical skill levels.
-* **Customizable**: Toggle features on or off and even change the color theme right from the `config.yml` file.
-
-![homehub](https://github.com/user-attachments/assets/55b1c580-8897-4073-9e51-2a892a2bdcd4)
-
-## Getting Started is Easy
-
-The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
-
-1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub and add family members. You can also set an optional password to protect the whole site.
-<details>
-  <summary>Click to see an example config.yml</summary>
-
-
-
-```yaml
-instance_name: "My Home Hub"
-password: "" #leave blank for password less access
-admin_name: "Administrator"
-feature_toggles:
-  shopping_list: true
-  media_downloader: true
-  pdf_compressor: true
-  qr_generator: true
-  notes: true
-  shared_cloud: true
-  who_is_home: true
-  personal_status: true
-  chores: true
-  recipes: true
-  expiry_tracker: true
-  url_shortener: true
-  expense_tracker: true
-
-family_members:
-  - Mom
-  - Dad
-  - Dipanshu
-  - Vivek
-  - India
-
-reminders:
-  # time_format controls how reminder times are displayed in the UI.
-  # Allowed values: "12h" (default) or "24h". Remove or leave blank to fall back to 12h.
-  time_format: 12h
-
-  # calendar_start_day controls which day the reminders calendar starts on.
-  # Accepts full weekday names (sunday, saturday).  
-  calendar_start_day: monday #default is Sunday, comment this line to switch to default
-
-  # Example reminder categories (keys lowercase no spaces recommended)
-  categories:
-    - key: health
-      label: Health
-      color: "#dc2626"
-    - key: bills
-      label: Bills
-      color: "#0d9488"
-    - key: school
-      label: School
-      color: "#7c3aed"
-    - key: family
-      label: Family
-      color: "#2563eb"
-
-#Optional settings
-theme:
-  primary_color: "#1d4ed8"
-  secondary_color: "#a0aec0"
-  background_color: "#f7fafc"
-  card_background_color: "#fff"
-  text_color: "#333"
-  sidebar_background_color: "#2563eb"
-  sidebar_text_color: "#ffffff"
-  sidebar_link_color: "rgba(255,255,255,0.95)"
-  sidebar_link_border_color: "rgba(255,255,255,0.18)"
-  sidebar_active_color: "#3b82f6"
+1. Clone repositori ini dan buat salinan konfigurasi:
+```bash
+git clone https://github.com/zarvelionzynji/homehub.git
+cd homehub
+cp config-example.yml config.yml
 ```
 
-</details>
+2. Buka dan edit `config.yml` untuk mengatur nama anggota keluarga dan pengaturan lainnya.
 
-**2. Run with Docker Compose**
-
-Use the provided `compose.yml` file to get started in seconds:
-
-```yaml
-# compose.yml
-services:
-  homehub:
-    container_name: homehub
-    image: ghcr.io/surajverma/homehub:latest
-    ports:
-      - "5000:5000" #app listens internally on port 5000
-    environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to random if not provided
-    volumes:
-      - ./uploads:/app/uploads
-      - ./media:/app/media
-      - ./pdfs:/app/pdfs
-      - ./data:/app/data
-      - ./config.yml:/app/config.yml:ro
-```
-
+3. Jalankan dengan Docker Compose:
 ```bash
 docker compose up -d
 ```
-That's it! Open your browser and head to [http://localhost:5000](http://localhost:5000)
+HomeHub Anda siap diakses di [http://localhost:5000](http://localhost:5000).
 
-## Theming
+## 🛠️ Cara Pengembangan (Development)
 
-HomeHub follows your system dark/light mode. You can customize colors via `config.yml > theme`.
-
-Configurable keys:
-
-```yaml
-theme:
-  # Accent colors
-  primary_color: "#1d4ed8"
-  secondary_color: "#a0aec0"
-  # Surfaces & text
-  background_color: "#f7fafc"
-  card_background_color: "#ffffff"
-  text_color: "#333333"
-  # Sidebar palette
-  sidebar_background_color: "#2563eb"
-  sidebar_text_color: "#ffffff"                # text color used for the sidebar title and labels
-  sidebar_link_color: "rgba(255,255,255,0.95)" # link text color in sidebar items
-  sidebar_link_border_color: "rgba(255,255,255,0.18)" # subtle border around sidebar links
-```
-
-Tips:
-- Want higher contrast in the sidebar? Increase `sidebar_link_border_color` opacity (e.g., `rgba(255,255,255,0.3)`).
-- Prefer lighter/darker accents? Tweak `primary_color` and `secondary_color`.
-- Dark mode palette adapts automatically; the variables above apply to light mode, while dark mode uses tuned counterparts for good contrast.
-
-## Weather Widget
-
-HomeHub includes an optional weather widget powered by [Open-Meteo](https://open-meteo.com/), a free weather API. The widget displays current weather conditions and optionally today's forecast on your dashboard.
-
-**By default, the weather widget is hidden.** You can enable it through `config.yml`:
-
-```yaml
-weather:
-  enabled: true # set to true to show the widget
-  label: "" # optional location label (e.g., "Kolkata"). Leave blank to hide.
-  latitude: "" # optional, leave empty to use browser geolocation
-  longitude: "" # optional, leave empty to use browser geolocation
-  timezone: "" # optional, e.g., "Asia/Kolkata" or "America/New_York"; if unset, API uses timezone=auto
-  units: metric # metric or imperial (default: metric)
-  view: compact # compact or detailed (detailed shows today's forecast: sunrise, sunset, UV, rain %, highs/lows)
-```
-
-**Features:**
-- **Two view modes:**
-  - `compact`: Shows current temperature, weather condition, feels like, wind (with direction and gusts), humidity, and recent precipitation
-  - `detailed`: Adds today's forecast with sunrise/sunset times, UV index, precipitation probability, and daily high/low temperatures
-- **Smart caching:** Weather data is cached for 15 minutes to respect API rate limits and improve performance
-- **Flexible location:** Use configured coordinates or browser geolocation
-- **Timezone support:** Displays times in your configured timezone, or uses automatic detection
-- **Unit selection:** Choose between metric (°C, km/h, mm) or imperial (°F, mph, mm) units
-
-**Privacy Note:** When enabled, the widget makes API requests to Open-Meteo's servers. Please review [Open-Meteo's privacy policy](https://open-meteo.com/en/terms) for details on their data handling practices.
-
-## Development Setup
-
-To contribute or run & build HomeHub locally, follow these steps:
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/surajverma/homehub.git
-cd homehub
-```
-
-### 2. Python Environment Setup
+Jika Anda ingin menjalankannya secara lokal tanpa Docker untuk mengubah kode:
 ```bash
 python -m venv venv
-venv\Scripts\activate  # On Windows
+venv\Scripts\activate  # Di Windows
 pip install -r requirements.txt
-```
-
-### 3. Configuration
-- Copy `config-example.yml` to `config.yml` and edit as needed for your family, features, and theme.
-
-### 4. CSS Build (Tailwind + Custom Styles)
-```bash
 npm install
 npm run build:css
-```
-- For live CSS rebuilds during development:
-```bash
-npm run watch:css
+
+python run.py
 ```
 
-### 5. Running the App
-- **With Docker (recommended):**
-  ```bash
-  docker compose up -d
-  ```
-- **Locally (for development):**
-  ```bash
-  python run.py
-  ```
-  (Ensure you have built CSS and set up your config.)
+## 📜 Lisensi & Penafian (Disclaimer)
 
-### 6. Troubleshooting
-- If you see missing dependency errors, ensure you have run both `pip install -r requirements.txt` and `npm install`.
-- If port 5000 is in use, stop the conflicting service or change the port in `compose.yml` and `config.yml`.
-- For Docker issues, try `docker compose down` then `docker compose up -d`.
-
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are always welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request.
-
-## Disclaimer & Security Notice
-
-This software is being provided to the community "as is." This means it comes **without any warranty or guarantee of any kind.** While I've done my best to build it, I can't promise it will be perfect, fit your exact needs, or be 100% free of bugs.
-
-**Please be aware that you are using this software at your own risk.** The authors and contributors are not responsible for any problems, damages, or data loss that might occur from using it.
-
-### 🛡️ Important Security Notice
-
-This project is built for use on a **local or trusted network** (like your home).
-
-It is **not designed or hardened to be safely exposed to the public internet.** If you choose to host this software publicly, you are solely responsible for performing a full security review and adding the necessary protections before you do so.
-
-### 🌤️ Weather Data & Third-Party Services
-
-The optional weather widget uses [Open-Meteo](https://open-meteo.com/), a free weather API service. When the weather widget is enabled:
-- Your browser makes requests to Open-Meteo's servers to fetch weather data
-- Location coordinates (latitude/longitude) are sent to their API
-- Open-Meteo has its own [privacy policy](https://open-meteo.com/en/terms) and terms of service
-
-By enabling the weather widget, you acknowledge that weather data is provided by a third-party service and is subject to their policies. HomeHub itself does not store or process weather data beyond local browser caching.
-
-## Have Fun!
-
-This project was built to be a practical tool for my own family, and I hope it's useful for yours too.
-
-If you find HomeHub useful, you can [buy me a coffee ☕](https://ko-fi.com/skv).
+Proyek ini dilisensikan di bawah MIT License. 
+Perangkat lunak ini disediakan "apa adanya" tanpa garansi. Dirancang khusus untuk penggunaan di **jaringan lokal yang terpercaya** dan tidak disarankan untuk diekspos langsung ke internet publik tanpa pengamanan tambahan.

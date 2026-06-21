@@ -1,6 +1,7 @@
 instance_name: "My Home Hub"
 password: "" #leave blank for password less access
 admin_name: "Administrator"
+ai_agent_token: "rahasia123" # Tambahkan token acak agar AI eksternal bisa mengakses API
 feature_toggles:
   shopping_list: true
   media_downloader: true
@@ -19,14 +20,11 @@ feature_toggles:
 family_members:
   - Mom
   - Dad
-  - Dipanshu
-  - Vivek
-  - India
 
 reminders:
   # time_format controls how reminder times are displayed in the UI.
   # Allowed values: "12h" (default) or "24h". Remove or leave blank to fall back to 12h.
-  time_format: 12h
+  time_format: 24h
 
   # calendar_start_day controls which day the reminders calendar starts on.
   # Accepts full weekday names (sunday..saturday) or numeric 0-6 where 0=Sunday.  

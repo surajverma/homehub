@@ -10,3 +10,4 @@ Flask-WTF
 bleach
 pytest
 requests
+ruamel.yaml

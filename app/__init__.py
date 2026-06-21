@@ -189,6 +189,9 @@ def create_app(test_config: dict | None = None):
     from .blueprints import qr  # noqa: F401
     from .blueprints import weather  # noqa: F401
     app.register_blueprint(main_bp)
+    
+    from .blueprints.ai_agent import ai_agent_bp
+    app.register_blueprint(ai_agent_bp)
 
     @app.context_processor
     def inject_auth_state():
