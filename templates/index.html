@@ -929,7 +929,11 @@ window.REMINDERS_CAL_START = (function(){
 		
 		function update() {
 			const now = new Date();
-			timeEl.textContent = now.toLocaleTimeString();
+			const is24h = '{{ config.get("reminders", {}).get("time_format", "12h") }}' === '24h';
+			timeEl.textContent = now.toLocaleTimeString(undefined, { 
+				hour12: !is24h,
+				hour: '2-digit', minute: '2-digit', second: '2-digit' 
+			});
 			dateEl.textContent = now.toLocaleDateString(undefined, { 
 				weekday: 'long', 
 				year: 'numeric', 
