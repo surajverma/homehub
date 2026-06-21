@@ -297,7 +297,9 @@ def api_reminders_list():
                 diff = abs((e.date - due_date).days)
                 if freq == 'daily' and diff == 0: return True
                 elif freq == 'weekly' and diff <= 3: return True
-                elif freq not in ('daily', 'weekly') and diff <= 20: return True
+                elif freq not in ('daily', 'weekly'):
+                    if e.date.year == due_date.year and e.date.month == due_date.month: return True
+                    if diff <= 20: return True
             return False
 
     except Exception:

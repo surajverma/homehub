@@ -20,6 +20,7 @@ Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 - **UI/UX Dark Mode Enhancements**: Meningkatkan dukungan tema gelap (*Dark Mode*) untuk halaman *Recurring Expenses* dengan mengubah CSS statis menjadi kelas *utility Tailwind* (seperti `dark:bg-gray-800`).
+- **Bug Fix (Early Payment Tracking)**: Memperbaiki deteksi pelunasan tagihan berulang bulanan di *dashboard* agar tetap mendeteksi pembayaran yang dilakukan sangat awal di bulan yang sama (sebelumnya gagal mendeteksi jika selisih pembayaran lebih dari 20 hari).
 - **Bug Fix (Overlap Layout)**: Memperbaiki elemen yang saling tumpang tindih (*overlap*) antara judul pengeluaran yang panjang dan label *badge* pada sidebar dengan menerapkan *flex constraints* (`shrink-0` dan `min-w-0`).
 - **Bug Fix (UnboundLocalError)**: Memperbaiki *Internal Server Error 500* pada dasbor (khususnya *widget* *Reminder*) yang diakibatkan oleh *shadowing variable* `timedelta` lokal pada Python.
 - **Bug Fix (Dashboard Clock)**: Memperbaiki masalah di mana jam berjalan di halaman muka tidak mengindahkan pengaturan format 24 jam (`reminders.time_format`) pada `config.yml`. Jam utama dan kartu sambutan sekarang mendetek format waktu dengan benar serta detiknya terus berdetak tanpa memuat ulang halaman.
