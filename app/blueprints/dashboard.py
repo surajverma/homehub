@@ -276,7 +276,6 @@ def api_reminders_list():
     import calendar as _calendar
     try:
         from ..models import ExpenseEntry
-        from datetime import timedelta
         # Broaden search window to catch early/late payments
         search_start = window_start - timedelta(days=30)
         search_end = window_end + timedelta(days=30)

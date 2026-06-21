@@ -22,7 +22,7 @@ HomeHub dibangun di atas *stack* teknologi berikut:
 ### 2. Modul Fungsionalitas Keluarga
 - **Shopping List**: Terletak di `app/blueprints/shopping.py`. Mirip dengan *Chores*, tapi khusus melacak daftar belanjaan beserta *tags* kategori dan histori belanja.
 - **Quick Links**: Terletak di `app/blueprints/quick_links.py`. Fitur manajemen *bookmark* interaktif dengan dukungan *drag-and-drop* (menggunakan Sortable.js), ikon SVG CDN, dan Auto-favicon. Tautan dan Kategori dapat diatur urutannya secara fleksibel (*order_index* tersimpan di SQLite), lalu ditampilkan berjejer di *dashboard* utama (sebagai *dashboard* mini ala Heimdall/Homarr).
-- **Expense Tracker**: Terletak di `app/blueprints/expenses.py`. Melacak pengeluaran dengan filter bulanan/tahunan, serta sistem penagihan (Belum Bayar/Lunas) untuk tagihan berulang rutin.
+- **Expense Tracker**: Terletak di `app/blueprints/expenses.py`. Melacak pengeluaran dengan filter bulanan/tahunan, serta sistem penagihan (Belum Bayar/Lunas) untuk tagihan berulang rutin. Memiliki halaman manajemen dedikasi untuk aturan *recurring* di `/expenses/recurring` dengan *Edit Strategy* pengamanan histori pembayaran.
 - **Shared Notes & Cloud**: Mengelola direktori penyimpanan file bersama dan catatan tempel.
 - **Kalender Reminders**: Mengelola pengingat jadwal satu kali jalan maupun jadwal rutin.
 
