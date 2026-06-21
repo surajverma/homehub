@@ -186,6 +186,16 @@ class ExpenseEntry(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     attachment_path = db.Column(db.String(512))
 
+class QuickLink(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(128), nullable=False)
+    url = db.Column(db.String(512), nullable=False)
+    category = db.Column(db.String(64), default='General')
+    icon_keyword = db.Column(db.String(64), default='')
+    show_on_dashboard = db.Column(db.Boolean, default=True)
+    creator = db.Column(db.String(64))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
 # Event listeners for strict file CRUD
 
 def delete_attachment_file(attachment_path):

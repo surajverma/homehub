@@ -9,6 +9,7 @@
 HomeHub adalah aplikasi web ringan yang berjalan di server lokal (self-hosted) untuk menjadi pusat kegiatan digital harian keluarga Anda.
 
 ## ✨ Fitur Utama
+* **🔗 Quick Links**: Dasbor visual bergaya kotak (*grid*) untuk mengorganisasi *bookmark* dan tautan favorit keluarga, lengkap dengan logo ikon dan pengelompokan kategori pintar.
 * **📝 Catatan & Cloud Bersama**: Tempat sederhana untuk menulis catatan cepat dan berbagi file di jaringan rumah.
 * **🛒 Daftar Belanja & Tugas (Chores)**: Daftar kolaboratif untuk melacak belanjaan dan tugas rumah tangga.
 * **🗓️ Kalender & Pengingat**: Kalender bersama untuk mengingat tanggal penting.

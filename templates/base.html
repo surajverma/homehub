@@ -114,6 +114,7 @@
             </div>
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="sidebarNav">
                 <a href="/" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Welcome"><i class="fa-solid fa-house w-5 text-center"></i><span class="nav-label">Welcome</span></a>
+                {% if config.feature_toggles.get('quick_links', True) %}<a href="/quick-links" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Quick Links"><i class="fa-solid fa-link w-5 text-center text-blue-400"></i><span class="nav-label">Quick Links</span></a>{% endif %}
                 {% if config.feature_toggles.get('notes') %}<a href="/notes" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Shared Notes"><i class="fa-solid fa-note-sticky w-5 text-center"></i><span class="nav-label">Shared Notes</span></a>{% endif %}
                 {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Shared Cloud"><i class="fa-solid fa-cloud w-5 text-center"></i><span class="nav-label">Shared Cloud</span></a>{% endif %}
                 {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Shopping List"><i class="fa-solid fa-cart-shopping w-5 text-center"></i><span class="nav-label">Shopping List</span></a>{% endif %}

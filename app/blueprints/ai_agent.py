@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from ..models import db, HomeStatus, MemberStatus, Note, Chore, ShoppingItem
+from ..models import db, HomeStatus, MemberStatus, Note, Chore, ShoppingItem, QuickLink
 from ..config import update_config
 from datetime import datetime
 
@@ -221,6 +221,82 @@ def handle_delete_shopping_item(params, family):
     db.session.commit()
     return {'success': True, 'item_id': item_id}
 
+def handle_get_quick_links(params, family):
+    links = QuickLink.query.order_by(QuickLink.timestamp.desc()).all()
+    result = []
+    for l in links:
+        result.append({
+            "id": l.id,
+            "title": l.title,
+            "url": l.url,
+            "category": l.category,
+            "icon_keyword": l.icon_keyword,
+            "show_on_dashboard": l.show_on_dashboard
+        })
+    return {'success': True, 'quick_links': result}
+
+def handle_add_quick_link(params, family):
+    title = params.get('title')
+    url = params.get('url')
+    if not title or not url:
+        return {'success': False, 'error': 'title and url are required'}
+        
+    category = params.get('category', 'General')
+    icon_keyword = params.get('icon_keyword', '')
+    show_on_dashboard = params.get('show_on_dashboard', True)
+    creator = params.get('creator', 'AI Assistant')
+    
+    ql = QuickLink(
+        title=title, 
+        url=url, 
+        category=category, 
+        icon_keyword=icon_keyword,
+        show_on_dashboard=show_on_dashboard,
+        creator=creator
+    )
+    db.session.add(ql)
+    db.session.commit()
+    return {'success': True, 'link_id': ql.id}
+
+def handle_delete_quick_link(params, family):
+    link_id = params.get('link_id')
+    if not link_id:
+        return {'success': False, 'error': 'link_id is required'}
+        
+    ql = QuickLink.query.get(link_id)
+    if not ql:
+        return {'success': False, 'error': 'QuickLink not found'}
+        
+    db.session.delete(ql)
+    db.session.commit()
+    return {'success': True, 'link_id': link_id}
+
+def handle_edit_quick_link(params, family):
+    link_id = params.get('link_id')
+    if not link_id:
+        return {'success': False, 'error': 'link_id is required'}
+        
+    ql = QuickLink.query.get(link_id)
+    if not ql:
+        return {'success': False, 'error': 'QuickLink not found'}
+        
+    if 'title' in params:
+        ql.title = params['title']
+    if 'url' in params:
+        url = params['url']
+        if not url.startswith('http://') and not url.startswith('https://'):
+            url = 'https://' + url
+        ql.url = url
+    if 'category' in params:
+        ql.category = params['category']
+    if 'icon_keyword' in params:
+        ql.icon_keyword = params['icon_keyword']
+    if 'show_on_dashboard' in params:
+        ql.show_on_dashboard = params['show_on_dashboard']
+        
+    db.session.commit()
+    return {'success': True, 'link_id': ql.id}
+
 def handle_get_config(params, family):
     config = current_app.config.get('HOMEHUB_CONFIG', {})
     safe_config = config.copy()
@@ -262,6 +338,10 @@ ACTION_ROUTER = {
     'add_shopping_item': handle_add_shopping_item,
     'check_shopping_item': handle_check_shopping_item,
     'delete_shopping_item': handle_delete_shopping_item,
+    'get_quick_links': handle_get_quick_links,
+    'add_quick_link': handle_add_quick_link,
+    'edit_quick_link': handle_edit_quick_link,
+    'delete_quick_link': handle_delete_quick_link,
     'get_config': handle_get_config,
     'update_config': handle_update_config
 }
@@ -354,6 +434,30 @@ def get_schema():
                                 "item_id": {
                                     "type": "integer",
                                     "description": "For check_shopping_item, delete_shopping_item: The ID of the shopping item."
+                                },
+                                "title": {
+                                    "type": "string",
+                                    "description": "For add_quick_link, edit_quick_link: The display name of the link."
+                                },
+                                "url": {
+                                    "type": "string",
+                                    "description": "For add_quick_link, edit_quick_link: The URL of the link."
+                                },
+                                "category": {
+                                    "type": "string",
+                                    "description": "For add_quick_link, edit_quick_link: Grouping category or tag (e.g., 'Media', 'Dashboard')."
+                                },
+                                "icon_keyword": {
+                                    "type": "string",
+                                    "description": "For add_quick_link, edit_quick_link: Icon slug from simpleicons.org (e.g., 'netflix', 'github'). Optional."
+                                },
+                                "show_on_dashboard": {
+                                    "type": "boolean",
+                                    "description": "For add_quick_link, edit_quick_link: Whether to show the link on the dashboard grid."
+                                },
+                                "link_id": {
+                                    "type": "integer",
+                                    "description": "For delete_quick_link, edit_quick_link: The ID of the quick link."
                                 },
                                 "family_members": {
                                     "type": "array",

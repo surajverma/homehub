@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Quick Links - HomeHub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <i class="fa-solid fa-link text-blue-500"></i> Quick Links
+        </h2>
+    </div>
+
+    <!-- Add Link Form -->
+    <div class="card p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <h3 class="text-lg font-semibold mb-4 text-gray-700">Add New Link</h3>
+        <form action="{{ url_for('quick_links.manage_links') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="action" value="add">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                    <input type="text" name="title" required placeholder="e.g. Proxmox" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">URL *</label>
+                    <input type="text" name="url" required placeholder="192.168.1.100:8006" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category / Group</label>
+                    <input type="text" name="category" value="General" placeholder="e.g. Media, Homelab" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Icon Keyword (Optional)</label>
+                    <input type="text" name="icon_keyword" placeholder="e.g. netflix, github" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <p class="text-[10px] text-gray-500 mt-1">Slug from <a href="https://simpleicons.org/" target="_blank" class="text-blue-500 hover:underline">simpleicons.org</a>. Leave blank to auto-fetch favicon.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 mt-2">
+                <input type="checkbox" name="show_on_dashboard" id="showDashboard" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <label for="showDashboard" class="text-sm text-gray-700 cursor-pointer">Show on Dashboard</label>
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors shadow-sm text-sm">
+                    <i class="fa-solid fa-plus mr-1"></i> Add Link
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- List Links -->
+    <div class="card p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <h3 class="text-lg font-semibold mb-4 text-gray-700">Manage Links</h3>
+        {% if links %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Link</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-4 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Dashboard</th>
+                        <th class="px-4 py-3 text-right font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for link in links %}
+                    <tr>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-50 rounded border border-gray-100">
+                                    {% if link.icon_keyword %}
+                                    <img src="https://cdn.simpleicons.org/{{ link.icon_keyword }}" alt="" class="w-4 h-4 object-contain">
+                                    {% else %}
+                                    <img src="https://www.google.com/s2/favicons?domain={{ link.url }}&sz=128" alt="" class="w-4 h-4 object-contain rounded-sm">
+                                    {% endif %}
+                                </div>
+                                <div class="min-w-0">
+                                    <a href="{{ link.url }}" target="_blank" class="font-medium text-blue-600 hover:underline block truncate max-w-[200px]">{{ link.title }}</a>
+                                    <span class="text-xs text-gray-400 block truncate max-w-[200px]">{{ link.url }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">
+                            <span class="px-2 py-1 bg-gray-100 rounded text-xs">{{ link.category }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <form action="{{ url_for('quick_links.manage_links') }}" method="POST" class="inline">
+                                <input type="hidden" name="action" value="toggle_dashboard">
+                                <input type="hidden" name="link_id" value="{{ link.id }}">
+                                <button type="submit" class="focus:outline-none" title="Toggle Dashboard Visibility">
+                                    {% if link.show_on_dashboard %}
+                                    <i class="fa-solid fa-eye text-green-500 hover:text-green-600 text-lg"></i>
+                                    {% else %}
+                                    <i class="fa-solid fa-eye-slash text-gray-400 hover:text-gray-500 text-lg"></i>
+                                    {% endif %}
+                                </button>
+                            </form>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="openEditModal('{{ link.id }}', '{{ link.title|escape }}', '{{ link.url|escape }}', '{{ link.category|escape }}', '{{ link.icon_keyword|escape }}')" class="text-blue-500 hover:text-blue-700 p-2" title="Edit">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <form action="{{ url_for('quick_links.manage_links') }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this link?');">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="link_id" value="{{ link.id }}">
+                                <button type="submit" class="text-red-500 hover:text-red-700 p-2" title="Delete">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <i class="fa-solid fa-link text-4xl mb-3 text-gray-300"></i>
+            <p>No quick links added yet. Start by adding one above!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Edit Link Modal -->
+<div id="editLinkModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+            <h3 class="text-lg font-semibold text-gray-800">Edit Quick Link</h3>
+            <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        <form action="{{ url_for('quick_links.manage_links') }}" method="POST" class="p-6 space-y-4">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="link_id" id="editLinkId">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                <input type="text" name="title" id="editLinkTitle" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">URL *</label>
+                <input type="text" name="url" id="editLinkUrl" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Category / Group</label>
+                <input type="text" name="category" id="editLinkCategory" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Icon Keyword</label>
+                <input type="text" name="icon_keyword" id="editLinkIcon" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div class="pt-4 flex justify-end gap-2">
+                <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditModal(id, title, url, category, icon) {
+    document.getElementById('editLinkId').value = id;
+    document.getElementById('editLinkTitle').value = title;
+    document.getElementById('editLinkUrl').value = url;
+    document.getElementById('editLinkCategory').value = category;
+    document.getElementById('editLinkIcon').value = icon;
+    document.getElementById('editLinkModal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+    document.getElementById('editLinkModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

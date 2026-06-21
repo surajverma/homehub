@@ -6,6 +6,7 @@ Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.
 ## [v1.0.1] - 2026-06-21
 
 ### Added
+- **Quick Links (Dashboard Bookmark)**: Fitur baru untuk menyimpan tautan akses cepat (seperti Heimdall/Homarr mini). Mendukung manajemen ikon cerdas (SVG CDN atau Favicon) dengan pengelompokan kategori bergaya kotak (*Grid*) vertikal/horizontal langsung di *dashboard* utama. Dilengkapi sistem *Feature Toggle* (dapat dinonaktifkan di `config.yml`) dan kemampuan CRUD penuh oleh asisten AI lewat aksi `edit_quick_link`, dsb.
 - **Delete Actions untuk AI Router**: AI sekarang bisa menghapus catatan, tugas, dan barang belanjaan lewat aksi `delete_note`, `delete_chore`, dan `delete_shopping_item`.
 - **AI Universal Router Expansion**: Penambahan fungsi asisten AI untuk membaca/memanipulasi `config.yml` (Config API) serta memanipulasi Catatan (*Notes*), Tugas Rumah (*Chores*), dan Daftar Belanja (*Shopping List*) via `POST /api/ai/execute`.
 - **AI Agent Universal Router**: API Endpoint (`/api/ai/execute`) tunggal untuk memungkinkan asisten AI pihak ketiga berinteraksi dengan seluruh *database* dan sistem *HomeHub* secara tersentralisasi.

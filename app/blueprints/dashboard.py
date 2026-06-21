@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, current_app
 from datetime import datetime, date, timedelta
-from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringReminder, Chore
+from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringReminder, Chore, QuickLink
 from ..blueprints import main_bp
 from ..security import sanitize_html, sanitize_text
 import json
@@ -98,6 +98,13 @@ def index():
             )
         except Exception:
             home_chores = []
+            
+    # Fetch Quick Links
+    qlinks = QuickLink.query.filter_by(show_on_dashboard=True).all()
+    grouped_quick_links = {}
+    for ql in qlinks:
+        grouped_quick_links.setdefault(ql.category, []).append(ql)
+        
     # Pass Python object; template will use |tojson safely
     return render_template(
         'index.html',
@@ -110,6 +117,7 @@ def index():
         reminder_categories=reminder_categories,
         home_chores=home_chores,
         show_chores_on_homepage=show_chores_on_homepage,
+        grouped_quick_links=grouped_quick_links
     )
 
 

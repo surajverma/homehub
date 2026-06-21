@@ -130,6 +130,37 @@ window.REMINDERS_CAL_START = (function(){
 			{% endif %}
 		</div>
 
+		{% if grouped_quick_links and config.feature_toggles.get('quick_links', True) %}
+		<div class="card p-4 mb-4">
+			<div class="flex items-center justify-between mb-3">
+				<h3 class="text-lg font-semibold flex items-center gap-2"><i class="fa-solid fa-link text-blue-500"></i> Quick Links</h3>
+				<a href="/quick-links" class="text-sm text-blue-600 hover:underline">Manage</a>
+			</div>
+			
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+			{% for category, links in grouped_quick_links.items() %}
+				<div class="bg-gray-50/50 p-3 rounded-lg border border-gray-100/50">
+					<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-1">{{ category }}</h4>
+					<div class="flex flex-wrap gap-2">
+					{% for link in links %}
+						<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-2 rounded hover:bg-white hover:shadow-sm transition-all group w-16">
+							<div class="w-10 h-10 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-200">
+								{% if link.icon_keyword %}
+								<img src="https://cdn.simpleicons.org/{{ link.icon_keyword }}" alt="" class="w-6 h-6 object-contain opacity-80 group-hover:opacity-100 transition-opacity">
+								{% else %}
+								<img src="https://www.google.com/s2/favicons?domain={{ link.url }}&sz=128" alt="" class="w-6 h-6 object-contain rounded opacity-80 group-hover:opacity-100 transition-opacity">
+								{% endif %}
+							</div>
+							<span class="text-[10px] text-center text-gray-500 truncate w-full group-hover:text-blue-600 font-medium">{{ link.title }}</span>
+						</a>
+					{% endfor %}
+					</div>
+				</div>
+			{% endfor %}
+			</div>
+		</div>
+		{% endif %}
+
 		{% if show_chores_on_homepage and config.feature_toggles.get('chores', True) %}
 		<div class="card p-4" id="homeChoresCard">
 			<div class="flex items-center justify-between mb-3">

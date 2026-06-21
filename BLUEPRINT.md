@@ -20,7 +20,8 @@ HomeHub dibangun di atas *stack* teknologi berikut:
 - **Main Dashboard**: `app/blueprints/dashboard.py` - Pusat kendali web yang merangkum *Widget* seperti kalender, siapa di rumah, dan status personal.
 
 ### 2. Modul Fungsionalitas Keluarga
-- **Shopping List & Chores**: Berkolaborasi untuk barang belanjaan dan manajemen tugas rumah (dilengkapi fungsionalitas pengulangan otomatis/recurring).
+- **Shopping List**: Terletak di `app/blueprints/shopping.py`. Mirip dengan *Chores*, tapi khusus melacak daftar belanjaan beserta *tags* kategori dan histori belanja.
+- **Quick Links**: Terletak di `app/blueprints/quick_links.py`. Fitur manajemen *bookmark* dengan dukungan ikon SVG CDN dan Auto-favicon, yang akan ditampilkan per kategori di beranda utama (sebagai *dashboard* mini ala Heimdall/Homarr).
 - **Expense Tracker**: Terletak di `app/blueprints/expenses.py`. Melacak pengeluaran dengan filter bulanan/tahunan, serta sistem penagihan (Belum Bayar/Lunas) untuk tagihan berulang rutin.
 - **Shared Notes & Cloud**: Mengelola direktori penyimpanan file bersama dan catatan tempel.
 - **Kalender Reminders**: Mengelola pengingat jadwal satu kali jalan maupun jadwal rutin.

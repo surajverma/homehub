@@ -192,6 +192,9 @@ def create_app(test_config: dict | None = None):
     
     from .blueprints.ai_agent import ai_agent_bp
     app.register_blueprint(ai_agent_bp)
+    
+    from .blueprints.quick_links import quick_links_bp
+    app.register_blueprint(quick_links_bp)
 
     @app.context_processor
     def inject_auth_state():

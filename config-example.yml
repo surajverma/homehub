@@ -3,6 +3,7 @@ password: "" #leave blank for password less access
 admin_name: "Administrator"
 ai_agent_token: "rahasia123" # Tambahkan token acak agar AI eksternal bisa mengakses API
 feature_toggles:
+  quick_links: true
   shopping_list: true
   media_downloader: true
   pdf_compressor: true
