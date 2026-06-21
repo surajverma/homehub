@@ -46,7 +46,7 @@ window.REMINDERS_CAL_START = (function(){
 			</div>
 			<div id="weatherContent">
 				<div class="text-center text-gray-500 py-4" role="status" aria-live="polite">
-					<i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
+					<i class="fa-solid fa-spinner motion-safe:animate-spin text-2xl" aria-hidden="true"></i>
 					<p class="mt-2">Loading weather data...</p>
 				</div>
 			</div>
@@ -139,16 +139,16 @@ window.REMINDERS_CAL_START = (function(){
 			
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 			{% for category, links in grouped_quick_links.items() %}
-				<div class="bg-gray-50/50 p-3 rounded-lg border border-gray-100/50">
+				<div class="mb-2">
 					<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-1">{{ category }}</h4>
 					<div class="flex flex-wrap gap-2">
 					{% for link in links %}
-						<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-2 rounded hover:bg-white hover:shadow-sm transition-all group w-16">
+						<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" title="{{ link.title }}" class="flex flex-col items-center p-2 rounded hover:bg-gray-50 hover:shadow-sm transition-all group w-16 cursor-pointer overflow-hidden">
 							<div class="w-10 h-10 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-200">
 								{% if link.icon_keyword %}
-								<img src="https://cdn.simpleicons.org/{{ link.icon_keyword }}" alt="" class="w-6 h-6 object-contain opacity-80 group-hover:opacity-100 transition-opacity">
+								<img src="https://cdn.simpleicons.org/{{ link.icon_keyword }}" alt="{{ link.title }} icon" class="w-6 h-6 object-contain opacity-80 group-hover:opacity-100 transition-opacity">
 								{% else %}
-								<img src="https://www.google.com/s2/favicons?domain={{ link.url }}&sz=128" alt="" class="w-6 h-6 object-contain rounded opacity-80 group-hover:opacity-100 transition-opacity">
+								<img src="https://www.google.com/s2/favicons?domain={{ link.url }}&sz=128" alt="{{ link.title }} icon" class="w-6 h-6 object-contain rounded opacity-80 group-hover:opacity-100 transition-opacity">
 								{% endif %}
 							</div>
 							<span class="text-[10px] text-center text-gray-500 truncate w-full group-hover:text-blue-600 font-medium">{{ link.title }}</span>

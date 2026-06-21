@@ -112,16 +112,16 @@
 			const sunset = daily.sunset?.[0] ? fmtTime(daily.sunset[0]) : '—';
 
 			dailyHtml = `
-				<div class="pt-3 mt-3 border-t">
+				<div class="pt-3 mt-3 border-t border-opacity-20 border-current">
 					<div class="flex items-center justify-between mb-2">
 						<div class="text-base font-semibold">Today's Forecast</div>
-						<div class="text-sm text-gray-700 flex items-center gap-2"><i class="fa-solid fa-arrow-up-long text-red-500"></i> H: <span class="font-semibold">${tMax!=null?Math.round(tMax)+tempUnit:'—'}</span> <i class="fa-solid fa-arrow-down-long text-blue-500 ml-3"></i> L: <span class="font-semibold">${tMin!=null?Math.round(tMin)+tempUnit:'—'}</span></div>
+						<div class="text-sm opacity-80 flex items-center gap-2"><i class="fa-solid fa-arrow-up-long text-red-500"></i> H: <span class="font-semibold opacity-100">${tMax!=null?Math.round(tMax)+tempUnit:'—'}</span> <i class="fa-solid fa-arrow-down-long text-blue-500 ml-3"></i> L: <span class="font-semibold opacity-100">${tMin!=null?Math.round(tMin)+tempUnit:'—'}</span></div>
 					</div>
-					<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-700">
-						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-amber-500"></i><span>Sunrise: <span class="font-semibold text-gray-900">${sunrise}</span></span></div>
-						<div class="flex items-center gap-2"><i class="fa-solid fa-moon text-indigo-400"></i><span>Sunset: <span class="font-semibold text-gray-900">${sunset}</span></span></div>
-						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-yellow-500"></i><span>UV Index: <span class="font-semibold text-gray-900">${uv!=null?uv:'—'}</span></span></div>
-						<div class="flex items-center gap-2"><i class="fa-solid fa-cloud-rain text-blue-500"></i><span>Rain: <span class="font-semibold text-gray-900">${rainProb!=null?rainProb+'%':'—'}</span></span></div>
+					<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm opacity-80">
+						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-amber-500"></i><span>Sunrise: <span class="font-semibold opacity-100">${sunrise}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-moon text-indigo-400"></i><span>Sunset: <span class="font-semibold opacity-100">${sunset}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-yellow-500"></i><span>UV Index: <span class="font-semibold opacity-100">${uv!=null?uv:'—'}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-cloud-rain text-blue-500"></i><span>Rain: <span class="font-semibold opacity-100">${rainProb!=null?rainProb+'%':'—'}</span></span></div>
 					</div>
 				</div>
 			`;
@@ -135,31 +135,31 @@
 					<i class="fa-solid ${weather.icon} ${weather.color} text-5xl md:text-6xl"></i>
 					<div>
 						<div class="text-4xl md:text-5xl font-bold">${Math.round(temp)}${tempUnit}</div>
-						<div class="text-gray-600 text-lg">${weather.desc}</div>
+						<div class="opacity-70 text-lg">${weather.desc}</div>
 					</div>
 				</div>
 
 				<!-- Right: Stats grid -->
-				<div class="grid grid-cols-2 gap-x-6 gap-y-2 w-full md:w-auto text-sm md:text-base text-gray-700">
+				<div class="grid grid-cols-2 gap-x-6 gap-y-2 w-full md:w-auto text-sm md:text-base opacity-90">
 					<div class="flex items-center gap-2">
-						<i class="fa-solid fa-temperature-half text-gray-500"></i>
-						<span>Feels like: <span class="font-semibold text-gray-900">${feelsLikeText}</span></span>
+						<i class="fa-solid fa-temperature-half opacity-60"></i>
+						<span>Feels like: <span class="font-semibold opacity-100">${feelsLikeText}</span></span>
 					</div>
 					<div class="flex items-center gap-2">
-						<i class="fa-solid fa-wind text-gray-500"></i>
-						<span>Wind: <span class="font-semibold text-gray-900">${windLine}</span></span>
+						<i class="fa-solid fa-wind opacity-60"></i>
+						<span>Wind: <span class="font-semibold opacity-100">${windLine}</span></span>
 					</div>
 					<div class="flex items-center gap-2">
-						<i class="fa-solid fa-wind text-gray-500"></i>
-						<span>Gusts: <span class="font-semibold text-gray-900">${gustLine}</span></span>
+						<i class="fa-solid fa-wind opacity-60"></i>
+						<span>Gusts: <span class="font-semibold opacity-100">${gustLine}</span></span>
 					</div>
 					<div class="flex items-center gap-2">
-						<i class="fa-solid fa-droplet text-gray-500"></i>
-						<span>Humidity: <span class="font-semibold text-gray-900">${humidityText}</span></span>
+						<i class="fa-solid fa-droplet opacity-60"></i>
+						<span>Humidity: <span class="font-semibold opacity-100">${humidityText}</span></span>
 					</div>
 					<div class="flex items-center gap-2">
-						<i class="fa-solid fa-cloud-rain text-gray-500"></i>
-						<span>Rain: <span class="font-semibold text-gray-900">${precipLabel}</span></span>
+						<i class="fa-solid fa-cloud-rain opacity-60"></i>
+						<span>Rain: <span class="font-semibold opacity-100">${precipLabel}</span></span>
 					</div>
 				</div>
 			</div>
@@ -183,10 +183,10 @@
 				const opts = { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' };
 				if (cfg && cfg.timezone) opts.timeZone = cfg.timezone;
 				const absTime = dt.toLocaleString(undefined, opts);
-				lastUpdatedHtml = `<div class="text-[11px] text-gray-500 mt-3 md:mt-4 text-right">Last updated: ${absTime} (${relativeTime})</div>`;
+				lastUpdatedHtml = `<div class="text-[11px] opacity-60 mt-3 md:mt-4 text-right">Last updated: ${absTime} (${relativeTime})</div>`;
 			} catch(e) {
 				const fallback = String(current.time).replace('T',' ');
-				lastUpdatedHtml = `<div class="text-[11px] text-gray-500 mt-3 md:mt-4 text-right">Last updated: ${fallback}</div>`;
+				lastUpdatedHtml = `<div class="text-[11px] opacity-60 mt-3 md:mt-4 text-right">Last updated: ${fallback}</div>`;
 			}
 		}
 		

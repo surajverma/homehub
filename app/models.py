@@ -186,6 +186,11 @@ class ExpenseEntry(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     attachment_path = db.Column(db.String(512))
 
+class QuickLinkCategory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True, nullable=False)
+    order_index = db.Column(db.Integer, default=0)
+
 class QuickLink(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(128), nullable=False)
@@ -193,6 +198,7 @@ class QuickLink(db.Model):
     category = db.Column(db.String(64), default='General')
     icon_keyword = db.Column(db.String(64), default='')
     show_on_dashboard = db.Column(db.Boolean, default=True)
+    order_index = db.Column(db.Integer, default=0)
     creator = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 

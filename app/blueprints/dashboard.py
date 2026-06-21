@@ -99,9 +99,14 @@ def index():
         except Exception:
             home_chores = []
             
-    # Fetch Quick Links
-    qlinks = QuickLink.query.filter_by(show_on_dashboard=True).all()
-    grouped_quick_links = {}
+    from ..models import QuickLinkCategory
+    from collections import OrderedDict
+    
+    qlinks = QuickLink.query.filter_by(show_on_dashboard=True).outerjoin(
+        QuickLinkCategory, QuickLink.category == QuickLinkCategory.name
+    ).order_by(QuickLinkCategory.order_index.asc().nulls_last(), QuickLink.order_index.asc()).all()
+    
+    grouped_quick_links = OrderedDict()
     for ql in qlinks:
         grouped_quick_links.setdefault(ql.category, []).append(ql)
         
