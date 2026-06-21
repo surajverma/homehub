@@ -119,7 +119,7 @@
 </div>
 
 <!-- Edit Link Modal -->
-<div id="editLinkModal" class="fixed inset-0 z-50 hidden bg-black/50 items-center justify-center p-4 backdrop-blur-sm">
+<div id="editLinkModal" class="fixed inset-0 z-50 bg-black/50 items-center justify-center p-4 backdrop-blur-sm hidden">
     <div class="bg-[var(--card-background-color)] text-[var(--text-color)] border border-gray-200/20 rounded-lg shadow-xl w-full max-w-md overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200/10 flex justify-between items-center bg-[var(--secondary-bg)]">
             <h3 class="text-lg font-semibold">Edit Quick Link</h3>
@@ -163,11 +163,15 @@ function openEditModal(id, title, url, category, icon) {
     document.getElementById('editLinkUrl').value = url;
     document.getElementById('editLinkCategory').value = category;
     document.getElementById('editLinkIcon').value = icon;
-    document.getElementById('editLinkModal').classList.remove('hidden');
+    const modal = document.getElementById('editLinkModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 function closeEditModal() {
-    document.getElementById('editLinkModal').classList.add('hidden');
+    const modal = document.getElementById('editLinkModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 function showToast(message) {

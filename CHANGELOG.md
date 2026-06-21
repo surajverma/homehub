@@ -2,6 +2,11 @@
 
 Semua perubahan yang signifikan pada proyek HomeHub ini akan dicatat di file ini.
 Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
+## [v1.0.3] - 2026-06-22
+
+### Fixed
+- **Quick Links Edit Modal Centering**: Memperbaiki bug pada Edit Quick Link Modal (`quick_links.html`) yang tampil di pojok kiri atas pada desktop dan di paling atas pada mobile. Dengan menghapus kelas `flex` bawaan dari deklarasi HTML awal (dan menyisakan kelas `hidden`), perubahan kelas dinamis JavaScript (`classList.add('flex')` dan `classList.remove('hidden')`) kini memposisikan modal di tengah-tengah layar secara presisi baik secara vertikal maupun horizontal di semua ukuran viewport.
+
 ## [v1.0.2] - 2026-06-22
 
 ### Changed

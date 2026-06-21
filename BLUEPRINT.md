@@ -1,6 +1,6 @@
 # HomeHub Project Blueprint
 
-**Version:** v1.0.2  
+**Version:** v1.0.3  
 **Last Updated:** 2026-06-22  
 
 Dokumen ini memetakan arsitektur dan modul utama dari proyek HomeHub, membantu *developer* memahami struktur fitur secara keseluruhan.
