@@ -6,6 +6,9 @@ Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Fixed
 - **Quick Links Edit Modal Centering**: Memperbaiki bug pada Edit Quick Link Modal (`quick_links.html`) yang tampil di pojok kiri atas pada desktop dan di paling atas pada mobile. Dengan menghapus kelas `flex` bawaan dari deklarasi HTML awal (dan menyisakan kelas `hidden`), perubahan kelas dinamis JavaScript (`classList.add('flex')` dan `classList.remove('hidden')`) kini memposisikan modal di tengah-tengah layar secara presisi baik secara vertikal maupun horizontal di semua ukuran viewport.
+- **Expense Editing & Navigation Flow**:
+  - Membuka pembatasan akses edit/delete pengeluaran individu di backend (`expenses.py`) dan frontend (`expenses.html`) agar semua anggota keluarga yang sah (bukan hanya pembuat/admin) dapat mengedit atau menghapusnya. Ini sangat krusial bagi entri pengeluaran rutin (*recurring*) yang dibuat oleh admin tetapi perlu ditandai sebagai 'Lunas' atau dilampirkan bukti bayar oleh anggota keluarga lain.
+  - Menjadikan daftar baris pengeluaran bulanan di sidebar "Entries This Month" dapat diklik (*clickable*). Mengeklik baris pengeluaran kini akan secara otomatis menggeser fokus tanggal kalender dan membuka panel detail di sebelah kiri, mempermudah akses pengeditan/penghapusan langsung dari ringkasan bulanan.
 
 ## [v1.0.2] - 2026-06-22
 

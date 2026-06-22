@@ -499,7 +499,9 @@ def delete_expense_entry(entry_id):
     user = sanitize_text(request.form.get('user', ''))
     admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
     admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if not (user in admin_aliases or user == (entry.payer or '')):
+    family = current_app.config['HOMEHUB_CONFIG'].get('family_members', [])
+    valid_users = admin_aliases | set(family)
+    if user not in valid_users:
         flash('Not allowed to delete entry.', 'error')
         return redirect(url_for('main.expenses'))
     db.session.delete(entry)
@@ -519,7 +521,9 @@ def edit_expense_entry(entry_id):
     user = sanitize_text(request.form.get('user', ''))
     admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
     admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if not (user in admin_aliases or user == (entry.payer or '')):
+    family = current_app.config['HOMEHUB_CONFIG'].get('family_members', [])
+    valid_users = admin_aliases | set(family)
+    if user not in valid_users:
         flash('Not allowed to edit entry.', 'error')
         return redirect(url_for('main.expenses'))
     # Update fields
@@ -563,6 +567,8 @@ def bulk_delete_expenses():
     user = sanitize_text(request.form.get('user', ''))
     admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
     admin_aliases = {admin_name, 'Administrator', 'admin'}
+    family = current_app.config['HOMEHUB_CONFIG'].get('family_members', [])
+    valid_users = admin_aliases | set(family)
     ids = request.form.getlist('ids')
     if not ids:
         flash('No entries selected.', 'warning')
@@ -571,7 +577,7 @@ def bulk_delete_expenses():
     for entry_id in ids:
         try:
             entry = ExpenseEntry.query.get(int(entry_id))
-            if entry and (user in admin_aliases or user == (entry.payer or '')):
+            if entry and user in valid_users:
                 db.session.delete(entry)
                 deleted += 1
         except Exception:
