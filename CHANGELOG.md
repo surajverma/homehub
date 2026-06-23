@@ -2,6 +2,19 @@
 
 Semua perubahan yang signifikan pada proyek HomeHub ini akan dicatat di file ini.
 Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
+
+## [v1.0.4] - 2026-06-23
+
+### Added
+- **AI Attachment Support (Base64)**: Endpoint AI agent (`POST /api/ai/execute`) kini mendukung unggahan lampiran struk/bukti bayar berbasis Base64 untuk modul pengeluaran. Menambahkan parameter fungsi `attachment_base64` dan `attachment_filename` yang otomatis diproses, dikompresi dengan Pillow, dan disimpan secara persisten.
+
+### Changed
+- **AI Metadata Lampiran**: Response endpoint pembacaan data (`get_expenses` dan `get_recurring_expenses`) kini menyertakan field `has_attachment` (boolean) dan `attachment_path` (string) sebagai indikator keberadaan lampiran.
+
+### Fixed
+- **AI Attachment Validation**: Menambahkan validasi ketat untuk lampiran expense: (1) Invalid base64 ditolak dengan error "Invalid base64 string", (2) attachment_base64 dan attachment_filename wajib berpasangan, ditolak dengan error "Both attachment_base64 and attachment_filename are required if one is provided".
+- **Attachment Semantics**: Mendokumentasikan perbedaan semantik lampiran di schema: expense individual = bukti pembayaran per-transaksi, recurring expense = bukti kontrak/langganan (template, tidak di-copy ke generated entries).
+
 ## [v1.0.3] - 2026-06-22
 
 ### Fixed
@@ -41,6 +54,7 @@ Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.
 ### Changed
 - **UI/UX Dark Mode Enhancements**: Meningkatkan dukungan tema gelap (*Dark Mode*) untuk halaman *Recurring Expenses* dengan mengubah CSS statis menjadi kelas *utility Tailwind* (seperti `dark:bg-gray-800`).
 - **Bug Fix (Early Payment Tracking)**: Memperbaiki deteksi pelunasan tagihan berulang bulanan di *dashboard* agar tetap mendeteksi pembayaran yang dilakukan sangat awal di bulan yang sama (sebelumnya gagal mendeteksi jika selisih pembayaran lebih dari 20 hari).
+- **API (AI Agent Validations)**: Memperbaiki sejumlah celah validasi pada rute API asisten AI, termasuk memblokir nominal negatif, membatasi input tahun (2000-2100), memastikan tanggal mulai tidak melebihi tanggal akhir pada tagihan berulang, mewajibkan pengisian nama pembayar (*payer*), serta memperbaiki logika konsistensi *hard-delete* untuk aturan berulang.
 - **Bug Fix (Overlap Layout)**: Memperbaiki elemen yang saling tumpang tindih (*overlap*) antara judul pengeluaran yang panjang dan label *badge* pada sidebar dengan menerapkan *flex constraints* (`shrink-0` dan `min-w-0`).
 - **Bug Fix (UnboundLocalError)**: Memperbaiki *Internal Server Error 500* pada dasbor (khususnya *widget* *Reminder*) yang diakibatkan oleh *shadowing variable* `timedelta` lokal pada Python.
 - **Bug Fix (Dashboard Clock)**: Memperbaiki masalah di mana jam berjalan di halaman muka tidak mengindahkan pengaturan format 24 jam (`reminders.time_format`) pada `config.yml`. Jam utama dan kartu sambutan sekarang mendetek format waktu dengan benar serta detiknya terus berdetak tanpa memuat ulang halaman.

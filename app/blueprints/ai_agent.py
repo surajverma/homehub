@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from ..models import db, HomeStatus, MemberStatus, Note, Chore, ShoppingItem, QuickLink
+from ..models import db, HomeStatus, MemberStatus, Note, Chore, ShoppingItem, QuickLink, ExpenseEntry, RecurringExpense
 from ..config import update_config
 from datetime import datetime
 
@@ -323,6 +323,332 @@ def handle_update_config(params, family):
         traceback.print_exc()
         return {'success': False, 'error': str(e)}
 
+
+from datetime import date
+import bleach
+
+def _parse_date(d_str):
+    if not d_str: return None
+    try:
+        from datetime import datetime
+        return datetime.strptime(d_str, '%Y-%m-%d').date()
+    except:
+        return None
+
+def _process_base64_attachment(b64_string, filename):
+    if not b64_string or not filename:
+        return None
+    try:
+        import base64
+        import os
+        from io import BytesIO
+        from ..utils import handle_expense_attachment
+        from flask import current_app
+        
+        content = base64.b64decode(b64_string)
+        dummy_file = BytesIO(content)
+        dummy_file.filename = filename
+        
+        upload_dir = os.path.abspath(os.path.join(current_app.root_path, '..', 'uploads'))
+        return handle_expense_attachment(dummy_file, upload_dir)
+    except Exception:
+        return None
+
+def _validate_and_process_attachment(params):
+    b64 = params.get('attachment_base64')
+    fname = params.get('attachment_filename')
+    
+    if not b64 and not fname:
+        return None, None
+        
+    if bool(b64) != bool(fname):
+        return None, 'Both attachment_base64 and attachment_filename are required if one is provided'
+        
+    try:
+        import base64
+        base64.b64decode(b64, validate=True)
+    except Exception:
+        return None, 'Invalid base64 string'
+        
+    path = _process_base64_attachment(b64, fname)
+    if not path:
+        return None, 'Failed to process attachment (invalid image or unsupported format)'
+        
+    return path, None
+
+def handle_get_expenses(params, family):
+    from .expenses import _generate_recurring_entries_until
+    today = date.today()
+    y = params.get('year', today.year)
+    m = params.get('month', today.month)
+    
+    import calendar
+    try:
+        last_day = calendar.monthrange(y, m)[1]
+    except Exception:
+        return {'success': False, 'error': 'Invalid year or month'}
+        
+    target_date = date(y, m, last_day)
+    _generate_recurring_entries_until(max(today, target_date))
+    
+    month_start = date(y, m, 1)
+    month_end = date(y, m, last_day)
+    
+    entries = ExpenseEntry.query.filter(ExpenseEntry.date >= month_start, ExpenseEntry.date <= month_end).all()
+    result = []
+    for e in entries:
+        result.append({
+            "id": e.id,
+            "title": e.title,
+            "category": e.category,
+            "amount": float(e.amount or 0),
+            "date": e.date.isoformat(),
+            "payer": e.payer,
+            "is_paid": e.is_paid,
+            "recurring_id": e.recurring_id,
+            "has_attachment": bool(e.attachment_path),
+            "attachment_path": e.attachment_path
+        })
+    return {'success': True, 'expenses': result}
+
+def handle_add_expense(params, family):
+    title = params.get('title')
+    amount = params.get('amount')
+    payer = params.get('payer')
+    
+    if not title or amount is None or payer is None:
+        return {'success': False, 'error': 'title, amount, and payer are required'}
+        
+    if float(amount) < 0:
+        return {'success': False, 'error': 'amount must be >= 0'}
+        
+    d = _parse_date(params.get('date')) or date.today()
+    if d.year < 2000 or d.year > 2100:
+        return {'success': False, 'error': 'date is out of reasonable range (2000-2100)'}
+        
+    category = bleach.clean(params.get('category') or '')
+    payer = bleach.clean(payer)
+    is_paid = params.get('is_paid', True)
+    
+    attachment_path, err = _validate_and_process_attachment(params)
+    if err:
+        return {'success': False, 'error': err}
+    
+    entry = ExpenseEntry(
+        title=title,
+        amount=float(amount),
+        date=d,
+        category=category,
+        payer=payer,
+        is_paid=is_paid,
+        attachment_path=attachment_path
+    )
+    db.session.add(entry)
+    db.session.commit()
+    return {'success': True, 'expense_id': entry.id}
+
+def handle_edit_expense(params, family):
+    expense_id = params.get('expense_id')
+    if not expense_id:
+        return {'success': False, 'error': 'expense_id is required'}
+        
+    entry = ExpenseEntry.query.get(expense_id)
+    if not entry:
+        return {'success': False, 'error': 'Expense not found'}
+        
+    if 'title' in params: entry.title = params['title']
+    if 'amount' in params:
+        amt = float(params['amount'])
+        if amt < 0:
+            return {'success': False, 'error': 'amount must be >= 0'}
+        entry.amount = amt
+        
+    if 'date' in params:
+        d = _parse_date(params['date'])
+        if d:
+            if d.year < 2000 or d.year > 2100:
+                return {'success': False, 'error': 'date is out of reasonable range (2000-2100)'}
+            entry.date = d
+            
+    if 'category' in params: entry.category = bleach.clean(params['category'] or '')
+    if 'payer' in params:
+        payer_val = bleach.clean(params['payer'] or '')
+        if not payer_val:
+            return {'success': False, 'error': 'payer cannot be empty'}
+        entry.payer = payer_val
+        
+    if 'is_paid' in params: entry.is_paid = bool(params['is_paid'])
+    
+    if 'attachment_base64' in params or 'attachment_filename' in params:
+        new_path, err = _validate_and_process_attachment(params)
+        if err:
+            return {'success': False, 'error': err}
+        if new_path:
+            entry.attachment_path = new_path
+    
+    db.session.commit()
+    return {'success': True, 'expense_id': entry.id}
+
+def handle_delete_expense(params, family):
+    expense_id = params.get('expense_id')
+    if not expense_id:
+        return {'success': False, 'error': 'expense_id is required'}
+        
+    entry = ExpenseEntry.query.get(expense_id)
+    if not entry:
+        return {'success': False, 'error': 'Expense not found'}
+        
+    db.session.delete(entry)
+    db.session.commit()
+    return {'success': True, 'expense_id': expense_id}
+
+def handle_get_recurring_expenses(params, family):
+    rules = RecurringExpense.query.all()
+    result = []
+    for r in rules:
+        result.append({
+            "id": r.id,
+            "title": r.title,
+            "category": r.category,
+            "unit_price": float(r.unit_price or 0),
+            "frequency": r.frequency,
+            "monthly_mode": r.monthly_mode,
+            "start_date": r.start_date.isoformat() if r.start_date else None,
+            "end_date": r.end_date.isoformat() if r.end_date else None,
+            "has_attachment": bool(r.attachment_path),
+            "attachment_path": r.attachment_path
+        })
+    return {'success': True, 'recurring_rules': result}
+
+def handle_add_recurring_expense(params, family):
+    title = params.get('title')
+    unit_price = params.get('unit_price')
+    if not title or unit_price is None:
+        return {'success': False, 'error': 'title and unit_price are required'}
+        
+    if float(unit_price) < 0:
+        return {'success': False, 'error': 'unit_price must be >= 0'}
+        
+    frequency = params.get('frequency', 'monthly')
+    sd = _parse_date(params.get('start_date')) or date.today()
+    ed = _parse_date(params.get('end_date'))
+    
+    if ed and sd > ed:
+        return {'success': False, 'error': 'end_date cannot be before start_date'}
+        
+    category = bleach.clean(params.get('category') or '')
+    creator = params.get('creator', 'AI Assistant')
+    monthly_mode = params.get('monthly_mode', 'day_of_month')
+    
+    attachment_path, err = _validate_and_process_attachment(params)
+    if err:
+        return {'success': False, 'error': err}
+    
+    rule = RecurringExpense(
+        title=title,
+        unit_price=float(unit_price),
+        default_quantity=1.0,
+        frequency=frequency,
+        monthly_mode=monthly_mode,
+        category=category,
+        start_date=sd,
+        end_date=ed,
+        effective_from=sd,
+        creator=creator,
+        attachment_path=attachment_path
+    )
+    db.session.add(rule)
+    db.session.commit()
+    return {'success': True, 'recurring_id': rule.id}
+
+def handle_edit_recurring_expense(params, family):
+    rule_id = params.get('rule_id')
+    if not rule_id:
+        return {'success': False, 'error': 'rule_id is required'}
+        
+    r = RecurringExpense.query.get(rule_id)
+    if not r:
+        return {'success': False, 'error': 'Recurring rule not found'}
+        
+    # Strategy 'apply_from' to preserve history
+    split_start = date.today()
+    
+    new_title = params.get('title', r.title)
+    new_category = bleach.clean(params.get('category') or '') if 'category' in params else r.category
+    new_unit_price = float(params.get('unit_price')) if 'unit_price' in params else r.unit_price
+    if new_unit_price < 0:
+        return {'success': False, 'error': 'unit_price must be >= 0'}
+        
+    new_frequency = params.get('frequency', r.frequency)
+    new_start_date = _parse_date(params.get('start_date')) or r.start_date
+    new_end_date = _parse_date(params.get('end_date')) or r.end_date
+
+    if new_end_date and new_start_date and new_start_date > new_end_date:
+        return {'success': False, 'error': 'end_date cannot be before start_date'}
+
+    if split_start <= (r.effective_from or date.min):
+        r.title = new_title
+        r.category = new_category
+        r.unit_price = new_unit_price
+        r.frequency = new_frequency
+        r.start_date = new_start_date
+        r.end_date = new_end_date
+    else:
+        removed_from_old = ExpenseEntry.query.filter(
+            ExpenseEntry.recurring_id == r.id,
+            ExpenseEntry.date >= split_start
+        ).delete()
+        
+        r.end_date = split_start
+        
+        new_attachment_path = r.attachment_path
+        if 'attachment_base64' in params or 'attachment_filename' in params:
+            new_path, err = _validate_and_process_attachment(params)
+            if err:
+                return {'success': False, 'error': err}
+            if new_path:
+                new_attachment_path = new_path
+        
+        new_rule = RecurringExpense(
+            title=new_title,
+            category=new_category,
+            unit_price=new_unit_price,
+            default_quantity=r.default_quantity,
+            frequency=new_frequency,
+            monthly_mode=r.monthly_mode,
+            start_date=max(new_start_date or split_start, split_start),
+            end_date=new_end_date,
+            effective_from=split_start,
+            creator=r.creator,
+            attachment_path=new_attachment_path
+        )
+        db.session.add(new_rule)
+        
+    db.session.commit()
+    return {'success': True, 'message': 'Recurring rule updated with history protection'}
+
+def handle_delete_recurring_expense(params, family):
+    rule_id = params.get('rule_id')
+    if not rule_id:
+        return {'success': False, 'error': 'rule_id is required'}
+        
+    r = RecurringExpense.query.get(rule_id)
+    if not r:
+        return {'success': False, 'error': 'Recurring rule not found'}
+        
+    delete_future_entries = params.get('delete_future_entries', True)
+    
+    if delete_future_entries:
+        try:
+            ExpenseEntry.query.filter_by(recurring_id=r.id).delete()
+        except Exception:
+            pass
+            
+    db.session.delete(r)
+    db.session.commit()
+    return {'success': True, 'rule_id': rule_id}
+
+
 # The Universal Router Map
 ACTION_ROUTER = {
     'update_home_status': handle_update_home_status,
@@ -343,7 +669,15 @@ ACTION_ROUTER = {
     'edit_quick_link': handle_edit_quick_link,
     'delete_quick_link': handle_delete_quick_link,
     'get_config': handle_get_config,
-    'update_config': handle_update_config
+    'update_config': handle_update_config,
+    'get_expenses': handle_get_expenses,
+    'add_expense': handle_add_expense,
+    'edit_expense': handle_edit_expense,
+    'delete_expense': handle_delete_expense,
+    'get_recurring_expenses': handle_get_recurring_expenses,
+    'add_recurring_expense': handle_add_recurring_expense,
+    'edit_recurring_expense': handle_edit_recurring_expense,
+    'delete_recurring_expense': handle_delete_recurring_expense
 }
 
 @ai_agent_bp.route('/api/ai/execute', methods=['POST'])
@@ -499,6 +833,72 @@ def get_schema():
                                         "units": {"type": "string", "enum": ["metric", "imperial"]},
                                         "view": {"type": "string", "enum": ["compact", "detailed"]}
                                     }
+                                },
+                                "expense_id": {
+                                    "type": "integer",
+                                    "description": "For edit_expense, delete_expense."
+                                },
+                                "rule_id": {
+                                    "type": "integer",
+                                    "description": "For edit_recurring_expense, delete_recurring_expense."
+                                },
+                                "amount": {
+                                    "type": "number",
+                                    "description": "For add_expense, edit_expense."
+                                },
+                                "unit_price": {
+                                    "type": "number",
+                                    "description": "For add_recurring_expense, edit_recurring_expense."
+                                },
+                                "date": {
+                                    "type": "string",
+                                    "description": "For add_expense, edit_expense: Date in YYYY-MM-DD format."
+                                },
+                                "payer": {
+                                    "type": "string",
+                                    "description": "For add_expense, edit_expense."
+                                },
+                                "is_paid": {
+                                    "type": "boolean",
+                                    "description": "For add_expense, edit_expense."
+                                },
+                                "frequency": {
+                                    "type": "string",
+                                    "enum": ["daily", "weekly", "monthly", "yearly"],
+                                    "description": "For add_recurring_expense, edit_recurring_expense."
+                                },
+                                "monthly_mode": {
+                                    "type": "string",
+                                    "enum": ["day_of_month", "calendar"],
+                                    "description": "For add_recurring_expense."
+                                },
+                                "start_date": {
+                                    "type": "string",
+                                    "description": "For add_recurring_expense, edit_recurring_expense: Date in YYYY-MM-DD format."
+                                },
+                                "end_date": {
+                                    "type": "string",
+                                    "description": "For add_recurring_expense, edit_recurring_expense: Date in YYYY-MM-DD format."
+                                },
+                                "delete_future_entries": {
+                                    "type": "boolean",
+                                    "description": "For delete_recurring_expense: Set to true to delete future unpaid entries generated by this rule."
+                                },
+                                "year": {
+                                    "type": "integer",
+                                    "description": "For get_expenses."
+                                },
+                                "month": {
+                                    "type": "integer",
+                                    "description": "For get_expenses."
+                                },
+                                "attachment_base64": {
+                                    "type": "string",
+                                    "description": "For expenses: receipt/bukti pembayaran per-entry. For recurring expenses: bukti kontrak/langganan (template, not per-entry)."
+                                },
+                                "attachment_filename": {
+                                    "type": "string",
+                                    "description": "Original filename with extension (e.g. 'receipt.jpg'). Required if attachment_base64 is provided."
                                 }
                             }
                         }
@@ -508,3 +908,7 @@ def get_schema():
             }
         }
     ])
+
+
+
+
