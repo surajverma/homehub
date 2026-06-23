@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function(){
           <div class="font-semibold">${fmt(e.amount)}</div>
           <div class="text-xs mt-1 space-x-2 ${allowed? '' : 'hidden'}">
             <button class="text-blue-600 hover:underline edit-expense" data-id="${e.id}" data-date="${ds}">Edit</button>
-            <form method="POST" action="/expenses/delete/${e.id}" class="inline expense-delete-form">
+            <form method="POST" action="/expenses/delete/${e.id}" class="inline expense-delete-form" data-title="${escapeHtml(e.title)}" data-amount="${fmt(e.amount)}">
               <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
               <button type="submit" class="text-red-600 hover:underline">Delete</button>
             </form>
@@ -621,8 +621,12 @@ document.addEventListener('DOMContentLoaded', function(){
   // Bulk delete submit behavior
   bulkBtn.addEventListener('click', (e)=>{
     e.preventDefault();
+    const count = bulkForm.querySelectorAll('input.entry-select:checked').length;
+    if (count === 0) return;
+    if (!confirm(`Yakin ingin menghapus ${count} pengeluaran terpilih?`)) return;
+    
     // Attach query params to preserve view
-  const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
+    const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
     bulkForm.action = `/expenses/bulk-delete?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
     bulkForm.submit();
   });
@@ -652,6 +656,16 @@ document.addEventListener('DOMContentLoaded', function(){
   document.body.addEventListener('submit', (e)=>{
     const f = e.target;
     if (!(f instanceof HTMLFormElement)) return;
+    
+    if (f.classList.contains('expense-delete-form')) {
+      const title = f.getAttribute('data-title') || '';
+      const amt = f.getAttribute('data-amount') || '';
+      if (!confirm(`Yakin ingin menghapus pengeluaran "${title}" sebesar ${amt}?`)) {
+        e.preventDefault();
+        return;
+      }
+    }
+    
     const needsPreserve = f.action.includes('/expenses/recurring/delete/') || f.action.includes('/expenses/recurring/edit/') || f.action.includes('/expenses/delete/') || f.action.endsWith('/expenses/settings');
     if (needsPreserve){
   const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';

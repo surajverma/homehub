@@ -186,7 +186,7 @@
               </form>
 
               <!-- Delete Form -->
-              <form method="POST" action="/expenses/recurring/delete/{{ r.id }}" class="mt-3 pt-3 border-t flex items-center gap-3 delete-form" data-creator="{{ r.creator }}">
+              <form method="POST" action="/expenses/recurring/delete/{{ r.id }}" class="mt-3 pt-3 border-t flex items-center gap-3 delete-form" data-creator="{{ r.creator }}" onsubmit="return confirm('Yakin ingin menghapus recurring rule &quot;{{ r.title }}&quot;? Lampiran (kontrak) juga akan dihapus.')"
                 <input type="hidden" name="user">
                 <label class="text-sm text-gray-600 dark:text-gray-300 inline-flex items-center gap-2">
                   <input type="checkbox" name="delete_entries" value="1" class="rounded"> Delete generated entries (unchecked = keep history)

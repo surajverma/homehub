@@ -14,6 +14,7 @@ Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.
 ### Fixed
 - **AI Attachment Validation**: Menambahkan validasi ketat untuk lampiran expense: (1) Invalid base64 ditolak dengan error "Invalid base64 string", (2) attachment_base64 dan attachment_filename wajib berpasangan, ditolak dengan error "Both attachment_base64 and attachment_filename are required if one is provided".
 - **Attachment Semantics**: Mendokumentasikan perbedaan semantik lampiran di schema: expense individual = bukti pembayaran per-transaksi, recurring expense = bukti kontrak/langganan (template, tidak di-copy ke generated entries).
+- **Expense Delete Confirm**: Memperbaiki bug UX di mana konfirmasi penghapusan pengeluaran satuan dan penghapusan massal (*bulk delete*) tidak muncul karena konflik cakupan fungsi lokal (*scope ReferenceError*) pada *inline handler*. Dialog konfirmasi kini muncul dengan benar sebelum mengeksekusi penghapusan.
 
 ## [v1.0.3] - 2026-06-22
 
