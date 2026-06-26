@@ -1,7 +1,7 @@
 # HomeHub Project Blueprint
 
-**Version:** v1.0.5  
-**Last Updated:** 2026-06-26  
+**Version:** v1.0.6  
+**Last Updated:** 2026-06-26
 
 Dokumen ini memetakan arsitektur dan modul utama dari proyek HomeHub, membantu *developer* memahami struktur fitur secara keseluruhan.
 
@@ -26,6 +26,23 @@ HomeHub dibangun di atas *stack* teknologi berikut:
 - **Shared Notes & Cloud**: Mengelola direktori penyimpanan file bersama dan catatan tempel.
 - **Kalender Reminders**: Mengelola pengingat jadwal satu kali jalan maupun jadwal rutin.
 - **Media Downloader & PDFs**: Terletak di `app/blueprints/media_pdfs.py`. Utilitas pengunduhan video/audio menggunakan `yt-dlp` dan konverter PDF. Terintegrasi erat dengan PWA (Progressive Web App) melalui dukungan **Web Share Target API**, memungkinkan pengguna di perangkat seluler untuk melempar tautan unduhan langsung ke aplikasi HomeHub.
+   - **PWA Web Share Target** — Fitur andalan yang memungkinkan pengguna Android membagikan tautan (misalnya dari YouTube) langsung ke Media Downloader via share sheet OS. Didukung oleh manifest `share_target` dan Service Worker fetch handler khusus untuk rute `/media/share`.
+
+### 2a. PWA Configuration (Progressive Web App)
+PWA HomeHub dikonfigurasi melalui dua endpoint dinamis di `app/blueprints/__init__.py`:
+- **`/manifest.webmanifest`** — Manifest JSON dinamis yang mencakup: `name`, `short_name`, `icons` (192x192 + 512x512 dengan `purpose: "any maskable"`), `display: standalone`, `display_override`, `share_target` untuk Web Share Target API, `categories`, `description`, dan `launch_handler`.
+- **`/sw.js`** — Service Worker dengan strategi offline-first: network-first untuk navigasi, stale-while-revalidate untuk aset statis, bypass cache untuk `/api/*` dan `/media/share`. Ikon PWA di-precache saat install.
+
+### Syarat Infra untuk Share Target
+1. **HTTPS** — Web Share Target API hanya berfungsi di secure context. Server harus diakses via HTTPS.
+2. **Ikon maskable** — Android 12+ memerlukan ikon dengan `purpose: "maskable"` untuk adaptive icon.
+3. **Instalasi penuh** — PWA harus di-install via prompt Chrome (bukan sekedar "Add to Home screen").
+
+### Panduan HTTPS
+Akses HTTPS bisa diatur via:
+- **Caddy** (auto SSL): Tambah service Caddy ke compose.yml dengan Caddyfile `homehub.domain.com { reverse_proxy homehub:5000 }`.
+- **Nginx + certbot**: Reverse proxy dengan SSL termination.
+- **Tailscale Funnel**: HTTPS cert otomatis via `*.ts.net` — install Tailscale di server + Android, akses via `https://<machine>.ts.net:5000`.
 
 ### 3. Ekstensi API Eksternal
 - **AI Agent Integration (Universal Router)**: `app/blueprints/ai_agent.py` - Menyediakan antarmuka "Tanpa Tatap Muka" bagi AI pihak ketiga via `POST /api/ai/execute` dan dokumentasi skema via `GET /api/ai/schema`. Modul ini memungkinkan agen AI untuk mengatur status rumah dan membaca/mengubah Catatan Bersama (*Notes*), Daftar Tugas (*Chores*), Daftar Belanja (*Shopping List*), Tautan Cepat (*Quick Links*), Pengaturan (`config.yml`), serta modul Keuangan (*Expense Tracker*) dengan dukungan unggahan bukti struk (Base64).

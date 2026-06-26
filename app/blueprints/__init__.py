@@ -15,7 +15,7 @@ def manifest_webmanifest():
     cfg = current_app.config.get('HOMEHUB_CONFIG', {})
     theme = cfg.get('theme', {})
     name = cfg.get('instance_name', 'HomeHub')
-    short_name = (name[:12] + '…') if len(name) > 13 else name
+    short_name = name[:12].rstrip() if len(name) > 12 else name
     manifest = {
         "name": name,
         "short_name": short_name,
@@ -25,10 +25,12 @@ def manifest_webmanifest():
         "background_color": theme.get('background_color', '#ffffff'),
         "theme_color": theme.get('primary_color', '#2563eb'),
         "icons": [
-            {"src": "/static/icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any"},
-            {"src": "/static/icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any"},
-            {"src": "/static/icons/homehub.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any"}
+            {"src": "/static/icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable"},
+            {"src": "/static/icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable"}
         ],
+        "display_override": ["standalone", "minimal-ui", "browser"],
+        "categories": ["utilities", "productivity", "lifestyle"],
+        "description": f"{name} — hub rumah pintar untuk keluarga, catatan, belanja, dan tugas harian.",
         "share_target": {
             "action": "/media/share",
             "method": "GET",
@@ -37,9 +39,14 @@ def manifest_webmanifest():
                 "text": "text",
                 "url": "url"
             }
+        },
+        "launch_handler": {
+            "client_mode": "auto"
         }
     }
-    return Response(json.dumps(manifest), mimetype='application/manifest+json')
+    resp = Response(json.dumps(manifest), mimetype='application/manifest+json')
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return resp
 
 
 @main_bp.route('/sw.js')
@@ -72,7 +79,9 @@ def service_worker():
         const PRECACHE = [
           '/',
           '/static/output.css',
-          '/static/js/reminders_api.js'
+          '/static/js/reminders_api.js',
+          '/static/icons/icon-192.png',
+          '/static/icons/icon-512.png'
         ];
 
         self.addEventListener('install', (event) => {
@@ -93,8 +102,8 @@ def service_worker():
           // Only handle GET
           if (req.method !== 'GET') return;
 
-          // Bypass caching for dynamic API endpoints to avoid stale data
-          if (url.pathname.startsWith('/api/')) {
+          // Bypass caching for dynamic API endpoints and share target
+          if (url.pathname.startsWith('/api/') || url.pathname === '/media/share') {
             event.respondWith(fetch(req));
             return;
           }

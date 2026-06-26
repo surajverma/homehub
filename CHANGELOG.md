@@ -3,6 +3,20 @@
 Semua perubahan yang signifikan pada proyek HomeHub ini akan dicatat di file ini.
 Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
+## [v1.0.6] - 2026-06-26
+
+### Fixed
+- **PWA Web Share Target tidak muncul di Android share sheet**: Memperbaiki tiga masalah kritis yang mencegah PWA terdaftar sebagai target share:
+    1. **Ikon maskable** — Menambahkan `purpose: "any maskable"` pada ikon PNG dan menghapus ikon SVG (tidak didukung andal di Android Chrome).
+    2. **`display_override`** — Menambahkan `["standalone", "minimal-ui", "browser"]` agar browser konsisten display mode di semua versi Android.
+    3. **Cache-Control** — Menambahkan `no-cache` pada respons manifest agar browser selalu mengambil konfigurasi terbaru.
+- **`short_name` tanpa unicode** — Mengganti `'…'` (U+2026) dengan truncate ASCII biasa untuk menghindari masalah di Android launcher.
+- **Template `shared_url` bug** — Memperbaiki `templates/media.html` yang membaca `request.args.get('shared_url')` alih-alih variabel template `shared_url` yang sudah diproses backend (URL tidak terisi otomatis dari share target).
+- **Service Worker pre-cache & share target** — Menambahkan ikon PWA ke daftar precache dan bypass cache khusus untuk rute `/media/share` agar share navigation selalu fresh.
+
+### Required Infra
+- **HTTPS** — Web Share Target API hanya bekerja di secure context. PWA harus diakses via HTTPS (Caddy/Nginx reverse proxy atau Tailscale Funnel). Lihat BLUEPRINT.md untuk panduan.
+
 ## [v1.0.5] - 2026-06-26
 
 ### Added
