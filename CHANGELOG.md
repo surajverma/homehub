@@ -13,6 +13,7 @@ Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.
 - **`short_name` tanpa unicode** — Mengganti `'…'` (U+2026) dengan truncate ASCII biasa untuk menghindari masalah di Android launcher.
 - **Template `shared_url` bug** — Memperbaiki `templates/media.html` yang membaca `request.args.get('shared_url')` alih-alih variabel template `shared_url` yang sudah diproses backend (URL tidak terisi otomatis dari share target).
 - **Service Worker pre-cache & share target** — Menambahkan ikon PWA ke daftar precache dan bypass cache khusus untuk rute `/media/share` agar share navigation selalu fresh.
+- **405 Method Not Allowed on Download** — Form di `/media/share` tidak punya `action`, POST ke URL saat ini yang cuma terima GET. Tambah `action="/media"` pada form.
 
 ### Required Infra
 - **HTTPS** — Web Share Target API hanya bekerja di secure context. PWA harus diakses via HTTPS (Caddy/Nginx reverse proxy atau Tailscale Funnel). Lihat BLUEPRINT.md untuk panduan.
