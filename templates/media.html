@@ -3,7 +3,7 @@
 <div class="mx-auto">
     <h2 class="text-xl font-bold mb-4">Media Downloader</h2>
     <form method="POST" class="mb-4 grid gap-2 md:grid-cols-12 grid-cols-1 items-end">
-        <input type="url" name="url" class="w-full p-2 border rounded md:col-span-6" placeholder="Paste media URL..." required>
+        <input type="url" name="url" class="w-full p-2 border rounded md:col-span-6" placeholder="Paste media URL..." value="{{ request.args.get('shared_url', '') }}" required>
         <select name="format" class="p-2 border rounded md:col-span-2">
             <option value="mp4">MP4 (video)</option>
             <option value="mp3">MP3 (audio)</option>

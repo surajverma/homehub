@@ -28,7 +28,16 @@ def manifest_webmanifest():
             {"src": "/static/icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any"},
             {"src": "/static/icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any"},
             {"src": "/static/icons/homehub.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any"}
-        ]
+        ],
+        "share_target": {
+            "action": "/media/share",
+            "method": "GET",
+            "params": {
+                "title": "title",
+                "text": "text",
+                "url": "url"
+            }
+        }
     }
     return Response(json.dumps(manifest), mimetype='application/manifest+json')
 

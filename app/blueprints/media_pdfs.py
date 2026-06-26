@@ -13,6 +13,32 @@ MEDIA_FOLDER = os.path.join(BASE_DIR, 'media')
 PDF_FOLDER = os.path.join(BASE_DIR, 'pdfs')
 
 
+@main_bp.route('/media/share', methods=['GET'])
+def media_share():
+    # Web Share Target API endpoint
+    # Android sends title, text, url as query parameters
+    url_param = request.args.get('url', '')
+    text_param = request.args.get('text', '')
+    
+    # Try to extract URL from url_param first, then text_param
+    extracted = None
+    for param in [url_param, text_param]:
+        if not param:
+            continue
+        match = re.search(r'(https?://[^\s]+)', param)
+        if match:
+            extracted = match.group(1)
+            break
+            
+    if extracted and is_url_safe_for_fetch(extracted):
+        # Redirect to main media page and prepopulate URL
+        from urllib.parse import urlencode
+        return redirect(url_for('main.media') + '?' + urlencode({'shared_url': extracted}))
+    
+    flash('No valid URL found in share intent.', 'error')
+    return redirect(url_for('main.media'))
+
+
 @main_bp.route('/media', methods=['GET', 'POST'])
 def media():
     if request.method == 'POST':

@@ -3,6 +3,12 @@
 Semua perubahan yang signifikan pada proyek HomeHub ini akan dicatat di file ini.
 Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
+## [v1.0.5] - 2026-06-26
+
+### Added
+- **PWA Web Share Target API**: Mengintegrasikan API Web Share Target ke dalam PWA HomeHub. Pengguna Android (dan desktop yang kompatibel) kini dapat menggunakan fitur "Share" bawaan OS (misalnya dari YouTube atau TikTok) untuk membagikan tautan video secara langsung ke aplikasi HomeHub. 
+- **Media Pre-fill**: Tautan yang dibagikan melalui *Share sheet* kini akan langsung membuka halaman Media Downloader dan otomatis mengisi (*pre-fill*) kolom input URL. Pengguna bisa me-*review* URL, memilih format (MP4/MP3) atau kualitas yang diinginkan sebelum mengklik Download.
+
 ## [v1.0.4] - 2026-06-23
 
 ### Added
