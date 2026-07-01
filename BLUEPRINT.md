@@ -1,7 +1,7 @@
 # HomeHub Project Blueprint
 
-**Version:** v1.0.6  
-**Last Updated:** 2026-06-26
+**Version:** v1.0.7  
+**Last Updated:** 2026-07-01
 
 Dokumen ini memetakan arsitektur dan modul utama dari proyek HomeHub, membantu *developer* memahami struktur fitur secara keseluruhan.
 
@@ -25,7 +25,7 @@ HomeHub dibangun di atas *stack* teknologi berikut:
 - **Expense Tracker**: Terletak di `app/blueprints/expenses.py`. Melacak pengeluaran dengan filter bulanan/tahunan, serta sistem penagihan (Belum Bayar/Lunas) untuk tagihan berulang rutin. Memiliki halaman manajemen dedikasi untuk aturan *recurring* di `/expenses/recurring` dengan *Edit Strategy* pengamanan histori pembayaran.
 - **Shared Notes & Cloud**: Mengelola direktori penyimpanan file bersama dan catatan tempel.
 - **Kalender Reminders**: Mengelola pengingat jadwal satu kali jalan maupun jadwal rutin.
-- **Media Downloader & PDFs**: Terletak di `app/blueprints/media_pdfs.py`. Utilitas pengunduhan video/audio menggunakan `yt-dlp` dan konverter PDF. Terintegrasi erat dengan PWA (Progressive Web App) melalui dukungan **Web Share Target API**, memungkinkan pengguna di perangkat seluler untuk melempar tautan unduhan langsung ke aplikasi HomeHub.
+- **Media Downloader & PDFs**: Terletak di `app/blueprints/media_pdfs.py`. Utilitas pengunduhan video/audio menggunakan `yt-dlp` dan konverter PDF. Terintegrasi erat dengan PWA (Progressive Web App) melalui dukungan **Web Share Target API**, memungkinkan pengguna di perangkat seluler untuk melempar tautan unduhan langsung ke aplikasi HomeHub. Dilengkapi **file existence validation** — backend mengecek keberadaan file sebelum serve, API status mengembalikan `file_exists` flag, dan antarmuka menampilkan status "Not available" jika file hilang (dihapus manual atau folder dipindah), mencegah broken links dan 404 yang membingungkan.
    - **PWA Web Share Target** — Fitur andalan yang memungkinkan pengguna Android membagikan tautan (misalnya dari YouTube) langsung ke Media Downloader via share sheet OS. Didukung oleh manifest `share_target` dan Service Worker fetch handler khusus untuk rute `/media/share`.
 
 ### 2a. PWA Configuration (Progressive Web App)

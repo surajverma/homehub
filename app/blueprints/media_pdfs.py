@@ -1,6 +1,6 @@
 import os, re, shutil, subprocess
 from threading import Thread
-from flask import render_template, request, redirect, url_for, send_from_directory, jsonify, current_app, flash
+from flask import render_template, request, redirect, url_for, send_from_directory, jsonify, current_app, flash, abort
 from datetime import datetime
 from ..models import db, Media, PDF
 from ..blueprints import main_bp
@@ -11,6 +11,14 @@ from werkzeug.utils import secure_filename
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 MEDIA_FOLDER = os.path.join(BASE_DIR, 'media')
 PDF_FOLDER = os.path.join(BASE_DIR, 'pdfs')
+
+
+def _file_exists(filepath: str) -> bool:
+    """Check if file exists, safe against filesystem errors"""
+    try:
+        return os.path.isfile(filepath)
+    except Exception:
+        return False
 
 
 @main_bp.route('/media/share', methods=['GET'])
@@ -106,18 +114,24 @@ def media():
 @main_bp.route('/media/status/<int:media_id>')
 def media_status(media_id):
     m = Media.query.get_or_404(media_id)
-    return jsonify({'status': m.status, 'progress': m.progress, 'filepath': m.filepath})
+    file_exists = _file_exists(os.path.join(MEDIA_FOLDER, m.filepath)) if m.filepath else False
+    return jsonify({'status': m.status, 'progress': m.progress, 'filepath': m.filepath, 'file_exists': file_exists})
 
 
 @main_bp.route('/media/<filename>')
 def serve_media(filename):
+    full_path = os.path.join(MEDIA_FOLDER, filename)
+    if not _file_exists(full_path):
+        abort(404)
     return send_from_directory(MEDIA_FOLDER, filename, as_attachment=True)
 
 
 @main_bp.route('/media/preview/<filename>')
 def preview_media(filename):
     """Serve media file for preview (inline) with security headers"""
-    # Add security headers to prevent script execution
+    full_path = os.path.join(MEDIA_FOLDER, filename)
+    if not _file_exists(full_path):
+        abort(404)
     from flask import make_response
     response = make_response(send_from_directory(MEDIA_FOLDER, filename, as_attachment=False))
     response.headers['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; media-src 'self'"
@@ -187,12 +201,18 @@ def pdfs():
 
 @main_bp.route('/pdfs/<filename>')
 def serve_pdf(filename):
+    full_path = os.path.join(PDF_FOLDER, filename)
+    if not _file_exists(full_path):
+        abort(404)
     return send_from_directory(PDF_FOLDER, filename, as_attachment=True)
 
 
 @main_bp.route('/pdfs/preview/<filename>')
 def preview_pdf(filename):
     """Serve PDF file for preview (inline) with security headers"""
+    full_path = os.path.join(PDF_FOLDER, filename)
+    if not _file_exists(full_path):
+        abort(404)
     from flask import make_response
     response = make_response(send_from_directory(PDF_FOLDER, filename, as_attachment=False))
     response.headers['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'"

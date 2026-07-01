@@ -24,10 +24,10 @@
         <span class="px-2 py-1 rounded bg-yellow-100 text-yellow-800 status-chip">Starting…</span>
         <span class="text-xs text-gray-500 progress-line">{{ media.progress or 'Will take a while…' }}</span>
                         {% elif media.filepath %}
-                <a href="/media/preview/{{ media.filepath }}" target="_blank" rel="noopener noreferrer" class="btn btn-success" aria-label="Preview {{ media.filepath }} in new tab">
+                <a href="/media/preview/{{ media.filepath }}" target="_blank" rel="noopener noreferrer" class="btn btn-success media-preview-link" data-filename="{{ media.filepath }}" aria-label="Preview {{ media.filepath }} in new tab">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i> Preview
                 </a>
-                <a href="/media/{{ media.filepath }}" class="btn btn-primary">
+                <a href="/media/{{ media.filepath }}" class="btn btn-primary media-download-link" data-filename="{{ media.filepath }}">
                     <i class="fa-solid fa-download" aria-hidden="true"></i> Download
                 </a>
                         {% else %}
@@ -75,20 +75,25 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
                 }
                 setTimeout(()=>poll(item), 2500);
             } else if (d.status === 'done' && d.filepath){
-                // replace chip with Preview and Download links
+                // replace chip with Preview and Download links (or error if file missing)
                 const chip = item.querySelector('.status-chip');
-                if (chip){ 
-                    chip.outerHTML = `
-                        <a href="/media/preview/${d.filepath}" target="_blank" rel="noopener noreferrer" class="btn btn-success" aria-label="Preview ${d.filepath} in new tab">
-                            <i class="fa-solid fa-eye" aria-hidden="true"></i> Preview
-                        </a>
-                        <a href="/media/${d.filepath}" class="btn btn-primary">
-                            <i class="fa-solid fa-download" aria-hidden="true"></i> Download
-                        </a>
-                    `; 
-                }
                 const p = item.querySelector('.progress-line');
-                if (p) p.textContent = '';
+                if (d.file_exists === false) {
+                    if (chip) chip.outerHTML = '<span class="px-2 py-1 rounded bg-red-100 text-red-800">Not available (deleted)</span>';
+                    if (p) p.textContent = 'File not found on disk';
+                } else {
+                    if (chip){
+                        chip.outerHTML = `
+                            <a href="/media/preview/${d.filepath}" target="_blank" rel="noopener noreferrer" class="btn btn-success media-preview-link" data-filename="${d.filepath}" aria-label="Preview ${d.filepath} in new tab">
+                                <i class="fa-solid fa-eye" aria-hidden="true"></i> Preview
+                            </a>
+                            <a href="/media/${d.filepath}" class="btn btn-primary media-download-link" data-filename="${d.filepath}">
+                                <i class="fa-solid fa-download" aria-hidden="true"></i> Download
+                            </a>
+                        `;
+                    }
+                    if (p) p.textContent = '';
+                }
             } else if (d.status === 'error'){
                 const chip = item.querySelector('.status-chip');
                 if (chip){ chip.textContent = 'Error'; chip.className = 'px-2 py-1 rounded bg-red-100 text-red-800 status-chip'; }
@@ -100,5 +105,15 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
         if (li.querySelector('.status-chip')) poll(li);
     });
 })();
+// Prevent navigation to broken media links
+document.addEventListener('click', async (e) => {
+    const link = e.target.closest('.media-preview-link, .media-download-link');
+    if (!link) return;
+    const res = await fetch(link.href, { method: 'HEAD' });
+    if (!res.ok) {
+        e.preventDefault();
+        link.replaceWith(`<span class="px-2 py-1 rounded bg-red-100 text-red-800">Not available (deleted)</span>`);
+    }
+});
 </script>
 {% endblock %}

@@ -3,6 +3,11 @@
 Semua perubahan yang signifikan pada proyek HomeHub ini akan dicatat di file ini.
 Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
+## [v1.0.7] - 2026-07-01
+
+### Fixed
+- **Media/PDF preview not found saat file hilang**: Media downloader dan PDF viewer sekarang mengecek keberadaan file di disk sebelum menyajikan tautan Preview/Download. Jika file sudah dihapus atau folder media dipindah, backend mengembalikan 404 dengan rapi, API status mengembalikan flag `file_exists`, dan antarmuka menampilkan "Not available (deleted)" alih-alih tautan rusak. Tombol Delete tetap tersedia agar pengguna bisa membersihkan entri *database*.
+
 ## [v1.0.6] - 2026-06-26
 
 ### Fixed
