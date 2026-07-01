@@ -109,9 +109,11 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
 document.addEventListener('click', async (e) => {
     const link = e.target.closest('.media-preview-link, .media-download-link');
     if (!link) return;
+    e.preventDefault(); // prevent NOW, before await
     const res = await fetch(link.href, { method: 'HEAD' });
-    if (!res.ok) {
-        e.preventDefault();
+    if (res.ok) {
+        window.open(link.href, link.classList.contains('media-preview-link') ? '_blank' : '_self');
+    } else {
         link.replaceWith(`<span class="px-2 py-1 rounded bg-red-100 text-red-800">Not available (deleted)</span>`);
     }
 });
