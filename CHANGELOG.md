@@ -8,6 +8,9 @@ Format penulisan berdasarkan [Keep a Changelog](https://keepachangelog.com/id/1.
 ### Fixed
 - **Media/PDF preview not found saat file hilang**: Media downloader dan PDF viewer sekarang mengecek keberadaan file di disk sebelum menyajikan tautan Preview/Download. Jika file sudah dihapus atau folder media dipindah, backend mengembalikan 404 dengan rapi, API status mengembalikan flag `file_exists`, dan antarmuka menampilkan "Not available (deleted)" alih-alih tautan rusak. Tombol Delete tetap tersedia agar pengguna bisa membersihkan entri *database*.
 - **Preview link tetap buka new tab 404 meski sudah ditandai "Not available"**: Memperbaiki *async race condition* di click handler frontend — `preventDefault()` kini dipanggil secara sinkron sebelum `await fetch(HEAD)`, sehingga navigasi ke 404 benar-benar dicegah. Jika file valid, `window.open()` dipanggil manual di kode.
+- **Raw HTML "Not available" muncul sebagai teks**: Memperbaiki penggunaan `replaceWith()` yang membuat TextNode — kini menggunakan `outerHTML()` agar elemen HTML dirender dengan benar.
+- **Add Redownload button untuk media hilang**: Menambahkan tombol "Redownload" yang muncul ketika media tidak ditemukan di disk. Klik tombol mengisi form URL download dengan URL asli video dan scroll ke form untuk memudahkan re-download.
+- **Initial page load validation**: Media yang sudah selesai di-download (filepath di DB ada) tetapi file di disk hilang kini otomatis terdeteksi saat halaman dimuat, bukan hanya setelah polling.
 
 ## [v1.0.6] - 2026-06-26
 
