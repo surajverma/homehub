@@ -18,7 +18,7 @@
     </form>
         <ul>
         {% for media in media_list %}
-    <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center" data-id="{{ media.id }}">
+    <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center" data-id="{{ media.id }}" data-filepath="{{ media.filepath }}">
             <span class="flex-1 truncate">{{ media.title }}</span>
             {% if media.status == 'pending' %}
         <span class="px-2 py-1 rounded bg-yellow-100 text-yellow-800 status-chip">Starting…</span>
@@ -31,7 +31,7 @@
                     <i class="fa-solid fa-download" aria-hidden="true"></i> Download
                 </a>
                         {% else %}
-                <span class="px-2 py-1 rounded bg-red-100 text-red-800">Not available</span>
+                <a href="#" class="px-2 py-1 rounded bg-red-100 text-red-800 media-not-found" data-url="{{ media.title }}">Not available</a>
                         {% endif %}
                         <div class="text-xs text-gray-500">By {{ media.creator }} at {{ media.download_time.strftime('%Y-%m-%d %H:%M') }}</div>
             <form method="POST" action="/media/delete/{{ media.id }}" class="delete-form" data-creator="{{ media.creator }}">
@@ -79,7 +79,8 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
                 const chip = item.querySelector('.status-chip');
                 const p = item.querySelector('.progress-line');
                 if (d.file_exists === false) {
-                    if (chip) chip.outerHTML = '<span class="px-2 py-1 rounded bg-red-100 text-red-800">Not available (deleted)</span>';
+                    const url = item.querySelector('.flex-1')?.textContent?.trim() || '';
+                    if (chip) chip.outerHTML = '<a href="#" class="px-2 py-1 rounded bg-red-100 text-red-800 media-not-found" data-url="' + url.replace(/"/g, '&quot;') + '">Not available (deleted)</a>';
                     if (p) p.textContent = 'File not found on disk';
                 } else {
                     if (chip){
@@ -109,13 +110,54 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
 document.addEventListener('click', async (e) => {
     const link = e.target.closest('.media-preview-link, .media-download-link');
     if (!link) return;
-    e.preventDefault(); // prevent NOW, before await
+    e.preventDefault();
     const res = await fetch(link.href, { method: 'HEAD' });
     if (res.ok) {
         window.open(link.href, link.classList.contains('media-preview-link') ? '_blank' : '_self');
     } else {
-        link.replaceWith(`<span class="px-2 py-1 rounded bg-red-100 text-red-800">Not available (deleted)</span>`);
+        link.outerHTML = '<button class="px-2 py-1 rounded bg-orange-100 text-orange-800 media-redownload" data-url="' + link.href.split('/media/preview/')[1] + '">Redownload</button>';
     }
 });
+// Redownload button handler
+document.addEventListener('click', (e) => {
+    const badge = e.target.closest('.media-redownload');
+    if (badge) {
+        e.preventDefault();
+        const form = document.querySelector('form[action="/media"]');
+        const input = form.querySelector('input[name="url"]');
+        input.value = badge.dataset.url || '';
+        input.focus();
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+    const notfound = e.target.closest('.media-not-found');
+    if (notfound) {
+        e.preventDefault();
+        const url = notfound.dataset.url || '';
+        if (url) {
+            const form = document.querySelector('form[action="/media"]');
+            const input = form.querySelector('input[name="url"]');
+            input.value = url;
+            input.focus();
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+});
+// Check initial media list for missing files silently
+(async function() {
+    for (const item of document.querySelectorAll('li[data-id]')) {
+        const filepath = item.dataset.filepath;
+        if (!filepath) continue;
+        const res = await fetch('/media/preview/' + encodeURIComponent(filepath), { method: 'HEAD' });
+        if (!res.ok) {
+            const titleEl = item.querySelector('.flex-1');
+            const url = titleEl?.textContent?.trim() || '';
+            const preview = item.querySelector('.media-preview-link');
+            const download = item.querySelector('.media-download-link');
+            if (preview) preview.outerHTML = '<span class="text-red-800">Not available (deleted)</span>';
+            if (download) download.outerHTML = '<button class="btn btn-warning media-redownload" data-url="' + url.replace(/"/g, '&quot;') + '">Redownload</button>';
+        }
+    }
+})();
 </script>
 {% endblock %}
