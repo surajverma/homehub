@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - dev
+    paths-ignore:
+      - '*.md'
+      - '.github/**'
+      - 'CLAUDE.md'
+      - 'config-example.yml'
   workflow_dispatch:
 
 jobs:
