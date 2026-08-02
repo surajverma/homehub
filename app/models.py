@@ -117,6 +117,11 @@ class Reminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.String(5))  # HH:MM (optional)
+    start_date = db.Column(db.Date)
+    start_time = db.Column(db.String(5))  # HH:MM (optional)
+    end_date = db.Column(db.Date)
+    end_time = db.Column(db.String(5))  # HH:MM (optional)
+    all_day = db.Column(db.Boolean, default=False)
     title = db.Column(db.String(256), nullable=False)
     description = db.Column(db.Text)
     creator = db.Column(db.String(64))
@@ -127,6 +132,8 @@ class Reminder(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     # Tie back to a recurring rule (if generated)
     recurring_id = db.Column(db.Integer)
+    completed_at = db.Column(db.DateTime)
+    deleted_at = db.Column(db.DateTime)
 
 class MemberStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)

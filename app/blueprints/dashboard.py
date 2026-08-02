@@ -15,6 +15,65 @@ def _parse_date_param(value, default=None):
         return default
 
 
+def _parse_time_param(value):
+    if value is None:
+        return None
+    raw = str(value).strip()
+    if not raw:
+        return None
+    if len(raw) == 5 and raw[2] == ':':
+        hh, mm = raw.split(':', 1)
+        if hh.isdigit() and mm.isdigit():
+            hhi, mmi = int(hh), int(mm)
+            if 0 <= hhi < 24 and 0 <= mmi < 60:
+                return f"{hhi:02d}:{mmi:02d}"
+    return None
+
+
+def _as_bool(value):
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def _datetime_from_parts(dv, tv, *, is_end=False):
+    if not dv:
+        return None
+    if tv:
+        try:
+            hh, mm = tv.split(':', 1)
+            return datetime(dv.year, dv.month, dv.day, int(hh), int(mm))
+        except Exception:
+            return None
+    if is_end:
+        return datetime(dv.year, dv.month, dv.day, 23, 59, 59)
+    return datetime(dv.year, dv.month, dv.day, 0, 0, 0)
+
+
+def _validate_range(start_date, start_time, end_date, end_time):
+    if not end_date and not end_time:
+        return True, None
+    if end_time and not end_date:
+        return False, 'End date is required when end time is provided'
+    sdt = _datetime_from_parts(start_date, start_time, is_end=False)
+    edt = _datetime_from_parts(end_date, end_time, is_end=True)
+    if not sdt or not edt:
+        return False, 'Invalid start or end date/time'
+    if edt < sdt:
+        return False, 'End date/time must be the same as or after start date/time'
+    return True, None
+
+
+def _reminder_start_date(r: Reminder):
+    return getattr(r, 'start_date', None) or r.date
+
+
+def _reminder_end_date(r: Reminder):
+    return getattr(r, 'end_date', None) or _reminder_start_date(r)
+
+
 def _show_chores_on_homepage() -> bool:
     try:
         row = db.session.execute(db.text("SELECT value FROM app_setting WHERE key='show_chores_on_homepage'"))
@@ -29,6 +88,15 @@ def _show_chores_on_homepage() -> bool:
 
 @main_bp.route('/')
 def index():
+    return _render_dashboard(calendar_only=False)
+
+
+@main_bp.route('/calendar')
+def calendar_page():
+    return _render_dashboard(calendar_only=True)
+
+
+def _render_dashboard(calendar_only=False):
     config = current_app.config['HOMEHUB_CONFIG']
     notice = Notice.query.order_by(Notice.updated_at.desc()).first()
     show_chores_on_homepage = _show_chores_on_homepage()
@@ -102,6 +170,7 @@ def index():
     return render_template(
         'index.html',
         config=config,
+        calendar_only=calendar_only,
         notice=notice,
         reminders_data=by_date,
         reminders_json=reminders_json,
@@ -114,10 +183,22 @@ def index():
 
 
 def _serialize_reminder(r: Reminder):
+    start_date = getattr(r, 'start_date', None) or r.date
+    start_time = getattr(r, 'start_time', None)
+    if start_time is None:
+        start_time = getattr(r, 'time', None)
+    all_day = bool(getattr(r, 'all_day', False))
+    if (start_time is None or start_time == '') and not getattr(r, 'end_date', None) and not getattr(r, 'end_time', None):
+        all_day = True
     return {
         'id': r.id,
         'date': r.date.strftime('%Y-%m-%d') if r.date else None,
         'time': getattr(r, 'time', None) or None,
+        'start_date': start_date.strftime('%Y-%m-%d') if start_date else None,
+        'start_time': start_time or None,
+        'end_date': getattr(r, 'end_date', None).strftime('%Y-%m-%d') if getattr(r, 'end_date', None) else None,
+        'end_time': getattr(r, 'end_time', None) or None,
+        'all_day': all_day,
         'title': r.title,
         'description': r.description or '',
         'creator': r.creator or '',
@@ -126,6 +207,8 @@ def _serialize_reminder(r: Reminder):
         'recurring_id': getattr(r, 'recurring_id', None),
         'timestamp': r.timestamp.isoformat() if r.timestamp else None,
         'updated_at': getattr(r, 'updated_at', None).isoformat() if getattr(r, 'updated_at', None) else None,
+        'completed_at': getattr(r, 'completed_at', None).isoformat() if getattr(r, 'completed_at', None) else None,
+        'deleted_at': getattr(r, 'deleted_at', None).isoformat() if getattr(r, 'deleted_at', None) else None,
     }
 
 def _serialize_recurring_rule(rr: RecurringReminder):
@@ -154,7 +237,7 @@ def _serialize_recurring_rule(rr: RecurringReminder):
 def api_reminders_list():
     scope = (request.args.get('scope', 'day') or 'day').lower()
     base_date = _parse_date_param(request.args.get('date'), date.today())
-    q = Reminder.query
+    q = Reminder.query.filter(Reminder.deleted_at.is_(None))
     if scope == 'month':
         start = base_date.replace(day=1)
         if start.month == 12:
@@ -261,14 +344,25 @@ def api_reminders_list():
     counts = {}
     categories_counts = {}
     if scope == 'month':
-        # Include stored and synthesized rows in counts for calendar dots
+        # Include stored and synthesized rows in counts for calendar dots.
+        # For one-time reminders with end_date, paint every day in the selected month span.
         for r in (rows + gen_rows):
-            k = r.date.strftime('%Y-%m-%d')
-            counts[k] = counts.get(k, 0) + 1
-            cat = getattr(r, 'category', None) or '_uncategorized'
-            if k not in categories_counts:
-                categories_counts[k] = {}
-            categories_counts[k][cat] = categories_counts[k].get(cat, 0) + 1
+            sd = _reminder_start_date(r)
+            ed = _reminder_end_date(r)
+            if not sd or not ed:
+                continue
+            if ed < sd:
+                ed = sd
+            dcur = sd if sd >= start else start
+            dend = ed if ed <= end else end
+            while dcur <= dend:
+                k = dcur.strftime('%Y-%m-%d')
+                counts[k] = counts.get(k, 0) + 1
+                cat = getattr(r, 'category', None) or '_uncategorized'
+                if k not in categories_counts:
+                    categories_counts[k] = {}
+                categories_counts[k][cat] = categories_counts[k].get(cat, 0) + 1
+                dcur = dcur + timedelta(days=1)
 
     # Build recurring rules summary for UI compression
     recurring_rules = []
@@ -328,14 +422,7 @@ def api_recurring_rules_update_delete(rid):
     if 'title' in payload: rr.title = sanitize_text(payload.get('title') or rr.title)
     if 'description' in payload: rr.description = sanitize_html(payload.get('description') or '')
     if 'time' in payload:
-        time_raw = payload.get('time')
-        tval = None
-        if isinstance(time_raw, str) and len(time_raw) == 5 and time_raw[2] == ':':
-            hh, mm = time_raw.split(':', 1)
-            if hh.isdigit() and mm.isdigit():
-                hhi, mmi = int(hh), int(mm)
-                if 0 <= hhi < 24 and 0 <= mmi < 60:
-                    tval = f"{hhi:02d}:{mmi:02d}"
+        tval = _parse_time_param(payload.get('time'))
         rr.time = tval
     if 'category' in payload: rr.category = sanitize_text(payload.get('category')) or None
     if 'color' in payload: rr.color = sanitize_text(payload.get('color')) or None
@@ -371,17 +458,20 @@ def api_reminders_create():
     description = sanitize_html(payload.get('description', ''))
     if not title:
         return jsonify({'ok': False, 'error': 'Title required'}), 400
-    d = _parse_date_param(payload.get('date'), None)
-    if not d:
+    start_d = _parse_date_param(payload.get('start_date'), None) or _parse_date_param(payload.get('date'), None)
+    if not start_d:
         return jsonify({'ok': False, 'error': 'Invalid date'}), 400
-    time_raw = payload.get('time')
-    tval = None
-    if isinstance(time_raw, str) and len(time_raw) == 5 and time_raw[2] == ':':
-        hh, mm = time_raw.split(':', 1)
-        if hh.isdigit() and mm.isdigit():
-            hhi, mmi = int(hh), int(mm)
-            if 0 <= hhi < 24 and 0 <= mmi < 60:
-                tval = f"{hhi:02d}:{mmi:02d}"
+    all_day = False
+    start_t = _parse_time_param(payload.get('start_time'))
+    if start_t is None:
+        start_t = _parse_time_param(payload.get('time'))
+    end_d = _parse_date_param(payload.get('end_date'), None)
+    end_t = _parse_time_param(payload.get('end_time'))
+    if (start_t is None or start_t == '') and not end_d and not end_t:
+        all_day = True
+    ok, err = _validate_range(start_d, start_t, end_d, end_t)
+    if not ok:
+        return jsonify({'ok': False, 'error': err}), 400
     # Recurring support (optional)
     recur = payload.get('recurring')
     if recur and isinstance(recur, dict):
@@ -402,12 +492,23 @@ def api_reminders_create():
         rr = RecurringReminder(title=title, description=description, creator=creator,
                                interval=interval, unit=unit,
                                frequency=None, monthly_mode=None,
-                               time=tval, category=payload.get('category'), color=payload.get('color'),
-                               start_date=d, end_date=end_d, effective_from=d)
+                               time=start_t, category=payload.get('category'), color=payload.get('color'),
+                               start_date=start_d, end_date=end_d, effective_from=start_d)
         db.session.add(rr)
         db.session.commit()
         return jsonify({'ok': True, 'recurring_id': rr.id})
-    r = Reminder(date=d, title=title, description=description, creator=creator, time=tval)
+    r = Reminder(
+        date=start_d,
+        time=start_t,
+        start_date=start_d,
+        start_time=start_t,
+        end_date=end_d,
+        end_time=end_t,
+        all_day=all_day,
+        title=title,
+        description=description,
+        creator=creator,
+    )
     cat = payload.get('category'); col = payload.get('color')
     if hasattr(r, 'category'):
         r.category = sanitize_text(cat) if cat else None
@@ -433,18 +534,47 @@ def api_reminders_update(rid):
             r.title = title
     if 'description' in payload:
         r.description = sanitize_html(payload['description'])
-    if 'date' in payload:
-        nd = _parse_date_param(payload['date'], None)
-        if nd:
-            r.date = nd
-    if hasattr(r, 'time') and 'time' in payload:
-        time_raw = payload.get('time')
-        if isinstance(time_raw, str) and len(time_raw) == 5 and time_raw[2] == ':':
-            hh, mm = time_raw.split(':', 1)
-            if hh.isdigit() and mm.isdigit():
-                hhi, mmi = int(hh), int(mm)
-                if 0 <= hhi < 24 and 0 <= mmi < 60:
-                    r.time = f"{hhi:02d}:{mmi:02d}"
+    new_start_d = getattr(r, 'start_date', None) or r.date
+    if 'start_date' in payload:
+        new_start_d = _parse_date_param(payload.get('start_date'), new_start_d)
+    elif 'date' in payload:
+        new_start_d = _parse_date_param(payload.get('date'), new_start_d)
+
+    new_start_t = getattr(r, 'start_time', None)
+    if new_start_t is None:
+        new_start_t = getattr(r, 'time', None)
+    if 'start_time' in payload:
+        new_start_t = _parse_time_param(payload.get('start_time'))
+    elif 'time' in payload:
+        new_start_t = _parse_time_param(payload.get('time'))
+
+    new_end_d = getattr(r, 'end_date', None)
+    if 'end_date' in payload:
+        new_end_d = _parse_date_param(payload.get('end_date'), None)
+
+    new_end_t = getattr(r, 'end_time', None)
+    if 'end_time' in payload:
+        new_end_t = _parse_time_param(payload.get('end_time'))
+
+    all_day = (new_start_t is None or new_start_t == '') and not new_end_d and not new_end_t
+
+    ok, err = _validate_range(new_start_d, new_start_t, new_end_d, new_end_t)
+    if not ok:
+        return jsonify({'ok': False, 'error': err}), 400
+
+    r.date = new_start_d
+    if hasattr(r, 'time'):
+        r.time = new_start_t
+    if hasattr(r, 'start_date'):
+        r.start_date = new_start_d
+    if hasattr(r, 'start_time'):
+        r.start_time = new_start_t
+    if hasattr(r, 'end_date'):
+        r.end_date = new_end_d
+    if hasattr(r, 'end_time'):
+        r.end_time = new_end_t
+    if hasattr(r, 'all_day'):
+        r.all_day = bool(all_day)
     if hasattr(r, 'category') and 'category' in payload:
         r.category = sanitize_text(payload.get('category')) if payload.get('category') else None
     if hasattr(r, 'color') and 'color' in payload:
@@ -453,8 +583,104 @@ def api_reminders_update(rid):
     return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
 
 
+@main_bp.route('/api/reminders/<int:rid>/done', methods=['POST'])
+def api_reminder_mark_done(rid):
+    r = Reminder.query.get_or_404(rid)
+    payload = request.get_json(silent=True) or {}
+    user = sanitize_text(payload.get('creator', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if user not in admin_aliases and user != (r.creator or ''):
+        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+    r.completed_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@main_bp.route('/api/reminders/<int:rid>/undo', methods=['POST'])
+def api_reminder_mark_undo(rid):
+    r = Reminder.query.get_or_404(rid)
+    payload = request.get_json(silent=True) or {}
+    user = sanitize_text(payload.get('creator', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if user not in admin_aliases and user != (r.creator or ''):
+        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+    r.completed_at = None
+    db.session.commit()
+    return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
+
+
+@main_bp.route('/api/reminders/<int:rid>/snooze', methods=['POST'])
+def api_reminder_snooze(rid):
+    r = Reminder.query.get_or_404(rid)
+    payload = request.get_json(silent=True) or {}
+    user = sanitize_text(payload.get('creator', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if user not in admin_aliases and user != (r.creator or ''):
+        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+
+    minutes = payload.get('minutes')
+    days = payload.get('days')
+    try:
+        minutes = int(minutes) if minutes is not None else 0
+    except Exception:
+        minutes = 0
+    try:
+        days = int(days) if days is not None else 0
+    except Exception:
+        days = 0
+    if minutes <= 0 and days <= 0:
+        days = 1
+    delta = timedelta(days=days, minutes=minutes)
+
+    sd = getattr(r, 'start_date', None) or r.date
+    st = getattr(r, 'start_time', None)
+    if st is None:
+        st = getattr(r, 'time', None)
+    ed = getattr(r, 'end_date', None)
+    et = getattr(r, 'end_time', None)
+
+    if st:
+        sdt = _datetime_from_parts(sd, st)
+        ndt = sdt + delta
+        r.date = ndt.date()
+        r.time = ndt.strftime('%H:%M')
+        if hasattr(r, 'start_date'):
+            r.start_date = ndt.date()
+        if hasattr(r, 'start_time'):
+            r.start_time = ndt.strftime('%H:%M')
+        if ed:
+            edt = _datetime_from_parts(ed, et, is_end=not bool(et))
+            nedt = edt + delta
+            if hasattr(r, 'end_date'):
+                r.end_date = nedt.date()
+            if hasattr(r, 'end_time'):
+                r.end_time = et and nedt.strftime('%H:%M') or None
+    else:
+        # Date-only reminder snooze shifts by whole days.
+        day_shift = delta.days if delta.days > 0 else 1
+        r.date = sd + timedelta(days=day_shift)
+        r.time = None
+        if hasattr(r, 'start_date'):
+            r.start_date = r.date
+        if hasattr(r, 'start_time'):
+            r.start_time = None
+        if ed and hasattr(r, 'end_date'):
+            r.end_date = ed + timedelta(days=day_shift)
+        if hasattr(r, 'end_time'):
+            r.end_time = et
+
+    if hasattr(r, 'all_day'):
+        r.all_day = (not getattr(r, 'start_time', None)) and (not getattr(r, 'end_date', None)) and (not getattr(r, 'end_time', None))
+    db.session.commit()
+    return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
+
+
 @main_bp.route('/api/reminders', methods=['DELETE'])
 def api_reminders_delete_bulk():
+    """Soft-delete: moves reminders to trash (sets deleted_at)."""
     payload = request.get_json(silent=True) or {}
     ids = payload.get('ids') or []
     user = sanitize_text(payload.get('creator', ''))
@@ -462,8 +688,9 @@ def api_reminders_delete_bulk():
         return jsonify({'ok': False, 'error': 'No ids provided'}), 400
     admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
     admin_aliases = {admin_name, 'Administrator', 'admin'}
-    deleted = 0
+    soft_deleted = 0
     dates = set()
+    now = datetime.utcnow()
     for rid in ids:
         if not isinstance(rid, int):
             continue
@@ -473,11 +700,53 @@ def api_reminders_delete_bulk():
         if user in admin_aliases or user == (r.creator or ''):
             if r.date:
                 dates.add(r.date.strftime('%Y-%m-%d'))
-            db.session.delete(r)
-            deleted += 1
-    if deleted:
+            r.deleted_at = now
+            soft_deleted += 1
+    if soft_deleted:
         db.session.commit()
-    return jsonify({'ok': True, 'deleted': deleted, 'dates': list(dates)})
+    return jsonify({'ok': True, 'deleted': soft_deleted, 'dates': list(dates)})
+
+
+@main_bp.route('/api/reminders/trash', methods=['GET'])
+def api_reminders_trash():
+    """List soft-deleted (trashed) reminders, auto-purging entries older than 7 days."""
+    cutoff = datetime.utcnow() - timedelta(days=7)
+    try:
+        Reminder.query.filter(Reminder.deleted_at < cutoff).delete(synchronize_session=False)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    rows = Reminder.query.filter(Reminder.deleted_at.isnot(None)).order_by(Reminder.deleted_at.desc()).all()
+    return jsonify({'ok': True, 'reminders': [_serialize_reminder(r) for r in rows]})
+
+
+@main_bp.route('/api/reminders/<int:rid>/restore', methods=['POST'])
+def api_reminder_restore(rid):
+    r = Reminder.query.get_or_404(rid)
+    payload = request.get_json(silent=True) or {}
+    user = sanitize_text(payload.get('creator', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if user not in admin_aliases and user != (r.creator or ''):
+        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+    r.deleted_at = None
+    db.session.commit()
+    return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
+
+
+@main_bp.route('/api/reminders/<int:rid>/purge', methods=['DELETE'])
+def api_reminder_purge(rid):
+    """Permanently delete a reminder from trash."""
+    r = Reminder.query.get_or_404(rid)
+    payload = request.get_json(silent=True) or {}
+    user = sanitize_text(payload.get('creator', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if user not in admin_aliases and user != (r.creator or ''):
+        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+    db.session.delete(r)
+    db.session.commit()
+    return jsonify({'ok': True})
 
 
 @main_bp.route('/calendar/add', methods=['POST'])
@@ -508,9 +777,9 @@ def delete_reminder(reminder_id):
     admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
     admin_aliases = {admin_name, 'Administrator', 'admin'}
     if user in admin_aliases or user == r.creator:
-        db.session.delete(r)
+        r.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash('Reminder deleted.', 'success')
+        flash('Reminder moved to trash.', 'success')
     else:
         flash('Not allowed to delete this reminder.', 'error')
     date_s = None
@@ -539,6 +808,7 @@ def delete_reminders_bulk():
     admin_aliases = {admin_name, 'Administrator', 'admin'}
     kept_date = None
     deleted = 0
+    now = datetime.utcnow()
     for rid in id_list:
         r = Reminder.query.get(rid)
         if not r:
@@ -549,11 +819,11 @@ def delete_reminders_bulk():
             except Exception:
                 kept_date = None
         if user in admin_aliases or user == r.creator:
-            db.session.delete(r)
+            r.deleted_at = now
             deleted += 1
     if deleted:
         db.session.commit()
-        flash(f'Deleted {deleted} reminder(s).', 'success')
+        flash(f'Moved {deleted} reminder(s) to trash.', 'success')
     else:
         flash('No reminders deleted (permission?).', 'error')
     return redirect(url_for('main.index', date=kept_date) if kept_date else url_for('main.index'))

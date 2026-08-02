@@ -25,5 +25,30 @@ window.remindersApi = (function(){
     const r = await fetch('/api/recurring_rules/'+id, {method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({creator})});
     return r.json();
   }
-  return {list, create, update, removeMany, updateRule, deleteRule};
+  async function markDone(id, creator){
+    const r = await fetch('/api/reminders/'+id+'/done', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({creator})});
+    return r.json();
+  }
+  async function undoDone(id, creator){
+    const r = await fetch('/api/reminders/'+id+'/undo', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({creator})});
+    return r.json();
+  }
+  async function snooze(id, creator, opts){
+    const payload = Object.assign({creator}, opts || {});
+    const r = await fetch('/api/reminders/'+id+'/snooze', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    return r.json();
+  }
+  async function trash(){
+    const r = await fetch('/api/reminders/trash');
+    return r.json();
+  }
+  async function restore(id, creator){
+    const r = await fetch('/api/reminders/'+id+'/restore', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({creator})});
+    return r.json();
+  }
+  async function purge(id, creator){
+    const r = await fetch('/api/reminders/'+id+'/purge', {method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({creator})});
+    return r.json();
+  }
+  return {list, create, update, removeMany, updateRule, deleteRule, markDone, undoDone, snooze, trash, restore, purge};
 })();
