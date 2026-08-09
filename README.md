@@ -47,7 +47,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 
 The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
 
-1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub and add family members. You can also set an optional password to protect the whole site.
+1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub and add family members. You can also set an optional password to protect the whole site. The shared calendar can be enabled with `feature_toggles.calendar`, and the weekly grid can start on the day configured under `reminders.calendar_start_day`.
 <details>
   <summary>Click to see an example config.yml</summary>
 
@@ -71,6 +71,7 @@ feature_toggles:
   expiry_tracker: true
   url_shortener: true
   expense_tracker: true
+  calendar: true
 
 family_members:
   - Mom
