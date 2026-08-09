@@ -1251,18 +1251,26 @@ window.REMINDERS_CAL_START = (function(){
 			ev.dataTransfer.effectAllowed = 'move';
 		});
 	}
+	function reminderOverlapsWindow(r, windowStart, windowEnd){
+		const startDate = r.start_date || r.date || '';
+		const endDate = r.end_date || startDate;
+		if(!startDate) return false;
+		const reminderStart = new Date(startDate + 'T00:00:00');
+		const reminderEnd = endDate ? new Date(endDate + 'T23:59:59') : reminderStart;
+		if(Number.isNaN(reminderStart.getTime()) || Number.isNaN(reminderEnd.getTime())) return false;
+		return reminderStart <= windowEnd && reminderEnd >= windowStart;
+	}
 	function renderUpcomingTimeline(){
 		if(!window.CALENDAR_ONLY || !upcomingTimeline) return;
 		const today = new Date();
 		const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-		const end = new Date(start.getTime() + 6 * 86400000);
+		const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+		const windowEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999);
 		const all = [];
 		Object.values(monthCache).forEach(mc=>{
 			(mc.reminders||[]).forEach(r=>{
 				if(r.recurring_id) return;
-				const rd = new Date((r.date||'') + 'T00:00:00');
-				if(Number.isNaN(rd.getTime())) return;
-				if(rd >= start && rd <= end) all.push(r);
+				if(reminderOverlapsWindow(r, start, windowEnd)) all.push(r);
 			});
 		});
 		all.sort((a,b)=> (a.date||'').localeCompare(b.date||'') || ((a.time||'~').localeCompare(b.time||'~')) || ((a.id||0)-(b.id||0)));

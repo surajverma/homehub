@@ -544,17 +544,45 @@ def api_reminders_update(rid):
     if new_start_t is None:
         new_start_t = getattr(r, 'time', None)
     if 'start_time' in payload:
-        new_start_t = _parse_time_param(payload.get('start_time'))
+        raw_start_t = payload.get('start_time')
+        if raw_start_t is None:
+            new_start_t = getattr(r, 'start_time', None) or getattr(r, 'time', None)
+        else:
+            parsed_start_t = _parse_time_param(raw_start_t)
+            if parsed_start_t is not None:
+                new_start_t = parsed_start_t
     elif 'time' in payload:
-        new_start_t = _parse_time_param(payload.get('time'))
+        raw_time = payload.get('time')
+        if raw_time is None:
+            new_start_t = getattr(r, 'start_time', None) or getattr(r, 'time', None)
+        else:
+            parsed_time = _parse_time_param(raw_time)
+            if parsed_time is not None:
+                new_start_t = parsed_time
 
     new_end_d = getattr(r, 'end_date', None)
     if 'end_date' in payload:
-        new_end_d = _parse_date_param(payload.get('end_date'), None)
+        raw_end_d = payload.get('end_date')
+        if raw_end_d is None:
+            new_end_d = getattr(r, 'end_date', None)
+        else:
+            parsed_end_d = _parse_date_param(raw_end_d, None)
+            if parsed_end_d is not None:
+                new_end_d = parsed_end_d
+            else:
+                new_end_d = getattr(r, 'end_date', None)
 
     new_end_t = getattr(r, 'end_time', None)
     if 'end_time' in payload:
-        new_end_t = _parse_time_param(payload.get('end_time'))
+        raw_end_t = payload.get('end_time')
+        if raw_end_t is None:
+            new_end_t = getattr(r, 'end_time', None)
+        else:
+            parsed_end_t = _parse_time_param(raw_end_t)
+            if parsed_end_t is not None:
+                new_end_t = parsed_end_t
+            else:
+                new_end_t = getattr(r, 'end_time', None)
 
     all_day = (new_start_t is None or new_start_t == '') and not new_end_d and not new_end_t
 
@@ -729,6 +757,8 @@ def api_reminder_restore(rid):
     admin_aliases = {admin_name, 'Administrator', 'admin'}
     if user not in admin_aliases and user != (r.creator or ''):
         return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+    if r.deleted_at is None:
+        return jsonify({'ok': False, 'error': 'Reminder is not in trash'}), 400
     r.deleted_at = None
     db.session.commit()
     return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
@@ -744,6 +774,8 @@ def api_reminder_purge(rid):
     admin_aliases = {admin_name, 'Administrator', 'admin'}
     if user not in admin_aliases and user != (r.creator or ''):
         return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+    if r.deleted_at is None:
+        return jsonify({'ok': False, 'error': 'Reminder is not in trash'}), 400
     db.session.delete(r)
     db.session.commit()
     return jsonify({'ok': True})

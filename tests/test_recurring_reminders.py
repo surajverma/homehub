@@ -206,6 +206,59 @@ def test_end_before_start_rejected(client):
     assert j['ok'] is False
 
 
+def test_patch_invalid_date_time_values_preserve_existing_values(client):
+    create_resp = client.post('/api/reminders', json={
+        'title': 'Keep Existing Values',
+        'creator': 'Alice',
+        'start_date': '2026-07-31',
+        'start_time': '09:30',
+        'end_date': '2026-08-02',
+        'end_time': '18:00',
+    })
+    assert create_resp.status_code == 200
+    rid = create_resp.get_json()['reminder']['id']
+
+    patch_resp = client.patch(f'/api/reminders/{rid}', json={
+        'creator': 'Alice',
+        'start_time': 'not-a-time',
+        'end_date': 'not-a-date',
+        'end_time': 'bad-time',
+    })
+    assert patch_resp.status_code == 200
+    reminder = patch_resp.get_json()['reminder']
+    assert reminder['start_time'] == '09:30'
+    assert reminder['end_date'] == '2026-08-02'
+    assert reminder['end_time'] == '18:00'
+
+
+def test_restore_rejects_non_trashed_reminder(client):
+    create_resp = client.post('/api/reminders', json={
+        'title': 'Restore Guard',
+        'creator': 'Alice',
+        'start_date': '2026-08-01',
+    })
+    assert create_resp.status_code == 200
+    rid = create_resp.get_json()['reminder']['id']
+
+    restore_resp = client.post(f'/api/reminders/{rid}/restore', json={'creator': 'Alice'})
+    assert restore_resp.status_code == 400
+    assert restore_resp.get_json()['ok'] is False
+
+
+def test_purge_rejects_non_trashed_reminder(client):
+    create_resp = client.post('/api/reminders', json={
+        'title': 'Purge Guard',
+        'creator': 'Alice',
+        'start_date': '2026-08-01',
+    })
+    assert create_resp.status_code == 200
+    rid = create_resp.get_json()['reminder']['id']
+
+    purge_resp = client.delete(f'/api/reminders/{rid}/purge', json={'creator': 'Alice'})
+    assert purge_resp.status_code == 400
+    assert purge_resp.get_json()['ok'] is False
+
+
 def test_calendar_module_page_is_available(client):
     r = client.get('/calendar')
     assert r.status_code == 200
