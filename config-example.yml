@@ -15,6 +15,7 @@ feature_toggles:
   expiry_tracker: true
   url_shortener: true
   expense_tracker: true
+  calendar: true
 
 family_members:
   - Mom

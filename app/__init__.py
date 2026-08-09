@@ -94,6 +94,30 @@ def create_app(test_config: dict | None = None):
                     cur.execute("ALTER TABLE reminder ADD COLUMN updated_at TIMESTAMP")
                 if not has_column('reminder', 'time'):
                     cur.execute("ALTER TABLE reminder ADD COLUMN time TEXT")
+                if not has_column('reminder', 'start_date'):
+                    cur.execute("ALTER TABLE reminder ADD COLUMN start_date DATE")
+                if not has_column('reminder', 'start_time'):
+                    cur.execute("ALTER TABLE reminder ADD COLUMN start_time TEXT")
+                if not has_column('reminder', 'end_date'):
+                    cur.execute("ALTER TABLE reminder ADD COLUMN end_date DATE")
+                if not has_column('reminder', 'end_time'):
+                    cur.execute("ALTER TABLE reminder ADD COLUMN end_time TEXT")
+                if not has_column('reminder', 'all_day'):
+                    cur.execute("ALTER TABLE reminder ADD COLUMN all_day INTEGER DEFAULT 0")
+                if not has_column('reminder', 'completed_at'):
+                    cur.execute("ALTER TABLE reminder ADD COLUMN completed_at TIMESTAMP")
+                if not has_column('reminder', 'deleted_at'):
+                    cur.execute("ALTER TABLE reminder ADD COLUMN deleted_at TIMESTAMP")
+                # Auto-purge reminders in trash older than 7 days
+                try:
+                    from datetime import timezone as _tz
+                    cutoff = (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
+                    cur.execute("DELETE FROM reminder WHERE deleted_at IS NOT NULL AND deleted_at < ?", (cutoff,))
+                except Exception:
+                    pass
+                # Backfill start_* fields from legacy date/time when available.
+                cur.execute("UPDATE reminder SET start_date=date WHERE start_date IS NULL AND date IS NOT NULL")
+                cur.execute("UPDATE reminder SET start_time=time WHERE start_time IS NULL AND time IS NOT NULL")
                 # Ensure memberstatus table exists
                 cur.execute("CREATE TABLE IF NOT EXISTS member_status (id INTEGER PRIMARY KEY, name TEXT, text TEXT, updated_at TIMESTAMP)")
                 # Ensure new tables for groceries and expenses exist

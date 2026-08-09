@@ -27,7 +27,10 @@ def make_app():
 @pytest.fixture()
 def client():
     app = make_app()
-    return app.test_client()
+    client = app.test_client()
+    with client.session_transaction() as sess:
+        sess['authed'] = True
+    return client
 
 
 def list_month(client, y, m):
