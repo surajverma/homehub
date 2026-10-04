@@ -1,5 +1,37 @@
+import json
 from . import db
 from datetime import datetime
+
+SPLIT_MODES = ('equal', 'shares', 'percent', 'amount')
+
+
+def parse_split(raw):
+    """Decode a stored split into (mode, {member: weight}).
+
+    Stored as a JSON list of names for an equal split, or
+    {"mode": ..., "weights": {name: number}} for an uneven one.
+    Every mode shares the amount in proportion to the weights.
+    """
+    if not raw:
+        return 'equal', {}
+    try:
+        val = json.loads(raw)
+    except Exception:
+        return 'equal', {}
+    if isinstance(val, list):
+        return 'equal', {str(x): 1.0 for x in val if str(x).strip()}
+    if isinstance(val, dict) and isinstance(val.get('weights'), dict):
+        weights = {}
+        for name, w in val['weights'].items():
+            try:
+                w = float(w)
+            except (TypeError, ValueError):
+                continue
+            if str(name).strip() and w > 0:
+                weights[str(name)] = w
+        mode = val.get('mode') if val.get('mode') in SPLIT_MODES else 'shares'
+        return mode, weights
+    return 'equal', {}
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -154,7 +186,21 @@ class RecurringExpense(db.Model):
     last_generated_date = db.Column(db.Date)
     effective_from = db.Column(db.Date)  # apply changes from this date forward
     creator = db.Column(db.String(64))
+    # JSON-encoded split, see parse_split (copied onto generated entries)
+    split_with = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def split_members(self):
+        return list(parse_split(self.split_with)[1])
+
+    @property
+    def split_mode(self):
+        return parse_split(self.split_with)[0]
+
+    @property
+    def split_weights(self):
+        return parse_split(self.split_with)[1]
 
 class RecurringReminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -186,4 +232,10 @@ class ExpenseEntry(db.Model):
     amount = db.Column(db.Float, nullable=False)
     payer = db.Column(db.String(64))
     recurring_id = db.Column(db.Integer, db.ForeignKey('recurring_expense.id'))
+    # Skipped recurring days stay in place (so they can be restored) but don't count anywhere
+    skipped = db.Column(db.Boolean, default=False)
+    # JSON-encoded split (see parse_split); empty/NULL means not shared
+    split_with = db.Column(db.Text)
+    # Settlement: payer paid split_with[0] back; excluded from spending totals
+    is_settlement = db.Column(db.Boolean, default=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)

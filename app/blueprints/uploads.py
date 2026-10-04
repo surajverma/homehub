@@ -3,6 +3,7 @@ from flask import render_template, request, redirect, url_for, send_from_directo
 from werkzeug.utils import secure_filename
 from ..models import db, File
 from ..blueprints import main_bp
+from ..admin import can_modify
 from ..security import sanitize_text
 
 
@@ -58,9 +59,7 @@ def preview_file(filename):
 def delete_file(file_id):
     db_file = File.query.get_or_404(file_id)
     user = sanitize_text(request.form['user'])
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if user in admin_aliases or user == db_file.creator:
+    if can_modify(user, db_file.creator):
         try:
             os.remove(os.path.join(UPLOAD_FOLDER, db_file.filename))
         except Exception:

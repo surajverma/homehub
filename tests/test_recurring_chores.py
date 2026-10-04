@@ -301,3 +301,9 @@ def test_delete_recurring_endpoint_removes_completed_chores(client):
     with client.application.app_context():
         assert RecurringChore.query.get(rid) is None
         assert Chore.query.filter_by(recurring_id=rid).count() == 0
+
+
+def test_homepage_chores_toggle_is_admin_only(client):
+    client.post('/chores', data={'description': 'Wipe table', 'creator': 'Bob', 'tags': '[]'})
+    client.post('/chores/settings', data={'user': 'Bob', 'show_chores_on_homepage': 'on'})
+    assert b'Open full list' not in client.get('/').data

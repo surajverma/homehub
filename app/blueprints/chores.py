@@ -2,6 +2,7 @@ from flask import render_template, request, redirect, url_for, current_app, json
 from datetime import datetime, date, timedelta
 from ..models import db, Chore, RecurringChore
 from ..blueprints import main_bp
+from ..admin import is_admin, can_modify
 from ..security import sanitize_text
 import json
 
@@ -119,11 +120,6 @@ def _ensure_current_recurring_chores(today: date | None = None):
         db.session.commit()
 
 
-def _admin_aliases() -> set[str]:
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    return {admin_name, 'Administrator', 'admin'}
-
-
 def _request_user() -> str:
     return sanitize_text(request.form.get('user', ''))
 
@@ -191,7 +187,6 @@ def chores():
         description = sanitize_text(request.form['description'])
         creator = sanitize_text(request.form['creator'])
         user = _request_user()
-        admin_aliases = _admin_aliases()
         raw_tags = request.form.get('tags', '').strip()
         tags_list = []
         if raw_tags:
@@ -241,7 +236,7 @@ def chores():
                 )
             if recurring_rule_id:
                 rule = RecurringChore.query.get_or_404(int(recurring_rule_id))
-                if not (user in admin_aliases or user == (rule.creator or '')):
+                if not can_modify(user, rule.creator or ''):
                     flash('Not allowed to update recurring rule.', 'error')
                     return redirect(url_for('main.chores'))
                 rule.description = description
@@ -289,7 +284,7 @@ def chores():
         else:
             if recurring_rule_id:
                 rule = RecurringChore.query.get_or_404(int(recurring_rule_id))
-                if not (user in admin_aliases or user == (rule.creator or '')):
+                if not can_modify(user, rule.creator or ''):
                     flash('Not allowed to delete recurring rule.', 'error')
                     return redirect(url_for('main.chores'))
                 Chore.query.filter_by(recurring_id=rule.id).delete()
@@ -297,7 +292,7 @@ def chores():
                 db.session.commit()
             if chore_id:
                 chore = Chore.query.get_or_404(int(chore_id))
-                if not (user in admin_aliases or user == (chore.creator or '')):
+                if not can_modify(user, chore.creator or ''):
                     flash('Not allowed to update chore.', 'error')
                     return redirect(url_for('main.chores'))
                 chore.description = description
@@ -320,9 +315,8 @@ def edit_chore(chore_id):
     if not user:
         user = request.args.get('creator')
     user = sanitize_text(user or '')
-    admin_aliases = _admin_aliases()
     creator = (chore.creator or '')
-    if not (user in admin_aliases or user == creator):
+    if not can_modify(user, creator):
         flash('Not allowed to edit chore.', 'error')
         return redirect(url_for('main.chores'))
     form_state = {
@@ -357,6 +351,9 @@ def chores_settings():
     if current_app.config['HOMEHUB_CONFIG'].get('password_hash') and not session.get('authed'):
         flash('Only admin can update chore settings.', 'error')
         return redirect(url_for('main.chores'))
+    if not is_admin(sanitize_text(request.form.get('user', ''))):
+        flash('Only admin can update chore settings.', 'error')
+        return redirect(url_for('main.chores'))
     enabled = request.form.get('show_chores_on_homepage') in ('1', 'on', 'true', 'yes')
     _set_show_chores_on_homepage(enabled)
     flash('Chore settings updated.', 'success')
@@ -367,8 +364,7 @@ def chores_settings():
 def delete_recurring_chore(rule_id):
     rule = RecurringChore.query.get_or_404(rule_id)
     user = _request_user()
-    admin_aliases = _admin_aliases()
-    if not (user in admin_aliases or user == (rule.creator or '')):
+    if not can_modify(user, rule.creator or ''):
         flash('Not allowed to delete recurring rule.', 'error')
         return redirect(url_for('main.chores'))
     Chore.query.filter_by(recurring_id=rule.id).delete()
@@ -403,12 +399,10 @@ def toggle_chore(chore_id):
 def delete_chore(chore_id):
     chore = Chore.query.get_or_404(chore_id)
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
     if getattr(chore, 'recurring_id', None):
         rule = RecurringChore.query.get(getattr(chore, 'recurring_id', None))
         rule_creator = (rule.creator if rule else chore.creator) or ''
-        if user in admin_aliases or user == rule_creator:
+        if can_modify(user, rule_creator):
             if rule:
                 Chore.query.filter_by(recurring_id=rule.id).delete()
                 db.session.delete(rule)
@@ -419,7 +413,7 @@ def delete_chore(chore_id):
         else:
             flash('Not allowed to delete recurring rule.', 'error')
         return redirect(url_for('main.chores'))
-    if user in admin_aliases or user == chore.creator:
+    if can_modify(user, chore.creator):
         db.session.delete(chore)
         db.session.commit()
         flash('Chore deleted.', 'success')
@@ -434,8 +428,7 @@ def update_chore_tags(chore_id):
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))
-        admin_aliases = _admin_aliases()
-        if not (user in admin_aliases or user == (chore.creator or '')):
+        if not can_modify(user, chore.creator or ''):
             return jsonify({"ok": False, "error": "not allowed"}), 403
         tags = data.get('tags', [])
         if not isinstance(tags, list):
@@ -493,8 +486,7 @@ def api_update_chore(chore_id):
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))
-        admin_aliases = _admin_aliases()
-        if not (user in admin_aliases or user == (chore.creator or '')):
+        if not can_modify(user, chore.creator or ''):
             return jsonify({"ok": False, "error": "not allowed"}), 403
         desc = data.get('description')
         raw_tags = data.get('tags', [])

@@ -148,6 +148,24 @@ docker compose up -d
 ```
 That's it! Open your browser and head to [http://localhost:5000](http://localhost:5000)
 
+## Admin password (optional)
+
+By default anyone can pick the admin user from the user switcher. To protect it, the server owner can set an admin password from the host:
+
+```bash
+docker exec -it homehub flask set-admin-password
+```
+
+- You are asked to type the password twice. Only a salted hash is stored, in `data/app.db`; nothing is written to `config.yml`.
+- Once set, switching to the admin user asks for the password. Family members keep switching freely.
+- Run the same command again to change it. A forgotten password is fixed the same way.
+- `docker exec -it homehub flask set-admin-password --clear` removes it and restores the default behaviour.
+- Not using Docker? Run `flask set-admin-password` from the project folder.
+
+The `password` in `config.yml` is separate: it protects the whole site and keeps working as before.
+
+Tip: set `SECRET_KEY` in your environment so logins and admin unlocks survive a restart.
+
 ## Theming
 
 HomeHub follows your system dark/light mode. You can customize colors via `config.yml > theme`.
