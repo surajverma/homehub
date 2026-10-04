@@ -24,22 +24,13 @@
         --sidebar-link-color: {{ config.theme.sidebar_link_color }};
         --sidebar-link-border-color: {{ config.theme.sidebar_link_border_color }};
         --sidebar-active-color: {{ config.theme.sidebar_active_color }};
+        --sidebar-active-text-color: {{ config.theme.sidebar_active_text_color }};
     }
     </style>
     {% if pc|length == 6 %}
     <style>:root { --primary-rgb: {{ pc[0:2]|int(base=16) }}, {{ pc[2:4]|int(base=16) }}, {{ pc[4:6]|int(base=16) }}; }</style>
     {% endif %}
     <style>
-    .btn, button.btn, a.btn { padding:0.5rem 0.75rem; font-size:0.875rem; font-weight:500; line-height:1.25rem; border-radius:0.375rem; display:inline-flex; align-items:center; gap:0.25rem; }
-    .btn-primary { background:var(--primary-color); color:#fff; }
-    .btn-primary:hover { filter:brightness(.92); }
-    .btn-danger { background:#dc2626; color:#fff; }
-    .btn-danger:hover { filter:brightness(.9); }
-    /* Add semantic success/secondary mapped to Tailwind-like colors (via fixed or theme vars) */
-    .btn-success { background:#16a34a; color:#fff; }
-    .btn-success:hover { filter:brightness(.95); }
-    .btn-secondary { background:#e5e7eb; color:#111827; }
-    .btn-secondary:hover { filter:brightness(.97); }
     /* Sidebar collapse styles (desktop-only) + root hint to avoid flash */
     @media (min-width: 768px){
         .sidebar.collapsed,
@@ -49,13 +40,9 @@
         .sidebar.collapsed .nav-label,
         .prefers-sidebar-collapsed .sidebar .nav-label{ display:none; }
         .sidebar.collapsed #sidebarNav a,
-        .prefers-sidebar-collapsed .sidebar #sidebarNav a{ padding-left: 1rem; padding-right: 1rem; justify-content: center; }
-    }
-    /* Ensure dark theme variable overrides reassert after config injection */
-    [data-theme="dark"] {
-        --background-color: #0f172a;
-        --card-background-color: #111827;
-        --text-color: #e5e7eb;
+        .prefers-sidebar-collapsed .sidebar #sidebarNav a{ padding-left: 0; padding-right: 0; justify-content: center; }
+        .sidebar.collapsed .sidebar-brand,
+        .prefers-sidebar-collapsed .sidebar .sidebar-brand{ justify-content: center; padding-left: 0; padding-right: 0; }
     }
     </style>
     <link rel="manifest" href="/manifest.webmanifest">
@@ -115,30 +102,30 @@
         <!-- Global JSON data for client scripts -->
         <script id="familyData" type="application/json">{{ config.family_members | tojson }}</script>
         <!-- Sidebar -->
-        <aside id="sidebar" class="sidebar w-64 text-white flex flex-col fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 z-40">
-            <div class="p-6 text-2xl font-bold border-b border-white/20 flex items-center justify-between" style="color: var(--sidebar-text-color);">
-                <span class="brand-name">{{ config.instance_name }}</span>
-                <div class="flex items-center gap-2">
-                    <button id="toggleCollapse" class="hidden md:inline-flex text-white/90 hover:text-white" title="Collapse sidebar" aria-label="Collapse sidebar">
-                        <i id="collapseIcon" class="fa-solid fa-angles-left"></i>
+        <aside id="sidebar" class="sidebar w-64 flex flex-col fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 z-40">
+            <div class="sidebar-brand h-16 px-5 flex items-center justify-between gap-2">
+                <span class="brand-name text-base font-bold tracking-tight truncate">{{ config.instance_name }}</span>
+                <div class="flex items-center gap-1">
+                    <button id="toggleCollapse" type="button" class="sidebar-icon-btn hidden md:inline-flex w-8 h-8 items-center justify-center rounded-md" title="Collapse sidebar" aria-label="Collapse sidebar">
+                        <i id="collapseIcon" class="fa-solid fa-angles-left" aria-hidden="true"></i>
                     </button>
-                    <button id="closeSidebar" class="md:hidden text-white/90 hover:text-white" aria-label="Close menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                    <button id="closeSidebar" type="button" class="sidebar-icon-btn md:hidden inline-flex w-8 h-8 items-center justify-center rounded-md" aria-label="Close menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 </div>
             </div>
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="sidebarNav">
-                <a href="/" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Welcome"><i class="fa-solid fa-house w-5 text-center"></i><span class="nav-label">Welcome</span></a>
-                {% if config.feature_toggles.get('notes') %}<a href="/notes" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Shared Notes"><i class="fa-solid fa-note-sticky w-5 text-center"></i><span class="nav-label">Shared Notes</span></a>{% endif %}
-                {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Shared Cloud"><i class="fa-solid fa-cloud w-5 text-center"></i><span class="nav-label">Shared Cloud</span></a>{% endif %}
-                {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Shopping List"><i class="fa-solid fa-cart-shopping w-5 text-center"></i><span class="nav-label">Shopping List</span></a>{% endif %}
-                {% if config.feature_toggles.get('calendar', True) %}<a href="/calendar" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Calendar"><i class="fa-solid fa-calendar-days w-5 text-center"></i><span class="nav-label">Calendar</span></a>{% endif %}
-                {% if config.feature_toggles.get('chores') %}<a href="/chores" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="To-Do/Chores"><i class="fa-solid fa-list-check w-5 text-center"></i><span class="nav-label">To-Do/Chores</span></a>{% endif %}
-                {% if config.feature_toggles.get('recipes') %}<a href="/recipes" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Recipe Book"><i class="fa-solid fa-utensils w-5 text-center"></i><span class="nav-label">Recipe Book</span></a>{% endif %}
-                {% if config.feature_toggles.get('expiry_tracker') %}<a href="/expiry" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Expiry Tracker"><i class="fa-solid fa-hourglass-half w-5 text-center"></i><span class="nav-label">Expiry Tracker</span></a>{% endif %}
-                {% if config.feature_toggles.get('url_shortener') %}<a href="/shorten" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="URL Shortener"><i class="fa-solid fa-link w-5 text-center"></i><span class="nav-label">URL Shortener</span></a>{% endif %}
-                {% if config.feature_toggles.get('media_downloader') %}<a href="/media" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Media Downloader"><i class="fa-solid fa-download w-5 text-center"></i><span class="nav-label">Media Downloader</span></a>{% endif %}
-                {% if config.feature_toggles.get('pdf_compressor') %}<a href="/pdfs" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="PDF Compressor"><i class="fa-solid fa-file-pdf w-5 text-center"></i><span class="nav-label">PDF Compressor</span></a>{% endif %}
-                {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="QR Generator"><i class="fa-solid fa-qrcode w-5 text-center"></i><span class="nav-label">QR Generator</span></a>{% endif %}
-                {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="flex items-center gap-3 py-2 px-4 rounded sidebar-link" title="Expense Tracker"><i class="fa-solid fa-wallet w-5 text-center"></i><span class="nav-label">Expense Tracker</span></a>{% endif %}
+            <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto" id="sidebarNav">
+                <a href="/" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Welcome"><i class="fa-solid fa-house w-5 text-center"></i><span class="nav-label">Welcome</span></a>
+                {% if config.feature_toggles.get('notes') %}<a href="/notes" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Shared Notes"><i class="fa-solid fa-note-sticky w-5 text-center"></i><span class="nav-label">Shared Notes</span></a>{% endif %}
+                {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Shared Cloud"><i class="fa-solid fa-cloud w-5 text-center"></i><span class="nav-label">Shared Cloud</span></a>{% endif %}
+                {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Shopping List"><i class="fa-solid fa-cart-shopping w-5 text-center"></i><span class="nav-label">Shopping List</span></a>{% endif %}
+                {% if config.feature_toggles.get('calendar', True) %}<a href="/calendar" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Calendar"><i class="fa-solid fa-calendar-days w-5 text-center"></i><span class="nav-label">Calendar</span></a>{% endif %}
+                {% if config.feature_toggles.get('chores') %}<a href="/chores" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="To-Do/Chores"><i class="fa-solid fa-list-check w-5 text-center"></i><span class="nav-label">To-Do/Chores</span></a>{% endif %}
+                {% if config.feature_toggles.get('recipes') %}<a href="/recipes" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Recipe Book"><i class="fa-solid fa-utensils w-5 text-center"></i><span class="nav-label">Recipe Book</span></a>{% endif %}
+                {% if config.feature_toggles.get('expiry_tracker') %}<a href="/expiry" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Expiry Tracker"><i class="fa-solid fa-hourglass-half w-5 text-center"></i><span class="nav-label">Expiry Tracker</span></a>{% endif %}
+                {% if config.feature_toggles.get('url_shortener') %}<a href="/shorten" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="URL Shortener"><i class="fa-solid fa-link w-5 text-center"></i><span class="nav-label">URL Shortener</span></a>{% endif %}
+                {% if config.feature_toggles.get('media_downloader') %}<a href="/media" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Media Downloader"><i class="fa-solid fa-download w-5 text-center"></i><span class="nav-label">Media Downloader</span></a>{% endif %}
+                {% if config.feature_toggles.get('pdf_compressor') %}<a href="/pdfs" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="PDF Compressor"><i class="fa-solid fa-file-pdf w-5 text-center"></i><span class="nav-label">PDF Compressor</span></a>{% endif %}
+                {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="QR Generator"><i class="fa-solid fa-qrcode w-5 text-center"></i><span class="nav-label">QR Generator</span></a>{% endif %}
+                {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Expense Tracker"><i class="fa-solid fa-wallet w-5 text-center"></i><span class="nav-label">Expense Tracker</span></a>{% endif %}
             </nav>
             <script>
             // Highlight active sidebar link
@@ -161,18 +148,19 @@
         <!-- Main Content -->
         <main class="main-content flex-1 p-4 md:p-8 overflow-y-auto md:ml-0 ml-0">
             <div class="max-w-none md:max-w-none mx-auto">
-                <div class="topbar sticky top-0 z-20 mb-4 -mx-4 md:-mx-8 px-4 md:px-8 py-2">
+                <div class="topbar sticky -top-4 md:-top-8 z-20 mb-4 -mx-4 md:-mx-8 -mt-4 md:-mt-8 px-4 md:px-8 py-3">
                     <div class="flex items-center gap-2">
-                        <button id="openSidebar" type="button" class="md:hidden bg-blue-600 text-white px-3 py-2 rounded" aria-controls="sidebar" aria-expanded="false"><i class="fa-solid fa-bars" aria-hidden="true"></i> Menu</button>
+                        <button id="openSidebar" type="button" class="md:hidden btn btn-secondary" aria-controls="sidebar" aria-expanded="false"><i class="fa-solid fa-bars" aria-hidden="true"></i> Menu</button>
                         {% if not (hide_user_ui | default(false)) %}
                         <div class="ml-auto flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
-                            <div id="welcome" class="hidden sm:block text-sm text-gray-600 truncate max-w-[50vw]"></div>
-                            <div class="flex items-center">
-                                <label for="userSwitcher" class="hidden sm:inline text-sm text-gray-600 mr-2">User:</label>
-                                <select id="userSwitcher" class="border rounded p-1 text-sm" aria-label="Current user"></select>
+                            <div id="welcome" class="hidden lg:block text-sm text-gray-500 truncate max-w-[40vw]"></div>
+                            <div class="user-chip" title="Switch user">
+                                <span id="userAvatar" class="user-chip-avatar" aria-hidden="true"></span>
+                                <select id="userSwitcher" class="user-chip-select" aria-label="Current user"></select>
+                                <i class="fa-solid fa-chevron-down user-chip-caret" aria-hidden="true"></i>
                             </div>
                             {% if is_authed %}
-                            <a href="/logout" class="px-2 py-1 rounded bg-gray-100 text-gray-800 whitespace-nowrap" aria-label="Log out"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span class="hidden sm:inline"> Logout</span></a>
+                            <a href="/logout" class="btn btn-ghost btn-icon sm:w-auto sm:px-3" aria-label="Log out" title="Log out"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span class="hidden sm:inline">Logout</span></a>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -183,8 +171,8 @@
             </div>
         </main>
     </div>
-    <footer class="border-t border-gray-200/70 bg-white/70 dark:bg-slate-900/60 dark:border-slate-700 text-center text-xs text-gray-500 px-4 py-3">                    
-        if you found this useful, consider <a href="https://ko-fi.com/skv" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-red-600 hover:underline">buying me a coffee ☕</a>
+    <footer class="border-t text-center text-xs text-gray-500 px-4 py-3" style="border-color: var(--border-color); background-color: var(--background-color);">
+        If you found this useful, consider <a href="https://ko-fi.com/skv" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 hover:underline" style="color: var(--primary-text);"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i> buying me a coffee</a>
     </footer>
     <script>        
         (function(){
@@ -194,7 +182,7 @@
             let hideTimer = null;
             let hideEndTimer = null;
             function ensure(){ let h=document.getElementById(hostId); if(!h){ h=document.createElement('div'); h.id=hostId; h.className='fixed top-4 right-4 left-4 sm:left-auto z-50 pointer-events-none flex justify-end'; h.setAttribute('role','status'); h.setAttribute('aria-live','polite'); document.body.appendChild(h);} return h; }
-            function classFor(type){ return type==='error'?['bg-red-600']:(type==='success'?['bg-green-600']:(type==='info'?['bg-blue-600']:['bg-gray-800'])); }
+            function classFor(type){ return type==='error'?['bg-red-600']:(type==='success'?['bg-green-600']:(type==='info'?['bg-slate-800']:['bg-slate-800'])); }
             function hide(){
                 if(!toastEl) return;
                 toastEl.style.opacity='0';
@@ -203,7 +191,7 @@
             }
             window.globalToast=function(msg,type){ const host=ensure(); if(!toastEl){ toastEl=document.createElement('div'); host.appendChild(toastEl);} if(hideTimer){ clearTimeout(hideTimer); hideTimer=null; } if(hideEndTimer){ clearTimeout(hideEndTimer); hideEndTimer=null; }
                 const isError = type==='error';
-                toastEl.className='toast pointer-events-auto inline-flex items-start gap-3 max-w-md px-3 py-2 rounded shadow text-sm text-white transition-opacity duration-200 '+classFor(type).join(' ');
+                toastEl.className='toast pointer-events-auto inline-flex items-start gap-3 max-w-md px-4 py-2.5 rounded-lg shadow-lg text-sm text-white transition-opacity duration-200 '+classFor(type).join(' ');
                 toastEl.setAttribute('role', isError ? 'alert' : 'status');
                 toastEl.style.display='';
                 toastEl.style.opacity='1';
@@ -404,7 +392,10 @@
             const name = localStorage.getItem('username') || '';
             const d = new Date();
             const ds = d.toLocaleString();
-            document.getElementById('welcome').textContent = name ? `Welcome, ${name}! — ${ds}` : ds;
+            const welcome = document.getElementById('welcome');
+            if (welcome) welcome.textContent = name ? `Welcome, ${name}! — ${ds}` : ds;
+            const avatar = document.getElementById('userAvatar');
+            if (avatar) avatar.textContent = (name || '?').trim().charAt(0).toUpperCase();
         }
         function applyUserContext(){
             const current = localStorage.getItem('username') || '';
@@ -436,31 +427,31 @@
     </script>
     <!-- Admin password prompt -->
     <div id="adminPasswordModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50" style="z-index:60">
-        <form id="adminPasswordForm" class="bg-white w-full max-w-sm p-4 rounded shadow" autocomplete="off">
+        <form id="adminPasswordForm" class="card w-full max-w-sm p-5 mx-4 shadow-xl" autocomplete="off">
             <h3 class="text-lg font-semibold mb-3">Admin password</h3>
             <p class="text-sm text-gray-600 mb-3">Enter the admin password to continue as {{ config.admin_name }}.</p>
             <div class="mb-3">
                 <label class="block text-sm text-gray-700 mb-1" for="adminPasswordInput">Password</label>
-                <input id="adminPasswordInput" type="password" class="w-full border rounded p-2" autocomplete="off" required>
+                <input id="adminPasswordInput" type="password" class="w-full" autocomplete="off" required>
                 <p id="adminPasswordError" class="text-sm text-red-600 mt-1" role="alert"></p>
             </div>
             <div class="flex justify-end gap-2">
-                <button type="button" id="adminPasswordCancel" class="px-3 py-2 rounded bg-gray-100 text-gray-800">Cancel</button>
-                <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Unlock</button>
+                <button type="button" id="adminPasswordCancel" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Unlock</button>
             </div>
         </form>
     </div>
     <!-- First-visit user selection modal -->
     <div id="userSelectModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
-        <div class="bg-white w-full max-w-sm p-4 rounded shadow">
+        <div class="card w-full max-w-sm p-5 mx-4 shadow-xl">
             <h3 class="text-lg font-semibold mb-3">Select your user</h3>
             <p class="text-sm text-gray-600 mb-3">Pick your name to personalize your HomeHub experience.</p>
             <div class="mb-3">
                 <label class="block text-sm text-gray-700 mb-1" for="userSelectInput">User</label>
-                <select id="userSelectInput" class="w-full border rounded p-2"></select>
+                <select id="userSelectInput" class="w-full"></select>
             </div>
             <div class="flex justify-end gap-2">
-                <button id="userSelectConfirm" class="px-3 py-2 rounded bg-blue-600 text-white">Continue</button>
+                <button id="userSelectConfirm" class="btn btn-primary">Continue</button>
             </div>
         </div>
     </div>

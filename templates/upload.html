@@ -1,29 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="mx-auto">
-    <h2 class="text-xl font-bold mb-4">Shared Cloud</h2>
-    <form method="POST" enctype="multipart/form-data" class="mb-4 card p-4">
-        <input type="file" name="files" multiple required aria-label="Files to upload" class="mb-2">
+<div class="mx-auto max-w-4xl">
+    <div class="page-header">
+        <h1 class="page-title">Shared Cloud</h1>
+        <p class="page-subtitle">Files shared with everyone on the home network.</p>
+    </div>
+    <form method="POST" enctype="multipart/form-data" class="mb-4 card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <input type="file" name="files" multiple required aria-label="Files to upload" class="flex-1">
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="btn btn-primary">Upload</button>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> Upload</button>
     </form>
-    <ul>
+    {% if not files %}<div class="card list-empty">No files yet.</div>{% endif %}
+    <ul class="card list-card {{ '' if files else 'hidden' }}">
         {% for file in files %}
-        <li class="card p-4 mb-2 flex justify-between items-center">
-            <div class="flex-1">
-                <a href="/uploads/{{ file.filename }}" class="font-semibold text-blue-700">{{ file.filename }}</a>
-                <div class="text-xs text-gray-500">By {{ file.creator }} at {{ file.upload_time|localtime }}</div>
+        <li class="list-row flex-wrap">
+            <i class="fa-regular fa-file text-gray-400" aria-hidden="true"></i>
+            <div class="flex-1 min-w-0">
+                <a href="/uploads/{{ file.filename }}" class="font-medium break-all hover:underline">{{ file.filename }}</a>
+                <div class="meta mt-0.5">By {{ file.creator }} at {{ file.upload_time|localtime }}</div>
             </div>
-            <div class="flex gap-2">
-                <a href="/uploads/preview/{{ file.filename }}" target="_blank" rel="noopener noreferrer" class="btn btn-success" aria-label="Preview {{ file.filename }} in new tab">
+            <div class="flex items-center gap-1">
+                <a href="/uploads/preview/{{ file.filename }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" aria-label="Preview {{ file.filename }} in new tab">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i> Preview
                 </a>
-                <a href="/uploads/{{ file.filename }}" class="btn btn-primary">
+                <a href="/uploads/{{ file.filename }}" class="btn btn-secondary btn-sm" aria-label="Download {{ file.filename }}">
                     <i class="fa-solid fa-download" aria-hidden="true"></i> Download
                 </a>
                 <form method="POST" action="/upload/delete/{{ file.id }}" class="delete-form" data-creator="{{ file.creator }}" data-confirm="Delete this file? It is removed from the server.">
                     <input type="hidden" name="user">
-                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="Delete" aria-label="Delete {{ file.filename }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
                 </form>
             </div>
         </li>

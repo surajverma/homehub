@@ -9,20 +9,20 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .expense-tab {
     border-bottom: 2px solid transparent;
-    color: #6b7280;
+    color: var(--muted-text);
     border-radius: 0.5rem 0.5rem 0 0;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
   .expense-tab:hover,
   .expense-tab:focus-visible {
-    color: #1f2937;
-    background: #f3f4f6;
-    border-color: #d1d5db;
+    color: var(--text-color);
+    background: var(--hover-bg);
+    border-color: var(--border-color);
     outline: none;
   }
   .expense-tab.active {
-    background: #e5e7eb;
-    color: #111827;
+    background: var(--primary-soft);
+    color: var(--primary-text);
     border-color: var(--primary-color);
     font-weight: 600;
   }
@@ -34,34 +34,37 @@
 <script id="expensesData" type="application/json">{{ expenses_json | safe }}</script>
 
 <div class="max-w-screen-2xl mx-auto space-y-6">
-  <h1 class="text-3xl font-bold text-gray-800">Expense Tracker</h1>
+  <div>
+    <h1 class="page-title">Expense Tracker</h1>
+    <p class="page-subtitle">Spending by day, with shared balances.</p>
+  </div>
 
   <!-- Summary Cards -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="summary-cards">
     <div class="card p-4 flex items-center">
-      <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><i class="fas fa-wallet"></i></div>
+      <div class="w-10 h-10 rounded-full inline-flex items-center justify-center" style="background: var(--primary-soft); color: var(--primary-text);"><i class="fas fa-wallet" aria-hidden="true"></i></div>
       <div class="ml-4">
         <p class="text-gray-500 text-sm">Total This Month</p>
-        <p class="text-2xl font-bold text-gray-800" id="total-this-month">₹0.00</p>
+        <p class="text-2xl font-bold tabular-nums" id="total-this-month">₹0.00</p>
       </div>
     </div>
     <div class="card p-4 flex items-center">
-      <div class="bg-green-100 text-green-600 p-3 rounded-full"><i class="fas fa-user-circle"></i></div>
+      <div class="w-10 h-10 rounded-full inline-flex items-center justify-center" style="background: var(--hover-bg); color: var(--muted-text);"><i class="fas fa-user-circle" aria-hidden="true"></i></div>
       <div class="ml-4">
         <p class="text-gray-500 text-sm">My Spending</p>
-        <p class="text-2xl font-bold text-gray-800" id="my-spending">₹0.00</p>
+        <p class="text-2xl font-bold tabular-nums" id="my-spending">₹0.00</p>
         <p class="text-xs text-gray-500" id="my-share"></p>
       </div>
     </div>
     <div class="card p-4 flex items-center">
-      <div class="bg-purple-100 text-purple-600 p-3 rounded-full"><i class="fas fa-chart-pie"></i></div>
+      <div class="w-10 h-10 rounded-full inline-flex items-center justify-center" style="background: var(--hover-bg); color: var(--muted-text);"><i class="fas fa-chart-pie" aria-hidden="true"></i></div>
       <div class="ml-4">
         <p class="text-gray-500 text-sm">Top Category</p>
-        <p class="text-2xl font-bold text-gray-800" id="top-category">-</p>
+        <p class="text-2xl font-bold tabular-nums" id="top-category">-</p>
       </div>
     </div>
     <div class="card p-4 flex items-center justify-center">
-      <a href="/expenses/recurring" class="w-full h-full btn flex items-center justify-center"><i class="fas fa-cog mr-2"></i>Recurring rules & config</a>
+      <a href="/expenses/recurring" class="w-full h-full btn btn-secondary"><i class="fas fa-gear" aria-hidden="true"></i>Recurring rules & config</a>
     </div>
   </div>
 
@@ -70,9 +73,9 @@
     <!-- Calendar -->
   <div class="lg:col-span-5 card p-4 relative z-0">
       <div class="flex items-center justify-between mb-3">
-        <button id="prev-month" class="p-2 rounded-full hover:bg-gray-100" title="Previous month" aria-label="Previous month"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
-        <h2 class="text-xl font-bold" id="calendar-header"></h2>
-        <button id="next-month" class="p-2 rounded-full hover:bg-gray-100" title="Next month" aria-label="Next month"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+        <button id="prev-month" class="btn btn-secondary btn-icon" title="Previous month" aria-label="Previous month"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+        <h2 class="text-lg font-semibold" id="calendar-header"></h2>
+        <button id="next-month" class="btn btn-secondary btn-icon" title="Next month" aria-label="Next month"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
       </div>
     <div class="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-1">
         <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>

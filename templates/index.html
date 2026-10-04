@@ -28,11 +28,11 @@ window.REMINDERS_CAL_START = (function(){
 		<div class="card p-6">
 			<div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
 				<div class="flex-1">
-					<h1 class="text-2xl md:text-3xl font-bold mb-2"><i class="fa-solid fa-house text-blue-600 mr-2"></i>Welcome to {{ config.instance_name }}!</h1>
-					<p class="text-sm md:text-base text-gray-600">Pick a tool from the left to get started.</p>
+					<h1 class="text-2xl md:text-[1.75rem] md:leading-9 font-bold tracking-tight mb-1">Welcome to {{ config.instance_name }}</h1>
+					<p class="text-sm text-gray-500">Pick a tool from the left to get started.</p>
 				</div>
 				<div class="flex flex-col items-start text-left gap-0.5 md:flex-col md:items-end md:text-right md:gap-1 flex-shrink-0">
-					<div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-200" id="currentTime">--:--:--</div>
+					<div class="text-lg md:text-2xl font-semibold tabular-nums text-gray-800 dark:text-gray-200" id="currentTime">--:--:--</div>
 					<div class="text-xs md:text-sm text-gray-500" id="currentDate"></div>
 				</div>
 			</div>
@@ -41,8 +41,8 @@ window.REMINDERS_CAL_START = (function(){
 		{% if config.weather and config.weather.enabled %}
 		<div class="card p-6" id="weatherWidget">
 			<div class="flex items-center justify-between mb-3">
-				<h2 class="text-xl font-bold flex items-center">
-					<i class="fa-solid fa-cloud-sun text-blue-500 mr-2"></i>
+				<h2 class="section-title">
+					<i class="fa-solid fa-cloud-sun section-icon" aria-hidden="true"></i>
 					Weather
 				</h2>
 				<span id="weatherLocation" class="text-sm text-gray-500"></span>
@@ -57,12 +57,12 @@ window.REMINDERS_CAL_START = (function(){
 		{% endif %}
 
 			<div class="card p-6">
-				<h2 class="text-xl font-bold mb-3"><i class="fa-solid fa-bullhorn text-amber-600 mr-2"></i>Family Notice Board</h2>
+				<h2 class="section-title mb-3"><i class="fa-solid fa-bullhorn section-icon" aria-hidden="true"></i>Family Notice Board</h2>
 			{% if notice and notice.content %}
-				<div class="prose max-w-none whitespace-pre-wrap bg-yellow-50 border border-yellow-200 rounded p-4">{{ notice.content }}</div>
+				<div class="prose max-w-none whitespace-pre-wrap notice-surface p-4">{{ notice.content }}</div>
 				<div class="text-xs text-gray-500 mt-2">Last updated by {{ notice.updated_by }} at {{ notice.updated_at|localtime }}</div>
 			{% else %}
-				<div class="text-gray-500">No notices yet. Admin can post one below.</div>
+				<div class="text-sm text-gray-500">No notices yet. Admin can post one below.</div>
 			{% endif %}
 			<form method="POST" action="/notice" class="mt-4 space-y-2" id="noticeForm">
 				<textarea name="content" rows="4" aria-label="Notice text" class="w-full p-2 border rounded" placeholder="Leave blank and submit to clear the notice"></textarea>
@@ -79,11 +79,11 @@ window.REMINDERS_CAL_START = (function(){
 			<!-- Who is Home (compact) -->
 			{% if show_who %}
 			<div class="card p-4" id="whoHomeCard">
-				<h2 class="text-lg font-semibold mb-3 flex items-center gap-2"><i class="fa-solid fa-house-user text-green-600"></i> Who is Home?</h2>
+				<h2 class="section-title mb-3"><i class="fa-solid fa-house-user section-icon" aria-hidden="true"></i> Who is Home?</h2>
 				<div id="whoStatusList" class="flex flex-wrap gap-2 mb-3 text-xs">
 					{% for member in config.family_members %}
 						{% set st = who_statuses.get(member) %}
-						<span class="px-2 py-1 rounded border bg-white flex items-center gap-1" data-member="{{ member }}">
+						<span class="px-2 py-1 rounded-full border bg-white flex items-center gap-1.5" data-member="{{ member }}">
 							<span class="font-medium">{{ member }}</span>
 							<span class="status-pill px-1.5 py-0.5 rounded text-[10px] leading-none
 							{% if st == 'Home' %} bg-green-100 text-green-700 border border-green-300
@@ -105,8 +105,8 @@ window.REMINDERS_CAL_START = (function(){
 						<option>Out</option>
 						<option>Traveling</option>
 					</select>
-					<button id="whoUpdateBtn" type="submit" class="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">Update</button>
-					<button id="whoClearBtn" type="button" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" title="Clear my status">Clear</button>
+					<button id="whoUpdateBtn" type="submit" class="btn btn-primary btn-sm">Update</button>
+					<button id="whoClearBtn" type="button" class="btn btn-secondary btn-sm" title="Clear my status">Clear</button>
 				</form>
             </div>
 			{% endif %}
@@ -114,20 +114,20 @@ window.REMINDERS_CAL_START = (function(){
 			<!-- Personal Status (compact) -->
 			{% if show_status %}
 			<div class="card p-4" id="personalStatusCard">
-				<h3 class="text-lg font-semibold mb-3 flex items-center gap-2"><i class="fa-solid fa-user-pen text-blue-600"></i> Personal Status</h3>
+				<h3 class="section-title mb-3"><i class="fa-solid fa-user-pen section-icon" aria-hidden="true"></i> Personal Status</h3>
 				<div id="memberStatusChips" class="flex flex-wrap gap-2 mb-3 text-xs">
 					{% for name, text in member_statuses.items() %}
-						<span data-name="{{ name }}" class="px-2 py-1 rounded border bg-white shadow-sm">{{ text }} <span class="text-gray-500 text-[10px]">— {{ name }}</span></span>
+						<span data-name="{{ name }}" class="px-2 py-1 rounded-full border bg-white">{{ text }} <span class="text-gray-500 text-[10px]">— {{ name }}</span></span>
 					{% endfor %}
 				</div>
 				<form id="memberStatusForm" action="/status/update" method="POST" class="flex items-center gap-2 text-xs">
 					<input type="hidden" name="name" id="memberStatusName" value="">
 					<input type="text" name="text" placeholder="My status" aria-label="My status" class="flex-1 border rounded p-1" />
-					<button type="submit" class="px-2 py-3 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+					<button type="submit" class="btn btn-primary">Save</button>
 				</form>
 				<form id="memberStatusDelete" action="/status/delete" method="POST" class="mt-2 text-right">
 					<input type="hidden" name="name" id="memberStatusDeleteName" value="">
-					<button type="submit" class="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 text-xs">Remove My Status</button>
+					<button type="submit" class="btn btn-ghost btn-danger-text btn-sm">Remove my status</button>
 				</form>
 			</div>
 			{% endif %}
@@ -136,13 +136,13 @@ window.REMINDERS_CAL_START = (function(){
 		{% if show_chores_on_homepage and config.feature_toggles.get('chores', True) %}
 		<div class="card p-4" id="homeChoresCard">
 			<div class="flex items-center justify-between mb-3">
-				<h3 class="text-lg font-semibold flex items-center gap-2"><i class="fa-solid fa-list-check text-indigo-600"></i> Chores</h3>
-				<a href="/chores" class="text-sm text-blue-600 hover:underline">Open full list</a>
+				<h3 class="section-title"><i class="fa-solid fa-list-check section-icon" aria-hidden="true"></i> Chores</h3>
+				<a href="/chores" class="text-sm hover:underline" style="color: var(--primary-text);">Open full list</a>
 			</div>
 			{% if home_chores and home_chores|length %}
-			<ul class="space-y-2">
+			<ul class="border rounded-lg overflow-hidden">
 				{% for chore in home_chores %}
-				<li class="flex items-center justify-between gap-3 text-sm border rounded px-3 py-2 bg-white">
+				<li class="list-row justify-between text-sm">
 					<div class="min-w-0">
 						<div class="font-medium truncate">{{ chore.description }}</div>
 						<div class="text-xs text-gray-500">
@@ -165,20 +165,20 @@ window.REMINDERS_CAL_START = (function(){
 	<div class="space-y-6 {{ 'max-w-5xl mx-auto w-full' if calendar_only else '' }}">
 		<!-- Reminders & Calendar (moved to right column) -->
 		<div class="card p-4 md:p-6" id="remindersCard" style="min-height:520px">
-			<h2 class="text-xl font-bold flex items-center gap-2 mb-3"><i class="fa-solid fa-calendar-days text-blue-600"></i> {{ 'Calendar & Reminders' if calendar_only else 'Reminders' }}</h2>
+			<h2 class="section-title mb-3"><i class="fa-solid fa-calendar-days section-icon" aria-hidden="true"></i> {{ 'Calendar & Reminders' if calendar_only else 'Reminders' }}</h2>
 			<div id="reminderMonthNav" class="flex items-center justify-between mb-2">
-				<button type="button" id="calPrev" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" aria-label="Previous Month">◀</button>
+				<button type="button" id="calPrev" class="btn btn-secondary btn-icon" aria-label="Previous month"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
 				<div id="calLabel" class="font-semibold flex-1 text-center"></div>
-				<button type="button" id="calNext" class="px-2 py-1 rounded border bg-white hover:bg-gray-50" aria-label="Next Month">▶</button>
+				<button type="button" id="calNext" class="btn btn-secondary btn-icon" aria-label="Next month"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
 			</div>
 			<div class="flex justify-end mb-2"><button id="backToToday" type="button" class="hidden text-xs text-blue-600 hover:underline">Back to Today</button></div>
 			<div id="reminderWeekdayRow" class="grid grid-cols-7 gap-1 text-xs font-semibold text-gray-600 mb-1"></div>
 			<div id="calendar" class="grid grid-cols-7 gap-1 mb-4"></div>
-			<div class="flex items-center flex-wrap gap-2 mb-2 {{ 'sticky top-0 z-20 py-2 border-b' if calendar_only else '' }}" id="remindersHeader" {% if calendar_only %}style="background-color: var(--card-background-color); border-color: color-mix(in srgb, var(--text-color) 12%, transparent);"{% endif %}>
+			<div class="flex items-center flex-wrap gap-2 mb-2 {{ 'sticky top-[42px] md:top-[26px] z-10 py-2 border-b' if calendar_only else '' }}" id="remindersHeader" {% if calendar_only %}style="background-color: var(--card-background-color); border-color: color-mix(in srgb, var(--text-color) 12%, transparent);"{% endif %}>
 				<button type="button" id="openAdd" class="btn btn-primary text-sm">Add Reminder</button>
 				{% if not calendar_only %}
 				{% if config.feature_toggles.get('calendar', True) %}
-				<a href="/calendar" class="text-sm text-blue-600 hover:underline">Open Calendar</a>
+				<a href="/calendar" class="text-sm hover:underline" style="color: var(--primary-text);">Open calendar</a>
 				{% endif %}
 				{% endif %}
 				<div class="text-sm text-gray-600" id="remindersSelectedDate"></div>
@@ -187,7 +187,7 @@ window.REMINDERS_CAL_START = (function(){
 			<div id="calendarModuleTools" class="{{ '' if calendar_only else 'hidden' }} mb-3 space-y-2">
 				<div class="flex flex-wrap items-center gap-2">
 					<input id="calendarSearch" type="text" aria-label="Search reminders" class="h-10 flex-1 min-w-[220px] border rounded p-2 text-sm" placeholder="Search reminders by title or description">
-					<button type="button" id="trashToggleBtn" class="h-8 px-3 text-xs rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-1" title="Recycle Bin">🗑 Trash</button>
+					<button type="button" id="trashToggleBtn" class="h-8 px-3 text-xs rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-1" title="Recycle Bin"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Trash</button>
 				</div>
 				<div class="text-xs text-gray-500">Drag reminder cards onto a date to reschedule.</div>
 				<div id="trashPanel" class="hidden border rounded bg-white dark:bg-slate-800 p-2"></div>
@@ -257,8 +257,8 @@ window.REMINDERS_CAL_START = (function(){
 						<textarea id="reminder-description" name="description" rows="2" class="w-full border rounded p-2 text-sm"></textarea>
 					</div>
 					<div class="flex gap-2 justify-end pt-2 border-t">
-						<button type="button" id="reminderCancelBtn" class="px-3 py-1.5 text-sm rounded border bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600">Cancel</button>
-						<button type="submit" id="reminderSaveBtn" class="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+						<button type="button" id="reminderCancelBtn" class="btn btn-secondary">Cancel</button>
+						<button type="submit" id="reminderSaveBtn" class="btn btn-primary">Save</button>
 					</div>
 				</form>
 			</div>
@@ -267,8 +267,8 @@ window.REMINDERS_CAL_START = (function(){
 					<span><span id="bulkCount">0</span> selected</span>
 					<input type="hidden" id="bulkIds" value="">
 					<input type="hidden" id="bulkUser" name="creator" value="">
-					<button type="submit" class="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700">Delete Selected</button>
-					<button type="button" id="bulkClearSel" class="px-2 py-1 rounded border bg-white hover:bg-gray-50">Clear</button>
+					<button type="submit" class="btn btn-danger btn-sm">Delete selected</button>
+					<button type="button" id="bulkClearSel" class="btn btn-secondary btn-sm">Clear</button>
 				</div>
 			</form>
 			<div class="flex items-center justify-between mb-1 text-[11px] text-gray-500">
@@ -880,7 +880,7 @@ window.REMINDERS_CAL_START = (function(){
 		if(out.length){
 		out.sort((a,b)=>{ if(a.isRule && !b.isRule) return -1; if(!a.isRule && b.isRule) return 1; if(a.isRule && b.isRule) return (a.title||'').localeCompare(b.title||''); return (a.date||'').localeCompare(b.date||'') || ((a.time||'~').localeCompare(b.time||'~')) || ((a.id||0)-(b.id||0)); });
 		out.forEach(r=>{
-			if(r.isRule){ const row=document.createElement('div'); row.className='group p-2 rounded border bg-white dark:bg-slate-800'; const meta = (r.time? ('at '+escapeHtml(fmtTime(r.time))+' · ') : '')+escapeHtml(r.creator||''); const canEdit = (function(){ const currentUser=localStorage.getItem('username')||''; const adminName={{ config.admin_name|tojson }}; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); return isAdmin || (r.creator && r.creator===currentUser); })(); const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; row.innerHTML = `<div class="font-semibold flex items-center">${dot}${escapeHtml(r.title)}<span class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 text-gray-600">Recurring</span>${canEdit?`<button type="button" data-edit-rule="${r.id}" class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600" aria-label="Edit recurring">✎</button>`:''}${canEdit?`<button type="button" data-delete-rule="${r.id}" class="ml-1 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" aria-label="Delete recurring">✕</button>`:''}</div><div class="text-xs text-gray-500">${escapeHtml(formatRepeat(r.interval, r.unit, r.end_date))}${meta? ' · '+meta:''}${r.category? ' · '+escapeHtml(r.category):''}</div>`; listWrap.appendChild(row); }
+			if(r.isRule){ const row=document.createElement('div'); row.className='group p-2 rounded border bg-white dark:bg-slate-800'; const meta = (r.time? ('at '+escapeHtml(fmtTime(r.time))+' · ') : '')+escapeHtml(r.creator||''); const canEdit = (function(){ const currentUser=localStorage.getItem('username')||''; const adminName={{ config.admin_name|tojson }}; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); return isAdmin || (r.creator && r.creator===currentUser); })(); const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; row.innerHTML = `<div class="font-semibold flex items-center">${dot}${escapeHtml(r.title)}<span class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 text-gray-600">Recurring</span>${canEdit?`<button type="button" data-edit-rule="${r.id}" class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600" aria-label="Edit recurring"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}${canEdit?`<button type="button" data-delete-rule="${r.id}" class="ml-1 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" aria-label="Delete recurring"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}</div><div class="text-xs text-gray-500">${escapeHtml(formatRepeat(r.interval, r.unit, r.end_date))}${meta? ' · '+meta:''}${r.category? ' · '+escapeHtml(r.category):''}</div>`; listWrap.appendChild(row); }
 				else {
 					const canEdit = isAdmin || (r.creator && r.creator===currentUser);
 					const row=document.createElement('div');
@@ -897,11 +897,11 @@ window.REMINDERS_CAL_START = (function(){
 					const meta = `${r.date}${timeFrag}${endDateFrag}${endTimeFrag}${allDayFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`;
 					row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}
 						<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit>
-							<div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\">✎</button>`:''}</div>
+							<div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}</div>
 							<div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>
 							${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}
 						</div>
-						${(window.CALENDAR_ONLY && canEdit)?`<div class=\"flex flex-col gap-1\"><button type=\"button\" data-done=\"${r.id}\" class=\"text-[11px] px-2 py-1 rounded border bg-white hover:bg-green-50\" title=\"Mark as done\" aria-label=\"Mark as done\">✓</button></div>`:''}${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\" title=\"Move to Trash\">✕</button>`:''}`;
+						${(window.CALENDAR_ONLY && canEdit)?`<div class=\"flex flex-col gap-1\"><button type=\"button\" data-done=\"${r.id}\" class=\"text-[11px] px-2 py-1 rounded border bg-white hover:bg-green-50\" title=\"Mark as done\" aria-label=\"Mark as done\"><i class='fa-solid fa-check' aria-hidden='true'></i></button></div>`:''}${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\" title=\"Move to Trash\"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}`;
 
 					if(window.CALENDAR_ONLY && canEdit){
 						row.setAttribute('draggable', 'true');
@@ -949,7 +949,7 @@ window.REMINDERS_CAL_START = (function(){
 				row2.setAttribute('data-date', r.date || '');
 				const catClass2 = r.category?'rem-cat-dot-'+r.category:'';
 				const dot2 = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass2||'bg-gray-400'}"></span>`;
-				row2.innerHTML = `<div class="flex-1"><div class="line-through text-gray-400 flex items-center">${dot2}${escapeHtml(r.title||'')} <span class="ml-2 text-[10px] px-1 py-0.5 rounded bg-green-100 text-green-700 font-medium">✓ Done</span></div>${r.date?`<div class="text-xs text-gray-400">${r.date}${r.time?' '+r.time:''}</div>`:''}</div><div class="flex items-center gap-1"><button type="button" data-undo-done="${r.id}" class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50" title="Mark as active">Undo</button><button type="button" class="deleteOne text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" title="Move to Trash" aria-label="Move to Trash">✕</button></div>`;
+				row2.innerHTML = `<div class="flex-1"><div class="line-through text-gray-400 flex items-center">${dot2}${escapeHtml(r.title||'')} <span class="ml-2 text-[10px] px-1 py-0.5 rounded bg-green-100 text-green-700 font-medium"><i class='fa-solid fa-check' aria-hidden='true'></i> Done</span></div>${r.date?`<div class="text-xs text-gray-400">${r.date}${r.time?' '+r.time:''}</div>`:''}</div><div class="flex items-center gap-1"><button type="button" data-undo-done="${r.id}" class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50" title="Mark as active">Undo</button><button type="button" class="deleteOne text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" title="Move to Trash" aria-label="Move to Trash"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button></div>`;
 				listWrap.appendChild(row2);
 			});
 			}
@@ -1097,7 +1097,7 @@ window.REMINDERS_CAL_START = (function(){
 	}
 	function paintItems(list){ const currentUser=localStorage.getItem('username')||''; const adminName={{ config.admin_name|tojson }}; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); const selections=new Set(); listWrap.innerHTML=''; bulkBar.classList.add('hidden'); bulkCount.textContent='0'; if(!list.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; return;} list.sort((a,b)=> (a.date.localeCompare(b.date)) || ((a.time||'~').localeCompare(b.time||'~')) || (a.id-b.id));
 	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
-	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\">✎</button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\">✕</button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast('Deleted (undo available)','success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent='Undo delete'; undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast('Delete failed','error');}); }); }
+	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast('Deleted (undo available)','success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent='Undo delete'; undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast('Delete failed','error');}); }); }
 	listWrap.appendChild(row); }); function updateBulk(){ bulkCount.textContent=selections.size; bulkIds.value=Array.from(selections).join(','); bulkBar.classList.toggle('hidden', !selections.size); } listWrap.querySelectorAll('.reminderChk').forEach(cb=>cb.addEventListener('change',()=>{ const id=parseInt(cb.value); if(cb.checked) selections.add(id); else selections.delete(id); updateBulk(); })); document.getElementById('bulkClearSel').onclick=()=>{ selections.clear(); listWrap.querySelectorAll('.reminderChk').forEach(c=>c.checked=false); updateBulk(); }; const bulkForm=document.getElementById('bulkDeleteForm'); if(bulkForm && !bulkForm.dataset.ajax){ bulkForm.dataset.ajax='1'; bulkForm.addEventListener('submit', e=>{ e.preventDefault(); const ids=Array.from(selections); if(!ids.length) return; const creator=localStorage.getItem('username')||''; window.remindersApi.removeMany(ids,creator).then(resp=>{ if(!resp.ok){ toast('Delete failed','error'); return;} Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(r=>!ids.includes(r.id)); }); toast('Deleted '+ids.length,'success'); selections.clear(); bulkCount.textContent='0'; bulkBar.classList.add('hidden'); renderList(); updateCalendarBadges(); }); }); }
 	}
 
@@ -1443,7 +1443,7 @@ window.REMINDERS_CAL_START = (function(){
 				entries = Object.entries(data.member_statuses).map(([name,text])=>({name,text}));
 			}
 			memberChips.innerHTML='';
-			entries.forEach(e=>{ if(!e.text) return; const span=document.createElement('span'); span.dataset.name=e.name; span.className='px-2 py-1 rounded border bg-white shadow-sm text-xs'; span.innerHTML=e.text+' <span class="text-gray-500 text-[10px]">— '+e.name+'</span>'; memberChips.appendChild(span); });
+			entries.forEach(e=>{ if(!e.text) return; const span=document.createElement('span'); span.dataset.name=e.name; span.className='px-2 py-1 rounded-full border bg-white text-xs'; span.innerHTML=e.text+' <span class="text-gray-500 text-[10px]">— '+e.name+'</span>'; memberChips.appendChild(span); });
 		recolorMemberChips();
 		const user=currentUser();
 		const has=Array.from(memberChips.querySelectorAll('span[data-name]')).some(el=>el.dataset.name===user);

@@ -108,15 +108,6 @@ reminders:
 #Optional settings
 theme:
   primary_color: "#1d4ed8"
-  secondary_color: "#a0aec0"
-  background_color: "#f7fafc"
-  card_background_color: "#fff"
-  text_color: "#333"
-  sidebar_background_color: "#2563eb"
-  sidebar_text_color: "#ffffff"
-  sidebar_link_color: "rgba(255,255,255,0.95)"
-  sidebar_link_border_color: "rgba(255,255,255,0.18)"
-  sidebar_active_color: "#3b82f6"
 ```
 
 </details>
@@ -183,7 +174,7 @@ Use a name from the [tz database](https://en.wikipedia.org/wiki/List_of_tz_datab
 
 HomeHub follows your system dark/light mode. You can customize colors via `config.yml > theme`.
 
-Configurable keys:
+Configurable keys (all optional):
 
 ```yaml
 theme:
@@ -191,18 +182,20 @@ theme:
   primary_color: "#1d4ed8"
   secondary_color: "#a0aec0"
   # Surfaces & text
-  background_color: "#f7fafc"
+  background_color: "#f8fafc"
   card_background_color: "#ffffff"
-  text_color: "#333333"
-  # Sidebar palette
+  text_color: "#0f172a"
+  # Sidebar palette. Leave these out for the default light sidebar.
+  # Setting sidebar_background_color gives a coloured sidebar with light links.
   sidebar_background_color: "#2563eb"
   sidebar_text_color: "#ffffff"                # text color used for the sidebar title and labels
   sidebar_link_color: "rgba(255,255,255,0.95)" # link text color in sidebar items
   sidebar_link_border_color: "rgba(255,255,255,0.18)" # subtle border around sidebar links
+  sidebar_active_color: "#3b82f6"              # background of the current page's link
 ```
 
 Tips:
-- Want higher contrast in the sidebar? Increase `sidebar_link_border_color` opacity (e.g., `rgba(255,255,255,0.3)`).
+- The old default blue sidebar (`#2563eb`) is treated as "not set", so configs copied from an older `config-example.yml` get the new light sidebar. Pick any other colour to keep a coloured sidebar.
 - Prefer lighter/darker accents? Tweak `primary_color` and `secondary_color`.
 - Dark mode palette adapts automatically; the variables above apply to light mode, while dark mode uses tuned counterparts for good contrast.
 

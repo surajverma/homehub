@@ -1,47 +1,55 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="mx-auto">
-    <h2 class="text-xl font-bold mb-4">QR Code Generator</h2>
-    <div class="mb-4 p-4 card bg-gray-50 border border-gray-200">
-        <h3 class="font-semibold mb-2">WiFi QR Code Instructions</h3>
-        <p>To generate a QR code for your wireless network, enter your details in the following format:</p>
-        <pre class="bg-gray-100 p-2 rounded text-sm overflow-x-auto"><code>ssid:mywifiname pass:123456789 type:wpa hidden:false</code></pre>
-        <ul class="list-disc ml-6 text-sm">
-            <li><b>ssid</b>: your WiFi network name</li>
-            <li><b>pass</b>: your WiFi password</li>
-            <li><b>type</b>: encryption type (<code>wpa</code>, <code>wep</code>, or <code>nopass</code>), default is <code>wpa</code></li>
-            <li><b>hidden</b>: <code>true</code> if the network is hidden, <code>false</code> otherwise (default is <code>false</code>)</li>
-        </ul>
-        <p class="mt-2 text-xs text-gray-600">You can copy and edit the code block above for your network. The minimum required information is ssid:your_network_name pass:your_wifi_password</p>
-        <p class="mt-2 text-xs text-gray-600">For other QR codes, enter any text or URL as usual.</p>
+<div class="mx-auto max-w-4xl">
+    <div class="page-header">
+        <h1 class="page-title">QR Code Generator</h1>
+        <p class="page-subtitle">Make a QR code for any text, link or Wi-Fi network.</p>
     </div>
-    <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
-        <input type="text" name="qrtext" aria-label="Text to encode" class="md:col-span-9 w-full p-2 border rounded" placeholder="Text to encode..." required>
+    <form method="POST" class="card p-4 mb-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+        <input type="text" name="qrtext" aria-label="Text to encode" class="md:col-span-9 w-full" placeholder="Text or URL to encode" required>
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="md:col-span-3 btn btn-primary">Generate QR</button>
+        <button type="submit" class="md:col-span-3 btn btn-primary"><i class="fa-solid fa-qrcode" aria-hidden="true"></i> Generate QR</button>
     </form>
+    <details class="mb-4 card p-4 text-sm">
+        <summary class="cursor-pointer font-medium">Wi-Fi QR code instructions</summary>
+        <div class="mt-3 space-y-2">
+            <p>To generate a QR code for your wireless network, enter your details in the following format:</p>
+            <pre class="bg-gray-100 p-2 rounded-lg text-sm overflow-x-auto"><code>ssid:mywifiname pass:123456789 type:wpa hidden:false</code></pre>
+            <ul class="list-disc ml-6">
+                <li><b>ssid</b>: your WiFi network name</li>
+                <li><b>pass</b>: your WiFi password</li>
+                <li><b>type</b>: encryption type (<code>wpa</code>, <code>wep</code>, or <code>nopass</code>), default is <code>wpa</code></li>
+                <li><b>hidden</b>: <code>true</code> if the network is hidden, <code>false</code> otherwise (default is <code>false</code>)</li>
+            </ul>
+            <p class="text-xs text-gray-500">You can copy and edit the code block above for your network. The minimum required information is ssid:your_network_name pass:your_wifi_password</p>
+            <p class="text-xs text-gray-500">For other QR codes, enter any text or URL as usual.</p>
+        </div>
+    </details>
     {% if qr_img %}
-    <div class="mt-4 card p-4">
+    <div class="mb-4 card p-4">
         <img src="data:image/png;base64,{{ qr_img }}" alt="QR Code" class="mx-auto">
     </div>
     {% endif %}
-    <h3 class="text-lg font-bold mt-6 mb-2">History</h3>
-    <ul>
+    <h2 class="section-title mt-6 mb-2">History</h2>
+    {% if not history %}<div class="card list-empty">No QR codes yet.</div>{% endif %}
+    <ul class="card list-card {{ '' if history else 'hidden' }}">
         {% for q in history %}
-        <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
-            <span class="flex-1 truncate">
-                {{ q.original_input or q.text }}
+        <li class="list-row flex-wrap">
+            <div class="flex-1 min-w-0">
+                <div class="font-medium truncate">{{ q.original_input or q.text }}</div>
                 {% if q.original_input and q.original_input != q.text %}
                 <details class="text-xs text-gray-500"><summary class="cursor-pointer inline text-gray-500">Generated</summary><span class="break-all">{{ q.text }}</span></details>
                 {% endif %}
-            </span>
-            <a class="btn btn-primary" href="/static/{{ q.filename }}" target="_blank">View</a>
-            <a class="btn btn-success" href="/static/{{ q.filename }}" download>Download</a>
-            <span class="text-xs text-gray-500">By {{ q.creator }} at {{ q.timestamp|localtime }}</span>
-            <form method="POST" action="/qr/delete/{{ q.id }}" class="delete-form" data-creator="{{ q.creator }}" data-confirm="Delete this QR code?">
-                <input type="hidden" name="user">
-                <button type="submit" class="btn btn-danger">Delete</button>
-            </form>
+                <div class="meta mt-0.5">By {{ q.creator }} at {{ q.timestamp|localtime }}</div>
+            </div>
+            <div class="flex items-center gap-1">
+                <a class="btn btn-secondary btn-sm" href="/static/{{ q.filename }}" target="_blank"><i class="fa-solid fa-eye" aria-hidden="true"></i> View</a>
+                <a class="btn btn-secondary btn-sm" href="/static/{{ q.filename }}" download><i class="fa-solid fa-download" aria-hidden="true"></i> Download</a>
+                <form method="POST" action="/qr/delete/{{ q.id }}" class="delete-form" data-creator="{{ q.creator }}" data-confirm="Delete this QR code?">
+                    <input type="hidden" name="user">
+                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="Delete" aria-label="Delete QR code"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+                </form>
+            </div>
         </li>
         {% endfor %}
     </ul>

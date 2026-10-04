@@ -61,3 +61,21 @@ def test_too_large_upload_redirects_with_message(client, monkeypatch):
     assert resp.status_code == 302
     page = client.get('/upload').get_data(as_text=True)
     assert 'Upload is too large' in page
+
+
+def test_theme_defaults_upgrade_old_example_values_but_keep_custom_colours():
+    old_example = config_module._apply_theme_defaults({
+        'background_color': '#f7fafc', 'text_color': '#333',
+        'sidebar_background_color': '#2563eb', 'sidebar_text_color': '#ffffff',
+        'sidebar_link_color': 'rgba(255,255,255,0.95)', 'sidebar_active_color': '#3b82f6',
+    })
+    assert old_example['sidebar_background_color'] == '#ffffff'
+    assert old_example['sidebar_link_color'] == '#475569'
+    assert old_example['background_color'] == '#f8fafc'
+    assert old_example['text_color'] == '#0f172a'
+
+    custom = config_module._apply_theme_defaults({'sidebar_background_color': '#7c3aed', 'background_color': '#fff7ed'})
+    assert custom['sidebar_background_color'] == '#7c3aed'
+    assert custom['sidebar_link_color'] == 'rgba(255,255,255,0.95)'
+    assert custom['sidebar_active_text_color'] == '#ffffff'
+    assert custom['background_color'] == '#fff7ed'

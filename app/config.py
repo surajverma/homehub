@@ -38,6 +38,51 @@ def upload_limit_bytes(config):
     return int(mb * 1024 * 1024) if mb > 0 else None
 
 
+# Theme values that shipped as defaults before the refreshed look. A config.yml that still
+# carries them (copied from config-example.yml) gets the new look; custom colours are kept.
+_LEGACY_SIDEBAR_BACKGROUNDS = {'#2563eb'}
+_LEGACY_THEME_VALUES = {
+    'background_color': {'#f7fafc'},
+    'text_color': {'#333', '#333333'},
+}
+_SIDEBAR_KEYS = ('sidebar_background_color', 'sidebar_text_color', 'sidebar_link_color',
+                 'sidebar_link_border_color', 'sidebar_active_color')
+
+
+def _norm_colour(value):
+    return str(value or '').replace(' ', '').lower()
+
+
+def _apply_theme_defaults(theme):
+    for key, legacy in _LEGACY_THEME_VALUES.items():
+        if _norm_colour(theme.get(key)) in legacy:
+            theme.pop(key)
+    theme.setdefault('primary_color', '#1d4ed8')
+    theme.setdefault('secondary_color', '#a0aec0')
+    theme.setdefault('background_color', '#f8fafc')
+    theme.setdefault('card_background_color', '#ffffff')
+    theme.setdefault('text_color', '#0f172a')
+    custom_sidebar = bool(theme.get('sidebar_background_color')) and \
+        _norm_colour(theme.get('sidebar_background_color')) not in _LEGACY_SIDEBAR_BACKGROUNDS
+    if custom_sidebar:
+        # A coloured sidebar the user picked: keep the previous light-on-colour link styling
+        theme.setdefault('sidebar_text_color', '#ffffff')
+        theme.setdefault('sidebar_link_color', 'rgba(255,255,255,0.95)')
+        theme.setdefault('sidebar_link_border_color', 'rgba(255,255,255,0.18)')
+        theme.setdefault('sidebar_active_color', '#3b82f6')
+        theme.setdefault('sidebar_active_text_color', '#ffffff')
+    else:
+        for key in _SIDEBAR_KEYS:
+            theme.pop(key, None)
+        theme['sidebar_background_color'] = '#ffffff'
+        theme['sidebar_text_color'] = '#0f172a'
+        theme['sidebar_link_color'] = '#475569'
+        theme['sidebar_link_border_color'] = 'transparent'
+        theme['sidebar_active_color'] = 'rgba(var(--primary-rgb), 0.10)'
+        theme.setdefault('sidebar_active_text_color', 'var(--primary-color)')
+    return theme
+
+
 def _parse_config():
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f) or {}
@@ -62,17 +107,7 @@ def _parse_config():
     config.setdefault('admin_name', 'Administrator')
     # Family members default list
     config.setdefault('family_members', [])
-    # Theme defaults
-    theme = config.setdefault('theme', {})
-    theme.setdefault('primary_color', '#1d4ed8')
-    theme.setdefault('secondary_color', '#a0aec0')
-    theme.setdefault('background_color', '#f7fafc')
-    theme.setdefault('card_background_color', '#ffffff')
-    theme.setdefault('text_color', '#333333')
-    theme.setdefault('sidebar_background_color', '#2563eb')
-    theme.setdefault('sidebar_text_color', '#ffffff')
-    theme.setdefault('sidebar_link_color', 'rgba(255,255,255,0.95)')
-    theme.setdefault('sidebar_link_border_color', 'rgba(255,255,255,0.18)')
+    _apply_theme_defaults(config.setdefault('theme', {}))
     # Weather widget defaults
     weather = config.setdefault('weather', {})
     weather.setdefault('enabled', False)

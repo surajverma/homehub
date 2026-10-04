@@ -3,25 +3,26 @@
 {% block content %}
 <style>
   .recurring-page-tabs {
-    border-bottom: 2px solid #e5e7eb;
-    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
   }
   .tab-button {
     border-bottom: 3px solid transparent;
-    color: #6b7280;
+    color: var(--muted-text);
     padding: 0.75rem 1rem;
+    margin-bottom: -1px;
     transition: all 0.2s ease;
     cursor: pointer;
     font-weight: 500;
   }
   .tab-button:hover {
-    color: #1f2937;
-    background: #f9fafb;
-    border-color: #e5e7eb;
+    color: var(--text-color);
+    background: var(--hover-bg);
+    border-color: var(--border-color);
   }
   .tab-button.active {
-    color: var(--primary-color, #3b82f6);
-    border-color: var(--primary-color, #3b82f6);
+    color: var(--primary-text);
+    border-color: var(--primary-color);
   }
   .tab-content {
     display: none;
@@ -35,10 +36,10 @@
     margin-bottom: 2rem;
   }
   .rule-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
     padding: 1rem;
-    background: white;
+    background: var(--card-background-color);
   }
   .rule-card details {
     margin: 0;
@@ -50,12 +51,12 @@
     user-select: none;
   }
   .rule-card summary:hover {
-    background: #f9fafb;
+    background: var(--hover-bg);
     border-radius: 0.25rem;
   }
   .rule-metadata {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted-text);
     margin-top: 0.25rem;
   }
   .rule-actions {
@@ -78,10 +79,10 @@
 <div class="max-w-4xl mx-auto space-y-6">
   <div class="flex items-center justify-between mb-6">
     <div class="flex items-center gap-4">
-      <a href="/expenses" class="text-blue-600 hover:underline flex items-center gap-2">
-        <i class="fas fa-arrow-left"></i> Back to Calendar
+      <a href="/expenses" class="btn btn-ghost btn-sm" style="color: var(--primary-text);">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Calendar
       </a>
-      <h1 class="text-3xl font-bold text-gray-800">Recurring Expense Rules</h1>
+      <h1 class="page-title">Recurring Expense Rules</h1>
     </div>
   </div>
 
