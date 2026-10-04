@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, current_app, flash, jsonify
 from ..models import db, Recipe
 from ..blueprints import main_bp
-from ..admin import is_admin
+from ..admin import can_modify
 from ..security import sanitize_text, sanitize_html, is_http_url
 import json
 
@@ -41,7 +41,7 @@ def recipes():
         
         if recipe_id:
             rec = Recipe.query.get_or_404(int(recipe_id))
-            if is_admin(creator) or creator == rec.creator:
+            if can_modify(creator, rec.creator):
                 rec.title = title
                 rec.link = link
                 rec.ingredients = ingredients
@@ -96,7 +96,7 @@ def recipes():
 def edit_recipe(recipe_id):
     rec = Recipe.query.get_or_404(recipe_id)
     user = sanitize_text(request.args.get('user', ''))
-    if not (is_admin(user) or user == (rec.creator or '')):
+    if not can_modify(user, rec.creator or ''):
         flash('Not allowed to edit recipe.', 'error')
         return redirect(url_for('main.recipes'))
     recipes_list = Recipe.query.order_by(Recipe.timestamp.desc()).all()
@@ -134,7 +134,7 @@ def edit_recipe(recipe_id):
 def delete_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     user = sanitize_text(request.form['user'])
-    if is_admin(user) or user == recipe.creator:
+    if can_modify(user, recipe.creator):
         db.session.delete(recipe)
         db.session.commit()
         flash('Recipe deleted.', 'success')
@@ -148,7 +148,7 @@ def update_recipe_tags(recipe_id):
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))
-        if not (is_admin(user) or user == (recipe.creator or '')):
+        if not can_modify(user, recipe.creator or ''):
             return jsonify({"ok": False, "error": "not allowed"}), 403
         tags = data.get('tags', [])
         if not isinstance(tags, list):

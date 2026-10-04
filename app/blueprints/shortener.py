@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, current_app, flas
 from ..models import db, ShortURL
 from ..utils import generate_short_code
 from ..blueprints import main_bp
-from ..admin import is_admin
+from ..admin import can_modify
 from ..security import sanitize_text, is_http_url
 
 
@@ -40,7 +40,7 @@ def redirect_short(short_code):
 def delete_short(url_id):
     su = ShortURL.query.get_or_404(url_id)
     user = sanitize_text(request.form['user'])
-    if is_admin(user) or user == su.creator:
+    if can_modify(user, su.creator):
         db.session.delete(su)
         db.session.commit()
     return redirect(url_for('main.shorten'))

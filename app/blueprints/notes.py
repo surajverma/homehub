@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, current_app
 from ..models import db, Note
 from ..blueprints import main_bp
-from ..admin import is_admin
+from ..admin import can_modify
 from ..security import sanitize_text, sanitize_html
 
 
@@ -13,7 +13,7 @@ def notes():
         creator = sanitize_text(request.form['creator'])
         if note_id:
             n = Note.query.get_or_404(int(note_id))
-            if is_admin(creator) or creator == n.creator:
+            if can_modify(creator, n.creator):
                 n.content = content
                 db.session.commit()
         else:
@@ -30,7 +30,7 @@ def notes():
 def delete_note(note_id):
     note = Note.query.get_or_404(note_id)
     user = sanitize_text(request.form['user'])
-    if is_admin(user) or user == note.creator:
+    if can_modify(user, note.creator):
         db.session.delete(note)
         db.session.commit()
     return redirect(url_for('main.notes'))

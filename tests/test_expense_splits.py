@@ -428,3 +428,48 @@ def test_rule_edit_form_keeps_former_members(client):
     html = client.get('/expenses/recurring').get_data(as_text=True)
     assert 'name="split_weight__Dave" value="2' in html
     assert 'value="Dave" class="rounded split-member" checked' in html
+
+
+@pytest.mark.parametrize('field', ['amount', 'unit_price', 'quantity'])
+def test_non_finite_expense_is_rejected(client, field):
+    data = {'form_type': 'single', 'title': 'Bad', 'amount': '10', 'payer': 'Alice', 'date': '2026-06-01'}
+    data[field] = 'nan' if field != 'quantity' else 'inf'
+    if field != 'amount':
+        data['unit_price'] = data.get('unit_price', '5')
+    client.post('/expenses', data=data)
+    with client.application.app_context():
+        assert ExpenseEntry.query.count() == 0
+
+
+def test_non_finite_recurring_rule_is_rejected(client):
+    client.post('/expenses', data={
+        'form_type': 'recurring', 'title': 'Milk', 'unit_price': 'inf', 'default_quantity': '1',
+        'frequency': 'daily', 'start_date': '2026-06-01', 'end_date': '2026-06-03', 'creator': 'Alice',
+    })
+    with client.application.app_context():
+        assert RecurringExpense.query.count() == 0
+
+
+def test_non_finite_edit_leaves_entry_unchanged(client):
+    with client.application.app_context():
+        db.session.add(ExpenseEntry(date=date(2026, 6, 1), title='Trip', amount=90.0, payer='Alice'))
+        db.session.commit()
+        eid = ExpenseEntry.query.one().id
+    client.post(f'/expenses/edit/{eid}', data={'user': 'Alice', 'title': 'Changed', 'amount': 'nan'})
+    with client.application.app_context():
+        e = db.session.get(ExpenseEntry, eid)
+        assert e.title == 'Trip' and e.amount == 90.0
+
+
+def test_restore_rejects_dates_before_last_edit(client):
+    with client.application.app_context():
+        rid = add_newspaper_rule()
+    client.get('/api/expenses/month?year=2026&month=6')
+    with client.application.app_context():
+        eid = entry_on(rid, date(2026, 6, 2)).id
+    client.post(f'/expenses/delete/{eid}', data={'user': 'Alice'})
+    edit_rule(client, rid, unit_price='8', effective_from='2026-06-05')
+
+    client.post(f'/expenses/recurring/{rid}/restore', data={'user': 'Alice', 'date': '2026-06-02'})
+    with client.application.app_context():
+        assert entry_on(rid, date(2026, 6, 2)) is None

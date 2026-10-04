@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, c
 from datetime import datetime, date, timedelta
 from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringReminder, Chore
 from ..blueprints import main_bp
-from ..admin import is_admin
+from ..admin import is_admin, can_modify
 from ..security import sanitize_html, sanitize_text
 import json
 
@@ -405,7 +405,7 @@ def api_recurring_rules_update_delete(rid):
     if request.method == 'DELETE':
         payload = request.get_json(silent=True) or {}
         user = sanitize_text(payload.get('creator', ''))
-        if not (is_admin(user) or user == (rr.creator or '')):
+        if not can_modify(user, rr.creator or ''):
             return jsonify({'ok': False, 'error': 'Not allowed'}), 403
         db.session.delete(rr)
         db.session.commit()
@@ -413,7 +413,7 @@ def api_recurring_rules_update_delete(rid):
     # PATCH
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
-    if not (is_admin(user) or user == (rr.creator or '')):
+    if not can_modify(user, rr.creator or ''):
         return jsonify({'ok': False, 'error': 'Not allowed'}), 403
     # Updatable fields
     if 'title' in payload: rr.title = sanitize_text(payload.get('title') or rr.title)
@@ -521,7 +521,7 @@ def api_reminders_update(rid):
     r = Reminder.query.get_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
-    if not is_admin(user) and user != (r.creator or ''):
+    if not can_modify(user, r.creator or ''):
         return jsonify({'ok': False, 'error': 'Not allowed'}), 403
     if 'title' in payload:
         title = sanitize_text(payload['title'])
@@ -611,7 +611,7 @@ def api_reminder_mark_done(rid):
     r = Reminder.query.get_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
-    if not is_admin(user) and user != (r.creator or ''):
+    if not can_modify(user, r.creator or ''):
         return jsonify({'ok': False, 'error': 'Not allowed'}), 403
     r.completed_at = datetime.utcnow()
     db.session.commit()
@@ -623,7 +623,7 @@ def api_reminder_mark_undo(rid):
     r = Reminder.query.get_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
-    if not is_admin(user) and user != (r.creator or ''):
+    if not can_modify(user, r.creator or ''):
         return jsonify({'ok': False, 'error': 'Not allowed'}), 403
     r.completed_at = None
     db.session.commit()
@@ -635,7 +635,7 @@ def api_reminder_snooze(rid):
     r = Reminder.query.get_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
-    if not is_admin(user) and user != (r.creator or ''):
+    if not can_modify(user, r.creator or ''):
         return jsonify({'ok': False, 'error': 'Not allowed'}), 403
 
     minutes = payload.get('minutes')
@@ -712,7 +712,7 @@ def api_reminders_delete_bulk():
         r = Reminder.query.get(rid)
         if not r:
             continue
-        if is_admin(user) or user == (r.creator or ''):
+        if can_modify(user, r.creator or ''):
             if r.date:
                 dates.add(r.date.strftime('%Y-%m-%d'))
             r.deleted_at = now
@@ -740,7 +740,7 @@ def api_reminder_restore(rid):
     r = Reminder.query.get_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
-    if not is_admin(user) and user != (r.creator or ''):
+    if not can_modify(user, r.creator or ''):
         return jsonify({'ok': False, 'error': 'Not allowed'}), 403
     if r.deleted_at is None:
         return jsonify({'ok': False, 'error': 'Reminder is not in trash'}), 400
@@ -755,7 +755,7 @@ def api_reminder_purge(rid):
     r = Reminder.query.get_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
-    if not is_admin(user) and user != (r.creator or ''):
+    if not can_modify(user, r.creator or ''):
         return jsonify({'ok': False, 'error': 'Not allowed'}), 403
     if r.deleted_at is None:
         return jsonify({'ok': False, 'error': 'Reminder is not in trash'}), 400
@@ -789,7 +789,7 @@ def add_reminder():
 def delete_reminder(reminder_id):
     r = Reminder.query.get_or_404(reminder_id)
     user = sanitize_text(request.form.get('user'))
-    if is_admin(user) or user == r.creator:
+    if can_modify(user, r.creator):
         r.deleted_at = datetime.utcnow()
         db.session.commit()
         flash('Reminder moved to trash.', 'success')
@@ -829,7 +829,7 @@ def delete_reminders_bulk():
                 kept_date = r.date.strftime('%Y-%m-%d')
             except Exception:
                 kept_date = None
-        if is_admin(user) or user == r.creator:
+        if can_modify(user, r.creator):
             r.deleted_at = now
             deleted += 1
     if deleted:

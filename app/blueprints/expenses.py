@@ -6,7 +6,7 @@ import math
 from ..models import db, RecurringExpense, ExpenseEntry, parse_split
 from ..security import sanitize_text
 from ..blueprints import main_bp
-from ..admin import is_admin
+from ..admin import is_admin, can_modify
 import bleach
 
 
@@ -152,6 +152,11 @@ def _split_people(config) -> list:
     if people and admin and admin not in people:
         people.append(admin)
     return people
+
+
+def _all_finite(*values) -> bool:
+    """False when any given number is NaN or infinite (None is allowed)."""
+    return all(v is None or math.isfinite(v) for v in values)
 
 
 class SplitError(ValueError):
@@ -383,6 +388,9 @@ def expenses():
             y = request.args.get('y') or today.year
             m = request.args.get('m') or today.month
             sel = request.args.get('sel')
+            if not _all_finite(unit_price, default_quantity):
+                flash('Invalid amount.', 'error')
+                return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
             try:
                 split_with = _split_from_form(request.form, unit_price * default_quantity)
             except SplitError as exc:
@@ -408,6 +416,9 @@ def expenses():
             y = request.args.get('y') or d.year
             m = request.args.get('m') or d.month
             sel = request.args.get('sel') or d.strftime('%Y-%m-%d')
+            if not _all_finite(amount, up, q):
+                flash('Invalid amount.', 'error')
+                return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
             try:
                 split_with = _split_from_form(request.form, amount)
             except SplitError as exc:
@@ -434,7 +445,7 @@ def expenses():
 def edit_recurring_expense(rid):
     r = RecurringExpense.query.get_or_404(rid)
     user = sanitize_text(request.form.get('user', ''))
-    if not (is_admin(user) or user == (r.creator or '')):
+    if not can_modify(user, r.creator or ''):
         flash('Not allowed to edit rule.', 'error')
         return redirect(url_for('main.expenses'))
 
@@ -470,6 +481,9 @@ def edit_recurring_expense(rid):
     new_start_date = _parse_date(request.form.get('start_date'), r.start_date)
     new_end_date = _parse_date(request.form.get('end_date'), r.end_date)
 
+    if not _all_finite(new_unit_price, new_default_quantity):
+        flash('Invalid amount.', 'error')
+        return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
     if request.form.get('split_present'):
         try:
             qty = new_default_quantity if new_default_quantity is not None else 1.0
@@ -642,7 +656,7 @@ def edit_recurring_expense(rid):
 def delete_recurring_expense(rid):
     r = RecurringExpense.query.get_or_404(rid)
     user = sanitize_text(request.form.get('user', ''))
-    if not (is_admin(user) or user == (r.creator or '')):
+    if not can_modify(user, r.creator or ''):
         flash('Not allowed to delete rule.', 'error')
         return redirect(url_for('main.expenses'))
     delete_entries = request.form.get('delete_entries') in ('1', 'true', 'on', 'yes')
@@ -692,7 +706,7 @@ def expenses_settings():
 def delete_expense_entry(entry_id):
     entry = ExpenseEntry.query.get_or_404(entry_id)
     user = sanitize_text(request.form.get('user', ''))
-    if not (is_admin(user) or user == (entry.payer or '')):
+    if not can_modify(user, entry.payer or ''):
         flash('Not allowed to delete entry.', 'error')
         return redirect(url_for('main.expenses'))
     db.session.delete(entry)
@@ -710,7 +724,7 @@ def delete_expense_entry(entry_id):
 def edit_expense_entry(entry_id):
     entry = ExpenseEntry.query.get_or_404(entry_id)
     user = sanitize_text(request.form.get('user', ''))
-    if not (is_admin(user) or user == (entry.payer or '')):
+    if not can_modify(user, entry.payer or ''):
         flash('Not allowed to edit entry.', 'error')
         return redirect(url_for('main.expenses'))
     # Update fields
@@ -730,6 +744,10 @@ def edit_expense_entry(entry_id):
     entry.amount = float(amt) if amt not in (None, '') else entry.amount
     if not entry.amount and entry.unit_price is not None:
         entry.amount = entry.unit_price * (entry.quantity if entry.quantity is not None else 1)
+    if not _all_finite(entry.amount, entry.unit_price, entry.quantity):
+        db.session.rollback()
+        flash('Invalid amount.', 'error')
+        return _redirect_to_view(entry.date)
     if request.form.get('split_present'):
         try:
             entry.split_with = _split_from_form(request.form, entry.amount)
@@ -760,7 +778,7 @@ def toggle_skip_expense_entry(entry_id):
     """Skip a day (e.g. no newspaper) without deleting it, or restore a skipped day."""
     entry = ExpenseEntry.query.get_or_404(entry_id)
     user = sanitize_text(request.form.get('user', ''))
-    if not (is_admin(user) or user == (entry.payer or '')):
+    if not can_modify(user, entry.payer or ''):
         flash('Not allowed to change entry.', 'error')
         return _redirect_to_view(entry.date)
     # Only recurring days can be skipped; a skipped day can always be restored
@@ -783,10 +801,12 @@ def restore_recurring_day(rid):
     except Exception:
         flash('Invalid date.', 'error')
         return _redirect_to_view()
-    if not (is_admin(user) or user == (r.creator or '')):
+    if not can_modify(user, r.creator or ''):
         flash('Not allowed to restore this day.', 'error')
         return _redirect_to_view(d)
-    if d > date.today() or not _rule_occurs_on(r, d):
+    # Days before the rule's last apply-from edit followed settings that are no longer stored
+    earliest = r.effective_from or r.start_date
+    if d > date.today() or (earliest and d < earliest) or not _rule_occurs_on(r, d):
         flash('That day is not part of this recurring rule.', 'error')
         return _redirect_to_view(d)
     if ExpenseEntry.query.filter_by(recurring_id=r.id, date=d).first():
@@ -811,7 +831,7 @@ def settle_up():
     if not from_member or not to_member or from_member == to_member or not math.isfinite(amount) or amount <= 0:
         flash('Invalid settlement.', 'error')
         return _redirect_to_view()
-    if not (is_admin(user) or user in (from_member, to_member)):
+    if not (can_modify(user, from_member) or can_modify(user, to_member)):
         flash('Only the people involved can record a settlement.', 'error')
         return _redirect_to_view()
     today = date.today()
@@ -839,7 +859,7 @@ def bulk_delete_expenses():
     for entry_id in ids:
         try:
             entry = ExpenseEntry.query.get(int(entry_id))
-            if entry and (is_admin(user) or user == (entry.payer or '')):
+            if entry and can_modify(user, entry.payer or ''):
                 db.session.delete(entry)
                 deleted += 1
         except Exception:

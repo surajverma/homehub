@@ -7,7 +7,7 @@ import qrcode
 
 from ..models import db, QRCode
 from ..blueprints import main_bp
-from ..admin import is_admin
+from ..admin import can_modify
 from ..security import sanitize_text
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -79,7 +79,7 @@ def qr_view():
 def qr_delete(qr_id: int):
     rec = QRCode.query.get_or_404(qr_id)
     user = sanitize_text(request.form.get('user', ''))
-    if is_admin(user) or user == rec.creator:
+    if can_modify(user, rec.creator):
         try:
             path = os.path.join(STATIC_DIR, rec.filename)
             if os.path.exists(path):

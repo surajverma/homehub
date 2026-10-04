@@ -90,6 +90,17 @@ def is_admin(user: str | None) -> bool:
     return admin_unlocked()
 
 
+def can_modify(user: str | None, owner: str | None) -> bool:
+    """True when ``user`` is the admin or owns the record.
+
+    An admin name only counts as the owner once the session is admin, so a locked
+    session can't reach admin-owned records by naming the admin.
+    """
+    if is_admin(user):
+        return True
+    return user == owner and user not in admin_aliases()
+
+
 def unlock_wait_seconds(client: str) -> int:
     count, until = _failed_attempts.get(client, (0, 0.0))
     remaining = until - time.time()

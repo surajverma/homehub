@@ -166,3 +166,21 @@ def test_unreadable_password_fails_closed(client, monkeypatch):
     with client.application.test_request_context():
         with pytest.raises(RuntimeError):
             admin.is_admin('Administrator')
+
+
+def test_locked_admin_name_cannot_use_ownership(client):
+    # Naming the admin must not reach admin-owned records through the owner check
+    set_password(client)
+    note_id = add_note(client, creator='Administrator')
+    delete_note_as(client, note_id, 'Administrator')
+    assert note_exists(client, note_id)
+
+    client.post('/admin/unlock', json={'password': '4321'})
+    delete_note_as(client, note_id, 'Administrator')
+    assert not note_exists(client, note_id)
+
+
+def test_admin_owned_records_work_without_password(client):
+    note_id = add_note(client, creator='Administrator')
+    delete_note_as(client, note_id, 'Administrator')
+    assert not note_exists(client, note_id)
