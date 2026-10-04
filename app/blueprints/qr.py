@@ -7,6 +7,7 @@ import qrcode
 
 from ..models import db, QRCode
 from ..blueprints import main_bp
+from ..admin import is_admin
 from ..security import sanitize_text
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -78,9 +79,7 @@ def qr_view():
 def qr_delete(qr_id: int):
     rec = QRCode.query.get_or_404(qr_id)
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if user in admin_aliases or user == rec.creator:
+    if is_admin(user) or user == rec.creator:
         try:
             path = os.path.join(STATIC_DIR, rec.filename)
             if os.path.exists(path):

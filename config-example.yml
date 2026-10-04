@@ -1,6 +1,6 @@
 instance_name: "My Home Hub"
 password: "" #leave blank for password less access
-admin_name: "Administrator"
+admin_name: "Administrator" # protect it with: docker exec -it homehub flask set-admin-pin
 feature_toggles:
   shopping_list: true
   media_downloader: true

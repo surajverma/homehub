@@ -4,6 +4,7 @@ from flask import render_template, request, redirect, url_for, send_from_directo
 from datetime import datetime
 from ..models import db, Media, PDF
 from ..blueprints import main_bp
+from ..admin import is_admin
 from ..security import sanitize_text, is_url_safe_for_fetch
 from werkzeug.utils import secure_filename
 
@@ -113,9 +114,7 @@ def preview_media(filename):
 def delete_media(media_id):
     m = Media.query.get_or_404(media_id)
     user = sanitize_text(request.form['user'])
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if user in admin_aliases or user == m.creator:
+    if is_admin(user) or user == m.creator:
         try:
             if m.filepath:
                 base = m.filepath.rsplit('.', 1)[0]
@@ -188,9 +187,7 @@ def preview_pdf(filename):
 def delete_pdf(pdf_id):
     p = PDF.query.get_or_404(pdf_id)
     user = sanitize_text(request.form['user'])
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if user in admin_aliases or user == p.creator:
+    if is_admin(user) or user == p.creator:
         try:
             if p.compressed_path:
                 os.remove(os.path.join(PDF_FOLDER, p.compressed_path))

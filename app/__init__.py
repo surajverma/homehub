@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from .config import load_config
 import os
 import secrets
+import click
 
 db = SQLAlchemy()
 
@@ -218,9 +219,27 @@ def create_app(test_config: dict | None = None):
 
     @app.context_processor
     def inject_auth_state():
+        from . import admin as _admin
         return {
-            'is_authed': bool(session.get('authed'))
+            'is_authed': bool(session.get('authed')),
+            'admin_pin_enabled': _admin.admin_pin_enabled(),
+            'admin_unlocked': _admin.admin_unlocked(),
         }
+
+    @app.cli.command('set-admin-pin')
+    @click.option('--clear', is_flag=True, help='Remove the admin PIN so admin is open to everyone again.')
+    def set_admin_pin_command(clear):
+        """Set or reset the PIN required to act as admin."""
+        from . import admin as _admin
+        if clear:
+            _admin.clear_admin_pin()
+            click.echo('Admin PIN removed. Anyone can switch to the admin user again.')
+            return
+        pin = click.prompt('New admin PIN', hide_input=True, confirmation_prompt=True)
+        if len(pin) < _admin.ADMIN_PIN_MIN_LENGTH:
+            raise click.ClickException(f'PIN must be at least {_admin.ADMIN_PIN_MIN_LENGTH} characters.')
+        _admin.set_admin_pin(pin)
+        click.echo('Admin PIN saved. Switching to the admin user now asks for it.')
     
     # Add Jinja2 filter for JSON parsing
     @app.template_filter('from_json')

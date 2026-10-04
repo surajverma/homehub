@@ -2,6 +2,7 @@ from flask import render_template, request, redirect, url_for, current_app, json
 from datetime import datetime, timedelta
 from ..models import db, ShoppingItem, GroceryHistory
 from ..blueprints import main_bp
+from ..admin import is_admin
 from ..security import sanitize_text
 import json
 
@@ -73,9 +74,7 @@ def check_shopping(item_id):
 def delete_shopping(item_id):
     item = ShoppingItem.query.get_or_404(item_id)
     user = sanitize_text(request.form['user'])
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if user in admin_aliases or user == item.creator:
+    if is_admin(user) or user == item.creator:
         db.session.delete(item)
         db.session.commit()
     return redirect(url_for('main.shopping'))
@@ -87,9 +86,7 @@ def update_shopping_tags(item_id):
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))
-        admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-        admin_aliases = {admin_name, 'Administrator', 'admin'}
-        if not (user in admin_aliases or user == (item.creator or '')):
+        if not (is_admin(user) or user == (item.creator or '')):
             return jsonify({"ok": False, "error": "not allowed"}), 403
         tags = data.get('tags', [])
         if not isinstance(tags, list):
@@ -138,9 +135,7 @@ def api_update_shopping(item_id):
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))
-        admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-        admin_aliases = {admin_name, 'Administrator', 'admin'}
-        if not (user in admin_aliases or user == (item.creator or '')):
+        if not (is_admin(user) or user == (item.creator or '')):
             return jsonify({"ok": False, "error": "not allowed"}), 403
         new_item = data.get('item')
         raw_tags = data.get('tags', [])

@@ -1,5 +1,6 @@
-from flask import current_app, request, session, redirect, url_for, render_template, flash
+from flask import current_app, request, session, redirect, url_for, render_template, flash, jsonify
 from ..blueprints import main_bp
+from .. import admin
 from ..config import load_config
 import hashlib
 import bleach
@@ -36,8 +37,29 @@ def login():
     return render_template('login.html', config=config, hide_user_ui=True)
 
 
+@main_bp.route('/admin/unlock', methods=['POST'])
+def admin_unlock():
+    if not admin.admin_pin_enabled():
+        return jsonify({'ok': True, 'pin_enabled': False})
+    client = request.remote_addr or 'unknown'
+    wait = admin.unlock_wait_seconds(client)
+    if wait:
+        return jsonify({'ok': False, 'error': f'Too many attempts. Try again in {wait} seconds.'}), 429
+    payload = request.get_json(silent=True) or {}
+    if admin.try_unlock(str(payload.get('pin', '')), client):
+        return jsonify({'ok': True, 'pin_enabled': True})
+    return jsonify({'ok': False, 'error': 'Incorrect admin PIN'}), 403
+
+
+@main_bp.route('/admin/lock', methods=['POST'])
+def admin_lock():
+    admin.lock()
+    return jsonify({'ok': True})
+
+
 @main_bp.route('/logout')
 def logout():
+    admin.lock()
     session.pop('authed', None)
     flash('Logged out.', 'info')
     return redirect(url_for('main.login'))

@@ -6,6 +6,7 @@ import math
 from ..models import db, RecurringExpense, ExpenseEntry, parse_split
 from ..security import sanitize_text
 from ..blueprints import main_bp
+from ..admin import is_admin
 import bleach
 
 
@@ -405,9 +406,7 @@ def expenses():
 def edit_recurring_expense(rid):
     r = RecurringExpense.query.get_or_404(rid)
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if not (user in admin_aliases or user == (r.creator or '')):
+    if not (is_admin(user) or user == (r.creator or '')):
         flash('Not allowed to edit rule.', 'error')
         return redirect(url_for('main.expenses'))
 
@@ -607,9 +606,7 @@ def edit_recurring_expense(rid):
 def delete_recurring_expense(rid):
     r = RecurringExpense.query.get_or_404(rid)
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if not (user in admin_aliases or user == (r.creator or '')):
+    if not (is_admin(user) or user == (r.creator or '')):
         flash('Not allowed to delete rule.', 'error')
         return redirect(url_for('main.expenses'))
     delete_entries = request.form.get('delete_entries') in ('1', 'true', 'on', 'yes')
@@ -631,8 +628,7 @@ def delete_recurring_expense(rid):
 @main_bp.route('/expenses/settings', methods=['POST'])
 def expenses_settings():
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    if user != admin_name:
+    if not is_admin(user):
         flash('Only admin can update settings.', 'error')
         return redirect(url_for('main.expenses'))
     currency = sanitize_text(request.form.get('currency', ''))
@@ -660,9 +656,7 @@ def expenses_settings():
 def delete_expense_entry(entry_id):
     entry = ExpenseEntry.query.get_or_404(entry_id)
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if not (user in admin_aliases or user == (entry.payer or '')):
+    if not (is_admin(user) or user == (entry.payer or '')):
         flash('Not allowed to delete entry.', 'error')
         return redirect(url_for('main.expenses'))
     db.session.delete(entry)
@@ -680,9 +674,7 @@ def delete_expense_entry(entry_id):
 def edit_expense_entry(entry_id):
     entry = ExpenseEntry.query.get_or_404(entry_id)
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if not (user in admin_aliases or user == (entry.payer or '')):
+    if not (is_admin(user) or user == (entry.payer or '')):
         flash('Not allowed to edit entry.', 'error')
         return redirect(url_for('main.expenses'))
     # Update fields
@@ -727,9 +719,7 @@ def toggle_skip_expense_entry(entry_id):
     """Skip a day (e.g. no newspaper) without deleting it, or restore a skipped day."""
     entry = ExpenseEntry.query.get_or_404(entry_id)
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
-    if not (user in admin_aliases or user == (entry.payer or '')):
+    if not (is_admin(user) or user == (entry.payer or '')):
         flash('Not allowed to change entry.', 'error')
         return _redirect_to_view(entry.date)
     entry.skipped = not bool(entry.skipped)
@@ -743,14 +733,12 @@ def restore_recurring_day(rid):
     """Add back a scheduled recurring day whose entry was deleted earlier."""
     r = RecurringExpense.query.get_or_404(rid)
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
     try:
         d = datetime.strptime(request.form.get('date', ''), '%Y-%m-%d').date()
     except Exception:
         flash('Invalid date.', 'error')
         return _redirect_to_view()
-    if not (user in admin_aliases or user == (r.creator or '')):
+    if not (is_admin(user) or user == (r.creator or '')):
         flash('Not allowed to restore this day.', 'error')
         return _redirect_to_view(d)
     if d > date.today() or not _rule_occurs_on(r, d):
@@ -769,8 +757,6 @@ def restore_recurring_day(rid):
 def settle_up():
     """Record that one member paid another back."""
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
     from_member = sanitize_text(request.form.get('from_member', '')).strip()
     to_member = sanitize_text(request.form.get('to_member', '')).strip()
     try:
@@ -780,7 +766,7 @@ def settle_up():
     if not from_member or not to_member or from_member == to_member or amount <= 0:
         flash('Invalid settlement.', 'error')
         return _redirect_to_view()
-    if not (user in admin_aliases or user in (from_member, to_member)):
+    if not (is_admin(user) or user in (from_member, to_member)):
         flash('Only the people involved can record a settlement.', 'error')
         return _redirect_to_view()
     today = date.today()
@@ -800,8 +786,6 @@ def settle_up():
 @main_bp.route('/expenses/bulk-delete', methods=['POST'])
 def bulk_delete_expenses():
     user = sanitize_text(request.form.get('user', ''))
-    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
-    admin_aliases = {admin_name, 'Administrator', 'admin'}
     ids = request.form.getlist('ids')
     if not ids:
         flash('No entries selected.', 'warning')
@@ -810,7 +794,7 @@ def bulk_delete_expenses():
     for entry_id in ids:
         try:
             entry = ExpenseEntry.query.get(int(entry_id))
-            if entry and (user in admin_aliases or user == (entry.payer or '')):
+            if entry and (is_admin(user) or user == (entry.payer or '')):
                 db.session.delete(entry)
                 deleted += 1
         except Exception:
