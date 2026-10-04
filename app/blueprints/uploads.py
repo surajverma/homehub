@@ -57,7 +57,7 @@ def preview_file(filename):
 
 @main_bp.route('/upload/delete/<int:file_id>', methods=['POST'])
 def delete_file(file_id):
-    db_file = File.query.get_or_404(file_id)
+    db_file = db.get_or_404(File, file_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, db_file.creator):
         try:

@@ -401,7 +401,7 @@ def api_reminders_list():
 
 @main_bp.route('/api/recurring_rules/<int:rid>', methods=['PATCH', 'DELETE'])
 def api_recurring_rules_update_delete(rid):
-    rr = RecurringReminder.query.get_or_404(rid)
+    rr = db.get_or_404(RecurringReminder, rid)
     if request.method == 'DELETE':
         payload = request.get_json(silent=True) or {}
         user = sanitize_text(payload.get('creator', ''))
@@ -518,7 +518,7 @@ def api_reminders_create():
 
 @main_bp.route('/api/reminders/<int:rid>', methods=['PATCH'])
 def api_reminders_update(rid):
-    r = Reminder.query.get_or_404(rid)
+    r = db.get_or_404(Reminder, rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -608,7 +608,7 @@ def api_reminders_update(rid):
 
 @main_bp.route('/api/reminders/<int:rid>/done', methods=['POST'])
 def api_reminder_mark_done(rid):
-    r = Reminder.query.get_or_404(rid)
+    r = db.get_or_404(Reminder, rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -620,7 +620,7 @@ def api_reminder_mark_done(rid):
 
 @main_bp.route('/api/reminders/<int:rid>/undo', methods=['POST'])
 def api_reminder_mark_undo(rid):
-    r = Reminder.query.get_or_404(rid)
+    r = db.get_or_404(Reminder, rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -632,7 +632,7 @@ def api_reminder_mark_undo(rid):
 
 @main_bp.route('/api/reminders/<int:rid>/snooze', methods=['POST'])
 def api_reminder_snooze(rid):
-    r = Reminder.query.get_or_404(rid)
+    r = db.get_or_404(Reminder, rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -709,7 +709,7 @@ def api_reminders_delete_bulk():
     for rid in ids:
         if not isinstance(rid, int):
             continue
-        r = Reminder.query.get(rid)
+        r = db.session.get(Reminder, rid)
         if not r:
             continue
         if can_modify(user, r.creator or ''):
@@ -737,7 +737,7 @@ def api_reminders_trash():
 
 @main_bp.route('/api/reminders/<int:rid>/restore', methods=['POST'])
 def api_reminder_restore(rid):
-    r = Reminder.query.get_or_404(rid)
+    r = db.get_or_404(Reminder, rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -752,7 +752,7 @@ def api_reminder_restore(rid):
 @main_bp.route('/api/reminders/<int:rid>/purge', methods=['DELETE'])
 def api_reminder_purge(rid):
     """Permanently delete a reminder from trash."""
-    r = Reminder.query.get_or_404(rid)
+    r = db.get_or_404(Reminder, rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -787,7 +787,7 @@ def add_reminder():
 
 @main_bp.route('/calendar/delete/<int:reminder_id>', methods=['POST'])
 def delete_reminder(reminder_id):
-    r = Reminder.query.get_or_404(reminder_id)
+    r = db.get_or_404(Reminder, reminder_id)
     user = sanitize_text(request.form.get('user'))
     if can_modify(user, r.creator):
         r.deleted_at = datetime.utcnow()
@@ -821,7 +821,7 @@ def delete_reminders_bulk():
     deleted = 0
     now = datetime.utcnow()
     for rid in id_list:
-        r = Reminder.query.get(rid)
+        r = db.session.get(Reminder, rid)
         if not r:
             continue
         if kept_date is None and getattr(r, 'date', None):

@@ -40,7 +40,7 @@ def recipes():
             return render_template('recipes.html', recipes=recipes_list, config=config, form_title=title, form_link=link, form_ingredients=ingredients or '', form_instructions=instructions or '')
         
         if recipe_id:
-            rec = Recipe.query.get_or_404(int(recipe_id))
+            rec = db.get_or_404(Recipe, int(recipe_id))
             if can_modify(creator, rec.creator):
                 rec.title = title
                 rec.link = link
@@ -94,7 +94,7 @@ def recipes():
 
 @main_bp.route('/recipes/edit/<int:recipe_id>')
 def edit_recipe(recipe_id):
-    rec = Recipe.query.get_or_404(recipe_id)
+    rec = db.get_or_404(Recipe, recipe_id)
     user = sanitize_text(request.args.get('user', ''))
     if not can_modify(user, rec.creator or ''):
         flash('Not allowed to edit recipe.', 'error')
@@ -132,7 +132,7 @@ def edit_recipe(recipe_id):
 
 @main_bp.route('/recipes/delete/<int:recipe_id>', methods=['POST'])
 def delete_recipe(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
+    recipe = db.get_or_404(Recipe, recipe_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, recipe.creator):
         db.session.delete(recipe)
@@ -144,7 +144,7 @@ def delete_recipe(recipe_id):
 @main_bp.route('/api/recipes/<int:recipe_id>/tags', methods=['POST'])
 def update_recipe_tags(recipe_id):
     """Update tags for a recipe via API (similar to chores/shopping)"""
-    recipe = Recipe.query.get_or_404(recipe_id)
+    recipe = db.get_or_404(Recipe, recipe_id)
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))

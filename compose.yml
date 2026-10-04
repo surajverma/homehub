@@ -14,3 +14,4 @@ services:
     environment:
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY:-}
+      # - TZ=Asia/Kolkata # optional; your timezone for due dates and recurring items (default UTC)
