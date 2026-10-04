@@ -4,6 +4,7 @@ from ..models import db, Chore, RecurringChore
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..security import sanitize_text
+from ..recurrence import next_occurrence as _next_occurrence, first_on_or_after as _next_due_on_or_after
 import json
 
 
@@ -14,53 +15,6 @@ def _parse_date(value):
         return datetime.strptime(value, '%Y-%m-%d').date()
     except Exception:
         return None
-
-
-def _add_months(dt: date, months: int) -> date:
-    y = dt.year + (dt.month - 1 + months) // 12
-    m = (dt.month - 1 + months) % 12 + 1
-    last = (date(y + (1 if m == 12 else 0), 1 if m == 12 else m + 1, 1) - timedelta(days=1)).day
-    d = min(dt.day, last)
-    return date(y, m, d)
-
-
-def _add_years(dt: date, years: int) -> date:
-    try:
-        return date(dt.year + years, dt.month, dt.day)
-    except Exception:
-        if dt.month == 2 and dt.day == 29:
-            return date(dt.year + years, 2, 28)
-        return _add_months(dt, years * 12)
-
-
-def _next_occurrence(rule: RecurringChore, d: date) -> date:
-    interval = max(1, int(getattr(rule, 'interval', 1) or 1))
-    unit = (getattr(rule, 'unit', 'day') or 'day').lower()
-    if unit == 'day':
-        return d + timedelta(days=interval)
-    if unit == 'week':
-        return d + timedelta(weeks=interval)
-    if unit == 'month':
-        return _add_months(d, interval)
-    if unit == 'year':
-        return _add_years(d, interval)
-    return d + timedelta(days=interval)
-
-
-def _next_due_on_or_after(rule: RecurringChore, target: date) -> date | None:
-    d = rule.start_date or target
-    if rule.end_date and d > rule.end_date:
-        return None
-    if d >= target:
-        return d
-    while d < target:
-        nd = _next_occurrence(rule, d)
-        if nd == d:
-            break
-        d = nd
-        if rule.end_date and d > rule.end_date:
-            return None
-    return d if (not rule.end_date or d <= rule.end_date) else None
 
 
 def _ensure_current_recurring_chores(today: date | None = None):

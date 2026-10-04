@@ -4,6 +4,7 @@ from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringRe
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..security import sanitize_html, sanitize_text
+from ..recurrence import occurrences_between, rule_interval_unit
 
 
 def _parse_date_param(value, default=None):
@@ -177,12 +178,7 @@ def _serialize_reminder(r: Reminder):
     }
 
 def _serialize_recurring_rule(rr: RecurringReminder):
-    interval = getattr(rr, 'interval', None) or 1
-    unit = (getattr(rr, 'unit', None) or '').lower()
-    if not unit:
-        if rr.frequency == 'daily': unit = 'day'
-        elif rr.frequency == 'weekly': unit = 'week'
-        else: unit = 'month'
+    interval, unit = rule_interval_unit(rr)
     return {
         'id': rr.id,
         'title': rr.title,
@@ -243,54 +239,8 @@ def api_reminders_list():
     else:
         window_start = base_date
         window_end = base_date
-    def add_months(dt: date, months: int) -> date:
-        y = dt.year + (dt.month - 1 + months) // 12
-        m = (dt.month - 1 + months) % 12 + 1
-        # clamp to last day of target month
-        last = (date(y + (1 if m == 12 else 0), 1 if m == 12 else m + 1, 1) - timedelta(days=1)).day
-        d = min(dt.day, last)
-        return date(y, m, d)
-    def add_years(dt: date, years: int) -> date:
-        try:
-            return date(dt.year + years, dt.month, dt.day)
-        except ValueError:
-            # Feb 29 -> Feb 28 fallback
-            if dt.month == 2 and dt.day == 29:
-                return date(dt.year + years, 2, 28)
-            # else clamp to last valid day of month
-            return add_months(dt, years * 12)
-    def next_date_rule(rr, d):
-        # Prefer new interval/unit if present
-        interval = getattr(rr, 'interval', None) or 1
-        unit = (getattr(rr, 'unit', None) or '').lower() or None
-        if not unit:
-            # legacy mapping
-            if rr.frequency == 'daily':
-                unit = 'day'; interval = 1
-            elif rr.frequency == 'weekly':
-                unit = 'week'; interval = 1
-            else:
-                unit = 'month'; interval = 1
-        if unit == 'day':
-            return d + timedelta(days=interval)
-        if unit == 'week':
-            return d + timedelta(weeks=interval)
-        if unit == 'month':
-            return add_months(d, interval)
-        if unit == 'year':
-            return add_years(d, interval)
-        # default safety
-        return d + timedelta(days=interval)
     for rr in rules:
-        rs = rr.start_date or window_start
-        d = rs
-        # advance d to window_start if needed
-        while d < window_start:
-            nd = next_date_rule(rr, d)
-            if nd == d:
-                break
-            d = nd
-        while d <= window_end and (not rr.end_date or d <= rr.end_date):
+        for d in occurrences_between(rr, window_start, window_end):
             # ensure not already present in DB rows for that date/title
             if not any((r.date == d and r.title == rr.title and r.recurring_id == rr.id) for r in rows):
                 temp = Reminder(date=d, title=rr.title, description=rr.description or '', creator=rr.creator or '', time=rr.time, category=rr.category, color=rr.color)
@@ -298,7 +248,6 @@ def api_reminders_list():
                 temp.recurring_id = rr.id
                 gen_rows.append(temp)
             rule_dates.setdefault(rr.id, []).append(d)
-            d = next_date_rule(rr, d)
     combined = rows + gen_rows
     # Sort combined
     try:
@@ -332,13 +281,7 @@ def api_reminders_list():
     # Build recurring rules summary for UI compression
     recurring_rules = []
     for rr in rules:
-        # Determine interval/unit from new fields or legacy frequency
-        interval = getattr(rr, 'interval', None) or 1
-        unit = (getattr(rr, 'unit', None) or '').lower()
-        if not unit:
-            if rr.frequency == 'daily': unit = 'day'
-            elif rr.frequency == 'weekly': unit = 'week'
-            else: unit = 'month'
+        interval, unit = rule_interval_unit(rr)
         recurring_rules.append({
             'id': rr.id,
             'title': rr.title,
