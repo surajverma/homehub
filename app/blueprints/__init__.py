@@ -33,30 +33,39 @@ def manifest_webmanifest():
     return Response(json.dumps(manifest), mimetype='application/manifest+json')
 
 
+_sw_version_cache = []
+
+
+def _sw_cache_version():
+    """SW cache version: ENV first, then git tag, then constant. Computed once per process."""
+    if _sw_version_cache:
+        return _sw_version_cache[0]
+    version = os.environ.get('SW_CACHE_VERSION')
+    if not version:
+        try:
+            repo_root = os.path.abspath(os.path.join(current_app.root_path, '..'))
+            res = subprocess.run(
+                ['git', 'describe', '--tags', '--always'],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                timeout=1.5
+            )
+            if res.returncode == 0:
+                version = (res.stdout or '').strip()
+                if version.startswith('v'):
+                    version = version[1:]
+        except Exception:
+            version = None
+    _sw_version_cache.append(version or DEFAULT_SW_CACHE_VERSION)
+    return _sw_version_cache[0]
+
+
 @main_bp.route('/sw.js')
 def service_worker():
     try:
         # Offline-first SW with runtime caching and navigation fallback
-        # Determine cache version: ENV first, then git tag, then constant
-        version = os.environ.get('SW_CACHE_VERSION')
-        if not version:
-            try:
-                repo_root = os.path.abspath(os.path.join(current_app.root_path, '..'))
-                res = subprocess.run(
-                    ['git', 'describe', '--tags', '--always'],
-                    cwd=repo_root,
-                    capture_output=True,
-                    text=True,
-                    timeout=1.5
-                )
-                if res.returncode == 0:
-                    version = (res.stdout or '').strip()
-                    if version.startswith('v'):
-                        version = version[1:]
-            except Exception:
-                version = None
-        if not version:
-            version = DEFAULT_SW_CACHE_VERSION
+        version = _sw_cache_version()
 
         sw_js = r"""
         const CACHE_NAME = 'homehub-v__VERSION__';

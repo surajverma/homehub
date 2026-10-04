@@ -1,6 +1,6 @@
 from flask import Flask, session
 from flask_sqlalchemy import SQLAlchemy
-from .config import load_config
+from .config import load_config, upload_limit_bytes
 import logging
 import os
 import secrets
@@ -64,6 +64,7 @@ def create_app(test_config: dict | None = None):
 
     # Load config.yml
     app.config['HOMEHUB_CONFIG'] = load_config()
+    app.config['MAX_CONTENT_LENGTH'] = upload_limit_bytes(app.config['HOMEHUB_CONFIG'])
 
     # Allow tests to override configuration (database, testing flag, etc.)
     if test_config:
@@ -236,6 +237,16 @@ def create_app(test_config: dict | None = None):
     from .blueprints import qr  # noqa: F401
     from .blueprints import weather  # noqa: F401
     app.register_blueprint(main_bp)
+
+    @app.errorhandler(413)
+    def upload_too_large(_err):
+        from flask import flash, jsonify, redirect, request
+        limit_mb = (app.config.get('MAX_CONTENT_LENGTH') or 0) // (1024 * 1024)
+        message = f'Upload is too large. The limit is {limit_mb} MB.'
+        if request.is_json or request.path.startswith('/api/'):
+            return jsonify({'ok': False, 'error': message}), 413
+        flash(message, 'error')
+        return redirect(request.referrer or '/')
 
     @app.context_processor
     def inject_auth_state():

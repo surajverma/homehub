@@ -47,4 +47,5 @@ COPY --from=builder /app/static/output.css /app/static/output.css
 
 EXPOSE 5000
 
-CMD ["gunicorn", "wsgi:app", "-w", "1", "-k", "sync", "-b", "0.0.0.0:5000", "--access-logfile", "-", "--error-logfile", "-"]
+# One process (SQLite, in-process download threads) with threads so a slow upload or PDF job does not block everyone
+CMD ["gunicorn", "wsgi:app", "-w", "1", "-k", "gthread", "--threads", "4", "-b", "0.0.0.0:5000", "--access-logfile", "-", "--error-logfile", "-"]

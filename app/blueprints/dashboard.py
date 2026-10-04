@@ -4,7 +4,6 @@ from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringRe
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..security import sanitize_html, sanitize_text
-import json
 
 
 def _parse_date_param(value, default=None):
@@ -101,33 +100,6 @@ def _render_dashboard(calendar_only=False):
     config = current_app.config['HOMEHUB_CONFIG']
     notice = Notice.query.order_by(Notice.updated_at.desc()).first()
     show_chores_on_homepage = _show_chores_on_homepage()
-    # Calendar: gather reminders grouped by date
-    try:
-        rows = Reminder.query.with_entities(
-            Reminder.id,
-            Reminder.title,
-            Reminder.description,
-            Reminder.creator,
-            Reminder.date,
-            Reminder.time,
-            Reminder.category,
-        ).all()
-    except Exception:
-        rows = []
-    by_date = {}
-    for rid, title, description, creator, rdate, rtime, rcat in rows:
-        try:
-            key = rdate.strftime('%Y-%m-%d')
-        except Exception:
-            key = str(rdate) if rdate else ''
-        by_date.setdefault(key, []).append({
-            'id': int(rid),
-            'title': title or '',
-            'description': description or '',
-            'creator': creator or '',
-            'time': rtime or None,
-            'category': rcat or None,
-        })
     # Who is Home summary
     family = list(dict.fromkeys(config.get('family_members', [])))
     who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
@@ -150,11 +122,6 @@ def _render_dashboard(calendar_only=False):
                 })
     except Exception:
         reminder_categories = []
-    # Backward compatibility: provide both Python object and pre-serialized JSON
-    try:
-        reminders_json = json.dumps(by_date)
-    except Exception:
-        reminders_json = '{}'
     home_chores = []
     if show_chores_on_homepage and config.get('feature_toggles', {}).get('chores', True):
         try:
@@ -167,14 +134,11 @@ def _render_dashboard(calendar_only=False):
             )
         except Exception:
             home_chores = []
-    # Pass Python object; template will use |tojson safely
     return render_template(
         'index.html',
         config=config,
         calendar_only=calendar_only,
         notice=notice,
-        reminders_data=by_date,
-        reminders_json=reminders_json,
         who_statuses=who_statuses,
         member_statuses=member_statuses,
         reminder_categories=reminder_categories,

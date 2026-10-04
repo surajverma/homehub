@@ -1,13 +1,44 @@
-import yaml
-import os
+import copy
 import hashlib
+import os
+import threading
+import yaml
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 CONFIG_PATH = os.path.join(BASE_DIR, 'config.yml')
 
+_cache_lock = threading.Lock()
+_cache = {'key': None, 'config': None}
+
+
 def load_config():
-    if not os.path.exists(CONFIG_PATH):
+    """Return the parsed config.yml, re-reading it only when the file changes."""
+    try:
+        st = os.stat(CONFIG_PATH)
+    except FileNotFoundError:
         raise FileNotFoundError(f'config.yml not found at {CONFIG_PATH}.')
+    key = (st.st_mtime_ns, st.st_size)
+    with _cache_lock:
+        if _cache['key'] != key:
+            _cache['config'] = _parse_config()
+            _cache['key'] = key
+        # Callers get their own copy, as they did when the file was parsed on every call
+        return copy.deepcopy(_cache['config'])
+
+
+DEFAULT_MAX_UPLOAD_MB = 1024
+
+
+def upload_limit_bytes(config):
+    """Request size limit from config.yml max_upload_mb (0 or less means no limit)."""
+    try:
+        mb = float(config.get('max_upload_mb', DEFAULT_MAX_UPLOAD_MB))
+    except (TypeError, ValueError):
+        mb = DEFAULT_MAX_UPLOAD_MB
+    return int(mb * 1024 * 1024) if mb > 0 else None
+
+
+def _parse_config():
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f) or {}
     # Hash password if present

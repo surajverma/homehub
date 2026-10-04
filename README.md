@@ -57,6 +57,7 @@ The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
 instance_name: "My Home Hub"
 password: "" #leave blank for password less access
 admin_name: "Administrator"
+max_upload_mb: 1024 # largest upload in MB (Shared Cloud, PDFs); 0 removes the limit
 feature_toggles:
   shopping_list: true
   media_downloader: true

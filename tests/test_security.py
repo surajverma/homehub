@@ -64,22 +64,16 @@ def test_reminders_api_and_index_bootstrap(client):
     assert j['ok'] is True
     rid = j['reminder']['id']
 
-    # Index page should embed reminders via tojson; no raw tags
-    resp2 = client.get('/')
-    assert resp2.status_code == 200
-    html = resp2.get_data(as_text=True)
-    # The JSON script tag should exist and not include an <img ... onerror>
-    m = re.search(r'<script id="legacyRemindersData"[^>]*>(.*?)</script>', html, re.S)
-    assert m, 'Bootstrap JSON script not found'
-    data_text = m.group(1)
-    # Must be valid JSON
-    data = json.loads(data_text)
-    # Expect our date key
-    assert d in data
-    # The reminder description should be sanitized (no tag like img with onerror)
-    rec = next((r for r in data[d] if r['id'] == rid), None)
+    # The month API (which the calendar loads) returns the sanitized description
+    month = client.get(f'/api/reminders?scope=month&date={d}').get_json()
+    rec = next((r for r in month['reminders'] if r['id'] == rid), None)
     assert rec is not None
     assert 'onerror' not in (rec.get('description') or '').lower()
+
+    # The page no longer embeds every reminder; the calendar fetches the month instead
+    resp2 = client.get('/')
+    assert resp2.status_code == 200
+    assert 'legacyRemindersData' not in resp2.get_data(as_text=True)
 
 
 def test_media_ssrf_block_localhost(client, monkeypatch):

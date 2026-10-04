@@ -281,7 +281,6 @@ window.REMINDERS_CAL_START = (function(){
 		</div>
 
 
-		<script id="legacyRemindersData" type="application/json">{% if reminders_data is defined %}{{ reminders_data|tojson }}{% else %}{{ reminders_json|safe }}{% endif %}</script>
 		<script id="reminderCategoriesData" type="application/json">{{ reminder_categories|tojson }}</script>
 		<script>
 // Inject category color classes immediately after data is available
@@ -345,7 +344,6 @@ window.REMINDERS_CAL_START = (function(){
 	let currentScope = localStorage.getItem('remindersScope') || 'day';
 	let display = new Date(); // current month
 	let monthCache = {}; // YYYY-MM -> { reminders:[], counts:{}, categories_counts:{} }
-	const legacyDataEl = document.getElementById('legacyRemindersData');
 	const catDataEl = document.getElementById('reminderCategoriesData');
 	let live = document.getElementById('reminderLiveRegion');
 	if(!live){ live=document.createElement('div'); live.id='reminderLiveRegion'; live.className='sr-only'; live.setAttribute('aria-live','polite'); header.appendChild(live);}  
@@ -826,31 +824,6 @@ window.REMINDERS_CAL_START = (function(){
 	}
 	function updateCalendarBadges(){ // ensure counts are in sync for currently loaded months
 	Object.keys(monthCache).forEach(recalcMonth); renderCalendar(); }
-	// Extract mapping logic for legacy reminders
-	function mapLegacyReminder(r, d) {
-	    return {
-	        id: r.id,
-	        title: r.title,
-	        description: r.description,
-	        creator: r.creator,
-	        date: d,
-	        time: r.time || null,
-	        category: r.category || null
-	    };
-	}
-	try {
-	    const legacy = JSON.parse(legacyDataEl?.textContent || '{}');
-	    const today = new Date();
-	    const mk = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
-	    monthCache[mk] = { reminders: [], counts: {}, categories_counts: {} };
-	    Object.entries(legacy).forEach(([d, arr]) => {
-	        if (d.startsWith(mk + '-')) {
-	            monthCache[mk].counts[d] = arr.length;
-	            monthCache[mk].reminders.push(...arr.map(r => mapLegacyReminder(r, d)));
-	        }
-	    });
-	    recalcMonth(mk);
-	} catch (e) {}
 	let activeCategory = 'ALL';
 	function renderList(){ const dateStr=getSelectedDate(); const dObj=new Date(dateStr+'T00:00:00'); const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]; if(!cache){ listWrap.innerHTML='<div class="text-xs text-gray-400">Loading...</div>'; fetchMonth(dateStr).then(()=>{ renderCalendar(); renderList(); renderUpcomingTimeline(); }); return;} let baseItems=[]; // Unfiltered items for current scope
 	// Filter baseItems to non-recurring generated occurrences (skip those with recurring_id)
