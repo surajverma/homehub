@@ -135,6 +135,7 @@ services:
     environment:
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to random if not provided
+      # - TZ=Asia/Kolkata # optional; see "Timezone" below
     volumes:
       - ./uploads:/app/uploads
       - ./media:/app/media
@@ -165,6 +166,17 @@ docker exec -it homehub flask set-admin-password
 The `password` in `config.yml` is separate: it protects the whole site and keeps working as before.
 
 Tip: set `SECRET_KEY` in your environment so logins and admin unlocks survive a restart.
+
+## Timezone (optional)
+
+HomeHub decides what "today" is (due dates, overdue chores, recurring expenses and chores) from the container's clock, which is UTC by default. If you are far from UTC, "today" can roll over a few hours early or late. Set your timezone with `TZ` in `compose.yml`:
+
+```yaml
+    environment:
+      - TZ=Asia/Kolkata
+```
+
+Use a name from the [tz database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), then run `docker compose up -d`. Leaving it out keeps the old UTC behaviour.
 
 ## Theming
 

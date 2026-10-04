@@ -26,6 +26,8 @@ WORKDIR /app
 # Build argument for app version (injected by CI) and environment variable for runtime
 ARG APP_VERSION=dev
 ENV SW_CACHE_VERSION=$APP_VERSION
+# Server timezone for "today" (due dates, recurring items). Override with TZ in compose.yml.
+ENV TZ=UTC
 
 # Runtime-only packages
 RUN apk add --no-cache \
@@ -33,7 +35,8 @@ RUN apk add --no-cache \
     ghostscript \
     libjpeg-turbo \
     zlib \
-    libstdc++
+    libstdc++ \
+    tzdata
 
 # Copy installed packages from builder
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
