@@ -132,16 +132,16 @@ services:
     image: ghcr.io/surajverma/homehub:latest
     ports:
       - "5000:5000" #app listens internally on port 5000
-    environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to random if not provided
-      # - TZ=Asia/Kolkata # optional; see "Timezone" below
     volumes:
       - ./uploads:/app/uploads
       - ./media:/app/media
       - ./pdfs:/app/pdfs
       - ./data:/app/data
       - ./config.yml:/app/config.yml:ro
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to random if not provided
+      # - TZ=Asia/Kolkata # optional; see "Timezone" below
 ```
 
 ```bash
