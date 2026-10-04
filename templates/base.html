@@ -69,6 +69,19 @@
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     {% block extra_head %}{% endblock %}
     <script>
+        // Admin password state. When a password is set, a stored admin name only counts once this session unlocked it.
+        window.HomeHubAdmin = {
+            passwordEnabled: {{ 'true' if admin_password_enabled else 'false' }},
+            unlocked: {{ 'true' if admin_unlocked else 'false' }},
+            names: [{{ config.admin_name | tojson }}, 'Administrator', 'admin'],
+            isAdminName: function(name){ return this.names.indexOf(name) !== -1; },
+            needsPassword: function(name){ return this.passwordEnabled && !this.unlocked && this.isAdminName(name); }
+        };
+        try{
+            if (window.HomeHubAdmin.needsPassword(localStorage.getItem('username'))) { localStorage.removeItem('username'); }
+        }catch(e){}
+    </script>
+    <script>
         // Apply saved sidebar collapsed state ASAP to avoid flash before main JS runs
         (function(){
             try{
@@ -212,6 +225,42 @@
             });            
             setTimeout(()=>wrap.remove(), msgs.length*70 + 200);
         })();        
+        // Ask for the admin password; resolves true once the server unlocked this session
+        function requestAdminUnlock(){
+            return new Promise(function(resolve){
+                const modal = document.getElementById('adminPasswordModal');
+                const input = document.getElementById('adminPasswordInput');
+                const error = document.getElementById('adminPasswordError');
+                const form = document.getElementById('adminPasswordForm');
+                const cancel = document.getElementById('adminPasswordCancel');
+                if (!modal || !input || !form){ resolve(false); return; }
+                const close = function(ok){
+                    modal.classList.add('hidden'); modal.classList.remove('flex');
+                    form.onsubmit = null; cancel.onclick = null; input.value = '';
+                    resolve(ok);
+                };
+                error.textContent = '';
+                modal.classList.remove('hidden'); modal.classList.add('flex');
+                input.focus();
+                cancel.onclick = function(){ close(false); };
+                form.onsubmit = async function(ev){
+                    ev.preventDefault();
+                    try{
+                        const resp = await fetch('/admin/unlock', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: input.value })
+                        });
+                        const data = await resp.json().catch(function(){ return {}; });
+                        if (resp.ok && data.ok){ window.HomeHubAdmin.unlocked = true; close(true); return; }
+                        error.textContent = data.error || 'Could not unlock admin.';
+                    }catch(e){
+                        error.textContent = 'Could not reach the server.';
+                    }
+                    input.value = ''; input.focus();
+                };
+            });
+        }
         function showUserSelectModal(users){
             const modal = document.getElementById('userSelectModal');
             const input = document.getElementById('userSelectInput');
@@ -224,8 +273,14 @@
             });
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            confirmBtn.onclick = function(){
+            confirmBtn.onclick = async function(){
                 const selected = input.value;
+                if (selected && window.HomeHubAdmin.needsPassword(selected)){
+                    if (!(await requestAdminUnlock())) return;
+                    localStorage.setItem('username', selected);
+                    location.reload();
+                    return;
+                }
                 if (selected){
                     localStorage.setItem('username', selected);
                     const switcher = document.getElementById('userSwitcher');
@@ -259,7 +314,21 @@
                     // Show first-run user selection modal now that DOM is ready
                     showUserSelectModal(users);
                 }
-                switcher.addEventListener('change', function(){
+                switcher.addEventListener('change', async function(){
+                    const admin = window.HomeHubAdmin;
+                    if (admin.needsPassword(this.value)){
+                        const target = this.value;
+                        const previous = localStorage.getItem('username') || '';
+                        if (!(await requestAdminUnlock())){ this.value = previous; return; }
+                        localStorage.setItem('username', target);
+                        // Reload so every page script sees the unlocked admin
+                        location.reload();
+                        return;
+                    }
+                    if (admin.unlocked && !admin.isAdminName(this.value)){
+                        admin.unlocked = false;
+                        fetch('/admin/lock', { method: 'POST' }).catch(function(){});
+                    }
                     localStorage.setItem('username', this.value);
                     renderWelcome();
                     applyUserContext();
@@ -332,6 +401,22 @@
         }
         // renderWelcome/applyUserContext are invoked from DOMContentLoaded
     </script>
+    <!-- Admin password prompt -->
+    <div id="adminPasswordModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50" style="z-index:60">
+        <form id="adminPasswordForm" class="bg-white w-full max-w-sm p-4 rounded shadow" autocomplete="off">
+            <h3 class="text-lg font-semibold mb-3">Admin password</h3>
+            <p class="text-sm text-gray-600 mb-3">Enter the admin password to continue as {{ config.admin_name }}.</p>
+            <div class="mb-3">
+                <label class="block text-sm text-gray-700 mb-1" for="adminPasswordInput">Password</label>
+                <input id="adminPasswordInput" type="password" class="w-full border rounded p-2" autocomplete="off" required>
+                <p id="adminPasswordError" class="text-sm text-red-600 mt-1" role="alert"></p>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" id="adminPasswordCancel" class="px-3 py-2 rounded bg-gray-100 text-gray-800">Cancel</button>
+                <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Unlock</button>
+            </div>
+        </form>
+    </div>
     <!-- First-visit user selection modal -->
     <div id="userSelectModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
         <div class="bg-white w-full max-w-sm p-4 rounded shadow">

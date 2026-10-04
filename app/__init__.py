@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from .config import load_config
 import os
 import secrets
+import click
 
 db = SQLAlchemy()
 
@@ -135,6 +136,10 @@ def create_app(test_config: dict | None = None):
                 ensure_column(_RecurringExpense.__tablename__, 'monthly_mode', 'TEXT', 'day_of_month')
                 ensure_column(_RecurringExpense.__tablename__, 'category', 'TEXT', None)
                 ensure_column(_RecurringExpense.__tablename__, 'effective_from', 'DATE', None)
+                ensure_column(_RecurringExpense.__tablename__, 'split_with', 'TEXT', None)
+                ensure_column('expense_entry', 'skipped', 'INTEGER DEFAULT 0', 0)
+                ensure_column('expense_entry', 'split_with', 'TEXT', None)
+                ensure_column('expense_entry', 'is_settlement', 'INTEGER DEFAULT 0', 0)
                 # Basic settings table (key/value) for currency and categories
                 cur.execute("CREATE TABLE IF NOT EXISTS app_setting (key TEXT PRIMARY KEY, value TEXT)")
                 # New columns for QRCode and Reminder
@@ -214,9 +219,27 @@ def create_app(test_config: dict | None = None):
 
     @app.context_processor
     def inject_auth_state():
+        from . import admin as _admin
         return {
-            'is_authed': bool(session.get('authed'))
+            'is_authed': bool(session.get('authed')),
+            'admin_password_enabled': _admin.admin_password_enabled(),
+            'admin_unlocked': _admin.admin_unlocked(),
         }
+
+    @app.cli.command('set-admin-password')
+    @click.option('--clear', is_flag=True, help='Remove the admin password so admin is open to everyone again.')
+    def set_admin_password_command(clear):
+        """Set or reset the password required to act as admin."""
+        from . import admin as _admin
+        if clear:
+            _admin.clear_admin_password()
+            click.echo('Admin password removed. Anyone can switch to the admin user again.')
+            return
+        password = click.prompt('New admin password', hide_input=True, confirmation_prompt=True)
+        if len(password) < _admin.ADMIN_PASSWORD_MIN_LENGTH:
+            raise click.ClickException(f'Password must be at least {_admin.ADMIN_PASSWORD_MIN_LENGTH} characters.')
+        _admin.set_admin_password(password)
+        click.echo('Admin password saved. Switching to the admin user now asks for it.')
     
     # Add Jinja2 filter for JSON parsing
     @app.template_filter('from_json')
