@@ -156,3 +156,13 @@ def test_page_exposes_password_state(client):
     assert 'passwordEnabled: true' in html and 'unlocked: false' in html
     client.post('/admin/unlock', json={'password': '4321'})
     assert 'unlocked: true' in client.get('/').get_data(as_text=True)
+
+
+def test_unreadable_password_fails_closed(client, monkeypatch):
+    # A database error must not be mistaken for "no password set"
+    def broken():
+        raise RuntimeError('database is locked')
+    monkeypatch.setattr(admin, '_ensure_app_setting_table', broken)
+    with client.application.test_request_context():
+        with pytest.raises(RuntimeError):
+            admin.is_admin('Administrator')

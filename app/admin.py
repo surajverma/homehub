@@ -37,7 +37,9 @@ def get_admin_password_hash() -> str | None:
         ).fetchone()
         value = (row[0] or None) if row else None
     except Exception:
-        value = None
+        # Fail closed: an unreadable password must never switch protection off
+        db.session.rollback()
+        raise
     if has_request_context():
         g._admin_password_hash = value
     return value

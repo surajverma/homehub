@@ -154,8 +154,16 @@ def _split_people(config) -> list:
     return people
 
 
-def _split_from_form(form):
-    """Members ticked under "Split with", as stored JSON (None when not shared)."""
+class SplitError(ValueError):
+    """A submitted split that breaks its mode's rules."""
+
+
+def _split_from_form(form, total: float | None = None):
+    """Members ticked under "Split with", as stored JSON (None when not shared).
+
+    Uneven splits must add up the way their mode says (percentages to 100, amounts
+    to `total`); anything else raises SplitError rather than being reshaped silently.
+    """
     members = {}
     for raw in form.getlist('split_with'):
         name = sanitize_text(raw or '').strip()
@@ -164,18 +172,28 @@ def _split_from_form(form):
     if not members:
         return None
     mode = form.get('split_mode') or 'equal'
-    if mode in ('shares', 'percent', 'amount'):
-        weights = {}
-        for name, raw in members.items():
-            try:
-                w = float(form.get(f'split_weight__{raw}') or 0)
-            except (TypeError, ValueError):
-                w = 0
-            if w > 0 and math.isfinite(w):
-                weights[name] = w
-        if weights:
-            return json.dumps({'mode': mode, 'weights': weights})
-    return json.dumps(list(members))
+    if mode not in ('shares', 'percent', 'amount'):
+        return json.dumps(list(members))
+    weights = {}
+    for name, raw in members.items():
+        try:
+            w = float(form.get(f'split_weight__{raw}') or 0)
+        except (TypeError, ValueError):
+            raise SplitError(f'Invalid split value for {name}.')
+        if not math.isfinite(w) or w < 0:
+            raise SplitError(f'Invalid split value for {name}.')
+        if w > 0:
+            weights[name] = w
+    if not weights:
+        raise SplitError('Enter a split value for at least one person.')
+    entered = sum(weights.values())
+    if mode == 'percent' and abs(entered - 100) > 0.01:
+        raise SplitError(f'Percentages add up to {entered:g}%, not 100%.')
+    if mode == 'amount':
+        precision = _load_expense_settings().get('fraction_precision', 2)
+        if total is None or not math.isfinite(total) or abs(entered - total) > 0.5 / (10 ** precision):
+            raise SplitError('Split amounts must add up to the expense amount.')
+    return json.dumps({'mode': mode, 'weights': weights})
 
 
 def _compute_balances(precision: int = 2) -> dict:
@@ -362,12 +380,17 @@ def expenses():
             creator = bleach.clean(request.form.get('creator',''))
             sd = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else date.today()
             ed = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
-            db.session.add(RecurringExpense(title=title, unit_price=unit_price, default_quantity=default_quantity, frequency=frequency, monthly_mode=monthly_mode, category=category, start_date=sd, end_date=ed, creator=creator, effective_from=sd, split_with=_split_from_form(request.form)))
-            db.session.commit()
-            flash('Recurring expense added.', 'success')
             y = request.args.get('y') or today.year
             m = request.args.get('m') or today.month
             sel = request.args.get('sel')
+            try:
+                split_with = _split_from_form(request.form, unit_price * default_quantity)
+            except SplitError as exc:
+                flash(str(exc), 'error')
+                return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
+            db.session.add(RecurringExpense(title=title, unit_price=unit_price, default_quantity=default_quantity, frequency=frequency, monthly_mode=monthly_mode, category=category, start_date=sd, end_date=ed, creator=creator, effective_from=sd, split_with=split_with))
+            db.session.commit()
+            flash('Recurring expense added.', 'success')
             return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
         else:
             title = bleach.clean(request.form.get('title',''))
@@ -382,12 +405,17 @@ def expenses():
             if not amount and up is not None:
                 # A blank quantity means one unit, not zero
                 amount = up * (q if q is not None else 1)
-            db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer, split_with=_split_from_form(request.form)))
-            db.session.commit()
-            flash('Expense added.', 'success')
             y = request.args.get('y') or d.year
             m = request.args.get('m') or d.month
             sel = request.args.get('sel') or d.strftime('%Y-%m-%d')
+            try:
+                split_with = _split_from_form(request.form, amount)
+            except SplitError as exc:
+                flash(str(exc), 'error')
+                return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
+            db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer, split_with=split_with))
+            db.session.commit()
+            flash('Expense added.', 'success')
             return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
 
     try:
@@ -442,7 +470,15 @@ def edit_recurring_expense(rid):
     new_start_date = _parse_date(request.form.get('start_date'), r.start_date)
     new_end_date = _parse_date(request.form.get('end_date'), r.end_date)
 
-    new_split_with = _split_from_form(request.form) if request.form.get('split_present') else getattr(r, 'split_with', None)
+    if request.form.get('split_present'):
+        try:
+            qty = new_default_quantity if new_default_quantity is not None else 1.0
+            new_split_with = _split_from_form(request.form, (new_unit_price or 0.0) * qty)
+        except SplitError as exc:
+            flash(str(exc), 'error')
+            return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
+    else:
+        new_split_with = getattr(r, 'split_with', None)
     effective_from = _parse_date(request.form.get('effective_from'), today)
     # Effective date is meaningful only for apply/split strategies and should stay
     # inside the rule's active window.
@@ -695,7 +731,12 @@ def edit_expense_entry(entry_id):
     if not entry.amount and entry.unit_price is not None:
         entry.amount = entry.unit_price * (entry.quantity if entry.quantity is not None else 1)
     if request.form.get('split_present'):
-        entry.split_with = _split_from_form(request.form)
+        try:
+            entry.split_with = _split_from_form(request.form, entry.amount)
+        except SplitError as exc:
+            db.session.rollback()
+            flash(str(exc), 'error')
+            return _redirect_to_view(entry.date)
     db.session.commit()
     flash('Expense updated.', 'success')
     # Preserve view
@@ -721,6 +762,10 @@ def toggle_skip_expense_entry(entry_id):
     user = sanitize_text(request.form.get('user', ''))
     if not (is_admin(user) or user == (entry.payer or '')):
         flash('Not allowed to change entry.', 'error')
+        return _redirect_to_view(entry.date)
+    # Only recurring days can be skipped; a skipped day can always be restored
+    if not entry.skipped and (entry.recurring_id is None or entry.is_settlement):
+        flash('Only recurring days can be skipped.', 'error')
         return _redirect_to_view(entry.date)
     entry.skipped = not bool(entry.skipped)
     db.session.commit()
@@ -763,7 +808,7 @@ def settle_up():
         amount = float(request.form.get('amount') or 0)
     except (TypeError, ValueError):
         amount = 0
-    if not from_member or not to_member or from_member == to_member or amount <= 0:
+    if not from_member or not to_member or from_member == to_member or not math.isfinite(amount) or amount <= 0:
         flash('Invalid settlement.', 'error')
         return _redirect_to_view()
     if not (is_admin(user) or user in (from_member, to_member)):

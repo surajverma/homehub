@@ -11,8 +11,11 @@
       {% if allow_amount %}<option value="amount" {% if mode == 'amount' %}selected{% endif %}>By amount</option>{% endif %}
     </select>
   </div>
+  {# Keep stored participants who have since left the member list, so editing never drops them #}
+  {% set ns = namespace(members=people|list) %}
+  {% for member in (selected or []) %}{% if member not in ns.members %}{% set ns.members = ns.members + [member] %}{% endif %}{% endfor %}
   <div class="split-rows mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-    {% for member in people %}
+    {% for member in ns.members %}
     <div class="split-row flex items-center justify-between gap-2 text-sm">
       <label class="inline-flex items-center gap-2 min-w-0">
         <input type="checkbox" name="split_with" value="{{ member }}" class="rounded split-member" {% if selected is none or member in selected %}checked{% endif %}>
@@ -55,9 +58,10 @@ window.ExpenseSplit = {
   init(box, opts){
     const modeSel = box.querySelector('.split-mode');
     const hint = box.querySelector('.split-hint');
-    const rows = [...box.querySelectorAll('.split-row')].map(r=>({
-      cb: r.querySelector('.split-member'), w: r.querySelector('.split-weight'), out: r.querySelector('.split-share'),
-    }));
+    const rowsBox = box.querySelector('.split-rows');
+    const rowOf = el => ({ el, cb: el.querySelector('.split-member'), w: el.querySelector('.split-weight'), out: el.querySelector('.split-share') });
+    let rows = [...box.querySelectorAll('.split-row')].map(rowOf);
+    const blankRow = rows.length ? rows[0].el.cloneNode(true) : null;
     const num = n => String(Number(n.toFixed(2)));
     const prec = () => (opts.precision ? opts.precision() : 2);
     const total = () => { const t = parseFloat(opts.getTotal ? opts.getTotal() : ''); return isNaN(t) ? null : t; };
@@ -80,7 +84,7 @@ window.ExpenseSplit = {
     function refresh(){
       const mode = modeSel.value, uneven = mode !== 'equal', t = total();
       // Names alone fit two to a row; names with a value and a share need the full width
-      box.querySelector('.split-rows').classList.toggle('sm:grid-cols-2', !uneven);
+      rowsBox.classList.toggle('sm:grid-cols-2', !uneven);
       rows.forEach(r=>{ r.w.classList.toggle('hidden', !uneven); r.w.disabled = !uneven || !r.cb.checked; r.out.textContent = ''; });
       const rs = ticked();
       const weights = rs.map(r=> uneven ? (parseFloat(r.w.value) || 0) : 1);
@@ -107,14 +111,28 @@ window.ExpenseSplit = {
     }
 
     modeSel.addEventListener('change', ()=>{ fillDefaults(); refresh(); });
-    rows.forEach(r=>{
+    function wire(r){
       r.cb.addEventListener('change', ()=>{
         if (!r.cb.checked) r.w.value = '';
         else if (modeSel.value === 'shares' && !r.w.value) r.w.value = '1';
         refresh();
       });
       r.w.addEventListener('input', refresh);
-    });
+    }
+    rows.forEach(wire);
+    // A row for someone who is in a stored split but no longer a configured member
+    function addRow(name){
+      const el = blankRow.cloneNode(true);
+      el.dataset.extra = '1';
+      const r = rowOf(el);
+      r.cb.value = name;
+      r.w.name = `split_weight__${name}`;
+      r.w.setAttribute('aria-label', `${name} split value`);
+      el.querySelector('.block.truncate').textContent = name;
+      rowsBox.appendChild(el);
+      wire(r);
+      rows.push(r);
+    }
     const form = box.closest('form');
     if (form) form.addEventListener('submit', (evt)=>{
       if (!refresh()){ evt.preventDefault(); evt.stopImmediatePropagation(); hint.scrollIntoView({block: 'nearest'}); }
@@ -126,6 +144,9 @@ window.ExpenseSplit = {
       // members: array of names, or null to tick everyone
       set(members, mode, weights){
         modeSel.value = mode || 'equal';
+        // Drop extra rows from a previous entry, then add any stored participant without a row
+        rows = rows.filter(r=>{ if (r.el.dataset.extra){ r.el.remove(); return false; } return true; });
+        if (members && blankRow) members.forEach(name=>{ if (!rows.some(r=>r.cb.value === name)) addRow(name); });
         rows.forEach(r=>{
           r.cb.checked = members === null ? true : members.includes(r.cb.value);
           r.w.value = (weights && weights[r.cb.value] != null) ? weights[r.cb.value] : '';

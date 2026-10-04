@@ -366,3 +366,65 @@ def test_settling_rounded_shares_leaves_no_residue(client):
         client.post('/expenses/settle', data={'user': t['from'], 'from_member': t['from'], 'to_member': t['to'], 'amount': str(t['amount'])})
     with client.application.app_context():
         assert _compute_balances(2) == {'net': {}, 'settlements': []}
+
+
+def test_skip_rejects_entries_without_a_rule(client):
+    with client.application.app_context():
+        db.session.add(ExpenseEntry(date=date(2026, 6, 1), title='Lunch', amount=40.0, payer='Alice'))
+        db.session.commit()
+        eid = ExpenseEntry.query.filter_by(title='Lunch').one().id
+    client.post(f'/expenses/skip/{eid}', data={'user': 'Alice'})
+    with client.application.app_context():
+        assert not db.session.get(ExpenseEntry, eid).skipped
+
+
+@pytest.mark.parametrize('amount', ['nan', 'inf', '-5', '0'])
+def test_settle_rejects_non_positive_or_non_finite_amounts(client, amount):
+    client.post('/expenses/settle', data={'user': 'Bob', 'from_member': 'Bob', 'to_member': 'Alice', 'amount': amount})
+    with client.application.app_context():
+        assert ExpenseEntry.query.count() == 0
+
+
+@pytest.mark.parametrize('mode, weights', [
+    ('percent', {'Alice': '60', 'Bob': '60'}),
+    ('amount', {'Alice': '30', 'Bob': '30'}),
+    ('shares', {'Alice': '', 'Bob': ''}),
+    ('shares', {'Alice': 'nan', 'Bob': '1'}),
+])
+def test_invalid_uneven_split_is_rejected(client, mode, weights):
+    data = {
+        'form_type': 'single', 'title': 'Trip', 'amount': '90', 'payer': 'Alice', 'date': '2026-06-01',
+        'split_with': ['Alice', 'Bob'], 'split_mode': mode,
+    }
+    data.update({f'split_weight__{k}': v for k, v in weights.items()})
+    client.post('/expenses', data=data)
+    with client.application.app_context():
+        assert ExpenseEntry.query.count() == 0
+
+
+def test_invalid_split_leaves_edited_entry_unchanged(client):
+    with client.application.app_context():
+        db.session.add(ExpenseEntry(date=date(2026, 6, 1), title='Trip', amount=90.0, payer='Alice', split_with=json.dumps(['Alice', 'Bob'])))
+        db.session.commit()
+        eid = ExpenseEntry.query.one().id
+    client.post(f'/expenses/edit/{eid}', data={
+        'user': 'Alice', 'title': 'Changed', 'amount': '90', 'split_present': '1',
+        'split_with': ['Alice', 'Bob'], 'split_mode': 'percent',
+        'split_weight__Alice': '10', 'split_weight__Bob': '10',
+    })
+    with client.application.app_context():
+        e = db.session.get(ExpenseEntry, eid)
+        assert e.title == 'Trip'
+        assert json.loads(e.split_with) == ['Alice', 'Bob']
+
+
+def test_rule_edit_form_keeps_former_members(client):
+    # Dave left family_members but is still part of the stored split
+    with client.application.app_context():
+        rid = add_newspaper_rule()
+        rule = db.session.get(RecurringExpense, rid)
+        rule.split_with = json.dumps({'mode': 'shares', 'weights': {'Alice': 1, 'Dave': 2}})
+        db.session.commit()
+    html = client.get('/expenses/recurring').get_data(as_text=True)
+    assert 'name="split_weight__Dave" value="2' in html
+    assert 'value="Dave" class="rounded split-member" checked' in html
