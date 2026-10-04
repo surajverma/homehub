@@ -39,16 +39,16 @@ def login():
 
 @main_bp.route('/admin/unlock', methods=['POST'])
 def admin_unlock():
-    if not admin.admin_pin_enabled():
-        return jsonify({'ok': True, 'pin_enabled': False})
+    if not admin.admin_password_enabled():
+        return jsonify({'ok': True, 'password_enabled': False})
     client = request.remote_addr or 'unknown'
     wait = admin.unlock_wait_seconds(client)
     if wait:
         return jsonify({'ok': False, 'error': f'Too many attempts. Try again in {wait} seconds.'}), 429
     payload = request.get_json(silent=True) or {}
-    if admin.try_unlock(str(payload.get('pin', '')), client):
-        return jsonify({'ok': True, 'pin_enabled': True})
-    return jsonify({'ok': False, 'error': 'Incorrect admin PIN'}), 403
+    if admin.try_unlock(str(payload.get('password', '')), client):
+        return jsonify({'ok': True, 'password_enabled': True})
+    return jsonify({'ok': False, 'error': 'Incorrect admin password'}), 403
 
 
 @main_bp.route('/admin/lock', methods=['POST'])

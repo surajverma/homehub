@@ -1,8 +1,8 @@
 """Admin identity helpers.
 
 Admin is still picked by name in the user switcher. When the server owner has
-set an admin PIN (``flask set-admin-pin``), the name alone is no longer enough:
-the browser session must also have been unlocked with that PIN. Without a PIN
+set an admin password (``flask set-admin-password``), the name alone is no longer enough:
+the browser session must also have been unlocked with that password. Without a password
 the app behaves as it always has.
 """
 import time
@@ -12,8 +12,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import db
 
-ADMIN_PIN_KEY = 'admin_pin_hash'
-ADMIN_PIN_MIN_LENGTH = 4
+ADMIN_PASSWORD_KEY = 'admin_password_hash'
+ADMIN_PASSWORD_MIN_LENGTH = 4
 SESSION_KEY = 'admin_unlocked'
 
 # Failed unlock throttling (per client address, in memory)
@@ -26,40 +26,40 @@ def _ensure_app_setting_table():
     db.session.execute(db.text("CREATE TABLE IF NOT EXISTS app_setting (key TEXT PRIMARY KEY, value TEXT)"))
 
 
-def get_admin_pin_hash() -> str | None:
-    if has_request_context() and hasattr(g, '_admin_pin_hash'):
-        return g._admin_pin_hash
+def get_admin_password_hash() -> str | None:
+    if has_request_context() and hasattr(g, '_admin_password_hash'):
+        return g._admin_password_hash
     value = None
     try:
         _ensure_app_setting_table()
         row = db.session.execute(
-            db.text("SELECT value FROM app_setting WHERE key=:k"), {"k": ADMIN_PIN_KEY}
+            db.text("SELECT value FROM app_setting WHERE key=:k"), {"k": ADMIN_PASSWORD_KEY}
         ).fetchone()
         value = (row[0] or None) if row else None
     except Exception:
         value = None
     if has_request_context():
-        g._admin_pin_hash = value
+        g._admin_password_hash = value
     return value
 
 
-def set_admin_pin(pin: str) -> None:
+def set_admin_password(password: str) -> None:
     _ensure_app_setting_table()
     db.session.execute(
         db.text("INSERT INTO app_setting(key,value) VALUES(:k, :v) ON CONFLICT(key) DO UPDATE SET value=excluded.value"),
-        {"k": ADMIN_PIN_KEY, "v": generate_password_hash(pin, method='pbkdf2:sha256')},
+        {"k": ADMIN_PASSWORD_KEY, "v": generate_password_hash(password, method='pbkdf2:sha256')},
     )
     db.session.commit()
 
 
-def clear_admin_pin() -> None:
+def clear_admin_password() -> None:
     _ensure_app_setting_table()
-    db.session.execute(db.text("DELETE FROM app_setting WHERE key=:k"), {"k": ADMIN_PIN_KEY})
+    db.session.execute(db.text("DELETE FROM app_setting WHERE key=:k"), {"k": ADMIN_PASSWORD_KEY})
     db.session.commit()
 
 
-def admin_pin_enabled() -> bool:
-    return bool(get_admin_pin_hash())
+def admin_password_enabled() -> bool:
+    return bool(get_admin_password_hash())
 
 
 def admin_aliases() -> set[str]:
@@ -67,23 +67,23 @@ def admin_aliases() -> set[str]:
     return {admin_name, 'Administrator', 'admin'}
 
 
-def _fingerprint(pin_hash: str) -> str:
-    # Ties an unlocked session to the current PIN so a reset locks everyone out
-    return pin_hash[-16:]
+def _fingerprint(password_hash: str) -> str:
+    # Ties an unlocked session to the current password so a reset locks everyone out
+    return password_hash[-16:]
 
 
 def admin_unlocked() -> bool:
-    pin_hash = get_admin_pin_hash()
-    if not pin_hash:
+    password_hash = get_admin_password_hash()
+    if not password_hash:
         return False
-    return session.get(SESSION_KEY) == _fingerprint(pin_hash)
+    return session.get(SESSION_KEY) == _fingerprint(password_hash)
 
 
 def is_admin(user: str | None) -> bool:
-    """True when ``user`` is the admin and, if a PIN is set, this session unlocked it."""
+    """True when ``user`` is the admin and, if a password is set, this session unlocked it."""
     if user not in admin_aliases():
         return False
-    if not admin_pin_enabled():
+    if not admin_password_enabled():
         return True
     return admin_unlocked()
 
@@ -94,11 +94,11 @@ def unlock_wait_seconds(client: str) -> int:
     return int(remaining) + 1 if count >= MAX_FAILED_ATTEMPTS and remaining > 0 else 0
 
 
-def try_unlock(pin: str, client: str) -> bool:
-    pin_hash = get_admin_pin_hash()
-    if pin_hash and check_password_hash(pin_hash, pin or ''):
+def try_unlock(password: str, client: str) -> bool:
+    password_hash = get_admin_password_hash()
+    if password_hash and check_password_hash(password_hash, password or ''):
         _failed_attempts.pop(client, None)
-        session[SESSION_KEY] = _fingerprint(pin_hash)
+        session[SESSION_KEY] = _fingerprint(password_hash)
         return True
     count, until = _failed_attempts.get(client, (0, 0.0))
     if count >= MAX_FAILED_ATTEMPTS and until <= time.time():

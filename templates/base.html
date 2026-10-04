@@ -69,16 +69,16 @@
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     {% block extra_head %}{% endblock %}
     <script>
-        // Admin PIN state. When a PIN is set, a stored admin name only counts once this session unlocked it.
+        // Admin password state. When a password is set, a stored admin name only counts once this session unlocked it.
         window.HomeHubAdmin = {
-            pinEnabled: {{ 'true' if admin_pin_enabled else 'false' }},
+            passwordEnabled: {{ 'true' if admin_password_enabled else 'false' }},
             unlocked: {{ 'true' if admin_unlocked else 'false' }},
             names: [{{ config.admin_name | tojson }}, 'Administrator', 'admin'],
             isAdminName: function(name){ return this.names.indexOf(name) !== -1; },
-            needsPin: function(name){ return this.pinEnabled && !this.unlocked && this.isAdminName(name); }
+            needsPassword: function(name){ return this.passwordEnabled && !this.unlocked && this.isAdminName(name); }
         };
         try{
-            if (window.HomeHubAdmin.needsPin(localStorage.getItem('username'))) { localStorage.removeItem('username'); }
+            if (window.HomeHubAdmin.needsPassword(localStorage.getItem('username'))) { localStorage.removeItem('username'); }
         }catch(e){}
     </script>
     <script>
@@ -225,14 +225,14 @@
             });            
             setTimeout(()=>wrap.remove(), msgs.length*70 + 200);
         })();        
-        // Ask for the admin PIN; resolves true once the server unlocked this session
+        // Ask for the admin password; resolves true once the server unlocked this session
         function requestAdminUnlock(){
             return new Promise(function(resolve){
-                const modal = document.getElementById('adminPinModal');
-                const input = document.getElementById('adminPinInput');
-                const error = document.getElementById('adminPinError');
-                const form = document.getElementById('adminPinForm');
-                const cancel = document.getElementById('adminPinCancel');
+                const modal = document.getElementById('adminPasswordModal');
+                const input = document.getElementById('adminPasswordInput');
+                const error = document.getElementById('adminPasswordError');
+                const form = document.getElementById('adminPasswordForm');
+                const cancel = document.getElementById('adminPasswordCancel');
                 if (!modal || !input || !form){ resolve(false); return; }
                 const close = function(ok){
                     modal.classList.add('hidden'); modal.classList.remove('flex');
@@ -249,7 +249,7 @@
                         const resp = await fetch('/admin/unlock', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ pin: input.value })
+                            body: JSON.stringify({ password: input.value })
                         });
                         const data = await resp.json().catch(function(){ return {}; });
                         if (resp.ok && data.ok){ window.HomeHubAdmin.unlocked = true; close(true); return; }
@@ -275,7 +275,7 @@
             modal.classList.add('flex');
             confirmBtn.onclick = async function(){
                 const selected = input.value;
-                if (selected && window.HomeHubAdmin.needsPin(selected)){
+                if (selected && window.HomeHubAdmin.needsPassword(selected)){
                     if (!(await requestAdminUnlock())) return;
                     localStorage.setItem('username', selected);
                     location.reload();
@@ -316,7 +316,7 @@
                 }
                 switcher.addEventListener('change', async function(){
                     const admin = window.HomeHubAdmin;
-                    if (admin.needsPin(this.value)){
+                    if (admin.needsPassword(this.value)){
                         const target = this.value;
                         const previous = localStorage.getItem('username') || '';
                         if (!(await requestAdminUnlock())){ this.value = previous; return; }
@@ -401,18 +401,18 @@
         }
         // renderWelcome/applyUserContext are invoked from DOMContentLoaded
     </script>
-    <!-- Admin PIN prompt -->
-    <div id="adminPinModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50" style="z-index:60">
-        <form id="adminPinForm" class="bg-white w-full max-w-sm p-4 rounded shadow" autocomplete="off">
-            <h3 class="text-lg font-semibold mb-3">Admin PIN</h3>
-            <p class="text-sm text-gray-600 mb-3">Enter the admin PIN to continue as {{ config.admin_name }}.</p>
+    <!-- Admin password prompt -->
+    <div id="adminPasswordModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50" style="z-index:60">
+        <form id="adminPasswordForm" class="bg-white w-full max-w-sm p-4 rounded shadow" autocomplete="off">
+            <h3 class="text-lg font-semibold mb-3">Admin password</h3>
+            <p class="text-sm text-gray-600 mb-3">Enter the admin password to continue as {{ config.admin_name }}.</p>
             <div class="mb-3">
-                <label class="block text-sm text-gray-700 mb-1" for="adminPinInput">PIN</label>
-                <input id="adminPinInput" type="password" class="w-full border rounded p-2" autocomplete="off" required>
-                <p id="adminPinError" class="text-sm text-red-600 mt-1" role="alert"></p>
+                <label class="block text-sm text-gray-700 mb-1" for="adminPasswordInput">Password</label>
+                <input id="adminPasswordInput" type="password" class="w-full border rounded p-2" autocomplete="off" required>
+                <p id="adminPasswordError" class="text-sm text-red-600 mt-1" role="alert"></p>
             </div>
             <div class="flex justify-end gap-2">
-                <button type="button" id="adminPinCancel" class="px-3 py-2 rounded bg-gray-100 text-gray-800">Cancel</button>
+                <button type="button" id="adminPasswordCancel" class="px-3 py-2 rounded bg-gray-100 text-gray-800">Cancel</button>
                 <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white">Unlock</button>
             </div>
         </form>
