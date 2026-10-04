@@ -95,14 +95,14 @@
                     </button>
                 </form>
                 <a href="/chores/edit/{{ chore.id }}" class="btn btn-secondary edit-btn" data-creator="{{ chore.creator }}">Edit</a>
-                <form method="POST" action="{{ '/chores/recurring/delete/' ~ chore.recurring_id if chore.recurring_id else '/chores/delete/' ~ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}">
+                <form method="POST" action="{{ '/chores/recurring/delete/' ~ chore.recurring_id if chore.recurring_id else '/chores/delete/' ~ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}" data-confirm="{{ 'Delete this recurring chore and its schedule?' if chore.recurring_id else 'Delete this chore?' }}">
                     <input type="hidden" name="user">
                     <button type="submit" class="btn btn-danger" title="Delete"><i class="fa fa-times"></i></button>
                 </form>
             </div>
             <div class="flex flex-wrap gap-2 items-center justify-between text-xs text-gray-500">
                 <div>
-                    By {{ chore.creator }} at {{ chore.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                    By {{ chore.creator }} at {{ chore.timestamp|localtime }}
                     {% if chore.recurring_id %}
                         • <span class="font-medium text-indigo-600">Recurring chore</span>
                         {% if chore.due_date %}
@@ -131,7 +131,7 @@ document.getElementById('settingsUser').value = localStorage.getItem('username')
 document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username') || '');
 
 (function(){
-    const adminName = '{{ config.admin_name }}';
+    const adminName = {{ config.admin_name|tojson }};
     const current = localStorage.getItem('username') || '';
     const wrap = document.getElementById('homepageToggleWrap');
     const btn = document.getElementById('homepageSaveBtn');
@@ -241,7 +241,7 @@ const T = Tags.scoped('chores');
 
 // Hide delete for non-owners; re-apply on user switch
 function applyChoreUserContext(){
-    const adminName='{{ config.admin_name }}';
+    const adminName={{ config.admin_name|tojson }};
     const current=localStorage.getItem('username')||'';
     const allowed = (creator) => (current===creator || current===adminName || current==='Administrator' || current==='admin');
     document.querySelectorAll('.delete-form').forEach(f=>{

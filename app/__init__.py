@@ -1,11 +1,35 @@
 from flask import Flask, session
 from flask_sqlalchemy import SQLAlchemy
 from .config import load_config
+import logging
 import os
 import secrets
 import click
+from datetime import datetime, timezone
 
 db = SQLAlchemy()
+
+
+def _load_or_create_secret_key(data_dir: str) -> str:
+    path = os.path.join(data_dir, 'secret_key')
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            existing = f.read().strip()
+        if existing:
+            return existing
+    except FileNotFoundError:
+        pass
+    except OSError:
+        logging.getLogger(__name__).warning('Could not read %s; using a temporary secret key', path)
+        return secrets.token_hex(32)
+    secret = secrets.token_hex(32)
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(secret)
+    except OSError:
+        logging.getLogger(__name__).warning('Could not write %s; sessions will reset on restart', path)
+    return secret
 
 
 def create_app(test_config: dict | None = None):
@@ -33,12 +57,8 @@ def create_app(test_config: dict | None = None):
     db_path = os.path.join(base_dir, 'data', 'app.db')
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    # Generate a strong SECRET_KEY if not provided via env
-    secret = os.environ.get('SECRET_KEY')
-    if not secret:
-        import secrets as _secrets
-        secret = _secrets.token_hex(32)
-    app.config['SECRET_KEY'] = secret
+    # SECRET_KEY from env, else one generated once and kept in data/ so restarts don't log everyone out
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or _load_or_create_secret_key(data_dir)
     # Explicitly disable CSRF (forms are simple and app runs on home network)
     app.config['WTF_CSRF_ENABLED'] = False
 
@@ -241,6 +261,15 @@ def create_app(test_config: dict | None = None):
         _admin.set_admin_password(password)
         click.echo('Admin password saved. Switching to the admin user now asks for it.')
     
+    # Timestamps are stored as naive UTC; show them in the server's local time (set with TZ)
+    @app.template_filter('localtime')
+    def localtime_filter(value, fmt='%Y-%m-%d %H:%M'):
+        if not isinstance(value, datetime):
+            return value
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone().strftime(fmt)
+
     # Add Jinja2 filter for JSON parsing
     @app.template_filter('from_json')
     def from_json_filter(s):

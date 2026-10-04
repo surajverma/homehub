@@ -225,6 +225,15 @@
             });            
             setTimeout(()=>wrap.remove(), msgs.length*70 + 200);
         })();        
+        // Forms with data-confirm ask before submitting (deletes). Capture phase runs before page handlers.
+        document.addEventListener('submit', function(ev){
+            const form = ev.target;
+            const msg = form && form.getAttribute && form.getAttribute('data-confirm');
+            if (msg && !window.confirm(msg)){
+                ev.preventDefault();
+                ev.stopImmediatePropagation();
+            }
+        }, true);
         // Ask for the admin password; resolves true once the server unlocked this session
         function requestAdminUnlock(){
             return new Promise(function(resolve){
@@ -299,7 +308,7 @@
                 const familyEl = document.getElementById('familyData');
                 let family = [];
                 try { family = JSON.parse(familyEl?.textContent || '[]'); } catch(e) { family = []; }
-                const adminName = '{{ config.admin_name }}';
+                const adminName = {{ config.admin_name|tojson }};
                 const users = [adminName, ...family];
                 switcher.innerHTML = '';
                 users.forEach(u => {
@@ -375,7 +384,7 @@
         }
         function applyUserContext(){
             const current = localStorage.getItem('username') || '';
-            const adminName = '{{ config.admin_name }}';
+            const adminName = {{ config.admin_name|tojson }};
             const allowed = (creator) => (current === creator || current === adminName || current === 'Administrator' || current === 'admin');
             // hidden inputs
             document.querySelectorAll('input[name="creator"]').forEach(function(i){ i.value = current; });

@@ -73,7 +73,7 @@
                 <div class="flex-1">
                     <h3 class="text-lg font-semibold text-gray-800">{{ recipe.title }}</h3>
                     <div class="text-xs text-gray-500 mt-1">
-                        By {{ recipe.creator }} • {{ recipe.timestamp.strftime('%b %d, %Y') }}
+                        By {{ recipe.creator }} • {{ recipe.timestamp|localtime('%b %d, %Y') }}
                     </div>
                     <div class="mt-2 recipe-tags-display" id="tags-recipe-{{ recipe.id }}" data-tags='{{ recipe.tags|safe }}'></div>
                 </div>
@@ -109,9 +109,9 @@
                     <a href="/recipes/edit/{{ recipe.id }}" class="btn btn-secondary btn-sm edit-btn" data-creator="{{ recipe.creator }}">
                         <i class="fa-solid fa-edit mr-1"></i>Edit
                     </a>
-                    <form method="POST" action="/recipes/delete/{{ recipe.id }}" class="delete-form inline" data-creator="{{ recipe.creator }}">
+                    <form method="POST" action="/recipes/delete/{{ recipe.id }}" class="delete-form inline" data-creator="{{ recipe.creator }}" data-confirm="Delete this recipe?">
                         <input type="hidden" name="user">
-                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this recipe?')">
+                        <button type="submit" class="btn btn-danger btn-sm">
                             <i class="fa-solid fa-trash mr-1"></i>Delete
                         </button>
                     </form>
@@ -130,7 +130,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const adminName = '{{ config.admin_name }}';
+    const adminName = {{ config.admin_name|tojson }};
     const currentUser = () => localStorage.getItem('username') || '';
     const isAllowed = (creator) => (
         currentUser() === creator ||

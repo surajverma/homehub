@@ -12,8 +12,8 @@
         <li class="card p-4 mb-2 flex flex-wrap gap-2 items-center">
             <span class="flex-1">{{ url.original_url }}</span>
             <a href="/s/{{ url.short_code }}" class="text-blue-600 underline">{{ (request.host_url ~ 's/' ~ url.short_code) }}</a>
-            <div class="text-xs text-gray-500">By {{ url.creator }} at {{ url.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
-            <form method="POST" action="/shorten/delete/{{ url.id }}" class="delete-form" data-creator="{{ url.creator }}">
+            <div class="text-xs text-gray-500">By {{ url.creator }} at {{ url.timestamp|localtime }}</div>
+            <form method="POST" action="/shorten/delete/{{ url.id }}" class="delete-form" data-creator="{{ url.creator }}" data-confirm="Delete this short link?">
                 <input type="hidden" name="user">
                 <button type="submit" class="btn btn-danger">Delete</button>
             </form>
@@ -26,7 +26,7 @@ document.getElementById('creator').value = localStorage.getItem('username');
 document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
 // Hide delete for non-owners
 (function(){
-    const adminName='{{ config.admin_name }}';
+    const adminName={{ config.admin_name|tojson }};
     const current=localStorage.getItem('username');
     document.querySelectorAll('.delete-form').forEach(f=>{
         const c=f.getAttribute('data-creator');

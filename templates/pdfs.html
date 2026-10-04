@@ -17,8 +17,8 @@
             <a href="/pdfs/{{ pdf.compressed_path }}" class="btn btn-primary">
                 <i class="fa-solid fa-download" aria-hidden="true"></i> Download
             </a>
-            <div class="text-xs text-gray-500">By {{ pdf.creator }} at {{ pdf.upload_time.strftime('%Y-%m-%d %H:%M') }}</div>
-            <form method="POST" action="/pdfs/delete/{{ pdf.id }}" class="delete-form" data-creator="{{ pdf.creator }}">
+            <div class="text-xs text-gray-500">By {{ pdf.creator }} at {{ pdf.upload_time|localtime }}</div>
+            <form method="POST" action="/pdfs/delete/{{ pdf.id }}" class="delete-form" data-creator="{{ pdf.creator }}" data-confirm="Delete this PDF?">
                 <input type="hidden" name="user">
                 <button type="submit" class="btn btn-danger">Delete</button>
             </form>
@@ -31,7 +31,7 @@ document.getElementById('creator').value = localStorage.getItem('username');
 document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
 // Hide delete for non-owners
 (function(){
-    const adminName='{{ config.admin_name }}';
+    const adminName={{ config.admin_name|tojson }};
     const current=localStorage.getItem('username');
     document.querySelectorAll('.delete-form').forEach(f=>{
         const c=f.getAttribute('data-creator');

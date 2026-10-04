@@ -37,8 +37,8 @@
             </span>
             <a class="btn btn-primary" href="/static/{{ q.filename }}" target="_blank">View</a>
             <a class="btn btn-success" href="/static/{{ q.filename }}" download>Download</a>
-            <span class="text-xs text-gray-500">By {{ q.creator }} at {{ q.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
-            <form method="POST" action="/qr/delete/{{ q.id }}" class="delete-form" data-creator="{{ q.creator }}">
+            <span class="text-xs text-gray-500">By {{ q.creator }} at {{ q.timestamp|localtime }}</span>
+            <form method="POST" action="/qr/delete/{{ q.id }}" class="delete-form" data-creator="{{ q.creator }}" data-confirm="Delete this QR code?">
                 <input type="hidden" name="user">
                 <button type="submit" class="btn btn-danger">Delete</button>
             </form>
@@ -51,7 +51,7 @@ document.getElementById('creator').value = localStorage.getItem('username');
 document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
 // Hide delete for non-owners
 (function(){
-    const adminName='{{ config.admin_name }}';
+    const adminName={{ config.admin_name|tojson }};
     const current=localStorage.getItem('username');
     document.querySelectorAll('.delete-form').forEach(f=>{
         const c=f.getAttribute('data-creator');

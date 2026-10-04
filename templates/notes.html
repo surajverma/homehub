@@ -16,11 +16,11 @@
         <li class="card p-4 mb-2 flex justify-between items-center">
             <div class="pr-2">
                 <div class="font-semibold break-words">{{ note.content }}</div>
-                <div class="text-xs text-gray-500">By {{ note.creator }} at {{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+                <div class="text-xs text-gray-500">By {{ note.creator }} at {{ note.timestamp|localtime }}</div>
             </div>
             <div class="flex items-center gap-2">
                 <button type="button" class="btn btn-secondary edit-btn" data-id="{{ note.id }}" data-content="{{ note.content|e }}" data-creator="{{ note.creator }}">Edit</button>
-                <form method="POST" action="/notes/delete/{{ note.id }}" class="delete-form" data-creator="{{ note.creator }}">
+                <form method="POST" action="/notes/delete/{{ note.id }}" class="delete-form" data-creator="{{ note.creator }}" data-confirm="Delete this note?">
                     <input type="hidden" name="user">
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
@@ -34,7 +34,7 @@ document.getElementById('creator').value = localStorage.getItem('username');
 document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
 // Hide delete/edit for non-owners
 (function(){
-    const adminName='{{ config.admin_name }}';
+    const adminName={{ config.admin_name|tojson }};
     const current=localStorage.getItem('username');
     document.querySelectorAll('.delete-form').forEach(f=>{
         const c=f.getAttribute('data-creator');

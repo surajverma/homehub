@@ -47,13 +47,13 @@
                     </button>
                 </form>
                 <button type="button" class="btn btn-secondary edit-btn" data-id="{{ item.id }}" data-creator="{{ item.creator }}">Edit</button>
-                <form method="POST" action="/shopping/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}">
+                <form method="POST" action="/shopping/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}" data-confirm="Delete this item?">
                     <input type="hidden" name="user">
                     <button type="submit" class="btn btn-danger" title="Delete"><i class="fa fa-times"></i></button>
                 </form>
             </div>
             <div class="flex flex-wrap gap-2 items-center justify-between text-xs text-gray-500">
-                <div>By {{ item.creator }} at {{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+                <div>By {{ item.creator }} at {{ item.timestamp|localtime }}</div>
                 <div class="flex-1"></div>
             </div>
             <div class="md:hidden flex flex-wrap gap-2 items-center item-tags" data-id="{{ item.id }}"></div>
@@ -141,7 +141,7 @@ const T = Tags.scoped('shopping');
 
 // Hide edit/delete for non-owners (fallback; base template also handles)
 function applyShoppingUserContext(){
-    const adminName='{{ config.admin_name }}';
+    const adminName={{ config.admin_name|tojson }};
     const current=localStorage.getItem('username')||'';
     const allowed=(creator)=> (current===creator || current===adminName || current==='Administrator' || current==='admin');
     document.querySelectorAll('.delete-form').forEach(f=>{
