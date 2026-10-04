@@ -133,6 +133,16 @@ def create_app(test_config: dict | None = None):
         _admin.set_admin_password(password)
         click.echo('Admin password saved. Switching to the admin user now asks for it.')
     
+    # Static URLs carry the file's mtime so the service worker and browsers fetch fresh copies after an update
+    @app.template_global('asset_url')
+    def asset_url(filename):
+        from flask import url_for
+        try:
+            version = int(os.path.getmtime(os.path.join(app.static_folder, filename)))
+        except OSError:
+            return url_for('static', filename=filename)
+        return url_for('static', filename=filename, v=version)
+
     # Timestamps are stored as naive UTC; show them in the server's local time (set with TZ)
     @app.template_filter('localtime')
     def localtime_filter(value, fmt='%Y-%m-%d %H:%M'):

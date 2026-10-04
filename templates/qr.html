@@ -54,17 +54,5 @@
         {% endfor %}
     </ul>
 </div>
-<script>
-document.getElementById('creator').value = localStorage.getItem('username');
-document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username'));
-// Hide delete for non-owners
-(function(){
-    const adminName={{ config.admin_name|tojson }};
-    const current=localStorage.getItem('username');
-    document.querySelectorAll('.delete-form').forEach(f=>{
-        const c=f.getAttribute('data-creator');
-        if(!(current===c||current===adminName||current==='Administrator'||current==='admin')) f.style.display='none';
-    });
-})();
-</script>
+<script src="{{ asset_url('js/owner_controls.js') }}"></script>
 {% endblock %}
