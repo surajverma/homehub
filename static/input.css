@@ -238,3 +238,8 @@ textarea::placeholder {
 .btn-primary:hover {
     opacity: 0.8;
 }
+
+/* Sticky top bar: solid page background so content doesn't show through while scrolling */
+.topbar {
+    background-color: var(--background-color);
+}

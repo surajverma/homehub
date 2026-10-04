@@ -3,8 +3,8 @@
 <div class="mx-auto">
     <h2 class="text-xl font-bold mb-4">Expiry Tracker</h2>
     <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
-        <input type="text" name="name" class="md:col-span-5 w-full p-2 border rounded" placeholder="Item name..." required>
-        <input type="date" name="expiry_date" class="md:col-span-4 w-full p-2 border rounded" required>
+        <input type="text" name="name" aria-label="Item name" class="md:col-span-5 w-full p-2 border rounded" placeholder="Item name..." required>
+        <input type="date" name="expiry_date" aria-label="Expiry date" class="md:col-span-4 w-full p-2 border rounded" required>
         <input type="hidden" name="creator" id="creator">
         <button type="submit" class="md:col-span-3 btn btn-primary">Add Item</button>
     </form>

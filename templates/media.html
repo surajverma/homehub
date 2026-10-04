@@ -3,12 +3,12 @@
 <div class="mx-auto">
     <h2 class="text-xl font-bold mb-4">Media Downloader</h2>
     <form method="POST" class="mb-4 grid gap-2 md:grid-cols-12 grid-cols-1 items-end">
-        <input type="url" name="url" class="w-full p-2 border rounded md:col-span-6" placeholder="Paste media URL..." required>
-        <select name="format" class="p-2 border rounded md:col-span-2">
+        <input type="url" name="url" aria-label="Media URL" class="w-full p-2 border rounded md:col-span-6" placeholder="Paste media URL..." required>
+        <select name="format" aria-label="Format" class="p-2 border rounded md:col-span-2">
             <option value="mp4">MP4 (video)</option>
             <option value="mp3">MP3 (audio)</option>
         </select>
-        <select name="quality" class="p-2 border rounded md:col-span-2">
+        <select name="quality" aria-label="Quality" class="p-2 border rounded md:col-span-2">
             <option value="best">Best Available</option>
             <option value="bestvideo[height<=1080]+bestaudio/best[height<=1080]">Up to 1080p</option>
             <option value="bestvideo[height<=720]+bestaudio/best[height<=720]">Up to 720p</option>

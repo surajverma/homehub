@@ -5,7 +5,7 @@
     <form method="POST" id="shoppingForm" class="mb-2">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div class="md:col-span-5">
-                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Item</label>
+                <label for="itemInput" class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Item</label>
                 <div class="relative h-11">
                     <input type="text" name="item" id="itemInput" class="w-full h-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Add item..." required autocomplete="off">
                     <!-- Autofill dropdown anchored to input width -->
@@ -13,7 +13,7 @@
                 </div>
             </div>
             <div class="md:col-span-4">
-                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Tags (stores, categories)</label>
+                <label for="tagInput" class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Tags (stores, categories)</label>
                 <div class="flex flex-wrap gap-2 rounded  focus-within:ring-1 focus-within:ring-blue-500 items-start h-11" id="tagInputWrap">
                     <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Add tag and press Enter">
                 </div>
@@ -21,7 +21,7 @@
                 <div class="mt-2 flex flex-wrap gap-2 text-xs" id="tagLibrary"></div>
             </div>
             <div class="md:col-span-3">
-                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1 opacity-0">Action</label>
+                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1 opacity-0" aria-hidden="true">Action</label>
                 <input type="hidden" name="creator" id="creator">
                 <button type="submit" class="w-full btn btn-primary h-11">Add</button>
             </div>
@@ -49,7 +49,7 @@
                 <button type="button" class="btn btn-secondary edit-btn" data-id="{{ item.id }}" data-creator="{{ item.creator }}">Edit</button>
                 <form method="POST" action="/shopping/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}" data-confirm="Delete this item?">
                     <input type="hidden" name="user">
-                    <button type="submit" class="btn btn-danger" title="Delete"><i class="fa fa-times"></i></button>
+                    <button type="submit" class="btn btn-danger" title="Delete" aria-label="Delete {{ item.item }}"><i class="fa fa-times" aria-hidden="true"></i></button>
                 </form>
             </div>
             <div class="flex flex-wrap gap-2 items-center justify-between text-xs text-gray-500">
@@ -169,11 +169,11 @@ document.addEventListener('user-switched', applyShoppingUserContext);
             <div class="bg-white dark:bg-gray-800 rounded shadow max-w-lg w-full p-4">
                 <h3 class="text-lg font-semibold mb-3">Edit Item</h3>
                 <div class="mb-3">
-                    <label class="block text-sm mb-1">Item</label>
+                    <label for="editItemInput" class="block text-sm mb-1">Item</label>
                     <input type="text" id="editItemInput" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
                 </div>
                 <div>
-                    <label class="block text-sm mb-1">Tags</label>
+                    <label for="editTagInput" class="block text-sm mb-1">Tags</label>
                     <div id="editTagWrap" class="flex flex-wrap gap-2 border border-gray-300 dark:border-gray-600 rounded p-2 focus-within:ring-1 focus-within:ring-blue-500">
                         <input type="text" id="editTagInput" class="flex-1 min-w-[140px] outline-none bg-transparent" placeholder="Add tag and press Enter" />
                     </div>
@@ -259,7 +259,7 @@ document.addEventListener('user-switched', applyShoppingUserContext);
             const row = document.createElement('div');
             row.className = 'flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer select-none';
             const text = document.createElement('div'); text.textContent = s; text.className='truncate pr-2 flex-1';
-            const del = document.createElement('button'); del.type='button'; del.title='Delete suggestion'; del.className='text-red-600'; del.innerHTML='<i class="fa fa-times"></i>';
+            const del = document.createElement('button'); del.type='button'; del.title='Delete suggestion'; del.setAttribute('aria-label','Delete suggestion '+s); del.className='text-red-600'; del.innerHTML='<i class="fa fa-times"></i>';
             del.addEventListener('click', async (e)=>{
                 e.stopPropagation();
                 // Hide locally and ask server to drop one history row for this suggestion (best effort)

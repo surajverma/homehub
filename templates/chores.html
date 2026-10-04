@@ -17,14 +17,14 @@
         <input type="hidden" name="recurring_rule_id" id="recurringRuleId" value="{{ form_recurring_rule_id if form_recurring_rule_id is defined else '' }}">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div class="md:col-span-5">
-                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Chore</label>
+                <label for="choreInput" class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Chore</label>
                 <div class="relative h-11">
                     <input type="text" name="description" id="choreInput" value="{{ form_description if form_description is defined else '' }}" class="w-full h-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Add a chore..." required autocomplete="off">
                     <div id="choreSuggestions" class="absolute left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow hidden max-h-72 overflow-auto"></div>
                 </div>
             </div>
             <div class="md:col-span-4">
-                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Tags (assignees, context)</label>
+                <label for="tagInput" class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Tags (assignees, context)</label>
                 <div class="flex flex-wrap gap-2 rounded focus-within:ring-1 focus-within:ring-blue-500 items-start h-11" id="tagInputWrap">
                     <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Add tag and press Enter">
                 </div>
@@ -32,7 +32,7 @@
                 <div class="mt-2 flex flex-wrap gap-2 text-xs" id="tagLibrary"></div>
             </div>
             <div class="md:col-span-3">
-                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1 opacity-0">Action</label>
+                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1 opacity-0" aria-hidden="true">Action</label>
                 <input type="hidden" name="creator" id="creator">
                 <input type="hidden" name="user" id="choreUser">
                 <div class="flex gap-2 h-11">
@@ -51,12 +51,12 @@
             <div class="md:col-span-12 hidden" id="recurringChoreControls">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end rounded p-1">
                     <div class="md:col-span-3">
-                        <label class="block text-xs text-gray-600 mb-1">Repeat this every</label>
-                        <input type="number" min="1" max="999" step="1" name="rec_interval" value="{{ form_rec_interval if form_rec_interval is defined else 1 }}" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
+                        <label for="chores-rec-interval" class="block text-xs text-gray-600 mb-1">Repeat this every</label>
+                        <input id="chores-rec-interval" type="number" min="1" max="999" step="1" name="rec_interval" value="{{ form_rec_interval if form_rec_interval is defined else 1 }}" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
                     </div>
                     <div class="md:col-span-3">
-                        <label class="block text-xs text-gray-600 mb-1">Unit</label>
-                        <select name="rec_unit" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
+                        <label for="chores-rec-unit" class="block text-xs text-gray-600 mb-1">Unit</label>
+                        <select id="chores-rec-unit" name="rec_unit" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
                             <option value="day" {% if form_rec_unit is defined and form_rec_unit == 'day' %}selected{% endif %}>day</option>
                             <option value="week" {% if form_rec_unit is defined and form_rec_unit == 'week' %}selected{% endif %}>week</option>
                             <option value="month" {% if form_rec_unit is defined and form_rec_unit == 'month' %}selected{% endif %}>month</option>
@@ -64,12 +64,12 @@
                         </select>
                     </div>
                     <div class="md:col-span-3">
-                        <label class="block text-xs text-gray-600 mb-1">Starting from</label>
-                        <input type="date" name="rec_start_date" value="{{ form_rec_start_date.strftime('%Y-%m-%d') if form_rec_start_date is defined and form_rec_start_date else '' }}" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
+                        <label for="chores-rec-start-date" class="block text-xs text-gray-600 mb-1">Starting from</label>
+                        <input id="chores-rec-start-date" type="date" name="rec_start_date" value="{{ form_rec_start_date.strftime('%Y-%m-%d') if form_rec_start_date is defined and form_rec_start_date else '' }}" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
                     </div>
                     <div class="md:col-span-3">
-                        <label class="block text-xs text-gray-600 mb-1">Till</label>
-                        <input type="date" name="rec_end_date" value="{{ form_rec_end_date.strftime('%Y-%m-%d') if form_rec_end_date is defined and form_rec_end_date else '' }}" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
+                        <label for="chores-rec-end-date" class="block text-xs text-gray-600 mb-1">Till</label>
+                        <input id="chores-rec-end-date" type="date" name="rec_end_date" value="{{ form_rec_end_date.strftime('%Y-%m-%d') if form_rec_end_date is defined and form_rec_end_date else '' }}" class="w-full h-11 p-2 border border-gray-300 dark:border-gray-600 rounded">
                     </div>
                 </div>
             </div>
@@ -97,7 +97,7 @@
                 <a href="/chores/edit/{{ chore.id }}" class="btn btn-secondary edit-btn" data-creator="{{ chore.creator }}">Edit</a>
                 <form method="POST" action="{{ '/chores/recurring/delete/' ~ chore.recurring_id if chore.recurring_id else '/chores/delete/' ~ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}" data-confirm="{{ 'Delete this recurring chore and its schedule?' if chore.recurring_id else 'Delete this chore?' }}">
                     <input type="hidden" name="user">
-                    <button type="submit" class="btn btn-danger" title="Delete"><i class="fa fa-times"></i></button>
+                    <button type="submit" class="btn btn-danger" title="Delete" aria-label="Delete {{ chore.description }}"><i class="fa fa-times" aria-hidden="true"></i></button>
                 </form>
             </div>
             <div class="flex flex-wrap gap-2 items-center justify-between text-xs text-gray-500">
@@ -293,7 +293,7 @@ document.addEventListener('user-switched', applyChoreUserContext);
             const row = document.createElement('div');
             row.className = 'flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer select-none';
             const text = document.createElement('div'); text.textContent = s; text.className='truncate pr-2 flex-1';
-            const del = document.createElement('button'); del.type='button'; del.title='Hide'; del.className='text-red-600'; del.innerHTML='<i class="fa fa-times"></i>';
+            const del = document.createElement('button'); del.type='button'; del.title='Hide'; del.setAttribute('aria-label','Hide suggestion '+s); del.className='text-red-600'; del.innerHTML='<i class="fa fa-times"></i>';
             del.addEventListener('click', (e)=>{ e.stopPropagation(); const h=getHidden(); h.add(s); setHidden(h); render(); });
             row.appendChild(text); const actions=document.createElement('div'); actions.className='flex items-center gap-2'; actions.appendChild(del); row.appendChild(actions);
             row.addEventListener('click', ()=>{ input.value = s; box.classList.add('hidden'); input.focus(); });

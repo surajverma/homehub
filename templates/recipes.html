@@ -12,17 +12,17 @@
         <input type="hidden" name="creator" id="creator">
         
         <div class="mb-3">
-            <label class="block text-sm font-semibold mb-1">Recipe Title</label>
+            <label for="recipeTitle" class="block text-sm font-semibold mb-1">Recipe Title</label>
             <input type="text" name="title" id="recipeTitle" value="{{ form_title if form_title is defined else '' }}" class="w-full p-2 border rounded" placeholder="Chocolate Chip Cookies" required>
         </div>
         
         <div class="mb-3">
-            <label class="block text-sm font-semibold mb-1">Link (optional)</label>
+            <label for="recipeLink" class="block text-sm font-semibold mb-1">Link (optional)</label>
             <input type="url" name="link" id="recipeLink" value="{{ form_link if form_link is defined else '' }}" class="w-full p-2 border rounded" placeholder="https://example.com/recipe">
         </div>
         
         <div class="mb-3">
-            <label class="block text-sm font-semibold mb-1">Tags</label>
+            <label for="tagInput" class="block text-sm font-semibold mb-1">Tags</label>
             <div class="flex flex-wrap gap-2 rounded focus-within:ring-1 focus-within:ring-blue-500 items-start h-11" id="tagInputWrap">
                 <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Add tag and press Enter">
             </div>

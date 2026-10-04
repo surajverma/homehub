@@ -3,7 +3,7 @@
 <div class="mx-auto">
     <h2 class="text-xl font-bold mb-4">Shared Notes</h2>
     <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-start" id="noteForm">
-        <textarea name="content" class="md:col-span-9 w-full p-2 border rounded" placeholder="Write a note..." required></textarea>
+        <textarea name="content" aria-label="Note" class="md:col-span-9 w-full p-2 border rounded" placeholder="Write a note..." required></textarea>
         <div class="md:col-span-3 flex gap-2">
             <button type="submit" class="btn btn-primary flex-1">Save</button>
             <button type="button" id="cancelEdit" class="btn hidden btn-secondary">Cancel</button>

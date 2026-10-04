@@ -119,10 +119,10 @@
             <div class="p-6 text-2xl font-bold border-b border-white/20 flex items-center justify-between" style="color: var(--sidebar-text-color);">
                 <span class="brand-name">{{ config.instance_name }}</span>
                 <div class="flex items-center gap-2">
-                    <button id="toggleCollapse" class="hidden md:inline-flex text-white/90 hover:text-white" title="Collapse sidebar" aria-label="Collapse">
+                    <button id="toggleCollapse" class="hidden md:inline-flex text-white/90 hover:text-white" title="Collapse sidebar" aria-label="Collapse sidebar">
                         <i id="collapseIcon" class="fa-solid fa-angles-left"></i>
                     </button>
-                    <button id="closeSidebar" class="md:hidden text-white/90 hover:text-white" aria-label="Close">✕</button>
+                    <button id="closeSidebar" class="md:hidden text-white/90 hover:text-white" aria-label="Close menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 </div>
             </div>
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="sidebarNav">
@@ -157,21 +157,22 @@
             })();
             </script>
         </aside>
+        <div id="sidebarBackdrop" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden" aria-hidden="true"></div>
         <!-- Main Content -->
         <main class="main-content flex-1 p-4 md:p-8 overflow-y-auto md:ml-0 ml-0">
             <div class="max-w-none md:max-w-none mx-auto">
-                <div class="sticky top-0 z-20 mb-4">
-                    <div class="flex items-center flex-wrap gap-2">
-                        <button id="openSidebar" class="md:hidden bg-blue-600 text-white px-3 py-2 rounded"><i class="fa-solid fa-bars"></i> Menu</button>
+                <div class="topbar sticky top-0 z-20 mb-4 -mx-4 md:-mx-8 px-4 md:px-8 py-2">
+                    <div class="flex items-center gap-2">
+                        <button id="openSidebar" type="button" class="md:hidden bg-blue-600 text-white px-3 py-2 rounded" aria-controls="sidebar" aria-expanded="false"><i class="fa-solid fa-bars" aria-hidden="true"></i> Menu</button>
                         {% if not (hide_user_ui | default(false)) %}
-                        <div class="ml-auto flex items-center gap-3 flex-wrap justify-end">
-                            <div id="welcome" class="text-sm text-gray-600 truncate max-w-[50vw]"></div>
-                            <div>
-                                <label class="text-sm text-gray-600 mr-2">User:</label>
-                                <select id="userSwitcher" class="border rounded p-1 text-sm"></select>
+                        <div class="ml-auto flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
+                            <div id="welcome" class="hidden sm:block text-sm text-gray-600 truncate max-w-[50vw]"></div>
+                            <div class="flex items-center">
+                                <label for="userSwitcher" class="hidden sm:inline text-sm text-gray-600 mr-2">User:</label>
+                                <select id="userSwitcher" class="border rounded p-1 text-sm" aria-label="Current user"></select>
                             </div>
                             {% if is_authed %}
-                            <a href="/logout" class="px-2 py-1 rounded bg-gray-100 text-gray-800"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                            <a href="/logout" class="px-2 py-1 rounded bg-gray-100 text-gray-800 whitespace-nowrap" aria-label="Log out"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span class="hidden sm:inline"> Logout</span></a>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -192,19 +193,27 @@
             let toastEl = null;
             let hideTimer = null;
             let hideEndTimer = null;
-            function ensure(){ let h=document.getElementById(hostId); if(!h){ h=document.createElement('div'); h.id=hostId; h.className='fixed top-4 right-4 z-50 pointer-events-none'; document.body.appendChild(h);} return h; }
+            function ensure(){ let h=document.getElementById(hostId); if(!h){ h=document.createElement('div'); h.id=hostId; h.className='fixed top-4 right-4 left-4 sm:left-auto z-50 pointer-events-none flex justify-end'; h.setAttribute('role','status'); h.setAttribute('aria-live','polite'); document.body.appendChild(h);} return h; }
             function classFor(type){ return type==='error'?['bg-red-600']:(type==='success'?['bg-green-600']:(type==='info'?['bg-blue-600']:['bg-gray-800'])); }
+            function hide(){
+                if(!toastEl) return;
+                toastEl.style.opacity='0';
+                toastEl.style.pointerEvents='none';
+                hideEndTimer=setTimeout(()=>{ toastEl && (toastEl.style.display='none'); }, 240);
+            }
             window.globalToast=function(msg,type){ const host=ensure(); if(!toastEl){ toastEl=document.createElement('div'); host.appendChild(toastEl);} if(hideTimer){ clearTimeout(hideTimer); hideTimer=null; } if(hideEndTimer){ clearTimeout(hideEndTimer); hideEndTimer=null; }
-                toastEl.className='pointer-events-auto inline-block px-3 py-2 rounded shadow text-sm text-white transition-opacity duration-200 '+classFor(type).join(' ');
+                const isError = type==='error';
+                toastEl.className='toast pointer-events-auto inline-flex items-start gap-3 max-w-md px-3 py-2 rounded shadow text-sm text-white transition-opacity duration-200 '+classFor(type).join(' ');
+                toastEl.setAttribute('role', isError ? 'alert' : 'status');
                 toastEl.style.display='';
                 toastEl.style.opacity='1';
                 toastEl.style.pointerEvents='auto';
-                toastEl.textContent=msg; 
-                hideTimer=setTimeout(()=>{                     
-                    toastEl.style.opacity='0'; 
-                    toastEl.style.pointerEvents='none';                    
-                    hideEndTimer=setTimeout(()=>{ toastEl && (toastEl.style.display='none'); }, 240);
-                }, 2600); // fade start
+                toastEl.textContent='';
+                const text=document.createElement('span'); text.textContent=msg; toastEl.appendChild(text);
+                const close=document.createElement('button'); close.type='button'; close.className='inline-flex items-center justify-center w-5 h-5 shrink-0 opacity-80 hover:opacity-100'; close.setAttribute('aria-label','Dismiss'); close.innerHTML='<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+                close.addEventListener('click', hide); toastEl.appendChild(close);
+                // Errors stay until dismissed so they can be read
+                if(!isError) hideTimer=setTimeout(hide, 4000);
             };
         })();        
         (function(){
@@ -351,8 +360,23 @@
             const sidebar = document.getElementById('sidebar');
             const COLLAPSE_KEY = 'ui:sidebarCollapsed';
             const rootEl = document.documentElement;
-            document.getElementById('openSidebar')?.addEventListener('click', ()=> sidebar.classList.remove('-translate-x-full'));
-            document.getElementById('closeSidebar')?.addEventListener('click', ()=> sidebar.classList.add('-translate-x-full'));
+            const openBtn = document.getElementById('openSidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            const isMobile = ()=> !window.matchMedia('(min-width: 768px)').matches;
+            function setSidebarOpen(open){
+                sidebar.classList.toggle('-translate-x-full', !open);
+                backdrop?.classList.toggle('hidden', !open);
+                openBtn?.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (open){ document.getElementById('closeSidebar')?.focus(); }
+                else if (isMobile() && sidebar.contains(document.activeElement)){ openBtn?.focus(); }
+            }
+            openBtn?.addEventListener('click', ()=> setSidebarOpen(true));
+            document.getElementById('closeSidebar')?.addEventListener('click', ()=> setSidebarOpen(false));
+            backdrop?.addEventListener('click', ()=> setSidebarOpen(false));
+            document.addEventListener('keydown', (e)=>{
+                if (e.key === 'Escape' && isMobile() && !sidebar.classList.contains('-translate-x-full')) setSidebarOpen(false);
+            });
+            document.querySelectorAll('#sidebarNav a').forEach(a=> a.addEventListener('click', ()=>{ if (isMobile()) setSidebarOpen(false); }));
             // Desktop collapse/expand
             const collapseIcon = document.getElementById('collapseIcon');
             function applyCollapsedState(collapsed){

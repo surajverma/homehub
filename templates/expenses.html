@@ -70,9 +70,9 @@
     <!-- Calendar -->
   <div class="lg:col-span-5 card p-4 relative z-0">
       <div class="flex items-center justify-between mb-3">
-        <button id="prev-month" class="p-2 rounded-full hover:bg-gray-100" title="Prev"><i class="fas fa-chevron-left"></i></button>
+        <button id="prev-month" class="p-2 rounded-full hover:bg-gray-100" title="Previous month" aria-label="Previous month"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
         <h2 class="text-xl font-bold" id="calendar-header"></h2>
-        <button id="next-month" class="p-2 rounded-full hover:bg-gray-100" title="Next"><i class="fas fa-chevron-right"></i></button>
+        <button id="next-month" class="p-2 rounded-full hover:bg-gray-100" title="Next month" aria-label="Next month"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
       </div>
     <div class="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-1">
         <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
@@ -147,36 +147,36 @@
       <input type="hidden" name="user" id="expense-user">
       <div class="space-y-3">
         <div>
-          <label class="text-sm text-gray-600">Date</label>
+          <label for="expense-date" class="text-sm text-gray-600">Date</label>
           <input type="date" id="expense-date" name="date" class="mt-1 block w-full border rounded p-2" required>
         </div>
         <div>
-          <label class="text-sm text-gray-600">Title</label>
+          <label for="expense-title" class="text-sm text-gray-600">Title</label>
           <input type="text" id="expense-title" name="title" class="mt-1 block w-full border rounded p-2" required>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-gray-600">Category</label>
+            <label for="expense-category" class="text-sm text-gray-600">Category</label>
             <input type="text" id="expense-category" name="category" class="mt-1 block w-full border rounded p-2" placeholder="e.g., Groceries">
             <div id="modal-category-chips" class="mt-2 flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label class="text-sm text-gray-600">Quantity</label>
+            <label for="expense-quantity" class="text-sm text-gray-600">Quantity</label>
             <input type="number" step="0.01" id="expense-quantity" name="quantity" class="mt-1 block w-full border rounded p-2" placeholder="optional">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-gray-600">Unit Price</label>
+            <label for="expense-unit-price" class="text-sm text-gray-600">Unit Price</label>
             <input type="number" step="0.01" id="expense-unit-price" name="unit_price" class="mt-1 block w-full border rounded p-2" placeholder="optional">
           </div>
           <div>
-            <label class="text-sm text-gray-600">Total Amount</label>
+            <label for="expense-amount" class="text-sm text-gray-600">Total Amount</label>
             <input type="number" step="0.01" id="expense-amount" name="amount" class="mt-1 block w-full border rounded p-2" required>
           </div>
         </div>
         <div>
-          <label class="text-sm text-gray-600">Paid by</label>
+          <label for="expense-payer" class="text-sm text-gray-600">Paid by</label>
           {% if split_people %}
           <select id="expense-payer" name="payer" class="mt-1 block w-full border rounded p-2" required>
             {% for member in split_people %}

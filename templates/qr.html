@@ -16,7 +16,7 @@
         <p class="mt-2 text-xs text-gray-600">For other QR codes, enter any text or URL as usual.</p>
     </div>
     <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
-        <input type="text" name="qrtext" class="md:col-span-9 w-full p-2 border rounded" placeholder="Text to encode..." required>
+        <input type="text" name="qrtext" aria-label="Text to encode" class="md:col-span-9 w-full p-2 border rounded" placeholder="Text to encode..." required>
         <input type="hidden" name="creator" id="creator">
         <button type="submit" class="md:col-span-3 btn btn-primary">Generate QR</button>
     </form>

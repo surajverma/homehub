@@ -132,48 +132,48 @@
                   Editing a recurring rule can affect generated entries. Choose a strategy to avoid accidental history loss.
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600">Title</label>
-                  <input type="text" name="title" class="w-full border rounded p-2" value="{{ r.title }}">
+                  <label for="rule-{{ r.id }}-title" class="text-sm text-gray-600">Title</label>
+                  <input id="rule-{{ r.id }}-title" type="text" name="title" class="w-full border rounded p-2" value="{{ r.title }}">
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600">Category</label>
-                  <input type="text" name="category" class="w-full border rounded p-2" value="{{ r.category or '' }}">
+                  <label for="rule-{{ r.id }}-category" class="text-sm text-gray-600">Category</label>
+                  <input id="rule-{{ r.id }}-category" type="text" name="category" class="w-full border rounded p-2" value="{{ r.category or '' }}">
                   <div class="edit-category-chips mt-2 flex flex-wrap gap-2"></div>
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600">Unit Price</label>
-                  <input type="number" step="0.01" name="unit_price" class="w-full border rounded p-2" value="{{ ('%.' ~ expense_precision ~ 'f')|format(r.unit_price or 0) }}">
+                  <label for="rule-{{ r.id }}-unit-price" class="text-sm text-gray-600">Unit Price</label>
+                  <input id="rule-{{ r.id }}-unit-price" type="number" step="0.01" name="unit_price" class="w-full border rounded p-2" value="{{ ('%.' ~ expense_precision ~ 'f')|format(r.unit_price or 0) }}">
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600">Default Qty</label>
-                  <input type="number" step="0.01" name="default_quantity" class="w-full border rounded p-2" value="{{ r.default_quantity }}">
+                  <label for="rule-{{ r.id }}-default-quantity" class="text-sm text-gray-600">Default Qty</label>
+                  <input id="rule-{{ r.id }}-default-quantity" type="number" step="0.01" name="default_quantity" class="w-full border rounded p-2" value="{{ r.default_quantity }}">
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600">Frequency</label>
-                  <select name="frequency" class="w-full border rounded p-2">
+                  <label for="rule-{{ r.id }}-frequency" class="text-sm text-gray-600">Frequency</label>
+                  <select id="rule-{{ r.id }}-frequency" name="frequency" class="w-full border rounded p-2">
                     <option value="daily" {% if r.frequency=='daily' %}selected{% endif %}>Daily</option>
                     <option value="weekly" {% if r.frequency=='weekly' %}selected{% endif %}>Weekly</option>
                     <option value="monthly" {% if r.frequency=='monthly' %}selected{% endif %}>Monthly</option>
                   </select>
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600">Monthly Mode</label>
-                  <select name="monthly_mode" class="w-full border rounded p-2">
+                  <label for="rule-{{ r.id }}-monthly-mode" class="text-sm text-gray-600">Monthly Mode</label>
+                  <select id="rule-{{ r.id }}-monthly-mode" name="monthly_mode" class="w-full border rounded p-2">
                     <option value="day_of_month" {% if (r.monthly_mode or 'day_of_month')=='day_of_month' %}selected{% endif %}>Same day-of-month</option>
                     <option value="calendar" {% if (r.monthly_mode or 'day_of_month')=='calendar' %}selected{% endif %}>Calendar month</option>
                   </select>
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600">Start Date</label>
-                  <input type="date" name="start_date" class="w-full border rounded p-2" value="{{ r.start_date }}">
+                  <label for="rule-{{ r.id }}-start-date" class="text-sm text-gray-600">Start Date</label>
+                  <input id="rule-{{ r.id }}-start-date" type="date" name="start_date" class="w-full border rounded p-2" value="{{ r.start_date }}">
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600">End Date</label>
-                  <input type="date" name="end_date" class="w-full border rounded p-2" value="{{ r.end_date or '' }}">
+                  <label for="rule-{{ r.id }}-end-date" class="text-sm text-gray-600">End Date</label>
+                  <input id="rule-{{ r.id }}-end-date" type="date" name="end_date" class="w-full border rounded p-2" value="{{ r.end_date or '' }}">
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600">Edit Strategy</label>
-                  <select name="edit_strategy" class="w-full border rounded p-2">
+                  <label for="rule-{{ r.id }}-edit-strategy" class="text-sm text-gray-600">Edit Strategy</label>
+                  <select id="rule-{{ r.id }}-edit-strategy" name="edit_strategy" class="w-full border rounded p-2">
                     <option value="apply_from" selected>Keep history, apply changes from effective date</option>
                     <option value="split_rule">Create new rule from effective date (split)</option>
                     <option value="rewrite_all">Rewrite entire rule history (destructive)</option>
@@ -186,8 +186,8 @@
                 </div>
                 {% endif %}
                 <div class="effective-from-group">
-                  <label class="text-sm text-gray-600">Effective From</label>
-                  <input type="date" name="effective_from" class="w-full border rounded p-2" value="{{ (r.start_date or '') }}">
+                  <label for="rule-{{ r.id }}-effective-from" class="text-sm text-gray-600">Effective From</label>
+                  <input id="rule-{{ r.id }}-effective-from" type="date" name="effective_from" class="w-full border rounded p-2" value="{{ (r.start_date or '') }}">
                   <p class="text-xs text-gray-500 mt-1">Used by apply/split strategies.</p>
                 </div>
                 <div class="md:col-span-3 flex justify-end gap-2">
@@ -261,18 +261,18 @@
           <input type="hidden" name="user" id="settings-user">
           
           <div>
-            <label class="text-sm text-gray-600 font-semibold">Currency symbol</label>
+            <label for="currency-input" class="text-sm text-gray-600 font-semibold">Currency symbol</label>
             <input type="text" name="currency" id="currency-input" class="w-full border rounded p-2 mt-1" placeholder="₹">
           </div>
           
           <div>
-            <label class="text-sm text-gray-600 font-semibold">Fraction factor</label>
+            <label for="fraction-factor-input" class="text-sm text-gray-600 font-semibold">Fraction factor</label>
             <input type="number" min="1" step="1" name="fraction_factor" id="fraction-factor-input" class="w-full border rounded p-2 mt-1" value="{{ expense_settings.fraction_factor if expense_settings is defined and expense_settings.fraction_factor is defined else 100 }}" placeholder="100">
             <p class="text-xs text-gray-500 mt-2">How many lower currency units make one main unit, like ₹1 contains 100 paise. Common values: 1, 100, 1000.</p>
           </div>
           
           <div>
-            <label class="text-sm text-gray-600 font-semibold">Categories (comma separated)</label>
+            <label for="categories-input" class="text-sm text-gray-600 font-semibold">Categories (comma separated)</label>
             <input type="text" name="categories" id="categories-input" class="w-full border rounded p-2 mt-1" placeholder="Groceries, Utilities, Housing">
             <div id="category-chips" class="mt-3 flex flex-wrap gap-2"></div>
           </div>

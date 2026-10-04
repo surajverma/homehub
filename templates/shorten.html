@@ -3,7 +3,7 @@
 <div class="mx-auto">
     <h2 class="text-xl font-bold mb-4">URL Shortener</h2>
     <form method="POST" class="mb-4 grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
-        <input type="url" name="original_url" class="md:col-span-9 w-full p-2 border rounded" placeholder="Paste long URL here..." required>
+        <input type="url" name="original_url" aria-label="Long URL" class="md:col-span-9 w-full p-2 border rounded" placeholder="Paste long URL here..." required>
         <input type="hidden" name="creator" id="creator">
         <button type="submit" class="md:col-span-3 btn btn-primary">Shorten</button>
     </form>
