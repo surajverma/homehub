@@ -12,7 +12,7 @@ def notes():
         content = sanitize_html(request.form['content'])
         creator = sanitize_text(request.form['creator'])
         if note_id:
-            n = Note.query.get_or_404(int(note_id))
+            n = db.get_or_404(Note, int(note_id))
             if can_modify(creator, n.creator):
                 n.content = content
                 db.session.commit()
@@ -28,7 +28,7 @@ def notes():
 
 @main_bp.route('/notes/delete/<int:note_id>', methods=['POST'])
 def delete_note(note_id):
-    note = Note.query.get_or_404(note_id)
+    note = db.get_or_404(Note, note_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, note.creator):
         db.session.delete(note)

@@ -77,7 +77,7 @@ def qr_view():
 
 @main_bp.route('/qr/delete/<int:qr_id>', methods=['POST'])
 def qr_delete(qr_id: int):
-    rec = QRCode.query.get_or_404(qr_id)
+    rec = db.get_or_404(QRCode, qr_id)
     user = sanitize_text(request.form.get('user', ''))
     if can_modify(user, rec.creator):
         try:

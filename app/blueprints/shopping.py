@@ -64,7 +64,7 @@ def shopping():
 
 @main_bp.route('/shopping/check/<int:item_id>', methods=['POST'])
 def check_shopping(item_id):
-    item = ShoppingItem.query.get_or_404(item_id)
+    item = db.get_or_404(ShoppingItem, item_id)
     item.checked = not item.checked
     db.session.commit()
     return redirect(url_for('main.shopping'))
@@ -72,7 +72,7 @@ def check_shopping(item_id):
 
 @main_bp.route('/shopping/delete/<int:item_id>', methods=['POST'])
 def delete_shopping(item_id):
-    item = ShoppingItem.query.get_or_404(item_id)
+    item = db.get_or_404(ShoppingItem, item_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, item.creator):
         db.session.delete(item)
@@ -82,7 +82,7 @@ def delete_shopping(item_id):
 
 @main_bp.route('/api/shopping/<int:item_id>/tags', methods=['POST'])
 def update_shopping_tags(item_id):
-    item = ShoppingItem.query.get_or_404(item_id)
+    item = db.get_or_404(ShoppingItem, item_id)
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))
@@ -131,7 +131,7 @@ def api_get_shopping():
 
 @main_bp.route('/api/shopping/<int:item_id>', methods=['PUT'])
 def api_update_shopping(item_id):
-    item = ShoppingItem.query.get_or_404(item_id)
+    item = db.get_or_404(ShoppingItem, item_id)
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))

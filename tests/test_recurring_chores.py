@@ -104,7 +104,7 @@ def test_recurring_chore_advances_due_date_on_completion(client):
     assert resp.status_code == 302
 
     with client.application.app_context():
-        updated = Chore.query.get(chore_id)
+        updated = db.session.get(Chore, chore_id)
         assert updated.due_date > old_due
         assert updated.done is False
 
@@ -172,7 +172,7 @@ def test_delete_recurring_chore_from_instance_deletes_rule(client):
     assert delete.status_code == 302
 
     with client.application.app_context():
-        assert RecurringChore.query.get(rid) is None
+        assert db.session.get(RecurringChore, rid) is None
         assert Chore.query.filter_by(recurring_id=rid).count() == 0
 
 
@@ -199,7 +199,7 @@ def test_update_chore_requires_admin_or_creator(client):
     assert update.status_code == 302
 
     with client.application.app_context():
-        refreshed = Chore.query.get(cid)
+        refreshed = db.session.get(Chore, cid)
         assert refreshed.description == 'Owner chore'
         assert refreshed.creator == 'Alice'
 
@@ -236,7 +236,7 @@ def test_update_recurring_rule_requires_admin_or_creator(client):
     assert update.status_code == 302
 
     with client.application.app_context():
-        refreshed = RecurringChore.query.get(rid)
+        refreshed = db.session.get(RecurringChore, rid)
         assert refreshed.description == 'Rule owner'
         assert refreshed.creator == 'Alice'
 
@@ -269,7 +269,7 @@ def test_non_recurring_branch_delete_rule_requires_permission(client):
     assert delete_attempt.status_code == 302
 
     with client.application.app_context():
-        assert RecurringChore.query.get(rid) is not None
+        assert db.session.get(RecurringChore, rid) is not None
         assert Chore.query.filter_by(recurring_id=rid).count() > 0
 
 
@@ -299,7 +299,7 @@ def test_delete_recurring_endpoint_removes_completed_chores(client):
     assert delete.status_code == 302
 
     with client.application.app_context():
-        assert RecurringChore.query.get(rid) is None
+        assert db.session.get(RecurringChore, rid) is None
         assert Chore.query.filter_by(recurring_id=rid).count() == 0
 
 

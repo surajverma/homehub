@@ -38,7 +38,7 @@ def redirect_short(short_code):
 
 @main_bp.route('/shorten/delete/<int:url_id>', methods=['POST'])
 def delete_short(url_id):
-    su = ShortURL.query.get_or_404(url_id)
+    su = db.get_or_404(ShortURL, url_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, su.creator):
         db.session.delete(su)

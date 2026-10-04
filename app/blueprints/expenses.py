@@ -443,7 +443,7 @@ def expenses():
 
 @main_bp.route('/expenses/recurring/edit/<int:rid>', methods=['POST'])
 def edit_recurring_expense(rid):
-    r = RecurringExpense.query.get_or_404(rid)
+    r = db.get_or_404(RecurringExpense, rid)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, r.creator or ''):
         flash('Not allowed to edit rule.', 'error')
@@ -654,7 +654,7 @@ def edit_recurring_expense(rid):
 
 @main_bp.route('/expenses/recurring/delete/<int:rid>', methods=['POST'])
 def delete_recurring_expense(rid):
-    r = RecurringExpense.query.get_or_404(rid)
+    r = db.get_or_404(RecurringExpense, rid)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, r.creator or ''):
         flash('Not allowed to delete rule.', 'error')
@@ -704,7 +704,7 @@ def expenses_settings():
 
 @main_bp.route('/expenses/delete/<int:entry_id>', methods=['POST'])
 def delete_expense_entry(entry_id):
-    entry = ExpenseEntry.query.get_or_404(entry_id)
+    entry = db.get_or_404(ExpenseEntry, entry_id)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, entry.payer or ''):
         flash('Not allowed to delete entry.', 'error')
@@ -722,7 +722,7 @@ def delete_expense_entry(entry_id):
 
 @main_bp.route('/expenses/edit/<int:entry_id>', methods=['POST'])
 def edit_expense_entry(entry_id):
-    entry = ExpenseEntry.query.get_or_404(entry_id)
+    entry = db.get_or_404(ExpenseEntry, entry_id)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, entry.payer or ''):
         flash('Not allowed to edit entry.', 'error')
@@ -776,7 +776,7 @@ def _redirect_to_view(d: date | None = None):
 @main_bp.route('/expenses/skip/<int:entry_id>', methods=['POST'])
 def toggle_skip_expense_entry(entry_id):
     """Skip a day (e.g. no newspaper) without deleting it, or restore a skipped day."""
-    entry = ExpenseEntry.query.get_or_404(entry_id)
+    entry = db.get_or_404(ExpenseEntry, entry_id)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, entry.payer or ''):
         flash('Not allowed to change entry.', 'error')
@@ -794,7 +794,7 @@ def toggle_skip_expense_entry(entry_id):
 @main_bp.route('/expenses/recurring/<int:rid>/restore', methods=['POST'])
 def restore_recurring_day(rid):
     """Add back a scheduled recurring day whose entry was deleted earlier."""
-    r = RecurringExpense.query.get_or_404(rid)
+    r = db.get_or_404(RecurringExpense, rid)
     user = sanitize_text(request.form.get('user', ''))
     try:
         d = datetime.strptime(request.form.get('date', ''), '%Y-%m-%d').date()
@@ -858,7 +858,7 @@ def bulk_delete_expenses():
     deleted = 0
     for entry_id in ids:
         try:
-            entry = ExpenseEntry.query.get(int(entry_id))
+            entry = db.session.get(ExpenseEntry, int(entry_id))
             if entry and can_modify(user, entry.payer or ''):
                 db.session.delete(entry)
                 deleted += 1

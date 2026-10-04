@@ -269,10 +269,10 @@ def test_edit_entry_updates_split(client):
         eid = ExpenseEntry.query.one().id
     client.post(f'/expenses/edit/{eid}', data={'user': 'Alice', 'split_present': '1', 'split_with': ['Alice', 'Bob']})
     with client.application.app_context():
-        assert json.loads(ExpenseEntry.query.get(eid).split_with) == ['Alice', 'Bob']
+        assert json.loads(db.session.get(ExpenseEntry, eid).split_with) == ['Alice', 'Bob']
     client.post(f'/expenses/edit/{eid}', data={'user': 'Alice', 'split_present': '1'})
     with client.application.app_context():
-        assert ExpenseEntry.query.get(eid).split_with is None
+        assert db.session.get(ExpenseEntry, eid).split_with is None
 
 
 def test_uneven_split_by_shares(client):

@@ -46,13 +46,13 @@ def media():
 
         def worker(app, mid: int, base_prefix: str, command: list):
             with app.app_context():
-                m = Media.query.get(mid)
+                m = db.session.get(Media, mid)
                 try:
                     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
                     last_percent = -1
                     for line in proc.stdout:
                         try:
-                            m = Media.query.get(mid)
+                            m = db.session.get(Media, mid)
                             if not m:
                                 continue
                             match = re.search(r"\[download\]\s+(\d+(?:\.\d+)?)%", line)
@@ -89,7 +89,7 @@ def media():
 
 @main_bp.route('/media/status/<int:media_id>')
 def media_status(media_id):
-    m = Media.query.get_or_404(media_id)
+    m = db.get_or_404(Media, media_id)
     return jsonify({'status': m.status, 'progress': m.progress, 'filepath': m.filepath})
 
 
@@ -112,7 +112,7 @@ def preview_media(filename):
 
 @main_bp.route('/media/delete/<int:media_id>', methods=['POST'])
 def delete_media(media_id):
-    m = Media.query.get_or_404(media_id)
+    m = db.get_or_404(Media, media_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, m.creator):
         try:
@@ -185,7 +185,7 @@ def preview_pdf(filename):
 
 @main_bp.route('/pdfs/delete/<int:pdf_id>', methods=['POST'])
 def delete_pdf(pdf_id):
-    p = PDF.query.get_or_404(pdf_id)
+    p = db.get_or_404(PDF, pdf_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, p.creator):
         try:

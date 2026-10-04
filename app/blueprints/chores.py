@@ -235,7 +235,7 @@ def chores():
                     form_recurring_rule_id=recurring_rule_id or '',
                 )
             if recurring_rule_id:
-                rule = RecurringChore.query.get_or_404(int(recurring_rule_id))
+                rule = db.get_or_404(RecurringChore, int(recurring_rule_id))
                 if not can_modify(user, rule.creator or ''):
                     flash('Not allowed to update recurring rule.', 'error')
                     return redirect(url_for('main.chores'))
@@ -283,7 +283,7 @@ def chores():
                 flash('Recurring chore added.', 'success')
         else:
             if recurring_rule_id:
-                rule = RecurringChore.query.get_or_404(int(recurring_rule_id))
+                rule = db.get_or_404(RecurringChore, int(recurring_rule_id))
                 if not can_modify(user, rule.creator or ''):
                     flash('Not allowed to delete recurring rule.', 'error')
                     return redirect(url_for('main.chores'))
@@ -291,7 +291,7 @@ def chores():
                 db.session.delete(rule)
                 db.session.commit()
             if chore_id:
-                chore = Chore.query.get_or_404(int(chore_id))
+                chore = db.get_or_404(Chore, int(chore_id))
                 if not can_modify(user, chore.creator or ''):
                     flash('Not allowed to update chore.', 'error')
                     return redirect(url_for('main.chores'))
@@ -310,7 +310,7 @@ def chores():
 
 @main_bp.route('/chores/edit/<int:chore_id>')
 def edit_chore(chore_id):
-    chore = Chore.query.get_or_404(chore_id)
+    chore = db.get_or_404(Chore, chore_id)
     user = request.args.get('user')
     if not user:
         user = request.args.get('creator')
@@ -331,7 +331,7 @@ def edit_chore(chore_id):
         'form_recurring_rule_id': '',
     }
     if chore.recurring_id:
-        rule = RecurringChore.query.get(chore.recurring_id)
+        rule = db.session.get(RecurringChore, chore.recurring_id)
         if rule:
             form_state.update({
                 'form_description': rule.description,
@@ -362,7 +362,7 @@ def chores_settings():
 
 @main_bp.route('/chores/recurring/delete/<int:rule_id>', methods=['POST'])
 def delete_recurring_chore(rule_id):
-    rule = RecurringChore.query.get_or_404(rule_id)
+    rule = db.get_or_404(RecurringChore, rule_id)
     user = _request_user()
     if not can_modify(user, rule.creator or ''):
         flash('Not allowed to delete recurring rule.', 'error')
@@ -376,9 +376,9 @@ def delete_recurring_chore(rule_id):
 
 @main_bp.route('/chores/toggle/<int:chore_id>', methods=['POST'])
 def toggle_chore(chore_id):
-    chore = Chore.query.get_or_404(chore_id)
+    chore = db.get_or_404(Chore, chore_id)
     if getattr(chore, 'recurring_id', None):
-        rule = RecurringChore.query.get(getattr(chore, 'recurring_id', None))
+        rule = db.session.get(RecurringChore, getattr(chore, 'recurring_id', None))
         if rule and chore.due_date:
             next_due = _next_occurrence(rule, chore.due_date)
             if rule.end_date and next_due > rule.end_date:
@@ -397,10 +397,10 @@ def toggle_chore(chore_id):
 
 @main_bp.route('/chores/delete/<int:chore_id>', methods=['POST'])
 def delete_chore(chore_id):
-    chore = Chore.query.get_or_404(chore_id)
+    chore = db.get_or_404(Chore, chore_id)
     user = sanitize_text(request.form.get('user', ''))
     if getattr(chore, 'recurring_id', None):
-        rule = RecurringChore.query.get(getattr(chore, 'recurring_id', None))
+        rule = db.session.get(RecurringChore, getattr(chore, 'recurring_id', None))
         rule_creator = (rule.creator if rule else chore.creator) or ''
         if can_modify(user, rule_creator):
             if rule:
@@ -424,7 +424,7 @@ def delete_chore(chore_id):
 
 @main_bp.route('/api/chores/<int:chore_id>/tags', methods=['POST'])
 def update_chore_tags(chore_id):
-    chore = Chore.query.get_or_404(chore_id)
+    chore = db.get_or_404(Chore, chore_id)
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))
@@ -482,7 +482,7 @@ def api_get_chores():
 
 @main_bp.route('/api/chores/<int:chore_id>', methods=['PUT'])
 def api_update_chore(chore_id):
-    chore = Chore.query.get_or_404(chore_id)
+    chore = db.get_or_404(Chore, chore_id)
     try:
         data = request.get_json(force=True) or {}
         user = sanitize_text(str(data.get('user', '')))

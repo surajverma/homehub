@@ -116,7 +116,7 @@ def test_recurring_edit_apply_from_keeps_history(client):
     with client.application.app_context():
         before = ExpenseEntry.query.filter_by(recurring_id=rid, date=date(2026, 6, 2)).first()
         on_or_after = ExpenseEntry.query.filter_by(recurring_id=rid, date=date(2026, 6, 3)).first()
-        rule = RecurringExpense.query.get(rid)
+        rule = db.session.get(RecurringExpense, rid)
 
     assert before is not None
     assert before.quantity == 4.0
@@ -169,7 +169,7 @@ def test_recurring_edit_split_rule_preserves_old_history(client):
     )
 
     with client.application.app_context():
-        old_rule = RecurringExpense.query.get(rid)
+        old_rule = db.session.get(RecurringExpense, rid)
         new_rules = RecurringExpense.query.filter(RecurringExpense.id != rid, RecurringExpense.title == 'Newspaper').all()
         old_future = ExpenseEntry.query.filter_by(recurring_id=rid, date=date(2026, 6, 4)).first()
 
@@ -215,7 +215,7 @@ def test_recurring_delete_checked_removes_generated_entries(client):
     client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Alice', 'delete_entries': '1'})
 
     with client.application.app_context():
-        deleted_rule = RecurringExpense.query.get(rid)
+        deleted_rule = db.session.get(RecurringExpense, rid)
         linked_entry = ExpenseEntry.query.filter_by(recurring_id=rid).first()
 
     assert deleted_rule is None
@@ -258,7 +258,7 @@ def test_recurring_delete_unchecked_keeps_generated_entries(client):
     client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Alice'})
 
     with client.application.app_context():
-        deleted_rule = RecurringExpense.query.get(rid)
+        deleted_rule = db.session.get(RecurringExpense, rid)
         kept_entry = ExpenseEntry.query.filter_by(recurring_id=rid).first()
 
     assert deleted_rule is None
@@ -310,7 +310,7 @@ def test_split_rule_at_start_falls_back_to_apply_from(client):
 
     with client.application.app_context():
         rules = RecurringExpense.query.filter_by(title='Water').all()
-        original = RecurringExpense.query.get(rid)
+        original = db.session.get(RecurringExpense, rid)
 
     assert len(rules) == 1
     assert original is not None
@@ -356,7 +356,7 @@ def test_apply_from_effective_date_clamped_to_start_date(client):
     )
 
     with client.application.app_context():
-        updated = RecurringExpense.query.get(rid)
+        updated = db.session.get(RecurringExpense, rid)
 
     assert updated.effective_from == date(2026, 5, 10)
 
@@ -399,6 +399,6 @@ def test_apply_from_effective_date_clamped_to_end_date(client):
     )
 
     with client.application.app_context():
-        updated = RecurringExpense.query.get(rid)
+        updated = db.session.get(RecurringExpense, rid)
 
     assert updated.effective_from == date(2026, 5, 20)

@@ -32,7 +32,7 @@ def expiry():
 
 @main_bp.route('/expiry/delete/<int:item_id>', methods=['POST'])
 def delete_expiry(item_id):
-    it = ExpiryItem.query.get_or_404(item_id)
+    it = db.get_or_404(ExpiryItem, item_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, it.creator):
         db.session.delete(it)
