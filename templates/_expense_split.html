@@ -4,7 +4,7 @@
   <input type="hidden" name="split_present" value="1">
   <div class="flex items-center justify-between gap-2">
     <label class="text-sm text-gray-600">Split with</label>
-    <select name="split_mode" class="split-mode border rounded p-1 text-sm">
+    <select name="split_mode" class="split-mode border rounded p-1 text-sm" aria-label="Split method">
       <option value="equal" {% if mode == 'equal' %}selected{% endif %}>Equally</option>
       <option value="shares" {% if mode == 'shares' %}selected{% endif %}>By shares</option>
       <option value="percent" {% if mode == 'percent' %}selected{% endif %}>By percentage</option>

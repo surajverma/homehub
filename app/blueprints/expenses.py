@@ -202,7 +202,7 @@ def _split_from_form(form, total: float | None = None):
 
 
 def _compute_balances(precision: int = 2) -> dict:
-    """All-time net balance per member and the fewest payments that settle everyone up.
+    """All-time net balance per member and a short list of payments that settles everyone up.
 
     Shared expenses credit the payer and charge each member their part of the split.
     Settlements credit the payer and debit the recipient (split_with[0]).
