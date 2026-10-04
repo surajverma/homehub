@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, current_app, json
 from datetime import datetime, date, timedelta
 from ..models import db, Chore, RecurringChore
 from ..blueprints import main_bp
-from ..admin import is_admin, admin_password_enabled
+from ..admin import is_admin
 from ..security import sanitize_text
 import json
 
@@ -351,7 +351,7 @@ def chores_settings():
     if current_app.config['HOMEHUB_CONFIG'].get('password_hash') and not session.get('authed'):
         flash('Only admin can update chore settings.', 'error')
         return redirect(url_for('main.chores'))
-    if admin_password_enabled() and not is_admin(sanitize_text(request.form.get('user', ''))):
+    if not is_admin(sanitize_text(request.form.get('user', ''))):
         flash('Only admin can update chore settings.', 'error')
         return redirect(url_for('main.chores'))
     enabled = request.form.get('show_chores_on_homepage') in ('1', 'on', 'true', 'yes')
