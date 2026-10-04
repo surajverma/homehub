@@ -135,6 +135,10 @@ def create_app(test_config: dict | None = None):
                 ensure_column(_RecurringExpense.__tablename__, 'monthly_mode', 'TEXT', 'day_of_month')
                 ensure_column(_RecurringExpense.__tablename__, 'category', 'TEXT', None)
                 ensure_column(_RecurringExpense.__tablename__, 'effective_from', 'DATE', None)
+                ensure_column(_RecurringExpense.__tablename__, 'split_with', 'TEXT', None)
+                ensure_column('expense_entry', 'skipped', 'INTEGER DEFAULT 0', 0)
+                ensure_column('expense_entry', 'split_with', 'TEXT', None)
+                ensure_column('expense_entry', 'is_settlement', 'INTEGER DEFAULT 0', 0)
                 # Basic settings table (key/value) for currency and categories
                 cur.execute("CREATE TABLE IF NOT EXISTS app_setting (key TEXT PRIMARY KEY, value TEXT)")
                 # New columns for QRCode and Reminder

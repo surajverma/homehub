@@ -2,7 +2,8 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, c
 from datetime import datetime, date, timedelta
 import calendar as _calendar
 import json
-from ..models import db, RecurringExpense, ExpenseEntry
+import math
+from ..models import db, RecurringExpense, ExpenseEntry, parse_split
 from ..security import sanitize_text
 from ..blueprints import main_bp
 import bleach
@@ -22,67 +23,228 @@ def _fraction_factor_precision(value) -> int:
     return precision if factor == 1 else 2
 
 
+def _rule_next_date(r: RecurringExpense, d: date, today: date) -> date:
+    if r.frequency == 'daily':
+        return d + timedelta(days=1)
+    if r.frequency == 'weekly':
+        return d + timedelta(weeks=1)
+    ny = d.year + (1 if d.month == 12 else 0)
+    nm = 1 if d.month == 12 else d.month + 1
+    mode = getattr(r, 'monthly_mode', 'day_of_month') or 'day_of_month'
+    if mode == 'calendar':
+        return date(ny, nm, 1)
+    base_day = (r.start_date or today).day
+    last_dom = _calendar.monthrange(ny, nm)[1]
+    return date(ny, nm, min(base_day, last_dom))
+
+
+def _rule_first_date(r: RecurringExpense, today: date) -> date:
+    start = r.start_date or today
+    if r.frequency == 'monthly':
+        mode = getattr(r, 'monthly_mode', 'day_of_month') or 'day_of_month'
+        if mode == 'calendar' and start.day != 1:
+            ny = start.year + (1 if start.month == 12 else 0)
+            nm = 1 if start.month == 12 else start.month + 1
+            return date(ny, nm, 1)
+    return start
+
+
+def _rule_occurrences(r: RecurringExpense, until: date, today: date | None = None):
+    """Yield every scheduled date of a rule from its start up to `until` (inclusive)."""
+    today = today or date.today()
+    d = _rule_first_date(r, today)
+    while d <= until and (not r.end_date or d <= r.end_date):
+        yield d
+        d = _rule_next_date(r, d, today)
+
+
+def _rule_occurs_on(r: RecurringExpense, target: date) -> bool:
+    return any(d == target for d in _rule_occurrences(r, target))
+
+
 def _generate_recurring_entries_until(today: date | None = None) -> None:
     today = today or date.today()
     recs = RecurringExpense.query.all()
     for r in recs:
-        start = r.start_date or today
         # Generate from rule start date; don't clamp to effective_from so rule owns entire range
-        base_day = (r.start_date or today).day
+        start = r.start_date or today
         last = r.last_generated_date
-
-        def next_date(d: date) -> date:
-            if r.frequency == 'daily':
-                return d + timedelta(days=1)
-            if r.frequency == 'weekly':
-                return d + timedelta(weeks=1)
-            mode = getattr(r, 'monthly_mode', 'day_of_month') or 'day_of_month'
-            if mode == 'calendar':
-                ny = d.year + (1 if d.month == 12 else 0)
-                nm = 1 if d.month == 12 else d.month + 1
-                return date(ny, nm, 1)
-            else:
-                ny = d.year + (1 if d.month == 12 else 0)
-                nm = 1 if d.month == 12 else d.month + 1
-                last_dom = _calendar.monthrange(ny, nm)[1]
-                day = min(base_day, last_dom)
-                return date(ny, nm, day)
-
         if last is None or (last and last < start):
-            if r.frequency in ('daily', 'weekly'):
-                d = start
-            else:
-                mode = getattr(r, 'monthly_mode', 'day_of_month') or 'day_of_month'
-                if mode == 'calendar':
-                    if start.day == 1:
-                        d = start
-                    else:
-                        ny = start.year + (1 if start.month == 12 else 0)
-                        nm = 1 if start.month == 12 else start.month + 1
-                        d = date(ny, nm, 1)
-                else:
-                    d = start
+            d = _rule_first_date(r, today)
         else:
-            d = next_date(last)
+            d = _rule_next_date(r, last, today)
 
         while d <= today and (not r.end_date or d <= r.end_date):
             exists = ExpenseEntry.query.filter_by(date=d, recurring_id=r.id).first()
             if not exists:
-                qty = r.default_quantity or 1.0
-                amt = (r.unit_price or 0.0) * qty
-                db.session.add(ExpenseEntry(
-                    date=d,
-                    title=r.title,
-                    category=getattr(r, 'category', None),
-                    unit_price=r.unit_price,
-                    quantity=qty,
-                    amount=amt,
-                    payer=r.creator,
-                    recurring_id=r.id
-                ))
+                db.session.add(_entry_from_rule(r, d))
             r.last_generated_date = d
-            d = next_date(d)
+            d = _rule_next_date(r, d, today)
     db.session.commit()
+
+
+def _entry_from_rule(r: RecurringExpense, d: date) -> ExpenseEntry:
+    qty = r.default_quantity or 1.0
+    return ExpenseEntry(
+        date=d,
+        title=r.title,
+        category=getattr(r, 'category', None),
+        unit_price=r.unit_price,
+        quantity=qty,
+        amount=(r.unit_price or 0.0) * qty,
+        payer=r.creator,
+        recurring_id=r.id,
+        split_with=getattr(r, 'split_with', None),
+    )
+
+
+def _skipped_dates(rule_id: int, after: date) -> set:
+    """Dates of skipped entries for a rule on or after `after`, so rebuilds can keep them skipped."""
+    rows = ExpenseEntry.query.filter(
+        ExpenseEntry.recurring_id == rule_id,
+        ExpenseEntry.date >= after,
+        ExpenseEntry.skipped.is_(True),
+    ).all()
+    return {e.date for e in rows}
+
+
+def _reapply_skips(rule_id: int, dates: set) -> None:
+    if not dates:
+        return
+    ExpenseEntry.query.filter(
+        ExpenseEntry.recurring_id == rule_id,
+        ExpenseEntry.date.in_(list(dates)),
+    ).update({ExpenseEntry.skipped: True}, synchronize_session=False)
+    db.session.commit()
+
+
+def _parse_split(raw) -> list:
+    return list(parse_split(raw)[1])
+
+
+def _split_shares(amount: float, weights: dict, precision: int = 2, payer: str = '') -> dict:
+    """Each member's part of `amount`, in proportion to their weight.
+
+    Parts are whole currency units (per `precision`) that add up to `amount` exactly,
+    so settling the displayed figures never leaves a stray 0.01 behind. The payer
+    absorbs the rounding difference when they share the expense.
+    """
+    total = sum(weights.values())
+    if total <= 0:
+        return {}
+    factor = 10 ** precision
+    units = {m: round(amount * factor * w / total) for m, w in weights.items()}
+    diff = round(amount * factor) - sum(units.values())
+    if diff and payer in units:
+        units[payer] += diff
+    elif diff:
+        step = 1 if diff > 0 else -1
+        for m in list(units)[:abs(diff)]:
+            units[m] += step
+    return {m: u / factor for m, u in units.items()}
+
+
+def _split_people(config) -> list:
+    """Everyone who can pay or share: family members plus the admin."""
+    people = list(config.get('family_members') or [])
+    admin = config.get('admin_name')
+    if people and admin and admin not in people:
+        people.append(admin)
+    return people
+
+
+def _split_from_form(form):
+    """Members ticked under "Split with", as stored JSON (None when not shared)."""
+    members = {}
+    for raw in form.getlist('split_with'):
+        name = sanitize_text(raw or '').strip()
+        if name and name not in members:
+            members[name] = raw
+    if not members:
+        return None
+    mode = form.get('split_mode') or 'equal'
+    if mode in ('shares', 'percent', 'amount'):
+        weights = {}
+        for name, raw in members.items():
+            try:
+                w = float(form.get(f'split_weight__{raw}') or 0)
+            except (TypeError, ValueError):
+                w = 0
+            if w > 0 and math.isfinite(w):
+                weights[name] = w
+        if weights:
+            return json.dumps({'mode': mode, 'weights': weights})
+    return json.dumps(list(members))
+
+
+def _compute_balances(precision: int = 2) -> dict:
+    """All-time net balance per member and the fewest payments that settle everyone up.
+
+    Shared expenses credit the payer and charge each member their part of the split.
+    Settlements credit the payer and debit the recipient (split_with[0]).
+    """
+    net: dict[str, float] = {}
+    rows = ExpenseEntry.query.filter(
+        (ExpenseEntry.skipped.is_(None)) | (ExpenseEntry.skipped.is_(False)),
+        ExpenseEntry.split_with.isnot(None),
+    ).all()
+    for e in rows:
+        weights = parse_split(e.split_with)[1]
+        members = list(weights)
+        amount = float(e.amount or 0)
+        payer = e.payer or ''
+        if not members or not payer or amount == 0:
+            continue
+        net[payer] = net.get(payer, 0.0) + amount
+        if e.is_settlement:
+            net[members[0]] = net.get(members[0], 0.0) - amount
+        else:
+            for m, share in _split_shares(amount, weights, precision, payer).items():
+                net[m] = net.get(m, 0.0) - share
+
+    eps = 0.5 / (10 ** precision)
+    creditors = sorted(((v, k) for k, v in net.items() if v > eps), reverse=True)
+    debtors = sorted(((-v, k) for k, v in net.items() if v < -eps), reverse=True)
+    creditors = [[v, k] for v, k in creditors]
+    debtors = [[v, k] for v, k in debtors]
+    settlements = []
+    i = j = 0
+    while i < len(debtors) and j < len(creditors):
+        pay = min(debtors[i][0], creditors[j][0])
+        settlements.append({'from': debtors[i][1], 'to': creditors[j][1], 'amount': round(pay, precision)})
+        debtors[i][0] -= pay
+        creditors[j][0] -= pay
+        if debtors[i][0] <= eps:
+            i += 1
+        if creditors[j][0] <= eps:
+            j += 1
+    return {
+        'net': {k: round(v, precision) for k, v in sorted(net.items()) if abs(v) > eps},
+        'settlements': settlements,
+    }
+
+
+def _missing_recurring_days(month_start: date, month_end: date, today: date) -> dict:
+    """Scheduled recurring days in the month whose entry was deleted, so they can be added back."""
+    missing: dict[str, list] = {}
+    for r in RecurringExpense.query.all():
+        lower = max(month_start, r.effective_from or r.start_date or month_start)
+        upper = min(month_end, today)
+        if r.last_generated_date:
+            upper = min(upper, r.last_generated_date)
+        if upper < lower:
+            continue
+        existing = {
+            e.date for e in ExpenseEntry.query.filter(
+                ExpenseEntry.recurring_id == r.id,
+                ExpenseEntry.date >= lower,
+                ExpenseEntry.date <= upper,
+            ).all()
+        }
+        for d in _rule_occurrences(r, upper, today):
+            if d >= lower and d not in existing:
+                missing.setdefault(d.strftime('%Y-%m-%d'), []).append({'rule_id': r.id, 'title': r.title, 'creator': r.creator or ''})
+    return missing
 
 
 def _load_expense_settings() -> dict:
@@ -121,14 +283,25 @@ def _build_month_payload(y: int, m: int) -> dict:
     total = 0.0
     per_payer: dict[str, float] = {}
     per_category: dict[str, float] = {}
+    # What each person actually bears after splits (unshared expenses stay with the payer)
+    per_share: dict[str, float] = {}
+    settings = _load_expense_settings()
+    precision = settings.get('fraction_precision', 2)
     for e in q_entries:
         ds = e.date.strftime('%Y-%m-%d')
         by_date.setdefault(ds, {'total': 0.0, 'entries': []})
-        by_date[ds]['total'] += float(e.amount or 0)
-        total += float(e.amount or 0)
-        per_payer[e.payer or ''] = per_payer.get(e.payer or '', 0.0) + float(e.amount or 0)
-        if e.category:
-            per_category[e.category] = per_category.get(e.category, 0.0) + float(e.amount or 0)
+        split_mode, split_weights = parse_split(e.split_with)
+        shares = {} if e.is_settlement else _split_shares(float(e.amount or 0), split_weights, precision, e.payer or '')
+        # Skipped days and settlements are shown but never count as spending
+        if not e.skipped and not e.is_settlement:
+            amt = float(e.amount or 0)
+            by_date[ds]['total'] += amt
+            total += amt
+            per_payer[e.payer or ''] = per_payer.get(e.payer or '', 0.0) + amt
+            for name, part in (shares or {e.payer or '': amt}).items():
+                per_share[name] = per_share.get(name, 0.0) + part
+            if e.category:
+                per_category[e.category] = per_category.get(e.category, 0.0) + amt
         by_date[ds]['entries'].append({
             'id': e.id,
             'title': e.title,
@@ -137,19 +310,27 @@ def _build_month_payload(y: int, m: int) -> dict:
             'amount': float(e.amount or 0),
             'quantity': float(e.quantity or 0) if e.quantity is not None else None,
             'recurring_id': e.recurring_id,
-            'payer': e.payer or ''
+            'payer': e.payer or '',
+            'skipped': bool(e.skipped),
+            'split_with': list(split_weights),
+            'split_mode': split_mode,
+            'split_weights': split_weights,
+            'shares': {name: round(part, precision) for name, part in shares.items()},
+            'is_settlement': bool(e.is_settlement),
         })
 
     top_category = None
     if per_category:
         top_category = max(per_category.items(), key=lambda kv: kv[1])[0]
 
-    settings = _load_expense_settings()
     payload = {
         'by_date': by_date,
+        'missing_recurring': _missing_recurring_days(month_start, month_end, date.today()),
+        'balances': _compute_balances(precision),
         'summary': {
             'total_this_month': total,
             'per_payer': per_payer,
+            'per_share': per_share,
             'per_category': per_category,
             'top_category': top_category,
         },
@@ -180,7 +361,7 @@ def expenses():
             creator = bleach.clean(request.form.get('creator',''))
             sd = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else date.today()
             ed = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
-            db.session.add(RecurringExpense(title=title, unit_price=unit_price, default_quantity=default_quantity, frequency=frequency, monthly_mode=monthly_mode, category=category, start_date=sd, end_date=ed, creator=creator, effective_from=sd))
+            db.session.add(RecurringExpense(title=title, unit_price=unit_price, default_quantity=default_quantity, frequency=frequency, monthly_mode=monthly_mode, category=category, start_date=sd, end_date=ed, creator=creator, effective_from=sd, split_with=_split_from_form(request.form)))
             db.session.commit()
             flash('Recurring expense added.', 'success')
             y = request.args.get('y') or today.year
@@ -197,7 +378,10 @@ def expenses():
             unit_price = request.form.get('unit_price'); quantity = request.form.get('quantity')
             up = float(unit_price) if unit_price else None
             q = float(quantity) if quantity else None
-            db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer))
+            if not amount and up is not None:
+                # A blank quantity means one unit, not zero
+                amount = up * (q if q is not None else 1)
+            db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer, split_with=_split_from_form(request.form)))
             db.session.commit()
             flash('Expense added.', 'success')
             y = request.args.get('y') or d.year
@@ -214,7 +398,7 @@ def expenses():
     payload = _build_month_payload(y, m)
     rules = RecurringExpense.query.order_by(RecurringExpense.timestamp.desc()).all()
     config = current_app.config['HOMEHUB_CONFIG']
-    return render_template('expenses.html', rules=rules, config=config, expenses_json=json.dumps(payload), expense_settings=payload.get('settings') or {})
+    return render_template('expenses.html', rules=rules, config=config, split_people=_split_people(config), expenses_json=json.dumps(payload), expense_settings=payload.get('settings') or {})
 
 
 @main_bp.route('/expenses/recurring/edit/<int:rid>', methods=['POST'])
@@ -259,6 +443,7 @@ def edit_recurring_expense(rid):
     new_start_date = _parse_date(request.form.get('start_date'), r.start_date)
     new_end_date = _parse_date(request.form.get('end_date'), r.end_date)
 
+    new_split_with = _split_from_form(request.form) if request.form.get('split_present') else getattr(r, 'split_with', None)
     effective_from = _parse_date(request.form.get('effective_from'), today)
     # Effective date is meaningful only for apply/split strategies and should stay
     # inside the rule's active window.
@@ -280,6 +465,7 @@ def edit_recurring_expense(rid):
         r.start_date = new_start_date
         r.end_date = new_end_date
         r.effective_from = new_start_date
+        r.split_with = new_split_with
 
         deleted = 0
         if r.start_date:
@@ -301,6 +487,7 @@ def edit_recurring_expense(rid):
             e.quantity = r.default_quantity
             qty = r.default_quantity if r.default_quantity is not None else 1.0
             e.amount = (r.unit_price or 0.0) * qty
+            e.split_with = r.split_with
             updated += 1
         db.session.commit()
         flash(f'Recurring rule fully rewritten. Updated {updated} entry(ies), removed {deleted} outside rule range.', 'warning')
@@ -322,7 +509,9 @@ def edit_recurring_expense(rid):
             r.start_date = new_start_date
             r.end_date = new_end_date
             r.effective_from = effective_from
+            r.split_with = new_split_with
 
+            skipped = _skipped_dates(r.id, effective_from)
             ExpenseEntry.query.filter(
                 ExpenseEntry.recurring_id == r.id,
                 ExpenseEntry.date >= effective_from
@@ -330,6 +519,7 @@ def edit_recurring_expense(rid):
             r.last_generated_date = effective_from - timedelta(days=1)
             db.session.commit()
             _generate_recurring_entries_until(today)
+            _reapply_skips(r.id, skipped)
             flash(
                 f'Split at {split_start} would create an empty old rule window. Applied changes from {effective_from} on the same rule instead.',
                 'info'
@@ -341,6 +531,7 @@ def edit_recurring_expense(rid):
             old_end = r.end_date
         r.end_date = old_end
 
+        skipped = _skipped_dates(r.id, old_end + timedelta(days=1))
         removed_from_old = ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id, ExpenseEntry.date > old_end).count()
         ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id, ExpenseEntry.date > old_end).delete()
 
@@ -356,10 +547,12 @@ def edit_recurring_expense(rid):
             last_generated_date=None,
             effective_from=split_start,
             creator=r.creator,
+            split_with=new_split_with,
         )
         db.session.add(new_rule)
         db.session.commit()
         _generate_recurring_entries_until(today)
+        _reapply_skips(new_rule.id, skipped)
         flash(f'Rule split from {split_start}. Old rule preserved; removed {removed_from_old} future old-rule entry(ies).', 'success')
     else:
         if new_start_date and effective_from < new_start_date:
@@ -381,7 +574,9 @@ def edit_recurring_expense(rid):
         r.start_date = new_start_date
         r.end_date = new_end_date
         r.effective_from = effective_from
+        r.split_with = new_split_with
 
+        skipped = _skipped_dates(r.id, effective_from)
         removed_for_rebuild = ExpenseEntry.query.filter(
             ExpenseEntry.recurring_id == r.id,
             ExpenseEntry.date >= effective_from
@@ -394,6 +589,7 @@ def edit_recurring_expense(rid):
         db.session.commit()
 
         _generate_recurring_entries_until(today)
+        _reapply_skips(r.id, skipped)
         regenerated = ExpenseEntry.query.filter(
             ExpenseEntry.recurring_id == r.id,
             ExpenseEntry.date >= effective_from
@@ -504,6 +700,10 @@ def edit_expense_entry(entry_id):
     entry.unit_price = float(up) if up not in (None, '') else entry.unit_price
     entry.quantity = float(q) if q not in (None, '') else entry.quantity
     entry.amount = float(amt) if amt not in (None, '') else entry.amount
+    if not entry.amount and entry.unit_price is not None:
+        entry.amount = entry.unit_price * (entry.quantity if entry.quantity is not None else 1)
+    if request.form.get('split_present'):
+        entry.split_with = _split_from_form(request.form)
     db.session.commit()
     flash('Expense updated.', 'success')
     # Preserve view
@@ -512,6 +712,89 @@ def edit_expense_entry(entry_id):
     m = request.args.get('m') or entry.date.month
     sel = request.args.get('sel') or entry.date.strftime('%Y-%m-%d')
     return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
+
+
+def _redirect_to_view(d: date | None = None):
+    today = date.today()
+    y = request.args.get('y') or (d or today).year
+    m = request.args.get('m') or (d or today).month
+    sel = request.args.get('sel') or (d.strftime('%Y-%m-%d') if d else None)
+    return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
+
+
+@main_bp.route('/expenses/skip/<int:entry_id>', methods=['POST'])
+def toggle_skip_expense_entry(entry_id):
+    """Skip a day (e.g. no newspaper) without deleting it, or restore a skipped day."""
+    entry = ExpenseEntry.query.get_or_404(entry_id)
+    user = sanitize_text(request.form.get('user', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    if not (user in admin_aliases or user == (entry.payer or '')):
+        flash('Not allowed to change entry.', 'error')
+        return _redirect_to_view(entry.date)
+    entry.skipped = not bool(entry.skipped)
+    db.session.commit()
+    flash('Day skipped.' if entry.skipped else 'Day restored.', 'success')
+    return _redirect_to_view(entry.date)
+
+
+@main_bp.route('/expenses/recurring/<int:rid>/restore', methods=['POST'])
+def restore_recurring_day(rid):
+    """Add back a scheduled recurring day whose entry was deleted earlier."""
+    r = RecurringExpense.query.get_or_404(rid)
+    user = sanitize_text(request.form.get('user', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    try:
+        d = datetime.strptime(request.form.get('date', ''), '%Y-%m-%d').date()
+    except Exception:
+        flash('Invalid date.', 'error')
+        return _redirect_to_view()
+    if not (user in admin_aliases or user == (r.creator or '')):
+        flash('Not allowed to restore this day.', 'error')
+        return _redirect_to_view(d)
+    if d > date.today() or not _rule_occurs_on(r, d):
+        flash('That day is not part of this recurring rule.', 'error')
+        return _redirect_to_view(d)
+    if ExpenseEntry.query.filter_by(recurring_id=r.id, date=d).first():
+        flash('That day is already there.', 'info')
+        return _redirect_to_view(d)
+    db.session.add(_entry_from_rule(r, d))
+    db.session.commit()
+    flash(f'{r.title} added back for {d}.', 'success')
+    return _redirect_to_view(d)
+
+
+@main_bp.route('/expenses/settle', methods=['POST'])
+def settle_up():
+    """Record that one member paid another back."""
+    user = sanitize_text(request.form.get('user', ''))
+    admin_name = current_app.config['HOMEHUB_CONFIG'].get('admin_name', 'Administrator')
+    admin_aliases = {admin_name, 'Administrator', 'admin'}
+    from_member = sanitize_text(request.form.get('from_member', '')).strip()
+    to_member = sanitize_text(request.form.get('to_member', '')).strip()
+    try:
+        amount = float(request.form.get('amount') or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    if not from_member or not to_member or from_member == to_member or amount <= 0:
+        flash('Invalid settlement.', 'error')
+        return _redirect_to_view()
+    if not (user in admin_aliases or user in (from_member, to_member)):
+        flash('Only the people involved can record a settlement.', 'error')
+        return _redirect_to_view()
+    today = date.today()
+    db.session.add(ExpenseEntry(
+        date=today,
+        title=f'Settlement: {from_member} → {to_member}',
+        amount=amount,
+        payer=from_member,
+        split_with=json.dumps([to_member]),
+        is_settlement=True,
+    ))
+    db.session.commit()
+    flash('Settlement recorded.', 'success')
+    return _redirect_to_view()
 
 
 @main_bp.route('/expenses/bulk-delete', methods=['POST'])
@@ -589,6 +872,7 @@ def recurring_expenses_page():
         'expenses_recurring.html',
         rules=rules,
         config=config,
+        split_people=_split_people(config),
         expense_settings=expense_settings,
         active_tab=active_tab
     )

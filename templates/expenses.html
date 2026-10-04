@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_expense_split.html" import split_box, split_script %}
 {% block content %}
 <style>
   .modal { transition: opacity 0.2s ease; }
@@ -49,6 +50,7 @@
       <div class="ml-4">
         <p class="text-gray-500 text-sm">My Spending</p>
         <p class="text-2xl font-bold text-gray-800" id="my-spending">₹0.00</p>
+        <p class="text-xs text-gray-500" id="my-share"></p>
       </div>
     </div>
     <div class="card p-4 flex items-center">
@@ -105,6 +107,34 @@
     </div>
   </div>
 
+  <!-- Balances: who owes whom (all-time, across months) -->
+  <div class="card p-4" id="balances-card">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-lg font-bold"><i class="fas fa-scale-balanced mr-2 text-gray-500"></i>Balances</h3>
+      <span class="text-xs text-gray-500">Shared expenses, all months</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <div class="text-sm font-semibold text-gray-600 mb-2">Net balance</div>
+        <div id="balances-net"></div>
+      </div>
+      <div>
+        <div class="text-sm font-semibold text-gray-600 mb-2">To settle up</div>
+        <div id="balances-settlements"></div>
+      </div>
+      <div>
+        <div class="text-sm font-semibold text-gray-600 mb-2">This month: paid vs share</div>
+        <div id="month-shares"></div>
+      </div>
+    </div>
+    <form id="settle-form" method="POST" action="/expenses/settle" class="hidden">
+      <input type="hidden" name="user" id="settle-user">
+      <input type="hidden" name="from_member" id="settle-from">
+      <input type="hidden" name="to_member" id="settle-to">
+      <input type="hidden" name="amount" id="settle-amount">
+    </form>
+  </div>
+
   <!-- Removed inline recurring/config section in favor of modal -->
 </div>
 
@@ -146,9 +176,20 @@
           </div>
         </div>
         <div>
-          <label class="text-sm text-gray-600">Payer</label>
+          <label class="text-sm text-gray-600">Paid by</label>
+          {% if split_people %}
+          <select id="expense-payer" name="payer" class="mt-1 block w-full border rounded p-2" required>
+            {% for member in split_people %}
+            <option value="{{ member }}">{{ member }}</option>
+            {% endfor %}
+          </select>
+          {% else %}
           <input type="text" id="expense-payer" name="payer" class="mt-1 block w-full border rounded p-2" required>
+          {% endif %}
         </div>
+        {% if split_people %}
+        <div id="expense-split">{{ split_box(split_people) }}</div>
+        {% endif %}
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button type="button" id="cancel-expense" class="btn">Cancel</button>
@@ -158,10 +199,12 @@
   </div>
   </div>
 
+{{ split_script() }}
 <script>
 document.addEventListener('DOMContentLoaded', function(){
   const adminName = '{{ config.admin_name }}';
   const currentUser = () => localStorage.getItem('username') || '';
+  const isAdmin = () => [adminName, 'Administrator', 'admin'].includes(currentUser());
 
   // HTML escaping to prevent XSS
   function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
@@ -177,7 +220,9 @@ document.addEventListener('DOMContentLoaded', function(){
   let year = payload.year || new Date().getFullYear();
   let month = payload.month || (new Date().getMonth()+1);
   let byDate = payload.by_date || {};
-  let summary = payload.summary || { total_this_month: 0, per_payer: {}, per_category: {}, top_category: null };
+  let summary = payload.summary || { total_this_month: 0, per_payer: {}, per_share: {}, per_category: {}, top_category: null };
+  let missingRecurring = payload.missing_recurring || {};
+  let balances = payload.balances || { net: {}, settlements: [] };
   let selectedDate = null;
   // If server provided a selected date via query param embedding, try to pick it from location
   try {
@@ -210,6 +255,8 @@ document.addEventListener('DOMContentLoaded', function(){
     const me = currentUser();
     const p = summary.per_payer || {}; const mine = p[me] || 0;
     document.getElementById('my-spending').textContent = fmt(mine);
+    // What I actually bear once shared expenses are split
+    document.getElementById('my-share').textContent = `My share after splits: ${fmt((summary.per_share || {})[me] || 0)}`;
     document.getElementById('top-category').textContent = summary.top_category || '-';
     monthlyTotalAmount.textContent = fmt(summary.total_this_month||0);
   }
@@ -252,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const allEntries = [];
     Object.keys(byDate).sort().forEach(ds=>{
       if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return;
-      (byDate[ds]?.entries||[]).filter(e=>e&&e.id).forEach(e=>allEntries.push({...e, date:ds}));
+      (byDate[ds]?.entries||[]).filter(e=>e&&e.id&&!e.is_settlement).forEach(e=>allEntries.push({...e, date:ds, counted: e.skipped ? 0 : e.amount}));
     });
     if(allEntries.length===0){
       monthlyList.innerHTML = '<div class="text-gray-500 p-2 text-sm">No entries this month.</div>';
@@ -288,18 +335,18 @@ document.addEventListener('DOMContentLoaded', function(){
       const runs = [];
       let cur = null;
       group.entries.forEach(e=>{
-        const sig = `${e.quantity}:${e.unit_price}`;
+        const sig = `${e.quantity}:${e.unit_price}:${e.skipped?1:0}`;
         const contiguous = !!cur && nextIsoDay(cur.endDate) === e.date;
         if (!cur || cur.sig !== sig || !contiguous) {
-          cur = {sig, qty:e.quantity, unitPrice:e.unit_price, entries:[], startDate:e.date, endDate:e.date, subtotal:0};
+          cur = {sig, qty:e.quantity, unitPrice:e.unit_price, skipped:!!e.skipped, entries:[], startDate:e.date, endDate:e.date, subtotal:0};
           runs.push(cur);
         }
         cur.entries.push(e);
         cur.endDate = e.date;
-        cur.subtotal += e.amount;
+        cur.subtotal += e.counted;
       });
 
-      const groupTotal = group.entries.reduce((s,e)=>s+e.amount, 0);
+      const groupTotal = group.entries.reduce((s,e)=>s+e.counted, 0);
       const badge = group.isRecurring
         ? `<span class="inline-block text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 leading-none">recurring</span>`
         : `<span class="inline-block text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 leading-none">manual</span>`;
@@ -307,9 +354,11 @@ document.addEventListener('DOMContentLoaded', function(){
       const runsHtml = runs.map(run=>{
         const count = run.entries.length;
         const dateRange = run.startDate===run.endDate ? fmtShort(run.startDate) : `${fmtShort(run.startDate)} – ${fmtShort(run.endDate)}`;
-        const runDesc = (run.qty!=null && run.unitPrice!=null)
-          ? `${run.qty} × ${count} day${count>1?'s':''} @ ${fmt(run.unitPrice)}`
-          : `${count} entr${count>1?'ies':'y'}`;
+        const runDesc = run.skipped
+          ? `skipped ${count} day${count>1?'s':''}`
+          : (run.qty!=null && run.unitPrice!=null)
+            ? `${run.qty} × ${count} day${count>1?'s':''} @ ${fmt(run.unitPrice)}`
+            : `${count} entr${count>1?'ies':'y'}`;
         // Hidden checkboxes carry entry IDs for bulk-delete; toggled by the visible run-check
         const hiddenEntries = run.entries.map(e=>
           `<input type="checkbox" class="entry-select" name="ids" value="${e.id}" hidden tabindex="-1" aria-hidden="true">`
@@ -321,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function(){
               <span class="text-sm font-medium">${dateRange}</span>
               <span class="text-xs text-gray-500 ml-1.5">${escapeHtml(runDesc)}</span>
             </div>
-            <span class="text-sm font-semibold shrink-0">${fmt(run.subtotal)}</span>
+            <span class="text-sm font-semibold shrink-0 ${run.skipped ? 'text-gray-400 line-through' : ''}">${run.skipped ? fmt(run.entries.reduce((s,e)=>s+e.amount,0)) : fmt(run.subtotal)}</span>
             ${hiddenEntries}
           </div>`;
       }).join('');
@@ -372,23 +421,49 @@ document.addEventListener('DOMContentLoaded', function(){
   const ds = isoLocalFromDate(selectedDate);
     const dayData = byDate[ds] || { entries: [], total: 0 };
     const entriesHtml = (dayData.entries||[]).map(e=>{
-      const allowed = (currentUser()===e.payer) || [adminName, 'Administrator', 'admin'].includes(currentUser());
+      const allowed = (currentUser()===e.payer) || isAdmin();
+      const badges = [
+        e.skipped ? '<span class="text-xs px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">skipped</span>' : '',
+        e.is_settlement ? '<span class="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700">settlement</span>' : '',
+      ].join(' ');
+      const splitLine = (!e.is_settlement && e.split_with && e.split_with.length)
+        ? `<div class="text-xs text-gray-500">Split: ${e.split_with.map(n=>`${escapeHtml(n)} ${fmt((e.shares||{})[n])}`).join(', ')}</div>` : '';
+      const skipForm = e.recurring_id != null ? `
+            <form method="POST" action="/expenses/skip/${e.id}" class="inline skip-form">
+              <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
+              <button type="submit" class="text-gray-700 hover:underline">${e.skipped ? 'Restore' : 'Skip day'}</button>
+            </form>` : '';
       return `
-      <div class="flex items-start justify-between p-2 border rounded mb-2">
+      <div class="flex items-start justify-between p-2 border rounded mb-2 ${e.skipped ? 'bg-gray-50' : ''}">
         <div>
-          <div class="font-medium">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
-          <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• by ${escapeHtml(e.payer)}`:''}</div>
+          <div class="font-medium ${e.skipped ? 'line-through text-gray-400' : ''}">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
+          <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• by ${escapeHtml(e.payer)}`:''} ${badges}</div>
+          ${splitLine}
         </div>
         <div class="text-right">
-          <div class="font-semibold">${fmt(e.amount)}</div>
+          <div class="font-semibold ${e.skipped ? 'line-through text-gray-400' : ''}">${fmt(e.amount)}</div>
           <div class="text-xs mt-1 space-x-2 ${allowed? '' : 'hidden'}">
-            <button class="text-blue-600 hover:underline edit-expense" data-id="${e.id}" data-date="${ds}">Edit</button>
+            ${e.skipped || e.is_settlement ? '' : `<button class="text-blue-600 hover:underline edit-expense" data-id="${e.id}" data-date="${ds}">Edit</button>`}
+            ${skipForm}
             <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${escapeHtml(e.payer||'')}">
               <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
               <button type="submit" class="text-red-600 hover:underline">Delete</button>
             </form>
           </div>
         </div>
+      </div>`;
+    }).join('');
+    // Recurring days that were deleted earlier can be added back
+    const missingHtml = (missingRecurring[ds]||[]).map(m=>{
+      const allowed = (currentUser()===m.creator) || isAdmin();
+      return `
+      <div class="flex items-center justify-between p-2 border border-dashed rounded mb-2 text-gray-500">
+        <div class="text-sm">${escapeHtml(m.title)} <span class="text-xs">(removed)</span></div>
+        <form method="POST" action="/expenses/recurring/${m.rule_id}/restore" class="inline restore-form ${allowed ? '' : 'hidden'}">
+          <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
+          <input type="hidden" name="date" value="${ds}">
+          <button type="submit" class="text-xs text-blue-600 hover:underline">Add back</button>
+        </form>
       </div>`;
     }).join('');
     panelContent.innerHTML = `
@@ -399,16 +474,79 @@ document.addEventListener('DOMContentLoaded', function(){
         </div>
         <div class="text-lg font-semibold">${fmt(dayData.total||0)}</div>
       </div>
-      <div>${entriesHtml || '<div class=\'text-gray-500\'>No expenses yet.</div>'}</div>
+      <div>${entriesHtml || (missingHtml ? '' : '<div class=\'text-gray-500\'>No expenses yet.</div>')}${missingHtml}</div>
       <button id="add-expense-btn" class="mt-3 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"><i class="fa-solid fa-plus mr-1"></i> Add Expense</button>
     `;
   }
+
+  function renderBalances(){
+    const net = balances.net || {};
+    const names = Object.keys(net);
+    document.getElementById('balances-net').innerHTML = names.length ? names.map(n=>{
+      const v = net[n];
+      const cls = v > 0 ? 'text-green-700' : 'text-red-600';
+      const label = v > 0 ? 'gets back' : 'owes';
+      return `<div class="flex justify-between text-sm py-1 border-b last:border-b-0"><span>${escapeHtml(n)}</span><span class="${cls}">${label} ${fmt(Math.abs(v))}</span></div>`;
+    }).join('') : '<div class="text-sm text-gray-500">Everyone is settled up.</div>';
+    const settlements = balances.settlements || [];
+    document.getElementById('balances-settlements').innerHTML = settlements.length ? settlements.map((t, i)=>{
+      const allowed = isAdmin() || [t.from, t.to].includes(currentUser());
+      return `<div class="flex items-center justify-between text-sm py-1 border-b last:border-b-0">
+        <span><strong>${escapeHtml(t.from)}</strong> owes <strong>${escapeHtml(t.to)}</strong> ${fmt(t.amount)}</span>
+        <button type="button" class="text-xs text-blue-600 hover:underline settle-btn ${allowed ? '' : 'hidden'}" data-idx="${i}">Settle up</button>
+      </div>`;
+    }).join('') : '<div class="text-sm text-gray-500">Nothing to settle.</div>';
+    // Per person this month: what they paid and what their share comes to
+    const paid = summary.per_payer || {}, share = summary.per_share || {};
+    const people = [...new Set([...Object.keys(paid), ...Object.keys(share)])].filter(Boolean).sort();
+    document.getElementById('month-shares').innerHTML = people.length ? people.map(n=>
+      `<div class="flex justify-between text-sm py-1 border-b last:border-b-0"><span>${escapeHtml(n)}</span><span class="text-gray-600">paid ${fmt(paid[n]||0)} · share ${fmt(share[n]||0)}</span></div>`
+    ).join('') : '<div class="text-sm text-gray-500">No spending this month.</div>';
+  }
+  document.getElementById('balances-settlements').addEventListener('click', (e)=>{
+    const btn = e.target.closest('.settle-btn'); if (!btn) return;
+    const t = (balances.settlements||[])[Number(btn.getAttribute('data-idx'))]; if (!t) return;
+    const input = window.prompt(`Record a payment from ${t.from} to ${t.to}. Amount:`, String(t.amount));
+    if (input === null) return;
+    const amount = parseFloat(input);
+    if (!(amount > 0)) return;
+    const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
+    const f = document.getElementById('settle-form');
+    f.action = `/expenses/settle?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
+    document.getElementById('settle-user').value = currentUser();
+    document.getElementById('settle-from').value = t.from;
+    document.getElementById('settle-to').value = t.to;
+    document.getElementById('settle-amount').value = String(amount);
+    f.submit();
+  });
+
+  // Payer dropdown and split checkboxes in the add/edit modal
+  function setPayer(name){
+    const sel = document.getElementById('expense-payer');
+    if (sel.tagName !== 'SELECT'){ sel.value = name || ''; return; }
+    if (name && ![...sel.options].some(o=>o.value===name)){
+      // Keep older free-text payers selectable when editing
+      sel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`);
+    }
+    if (name) sel.value = name;
+  }
+  const splitBox = document.querySelector('#expense-split .split-box');
+  const split = splitBox ? window.ExpenseSplit.init(splitBox, {
+    getTotal: ()=> document.getElementById('expense-amount').value,
+    fmt,
+    precision: ()=> settings.fraction_precision ?? 2,
+  }) : null;
+  function setSplit(members, mode, weights){ if (split) split.set(members, mode, weights); }
+  // Whoever pays normally shares the expense too; untick them for "I paid for others"
+  document.getElementById('expense-payer').addEventListener('change', (e)=>{ if (split) split.tick(e.target.value); });
+  document.getElementById('expense-amount').addEventListener('input', ()=>{ if (split) split.refresh(); });
 
   async function fetchMonth(y, m){
     const res = await fetch(`/api/expenses/month?year=${y}&month=${m}`);
     const data = await res.json();
     year = data.year; month = data.month; byDate = data.by_date || {}; summary = data.summary || summary; settings = data.settings || settings;
-    updateSummaryCards(); renderCalendar(); renderMonthlySidebar(); renderSidePanel();
+    missingRecurring = data.missing_recurring || {}; balances = data.balances || balances;
+    updateSummaryCards(); renderCalendar(); renderMonthlySidebar(); renderSidePanel(); renderBalances();
   }
 
   // Event listeners
@@ -443,7 +581,8 @@ document.addEventListener('DOMContentLoaded', function(){
       document.getElementById('expense-quantity').value = '';
       document.getElementById('expense-unit-price').value = '';
       document.getElementById('expense-amount').value = '';
-      document.getElementById('expense-payer').value = currentUser();
+      setPayer(currentUser());
+      setSplit(null);
       openModal(expenseModal);
     }
     if (e.target && e.target.classList.contains('edit-expense')){
@@ -464,7 +603,8 @@ document.addEventListener('DOMContentLoaded', function(){
       document.getElementById('expense-quantity').value = (entry.quantity!=null? entry.quantity : '');
       document.getElementById('expense-unit-price').value = (entry.unit_price!=null? entry.unit_price : '');
       document.getElementById('expense-amount').value = entry.amount || '';
-      document.getElementById('expense-payer').value = entry.payer || currentUser();
+      setPayer(entry.payer || currentUser());
+      setSplit(entry.split_with || [], entry.split_mode, entry.split_weights);
       openModal(expenseModal);
     }
   });
@@ -477,21 +617,24 @@ document.addEventListener('DOMContentLoaded', function(){
     document.querySelectorAll('form.delete-form input[name="user"]').forEach(i=> i.value = currentUser());
     document.getElementById('bulk-user').value = currentUser();
   }
-  document.addEventListener('user-switched', ()=>{ updateSummaryCards(); renderSidePanel(); applyUserVisibility(); });
+  document.addEventListener('user-switched', ()=>{ updateSummaryCards(); renderSidePanel(); renderBalances(); applyUserVisibility(); });
 
   // Initialize
   updateSummaryCards();
   renderCalendar();
   renderMonthlySidebar();
   renderSidePanel();
+  renderBalances();
   applyUserVisibility();
 
   // Auto-total calculation when editing/adding
   function recalcTotal(){
-    const q = parseFloat(document.getElementById('expense-quantity').value || '0');
+    // A blank quantity means one unit, so a unit price alone still gives a total
+    const q = parseFloat(document.getElementById('expense-quantity').value || '1');
     const up = parseFloat(document.getElementById('expense-unit-price').value || '0');
     if (!isNaN(q) && !isNaN(up) && (q>0 || up>0)){
       document.getElementById('expense-amount').value = (q*up).toFixed(settings.fraction_precision ?? 2);
+      if (split) split.refresh();
     }
   }
   ['expense-quantity','expense-unit-price'].forEach(id=>{
@@ -544,7 +687,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.body.addEventListener('submit', (e)=>{
     const f = e.target;
     if (!(f instanceof HTMLFormElement)) return;
-    const needsPreserve = f.action.includes('/expenses/recurring/delete/') || f.action.includes('/expenses/recurring/edit/') || f.action.includes('/expenses/delete/') || f.action.endsWith('/expenses/settings');
+    const needsPreserve = f.action.includes('/expenses/recurring/delete/') || f.action.includes('/expenses/recurring/edit/') || f.action.includes('/expenses/delete/') || f.action.includes('/expenses/skip/') || f.action.includes('/restore') || f.action.endsWith('/expenses/settings');
     if (needsPreserve){
   const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
       try {

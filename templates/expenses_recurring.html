@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_expense_split.html" import split_box, split_script %}
 {% block content %}
 <style>
   .recurring-page-tabs {
@@ -113,7 +114,7 @@
                     <div class="rule-metadata">
                       {{ r.default_quantity }} × {{ ('%.' ~ expense_precision ~ 'f')|format(r.unit_price or 0) }} 
                       • {{ r.start_date }}{% if r.end_date %} → {{ r.end_date }}{% endif %} 
-                      • by {{ r.creator }}
+                      • by {{ r.creator }}{% if r.split_members %} • split with {{ r.split_members|join(', ') }}{% if r.split_mode != 'equal' %} ({{ {'shares': 'by shares', 'percent': 'by percentage', 'amount': 'by amount'}[r.split_mode] }}){% endif %}{% endif %}
                     </div>
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
@@ -178,6 +179,12 @@
                     <option value="rewrite_all">Rewrite entire rule history (destructive)</option>
                   </select>
                 </div>
+                {% if split_people %}
+                <div class="md:col-span-3">
+                  {# By amount is left out: a rule's amount changes with quantity #}
+                  {{ split_box(split_people, r.split_mode, r.split_weights, r.split_members, allow_amount=false) }}
+                </div>
+                {% endif %}
                 <div class="effective-from-group">
                   <label class="text-sm text-gray-600">Effective From</label>
                   <input type="date" name="effective_from" class="w-full border rounded p-2" value="{{ (r.start_date or '') }}">
@@ -232,6 +239,11 @@
             <input type="date" name="start_date" class="md:col-span-6 p-2 border rounded" placeholder="Start">
             <input type="date" name="end_date" class="md:col-span-6 p-2 border rounded" placeholder="End (optional)">
             <input type="hidden" name="creator" id="recCreator">
+            {% if split_people %}
+            <div class="md:col-span-12">
+              {{ split_box(split_people, allow_amount=false) }}
+            </div>
+            {% endif %}
             <div class="md:col-span-12 flex justify-end">
               <button type="submit" class="btn btn-primary">Add Recurring Rule</button>
             </div>
@@ -274,6 +286,7 @@
   </div>
 </div>
 
+{{ split_script() }}
 <script>
 document.addEventListener('DOMContentLoaded', function(){
   const adminName = '{{ config.admin_name }}';
@@ -302,6 +315,18 @@ document.addEventListener('DOMContentLoaded', function(){
   if (serverSettings && typeof serverSettings === 'object') {
     settings = { ...settings, ...serverSettings };
   }
+
+  // Split pickers on the add and edit rule forms; shares preview uses unit price × quantity
+  document.querySelectorAll('.split-box').forEach(box => {
+    const form = box.closest('form');
+    const field = name => form.querySelector(`input[name="${name}"]`);
+    const picker = window.ExpenseSplit.init(box, {
+      getTotal: () => (parseFloat(field('unit_price').value) || 0) * (parseFloat(field('default_quantity').value) || 1),
+      fmt: n => (settings.currency || '₹') + (Number(n) || 0).toFixed(settings.fraction_precision ?? 2),
+      precision: () => settings.fraction_precision ?? 2,
+    });
+    ['unit_price', 'default_quantity'].forEach(name => field(name).addEventListener('input', picker.refresh));
+  });
 
   // Pre-fill settings form
   document.getElementById('currency-input').value = settings.currency || '₹';
