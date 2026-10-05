@@ -164,3 +164,13 @@ def test_upload_preview_endpoint_security(client):
     download_res = client.get('/uploads/test.jpg')
     download_disposition = download_res.headers.get('Content-Disposition', '')
     assert 'attachment' in download_disposition.lower(), "Download endpoint should force attachment"
+
+
+def test_tag_with_quote_cannot_break_out_of_data_attribute(client):
+    payload = "x' onmouseover='alert(1)"
+    client.post('/shopping', data={'item': 'Milk', 'creator': 'Alice', 'tags': json.dumps([payload])})
+    client.post('/chores', data={'description': 'Dishes', 'creator': 'Alice', 'tags': json.dumps([payload])})
+    for path in ('/shopping', '/chores'):
+        html = client.get(path).get_data(as_text=True)
+        assert "onmouseover='alert(1)" not in html
+        assert 'data-tags="[&#34;x&#39; onmouseover=&#39;alert(1)&#34;]"' in html

@@ -89,7 +89,7 @@
     <ul id="choreList" class="card list-card {{ '' if chores else 'hidden' }}">
         {% for chore in chores %}
         {% set tags = (chore.tags or '[]') %}
-        <li class="list-row items-start" data-id="{{ chore.id }}" data-tags='{{ tags|safe }}' data-done="{{ '1' if chore.done else '0' }}">
+        <li class="list-row items-start" data-id="{{ chore.id }}" data-tags="{{ tags }}" data-done="{{ '1' if chore.done else '0' }}">
             <form method="POST" action="/chores/toggle/{{ chore.id }}" class="pt-0.5">
                 <button type="submit" class="check-btn {{ 'is-checked' if chore.done else '' }}" aria-pressed="{{ 'true' if chore.done else 'false' }}" title="{{ 'Completed · Undo' if chore.done else 'Mark Completed' }}" aria-label="{{ ('Undo completed: ' if chore.done else 'Mark completed: ') ~ chore.description }}"><i class="fa-solid fa-check" aria-hidden="true"></i></button>
             </form>

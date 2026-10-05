@@ -41,7 +41,7 @@
     <ul id="shoppingList" class="card list-card {{ '' if items else 'hidden' }}">
         {% for item in items %}
         {% set tags = (item.tags or '[]') %}
-        <li class="list-row items-start" data-id="{{ item.id }}" data-tags='{{ tags|safe }}' data-checked="{{ '1' if item.checked else '0' }}">
+        <li class="list-row items-start" data-id="{{ item.id }}" data-tags="{{ tags }}" data-checked="{{ '1' if item.checked else '0' }}">
             <form method="POST" action="/shopping/check/{{ item.id }}" class="pt-0.5">
                 <button type="submit" class="check-btn {{ 'is-checked' if item.checked else '' }}" aria-pressed="{{ 'true' if item.checked else 'false' }}" title="{{ 'Purchased · Undo' if item.checked else 'Mark Purchased' }}" aria-label="{{ ('Undo purchased: ' if item.checked else 'Mark purchased: ') ~ item.item }}"><i class="fa-solid fa-check" aria-hidden="true"></i></button>
             </form>

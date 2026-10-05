@@ -78,7 +78,7 @@
                     <div class="text-xs text-gray-500 mt-1">
                         By {{ recipe.creator }} • {{ recipe.timestamp|localtime('%b %d, %Y') }}
                     </div>
-                    <div class="mt-2 recipe-tags-display" id="tags-recipe-{{ recipe.id }}" data-tags='{{ recipe.tags|safe }}'></div>
+                    <div class="mt-2 recipe-tags-display" id="tags-recipe-{{ recipe.id }}" data-tags="{{ recipe.tags }}"></div>
                 </div>
                 <div class="flex items-center gap-2 ml-4">
                     <i class="fa-solid fa-chevron-down text-gray-400 transition-transform" id="chevron-{{ recipe.id }}" aria-hidden="true"></i>
