@@ -45,6 +45,28 @@ document.addEventListener('DOMContentLoaded', function(){
   // Settings bootstrap
   let settings = (payload.settings||{currency:'₹', categories:[]});
   function fmt(amount){ return (settings.currency||'₹') + (Number(amount)||0).toFixed(settings.fraction_precision ?? 2); }
+  // Calendar cells are narrow: whole units below 1,00,000 (short form above); fitCellAmounts() also shortens (₹3.3k) and then shrinks the text when a cell is too narrow
+  function fmtCell(amount){ const n = Number(amount)||0; return Math.abs(n) >= 99950 ? fmtCellShort(n) : (settings.currency||'₹') + Math.round(n); }
+  function fmtCellShort(amount){
+    const cur = settings.currency||'₹';
+    const n = Number(amount)||0, a = Math.abs(n);
+    const short = (v, unit) => (Math.round(v*10)/10).toString() + unit;
+    if (a < 1000) return cur + Math.round(n);
+    if (cur === '₹' && a >= 9.995e6) return cur + short(n/1e7, 'Cr');
+    if (cur === '₹' && a >= 99950) return cur + short(n/1e5, 'L');
+    if (a >= 999950) return cur + short(n/1e6, 'M');
+    return cur + short(n/1e3, 'k');
+  }
+  function fitCellAmounts(){
+    document.querySelectorAll('#calendar-grid .calendar-cell-amount').forEach(el => {
+      el.classList.remove('is-tight');
+      el.textContent = fmtCell(el.dataset.amount);
+      if (el.scrollWidth > el.clientWidth) el.textContent = fmtCellShort(el.dataset.amount);
+      if (el.scrollWidth > el.clientWidth) el.classList.add('is-tight');
+    });
+  }
+  window.addEventListener('resize', () => { clearTimeout(fitCellAmounts._t); fitCellAmounts._t = setTimeout(fitCellAmounts, 150); });
+
 
   function updateSummaryCards(){
     document.getElementById('total-this-month').textContent = fmt(summary.total_this_month||0);
@@ -79,16 +101,17 @@ document.addEventListener('DOMContentLoaded', function(){
       const data = byDate[ds];
       const isToday = (ds===todayIso);
       const isSelected = selectedDate && (isoLocalFromDate(selectedDate)===ds);
-      let cls = 'calendar-cell p-2 border rounded-md cursor-pointer flex flex-col text-left';
+      let cls = 'calendar-cell p-1 sm:p-2 border rounded-md cursor-pointer flex flex-col text-left';
       if (isSelected) cls += ' is-selected';
       if (isToday) cls += ' is-today';
       grid.insertAdjacentHTML('beforeend', `
         <button class="${cls}" data-date="${ds}"${isSelected ? ' aria-pressed="true"' : ''}>
           <div class="font-semibold calendar-cell-day">${day}</div>
-          ${data && data.total ? `<div class="text-xs mt-1 calendar-cell-amount">${fmt(data.total)}</div>` : ''}
+          ${data && data.total ? `<div class="text-xs mt-1 calendar-cell-amount" title="${fmt(data.total)}" data-amount="${Number(data.total)||0}">${fmtCell(data.total)}</div>` : ''}
         </button>
       `);
     }
+    fitCellAmounts();
   }
 
   function renderMonthlySidebar(){

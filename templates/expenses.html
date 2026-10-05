@@ -69,9 +69,9 @@
   </div>
 
   <!-- Main Content -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- Calendar -->
-  <div class="lg:col-span-5 card p-4 relative z-0">
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+    <!-- Calendar and day panel side by side; the month list joins them as a third column only on wide screens -->
+  <div class="xl:col-span-7 2xl:col-span-5 card p-4 relative z-0">
       <div class="flex items-center justify-between mb-3">
         <button id="prev-month" class="btn btn-secondary btn-icon" title="Previous month" aria-label="Previous month"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
         <h2 class="text-lg font-semibold" id="calendar-header"></h2>
@@ -84,12 +84,12 @@
     </div>
 
     <!-- Side Panel -->
-    <div id="side-panel" class="lg:col-span-3 card p-4 relative z-0">
+    <div id="side-panel" class="xl:col-span-5 2xl:col-span-3 card p-4 relative z-0">
       <div id="panel-content"></div>
     </div>
 
     <!-- Monthly Summary Sidebar -->
-    <div class="lg:col-span-4 card p-4 monthly-summary-container relative z-0">
+    <div class="xl:col-span-12 2xl:col-span-4 card p-4 monthly-summary-container relative z-0">
       <div class="flex-shrink-0 flex items-center justify-between mb-3">
         <h3 class="text-lg font-bold">Entries This Month</h3>
         <label id="select-all-label" class="text-sm flex items-center gap-2" style="display: none;"><input type="checkbox" id="select-all-month" class="rounded"> Select all</label>

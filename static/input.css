@@ -398,8 +398,11 @@ input[type="file"]::file-selector-button:hover { background-color: var(--hover-b
 /* Expense tracker calendar: same selected look as the reminders calendar, today marked by its date colour */
 .calendar-cell { border-color: var(--border-color); transition: background-color .15s, border-color .15s; }
 .calendar-cell:hover { background-color: var(--hover-bg); }
-.calendar-cell .calendar-cell-amount { color: var(--muted-text); }
+.calendar-cell { min-width: 0; overflow: hidden; }
+.calendar-cell .calendar-cell-amount { color: var(--muted-text); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .calendar-cell .calendar-cell-amount { font-size: .68rem; } }
 .calendar-cell.is-today .calendar-cell-day { color: var(--primary-text); }
 .calendar-cell.is-selected { border-color: var(--primary-color); background-color: var(--primary-soft); color: var(--text-color); }
-.calendar-cell.is-selected .calendar-cell-amount { color: var(--primary-text); font-weight: 600; }
+.calendar-cell.is-selected .calendar-cell-amount { color: var(--primary-text); }
+.calendar-cell .calendar-cell-amount.is-tight { font-size: .6rem; letter-spacing: -0.02em; }
 [data-theme="dark"] .calendar-cell.is-selected { background-color: rgba(59,130,246,0.28); border-color: rgba(147,197,253,0.55); }
