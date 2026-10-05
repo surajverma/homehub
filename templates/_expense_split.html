@@ -1,4 +1,4 @@
-{# "Split with" picker shared by the expense modal and the recurring rule forms #}
+{# "Split with" picker shared by the expense modal and the recurring rule forms; nobody is ticked unless a stored split says so #}
 {% macro split_box(people, mode='equal', weights={}, selected=none, allow_amount=true) %}
 <div class="split-box">
   <input type="hidden" name="split_present" value="1">
@@ -18,7 +18,7 @@
     {% for member in ns.members %}
     <div class="split-row flex items-center justify-between gap-2 text-sm">
       <label class="inline-flex items-center gap-2 min-w-0">
-        <input type="checkbox" name="split_with" value="{{ member }}" class="rounded split-member" {% if selected is none or member in selected %}checked{% endif %}>
+        <input type="checkbox" name="split_with" value="{{ member }}" class="rounded split-member" {% if selected and member in selected %}checked{% endif %}>
         <span class="min-w-0">
           <span class="block truncate">{{ member }}</span>
           <span class="split-share block text-xs text-gray-500"></span>

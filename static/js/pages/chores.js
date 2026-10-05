@@ -4,18 +4,6 @@ document.getElementById('settingsUser').value = localStorage.getItem('username')
 document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username') || '');
 
 (function(){
-    const adminName = window.HomeHubAdmin.names[0];
-    const current = localStorage.getItem('username') || '';
-    const wrap = document.getElementById('homepageToggleWrap');
-    const btn = document.getElementById('homepageSaveBtn');
-    const form = document.getElementById('homepageToggleForm');
-    const allowed = current === adminName || current === 'Administrator' || current === 'admin';
-    if (wrap) wrap.classList.toggle('hidden', !allowed);
-    if (btn) btn.classList.toggle('hidden', !allowed);
-    if (form) form.classList.toggle('hidden', !allowed);
-})();
-
-(function(){
     const recurringToggle = document.getElementById('isRecurringChore');
     const recurringControls = document.getElementById('recurringChoreControls');
     if (!recurringToggle || !recurringControls) return;
@@ -112,11 +100,15 @@ const T = Tags.scoped('chores');
     });
 })();
 
-// Hide delete for non-owners; re-apply on user switch
+// Hide delete for non-owners and the homepage toggle for non-admins; re-apply on user switch
 function applyChoreUserContext(){
-    const adminName=window.HomeHubAdmin.names[0];
     const current=localStorage.getItem('username')||'';
-    const allowed = (creator) => (current===creator || current===adminName || current==='Administrator' || current==='admin');
+    const isAdmin = window.HomeHubAdmin.isAdminName(current);
+    const allowed = (creator) => (current===creator || isAdmin);
+    ['homepageToggleForm', 'homepageToggleWrap', 'homepageSaveBtn'].forEach(id=>{
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden', !isAdmin);
+    });
     document.querySelectorAll('.delete-form').forEach(f=>{
         f.style.display = allowed(f.getAttribute('data-creator')) ? '' : 'none';
     });

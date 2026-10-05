@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function(){
       document.getElementById('expense-unit-price').value = '';
       document.getElementById('expense-amount').value = '';
       setPayer(currentUser());
-      setSplit(null);
+      setSplit([]);
       openModal(expenseModal);
     }
     if (e.target && e.target.classList.contains('edit-expense')){
