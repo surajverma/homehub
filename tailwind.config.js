@@ -12,5 +12,6 @@ module.exports = {
     },
   },
   plugins: [],
-  darkMode: 'class', // Enable class-based dark mode for [data-theme="dark"]
+  // base.html sets data-theme="dark" on <html>, so dark: variants key off that attribute
+  darkMode: ['selector', '[data-theme="dark"]'],
 }

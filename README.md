@@ -41,7 +41,10 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **Family-Focused**: Designed to be intuitive for users of all technical skill levels.
 * **Customizable**: Toggle features on or off and even change the color theme right from the `config.yml` file.
 
-![homehub](https://github.com/user-attachments/assets/55b1c580-8897-4073-9e51-2a892a2bdcd4)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/homehub-dark.gif">
+  <img src="docs/images/homehub-light.gif" alt="A tour of HomeHub: home, calendar, expenses, shopping, chores, recipes and more">
+</picture>
 
 ## Getting Started is Easy
 
@@ -57,6 +60,7 @@ The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
 instance_name: "My Home Hub"
 password: "" #leave blank for password less access
 admin_name: "Administrator"
+max_upload_mb: 1024 # largest upload in MB (Shared Cloud, PDFs); 0 removes the limit
 feature_toggles:
   shopping_list: true
   media_downloader: true
@@ -107,15 +111,6 @@ reminders:
 #Optional settings
 theme:
   primary_color: "#1d4ed8"
-  secondary_color: "#a0aec0"
-  background_color: "#f7fafc"
-  card_background_color: "#fff"
-  text_color: "#333"
-  sidebar_background_color: "#2563eb"
-  sidebar_text_color: "#ffffff"
-  sidebar_link_color: "rgba(255,255,255,0.95)"
-  sidebar_link_border_color: "rgba(255,255,255,0.18)"
-  sidebar_active_color: "#3b82f6"
 ```
 
 </details>
@@ -140,7 +135,7 @@ services:
       - ./config.yml:/app/config.yml:ro
     environment:
       - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to random if not provided
+      - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to one kept in data/secret_key
       # - TZ=Asia/Kolkata # optional; see "Timezone" below
 ```
 
@@ -165,11 +160,11 @@ docker exec -it homehub flask set-admin-password
 
 The `password` in `config.yml` is separate: it protects the whole site and keeps working as before.
 
-Tip: set `SECRET_KEY` in your environment so logins and admin unlocks survive a restart.
+Logins and admin unlocks survive a restart: if `SECRET_KEY` is not set, HomeHub generates one on first start and keeps it in `data/secret_key`.
 
 ## Timezone (optional)
 
-HomeHub decides what "today" is (due dates, overdue chores, recurring expenses and chores) from the container's clock, which is UTC by default. If you are far from UTC, "today" can roll over a few hours early or late. Set your timezone with `TZ` in `compose.yml`:
+HomeHub decides what "today" is (due dates, overdue chores, recurring expenses and chores) and which time to show next to "By … at …" from the container's clock, which is UTC by default. If you are far from UTC, "today" can roll over a few hours early or late. Set your timezone with `TZ` in `compose.yml`:
 
 ```yaml
     environment:
@@ -182,7 +177,7 @@ Use a name from the [tz database](https://en.wikipedia.org/wiki/List_of_tz_datab
 
 HomeHub follows your system dark/light mode. You can customize colors via `config.yml > theme`.
 
-Configurable keys:
+Configurable keys (all optional):
 
 ```yaml
 theme:
@@ -190,18 +185,20 @@ theme:
   primary_color: "#1d4ed8"
   secondary_color: "#a0aec0"
   # Surfaces & text
-  background_color: "#f7fafc"
+  background_color: "#f8fafc"
   card_background_color: "#ffffff"
-  text_color: "#333333"
-  # Sidebar palette
+  text_color: "#0f172a"
+  # Sidebar palette. Leave these out for the default light sidebar.
+  # Setting sidebar_background_color gives a coloured sidebar with light links.
   sidebar_background_color: "#2563eb"
   sidebar_text_color: "#ffffff"                # text color used for the sidebar title and labels
   sidebar_link_color: "rgba(255,255,255,0.95)" # link text color in sidebar items
   sidebar_link_border_color: "rgba(255,255,255,0.18)" # subtle border around sidebar links
+  sidebar_active_color: "#3b82f6"              # background of the current page's link
 ```
 
 Tips:
-- Want higher contrast in the sidebar? Increase `sidebar_link_border_color` opacity (e.g., `rgba(255,255,255,0.3)`).
+- The old default blue sidebar (`#2563eb`) is treated as "not set", so configs copied from an older `config-example.yml` get the new light sidebar. Pick any other colour to keep a coloured sidebar.
 - Prefer lighter/darker accents? Tweak `primary_color` and `secondary_color`.
 - Dark mode palette adapts automatically; the variables above apply to light mode, while dark mode uses tuned counterparts for good contrast.
 

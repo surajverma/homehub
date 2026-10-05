@@ -7,6 +7,7 @@ from ..models import db, RecurringExpense, ExpenseEntry, parse_split
 from ..security import sanitize_text
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
+from ..recurrence import serialized
 import bleach
 
 
@@ -63,6 +64,7 @@ def _rule_occurs_on(r: RecurringExpense, target: date) -> bool:
     return any(d == target for d in _rule_occurrences(r, target))
 
 
+@serialized
 def _generate_recurring_entries_until(today: date | None = None) -> None:
     today = today or date.today()
     recs = RecurringExpense.query.all()

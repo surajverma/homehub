@@ -1,0 +1,208 @@
+document.addEventListener('DOMContentLoaded', function() {
+    const adminName = window.HomeHubAdmin.names[0];
+    const currentUser = () => localStorage.getItem('username') || '';
+    const isAllowed = (creator) => (
+        currentUser() === creator ||
+        currentUser() === adminName ||
+        currentUser() === 'Administrator' ||
+        currentUser() === 'admin'
+    );
+    
+    // Set creator
+    document.getElementById('creator').value = currentUser();
+    document.querySelectorAll('input[name="user"]').forEach(i => i.value = currentUser());
+
+    function applyRecipeUserContext() {
+        document.querySelectorAll('input[name="user"]').forEach(i => i.value = currentUser());
+        document.querySelectorAll('.delete-form').forEach(f => {
+            f.style.display = isAllowed(f.getAttribute('data-creator')) ? '' : 'none';
+        });
+        document.querySelectorAll('.edit-btn[data-creator]').forEach(a => {
+            const allowed = isAllowed(a.getAttribute('data-creator'));
+            a.style.display = allowed ? '' : 'none';
+            if (allowed) {
+                const baseHref = (a.getAttribute('data-base-href') || a.getAttribute('href') || '').split('?')[0];
+                if (baseHref) {
+                    a.setAttribute('data-base-href', baseHref);
+                    a.setAttribute('href', `${baseHref}?user=${encodeURIComponent(currentUser())}`);
+                }
+            }
+        });
+    }
+    applyRecipeUserContext();
+    document.addEventListener('user-switched', () => {
+        applyRecipeUserContext();
+    });
+    
+    // Initialize Quill editors
+    const quillConfig = {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline'],
+                [{ 'header': [2, 3, false] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link'],
+                ['clean']
+            ],
+            clipboard: {
+                matchVisual: false  // Better paste from Word
+            }
+        },
+        placeholder: 'Type here...'
+    };
+    
+    const ingredientsQuill = new Quill('#ingredientsEditor', quillConfig);
+    const instructionsQuill = new Quill('#instructionsEditor', quillConfig);
+    
+    // Load existing content if editing (read from JSON script tags)
+    const ingNode = document.getElementById('formIngredientsJSON');
+    const insNode = document.getElementById('formInstructionsJSON');
+    if (ingNode) {
+        try { ingredientsQuill.root.innerHTML = JSON.parse(ingNode.textContent || '""'); } catch(e) {}
+    }
+    if (insNode) {
+        try { instructionsQuill.root.innerHTML = JSON.parse(insNode.textContent || '""'); } catch(e) {}
+    }
+    
+    // Form submission - convert Quill content to HTML
+    document.getElementById('recipeForm').addEventListener('submit', function(e) {
+        const ingredientsHTML = ingredientsQuill.root.innerHTML;
+        const instructionsHTML = instructionsQuill.root.innerHTML;
+        
+        // Check if both are empty (Quill adds <p><br></p> for empty content)
+        const ingText = ingredientsQuill.getText().trim();
+        const insText = instructionsQuill.getText().trim();
+        
+        if (!ingText && !insText) {
+            e.preventDefault();
+            alert('Please add ingredients or instructions (or both).');
+            return false;
+        }
+        
+        document.getElementById('ingredientsHidden').value = ingredientsHTML;
+        document.getElementById('instructionsHidden').value = instructionsHTML;
+    });
+    
+    // Tag Management using FormTags (same as shopping/chores)
+    const T = Tags.scoped('recipes');
+    
+    FormTags.initTagInputForm(T, {
+        formId: 'recipeForm',
+        wrapId: 'tagInputWrap',
+        inputId: 'tagInput',
+        hiddenId: 'tagsInput',
+        libraryId: 'tagLibrary'
+    });
+    
+    // Accordion functionality
+    window.toggleRecipe = function(id) {
+        const content = document.getElementById('content-' + id);
+        const chevron = document.getElementById('chevron-' + id);
+        
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            chevron.style.transform = 'rotate(0deg)';
+        } else {
+            // Close all others
+            document.querySelectorAll('.recipe-content').forEach(c => c.classList.remove('expanded'));
+            document.querySelectorAll('[id^="chevron-"]').forEach(ch => ch.style.transform = 'rotate(0deg)');
+            
+            // Open this one
+            content.classList.add('expanded');
+            chevron.style.transform = 'rotate(180deg)';
+        }
+    };
+    
+    // Add click handlers to recipe headers
+    document.querySelectorAll('.recipe-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const recipeId = this.getAttribute('data-recipe-id');
+            toggleRecipe(recipeId);
+        });
+    });
+    
+    // Tag filtering (same pattern as shopping/chores)
+    (function(){
+        const filterHost = document.getElementById('filterTags');
+        const clearBtn = document.getElementById('clearTagFilters');
+        const filterSection = document.getElementById('filterSection');
+        const selected = new Set();
+        
+        function collectTags(){
+            const set = new Set();
+            document.querySelectorAll('.recipe-card').forEach(card=>{
+                try{ 
+                    const tagsData = card.querySelector('.recipe-tags-display').dataset.tags;
+                    (JSON.parse(tagsData||'[]')||[]).forEach(t=> set.add(t)); 
+                }catch(e){}
+            });
+            T.getAllKnownTags().forEach(t=> set.add(t));
+            return [...set].sort((a,b)=> a.localeCompare(b));
+        }
+        
+        function apply(){
+            const tags = [...selected];
+            document.querySelectorAll('.recipe-card').forEach(card=>{
+                if(!tags.length){ card.classList.remove('hidden'); return; }
+                let matched=false; 
+                try{ 
+                    const tagsData = card.querySelector('.recipe-tags-display').dataset.tags;
+                    const cardTags = JSON.parse(tagsData||'[]')||[]; 
+                    matched = cardTags.some(t=>tags.includes(t)); 
+                }catch(e){}
+                card.classList.toggle('hidden', !matched);
+            });
+        }
+        
+        function render(){
+            const all = collectTags();
+            filterHost.innerHTML='';
+            if(all.length === 0){
+                filterSection.style.display = 'none';
+                return;
+            }
+            filterSection.style.display = 'flex';
+            all.forEach(t=>{
+                const pill = T.makePill(t, ()=>{ 
+                    if(selected.has(t)) selected.delete(t); 
+                    else selected.add(t); 
+                    render(); 
+                    apply(); 
+                }, selected.has(t));
+                filterHost.appendChild(pill);
+            });
+            clearBtn.style.display = selected.size > 0 ? 'inline-block' : 'none';
+        }
+        
+        clearBtn.addEventListener('click', ()=>{ selected.clear(); render(); apply(); });
+        T.onChange(()=> render());
+        render();
+    })();
+    
+    // Display recipe tags with colors
+    document.querySelectorAll('.recipe-tags-display').forEach(el => {
+        const tags = JSON.parse(el.dataset.tags || '[]');
+        el.innerHTML = '';
+        tags.forEach(t => {
+            const bg = T.colorFor(t);
+            // Calculate text color for contrast
+            const getTextColor = (bgColor) => {
+                if(/^hsl\(/i.test(bgColor)){
+                    try{
+                        const parts = bgColor.match(/hsl\(([^)]+)\)/i)[1].trim().split(/\s+/);
+                        const l = parseInt(parts[2]);
+                        return l < 60 ? '#fff' : '#111827';
+                    }catch(e){ return '#fff'; }
+                }
+                return '#fff';
+            };
+            const fg = getTextColor(bg);
+            const pill = document.createElement('span');
+            pill.className = 'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs';
+            pill.setAttribute('style', `background: ${bg}; color: ${fg};`);
+            pill.textContent = t;
+            el.appendChild(pill);
+        });
+    });
+});

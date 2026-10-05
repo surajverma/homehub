@@ -17,6 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY package.json tailwind.config.js ./
 COPY static/input.css ./static/
 COPY templates ./templates
+# Page scripts use Tailwind classes too, so Tailwind must see them when it builds the CSS
+COPY static/js ./static/js
 RUN npm install && npm run build:css
 
 FROM python:3.12-alpine
@@ -47,4 +49,5 @@ COPY --from=builder /app/static/output.css /app/static/output.css
 
 EXPOSE 5000
 
-CMD ["gunicorn", "wsgi:app", "-w", "1", "-k", "sync", "-b", "0.0.0.0:5000", "--access-logfile", "-", "--error-logfile", "-"]
+# One process (SQLite, in-process download threads) with threads so a slow upload or PDF job does not block everyone
+CMD ["gunicorn", "wsgi:app", "-w", "1", "-k", "gthread", "--threads", "4", "-b", "0.0.0.0:5000", "--access-logfile", "-", "--error-logfile", "-"]

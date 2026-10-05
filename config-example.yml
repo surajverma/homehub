@@ -1,6 +1,7 @@
 instance_name: "My Home Hub"
 password: "" #leave blank for password less access
 admin_name: "Administrator" # protect it with: docker exec -it homehub flask set-admin-password
+max_upload_mb: 1024 # largest upload (Shared Cloud, PDFs) in MB; 0 removes the limit
 feature_toggles:
   shopping_list: true
   media_downloader: true
@@ -57,15 +58,6 @@ weather:
   units: metric # metric or imperial (default: metric)
   view: compact # compact or detailed (detailed also shows today's forecast: sunrise, sunset, UV, rain %, highs/lows)
 
-#Optional
+#Optional: accent colour. See the README "Theming" section for every key.
 theme:
   primary_color: "#1d4ed8"
-  secondary_color: "#a0aec0"
-  background_color: "#f7fafc"
-  card_background_color: "#fff"
-  text_color: "#333"
-  sidebar_background_color: "#2563eb"
-  sidebar_text_color: "#ffffff"
-  sidebar_link_color: "rgba(255,255,255,0.95)"
-  sidebar_link_border_color: "rgba(255,255,255,0.18)"
-  sidebar_active_color: "#3b82f6"

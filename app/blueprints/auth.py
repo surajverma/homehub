@@ -1,7 +1,7 @@
 from flask import current_app, request, session, redirect, url_for, render_template, flash, jsonify
 from ..blueprints import main_bp
 from .. import admin
-from ..config import load_config
+from ..config import load_config, upload_limit_bytes
 import hashlib
 import bleach
 
@@ -10,6 +10,7 @@ import bleach
 def reload_config_and_auth():
     try:
         current_app.config['HOMEHUB_CONFIG'] = load_config()
+        current_app.config['MAX_CONTENT_LENGTH'] = upload_limit_bytes(current_app.config['HOMEHUB_CONFIG'])
     except Exception:
         pass
     cfg = current_app.config.get('HOMEHUB_CONFIG', {})

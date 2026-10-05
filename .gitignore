@@ -1,5 +1,6 @@
 # Database files
 data/app.db
+data/secret_key
 database.db
 
 # User-uploaded files
@@ -26,3 +27,5 @@ package-lock.json
 static/output.css
 static/custom.css
 tests/__pycache__/
+# Generated QR codes
+static/qr_*.png

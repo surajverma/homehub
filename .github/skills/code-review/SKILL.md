@@ -9,9 +9,9 @@ HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja te
 
 ## Upgrades must not break existing installs
 
-- There is no Alembic. Existing databases are upgraded at startup in `create_app` (`app/__init__.py`).
-- **A new column on an existing table needs both the model field and an `ensure_column(table, col, type_spec, default)` call** in that startup block. Without it, existing installs crash with "no such column". Check that the default makes sense for old rows.
-- A new table needs a `CREATE TABLE IF NOT EXISTS` in the same block, or must be safe to create through `db.create_all()`.
+- There is no Alembic. Existing databases are upgraded at startup by `app/migrations.py`, which `create_app` calls. New columns go in its `COLUMNS` or `LATE_COLUMNS` lists.
+- **A new column on an existing table needs both the model field and an entry in `COLUMNS` or `LATE_COLUMNS` in `app/migrations.py`**. Without it, existing installs crash with "no such column". Check that the default makes sense for old rows.
+- A new table needs a `CREATE TABLE IF NOT EXISTS` in `TABLES` there, or must be safe to create through `db.create_all()`.
 - Startup migrations must be idempotent and additive. Flag column renames, drops or type changes, since they break existing `data/app.db` files.
 - New `config.yml` keys must have a default in code, and should be added to `config-example.yml`. An existing `config.yml` without the key must keep working.
 

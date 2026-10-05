@@ -1,0 +1,241 @@
+// Initialize creator
+document.getElementById('creator').value = localStorage.getItem('username') || '';
+document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStorage.getItem('username') || '');
+
+// Scoped Tags for shopping
+const T = Tags.scoped('shopping');
+
+// Tag input handling for create form (reusable)
+(function(){
+    FormTags.initTagInputForm(T, {
+        formId: 'shoppingForm',
+        wrapId: 'tagInputWrap',
+        inputId: 'tagInput',
+        hiddenId: 'tagsField',
+        libraryId: 'tagLibrary'
+    });
+})();
+
+// Build filter chips from all known tags
+(function(){
+    const filterHost = document.getElementById('tagFilters');
+    const clearBtn = document.getElementById('clearTagFilters');
+    const selected = new Set();
+    function collectTags(){
+        const set = new Set();
+        document.querySelectorAll('#shoppingList li').forEach(li=>{
+            try{ (JSON.parse(li.dataset.tags||'[]')||[]).forEach(t=> set.add(t)); }catch(e){}
+        });
+        T.getAllKnownTags().forEach(t=> set.add(t));
+        return [...set].sort((a,b)=> a.localeCompare(b));
+    }
+    function apply(){
+        const tags = [...selected];
+        document.querySelectorAll('#shoppingList li').forEach(li=>{
+            if(!tags.length){ li.classList.remove('hidden'); return; }
+            let matched=false; try{ const tg=JSON.parse(li.dataset.tags||'[]')||[]; matched = tg.some(t=>tags.includes(t)); }catch(e){}
+            li.classList.toggle('hidden', !matched);
+        });
+    }
+    function render(){
+        const all = collectTags();
+        filterHost.innerHTML='';
+        all.forEach(t=>{
+            const pill = T.makePill(t, ()=>{ if(selected.has(t)) selected.delete(t); else selected.add(t); render(); apply(); }, selected.has(t));
+            filterHost.appendChild(pill);
+        });
+        clearBtn.style.display = selected.size > 0 ? 'inline-block' : 'none';
+    }
+    clearBtn.addEventListener('click', ()=>{ selected.clear(); render(); apply(); });
+    T.onChange(()=> render());
+    render();
+})();
+
+// Item tags display (no inline add); update via Edit modal/API
+(function(){
+    const list = document.getElementById('shoppingList');
+    function renderItemTags(li){
+        const id = li.dataset.id;
+        let tags=[]; try{ tags = JSON.parse(li.dataset.tags||'[]')||[]; }catch(e){}
+        const hosts = li.querySelectorAll('.item-tags');
+        hosts.forEach(host=>{
+            host.innerHTML = '';
+            tags.forEach(t=> host.appendChild(T.makeFilledPill(t, null)));
+        });
+        // record known tags for library/filter
+        T.recordTags(tags);
+    }
+    list.querySelectorAll('li').forEach(li=>{
+        renderItemTags(li);
+    });
+})();
+
+// Hide edit/delete for non-owners (fallback; base template also handles)
+function applyShoppingUserContext(){
+    const adminName=window.HomeHubAdmin.names[0];
+    const current=localStorage.getItem('username')||'';
+    const allowed=(creator)=> (current===creator || current===adminName || current==='Administrator' || current==='admin');
+    document.querySelectorAll('.delete-form').forEach(f=>{
+        f.style.display = allowed(f.getAttribute('data-creator')) ? '' : 'none';
+    });
+    document.querySelectorAll('.edit-btn[data-creator]').forEach(b=>{
+        b.style.display = allowed(b.getAttribute('data-creator')) ? '' : 'none';
+    });
+}
+applyShoppingUserContext();
+document.addEventListener('user-switched', applyShoppingUserContext);
+// Attach current user to suggestion buttons
+(function(){
+    const current = localStorage.getItem('username') || '';
+    document.querySelectorAll('form.inline input[name="creator"]').forEach(i=>{ i.value = current; });
+})();
+
+// Edit modal for item + tags
+(function(){
+        // Create modal once
+        const modal = document.createElement('div');
+        modal.id = 'editModal';
+        modal.className = 'fixed inset-0 hidden items-center justify-center bg-black/50 z-50';
+        modal.innerHTML = `
+            <div class="card shadow-xl max-w-lg w-full p-5 mx-4">
+                <h3 class="text-lg font-semibold mb-3">Edit Item</h3>
+                <div class="mb-3">
+                    <label for="editItemInput" class="block text-sm mb-1">Item</label>
+                    <input type="text" id="editItemInput" class="w-full" />
+                </div>
+                <div>
+                    <label for="editTagInput" class="block text-sm mb-1">Tags</label>
+                    <div id="editTagWrap" class="flex flex-wrap gap-2 border rounded-lg p-2">
+                        <input type="text" id="editTagInput" class="flex-1 min-w-[140px] outline-none bg-transparent" placeholder="Add tag and press Enter" />
+                    </div>
+                            <div class="mt-2 flex flex-wrap gap-2 text-xs" id="editTagLibrary"></div>
+                </div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" id="editCancel" class="btn btn-secondary">Cancel</button>
+                    <button type="button" id="editSave" class="btn btn-primary">Save</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+        const editBtns = document.querySelectorAll('.edit-btn');
+        let currentId = null; let tags = [];
+        const itemInput = document.getElementById('editItemInput');
+        const tagWrap = document.getElementById('editTagWrap');
+        const tagInput = document.getElementById('editTagInput');
+        function render(){ T.renderPills(tagWrap, tags, (t)=>{ tags = tags.filter(x=>x!==t); render(); }); }
+        tagInput.addEventListener('keydown', (e)=>{
+            if(e.key==='Enter' || e.key===','){ e.preventDefault(); const v=tagInput.value.trim(); if(v && !tags.includes(v)){ tags.push(v); T.ensureColor(v); render(); } tagInput.value=''; }
+            if(e.key==='Backspace' && !tagInput.value && tags.length){ tags.pop(); render(); }
+        });
+            function open(id){
+            currentId = id;
+            const li = document.querySelector(`#shoppingList li[data-id="${id}"]`);
+            if(!li) return;
+            let tg=[]; try{ tg = JSON.parse(li.dataset.tags||'[]')||[]; }catch(e){}
+            tags = tg.slice(); render();
+            itemInput.value = li.querySelector('span.flex-1').textContent.trim();
+                // Render library in modal
+                const lib = document.getElementById('editTagLibrary');
+                T.renderLibrary(lib, (t)=>{ if(!tags.includes(t)){ tags.push(t); render(); }});
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            itemInput.focus();
+        }
+        async function save(){
+            if(!currentId) return;
+            // Harvest any pending comma-separated tokens in the edit input
+            FormTags.harvestPendingInto(T, tagInput, tags);
+            const payload = { item: itemInput.value.trim(), tags: tags, user: (localStorage.getItem('username') || '') };
+            try{
+                const res = await fetch(`/api/shopping/${currentId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if(data.ok){
+                    const li = document.querySelector(`#shoppingList li[data-id="${currentId}"]`);
+                    if(li){
+                        li.dataset.tags = JSON.stringify(data.item.tags||[]);
+                        li.querySelector('span.flex-1').textContent = data.item.item;
+                        const hosts = li.querySelectorAll('.item-tags');
+                        hosts.forEach(host=>{ host.innerHTML=''; (data.item.tags||[]).forEach(t=> host.appendChild(T.makePill(t))); });
+                                    T.recordTags(data.item.tags||[]);
+                                    refreshFiltersAndLibrary();
+                    }
+                    close();
+                }
+            }catch(e){ console.error(e); }
+        }
+        function close(){ modal.classList.add('hidden'); modal.classList.remove('flex'); currentId=null; }
+        document.getElementById('editCancel').addEventListener('click', close);
+        document.getElementById('editSave').addEventListener('click', save);
+        editBtns.forEach(btn=> btn.addEventListener('click', ()=> open(btn.dataset.id)));
+    })();
+
+// Build chips suggestions under the Item input (non-submitting; fills input)
+(function(){
+    const box = document.getElementById('itemAutoFill');
+    const input = document.getElementById('itemInput');
+    const HIDE_KEY = 'shopping:hidden_suggestions';
+    function getHidden(){ try{return new Set(JSON.parse(localStorage.getItem(HIDE_KEY)||'[]'));}catch(e){return new Set();} }
+    function setHidden(s){ try{ localStorage.setItem(HIDE_KEY, JSON.stringify([...s])); }catch(e){} }
+    let base = [];
+    try { base = JSON.parse(document.getElementById('shoppingSuggestions').textContent || '[]') || []; } catch(e) { base = []; }
+    function currentListItems(){
+        return [...document.querySelectorAll('#shoppingList li span.flex-1')].map(n=> n.textContent.trim().toLowerCase());
+    }
+    function render(){
+        const q = input.value.trim().toLowerCase();
+        const hidden = getHidden();
+        const existing = new Set(currentListItems());
+        const list = base.filter(s=> !hidden.has(s) && !existing.has(s.toLowerCase()) && (!q || s.toLowerCase().includes(q))).slice(0,50);
+        if(!list.length){ box.classList.add('hidden'); box.innerHTML=''; return; }
+        box.innerHTML='';
+        list.forEach(s=>{
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer select-none';
+            const text = document.createElement('div'); text.textContent = s; text.className='truncate pr-2 flex-1';
+            const del = document.createElement('button'); del.type='button'; del.title='Delete suggestion'; del.setAttribute('aria-label','Delete suggestion '+s); del.className='text-gray-400 hover:text-red-600 w-6 h-6 inline-flex items-center justify-center'; del.innerHTML='<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+            del.addEventListener('click', async (e)=>{
+                e.stopPropagation();
+                // Hide locally and ask server to drop one history row for this suggestion (best effort)
+                const h=getHidden(); h.add(s); setHidden(h);
+                try{ await fetch('/api/shopping/history', { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({item: s}) }); }catch(e){}
+                render();
+            });
+            row.addEventListener('click', ()=>{ input.value = s; box.classList.add('hidden'); input.focus(); });
+            row.appendChild(text);
+            const actions=document.createElement('div'); actions.className='flex items-center gap-2'; actions.appendChild(del); row.appendChild(actions);
+            box.appendChild(row);
+        });
+        box.classList.remove('hidden');
+    }
+    input.addEventListener('input', render);
+    input.addEventListener('focus', render);
+    document.addEventListener('click', (e)=>{ if(!box.contains(e.target) && e.target!==input){ box.classList.add('hidden'); }});
+    // Expose render globally so delete actions can refresh autofill
+    window.refreshShoppingAutofill = render;
+})();
+
+function refreshFiltersAndLibrary(){
+    // Rebuild tag filter list and library after changes
+    const filterHost = document.getElementById('tagFilters');
+    const allTags = new Set();
+    document.querySelectorAll('#shoppingList li').forEach(li=>{
+        try{ (JSON.parse(li.dataset.tags||'[]')||[]).forEach(t=>allTags.add(t)); }catch(e){}
+    });
+    T.getAllKnownTags().forEach(t=> allTags.add(t));
+    filterHost.innerHTML='';
+    [...allTags].sort((a,b)=>a.localeCompare(b)).forEach(t=>{
+          const pill = T.makeFilledPill(t, null, false);
+          filterHost.appendChild(pill);
+    });
+    const lib = document.getElementById('tagLibrary');
+    T.renderLibrary(lib, (t)=>{
+        const hidden = document.getElementById('tagsField');
+        let tags=[]; try{ tags = JSON.parse(hidden.value||'[]'); }catch(e){}
+        if(!tags.includes(t)){
+            tags.push(t); hidden.value = JSON.stringify(tags);
+            const wrap = document.getElementById('tagInputWrap');
+            T.renderPills(wrap, tags, (rm)=>{ tags = tags.filter(x=>x!==rm); hidden.value=JSON.stringify(tags); T.renderPills(wrap, tags, ()=>{}); });
+        }
+    });
+}
+
+// Refresh tag library when tags change anywhere in this scope
+T.onChange(()=> refreshFiltersAndLibrary());
