@@ -17,6 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY package.json tailwind.config.js ./
 COPY static/input.css ./static/
 COPY templates ./templates
+# Page scripts use Tailwind classes too, so Tailwind must see them when it builds the CSS
+COPY static/js ./static/js
 RUN npm install && npm run build:css
 
 FROM python:3.12-alpine

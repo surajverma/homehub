@@ -80,12 +80,12 @@ document.addEventListener('DOMContentLoaded', function(){
       const isToday = (ds===todayIso);
       const isSelected = selectedDate && (isoLocalFromDate(selectedDate)===ds);
       let cls = 'calendar-cell p-2 border rounded-md cursor-pointer flex flex-col text-left';
-      if (isSelected) cls += ' bg-blue-500 text-white';
-      else if (isToday) cls += ' bg-green-500';
+      if (isSelected) cls += ' is-selected';
+      if (isToday) cls += ' is-today';
       grid.insertAdjacentHTML('beforeend', `
-        <button class="${cls}" data-date="${ds}">
-          <div class="font-semibold">${day}</div>
-          ${data && data.total ? `<div class="text-xs mt-1 ${isSelected? 'text-white' : 'text-gray-600'}">${fmt(data.total)}</div>` : ''}
+        <button class="${cls}" data-date="${ds}"${isSelected ? ' aria-pressed="true"' : ''}>
+          <div class="font-semibold calendar-cell-day">${day}</div>
+          ${data && data.total ? `<div class="text-xs mt-1 calendar-cell-amount">${fmt(data.total)}</div>` : ''}
         </button>
       `);
     }
