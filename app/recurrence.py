@@ -4,6 +4,8 @@ Both kinds of rule repeat every ``interval`` days, weeks, months or years.
 Month and year steps clamp to the last valid day of the target month, so a
 rule that falls on the 31st lands on the 30th (or Feb 28/29) in shorter months.
 """
+import functools
+import threading
 from datetime import date, timedelta
 
 UNITS = ('day', 'week', 'month', 'year')
@@ -79,3 +81,18 @@ def occurrences_between(rule, start: date, end: date):
     while d is not None and d <= end and (not rule_end or d <= rule_end):
         yield d
         d = next_occurrence(rule, d)
+
+
+# Generating due chores and recurring expenses is check-then-insert. Gunicorn runs one
+# worker with several threads, so a process-wide lock is enough to stop two requests
+# from both creating the same occurrence.
+_generation_lock = threading.RLock()
+
+
+def serialized(fn):
+    """Run ``fn`` (including its commit) while holding the shared generation lock."""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        with _generation_lock:
+            return fn(*args, **kwargs)
+    return wrapper

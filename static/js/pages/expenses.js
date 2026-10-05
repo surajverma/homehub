@@ -476,6 +476,8 @@ document.addEventListener('DOMContentLoaded', function(){
   // Bulk delete submit behavior
   bulkBtn.addEventListener('click', (e)=>{
     e.preventDefault();
+    const count = bulkForm.querySelectorAll('input[name="ids"]:checked').length;
+    if (!confirm(`Delete ${count} selected entr${count === 1 ? 'y' : 'ies'}?`)) return;
     // Attach query params to preserve view
   const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
     bulkForm.action = `/expenses/bulk-delete?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;

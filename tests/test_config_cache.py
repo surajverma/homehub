@@ -79,3 +79,23 @@ def test_theme_defaults_upgrade_old_example_values_but_keep_custom_colours():
     assert custom['sidebar_link_color'] == 'rgba(255,255,255,0.95)'
     assert custom['sidebar_active_text_color'] == '#ffffff'
     assert custom['background_color'] == '#fff7ed'
+
+
+def test_too_large_upload_never_redirects_off_site(client, monkeypatch):
+    monkeypatch.setattr('app.blueprints.auth.upload_limit_bytes', lambda cfg: 1024)
+    for referer, expected in [('https://evil.example/phish', '/'), ('//evil.example/x', '/'),
+                              ('http://localhost/upload?x=1', '/upload?x=1')]:
+        resp = client.post('/upload', data={
+            'creator': 'Alice',
+            'files': (io.BytesIO(b'x' * 4096), 'big.bin'),
+        }, content_type='multipart/form-data', headers={'Referer': referer})
+        assert resp.status_code == 302
+        assert resp.headers['Location'] == expected, referer
+
+
+def test_light_sidebar_keeps_individually_customised_keys():
+    theme = config_module._apply_theme_defaults({'sidebar_active_color': '#7c3aed', 'sidebar_text_color': '#ffffff'})
+    assert theme['sidebar_background_color'] == '#ffffff'
+    assert theme['sidebar_active_color'] == '#7c3aed'
+    # White text was the old default and would be invisible on the light sidebar
+    assert theme['sidebar_text_color'] == '#0f172a'

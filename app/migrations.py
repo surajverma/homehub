@@ -86,7 +86,7 @@ LATE_COLUMNS = [
     ('reminder', 'recurring_id', 'INTEGER', None),
     ('recipe', 'tags', "TEXT DEFAULT '[]'", None),
     ('recurring_reminder', 'interval', 'INTEGER', 1),
-    # Filled from the legacy frequency below, then 'day' for anything left
+    # Filled from the legacy frequency below, then 'month' for anything left (matches app/recurrence.py)
     ('recurring_reminder', 'unit', 'TEXT', None),
 ]
 
@@ -150,8 +150,9 @@ def run(db_path: str) -> bool:
             ok &= _step(conn, f'backfill recurring_reminder unit for {frequency}', cur.execute,
                         "UPDATE recurring_reminder SET unit=? WHERE (unit IS NULL OR unit='') AND frequency=?",
                         (unit, frequency))
+        # Anything else is scheduled monthly by the app's legacy fallback, so store that
         ok &= _step(conn, 'default recurring_reminder unit', cur.execute,
-                    "UPDATE recurring_reminder SET unit='day' WHERE unit IS NULL OR unit=''")
+                    "UPDATE recurring_reminder SET unit='month' WHERE unit IS NULL OR unit=''")
     finally:
         conn.close()
     if not ok:

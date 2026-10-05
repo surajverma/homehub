@@ -4,7 +4,7 @@ from ..models import db, Chore, RecurringChore
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..security import sanitize_text
-from ..recurrence import next_occurrence as _next_occurrence, first_on_or_after as _next_due_on_or_after
+from ..recurrence import next_occurrence as _next_occurrence, first_on_or_after as _next_due_on_or_after, serialized
 import json
 
 
@@ -17,6 +17,7 @@ def _parse_date(value):
         return None
 
 
+@serialized
 def _ensure_current_recurring_chores(today: date | None = None):
     today = today or date.today()
     rules = RecurringChore.query.all()

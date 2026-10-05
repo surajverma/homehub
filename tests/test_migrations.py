@@ -58,7 +58,7 @@ def test_old_database_is_upgraded_in_place(tmp_path):
     intervals = dict(conn.execute("SELECT id, interval FROM recurring_reminder"))
     assert intervals == {1: 1, 2: 1, 3: 1}
     # Legacy frequency carries over to the new unit column
-    assert units == {1: 'week', 2: 'month', 3: 'day'}
+    assert units == {1: 'week', 2: 'month', 3: 'month'}
     conn.close()
 
 
@@ -108,3 +108,23 @@ def test_failed_step_is_logged_and_others_still_run(tmp_path, caplog):
     assert 'deleted_at' in columns(conn, 'reminder')
     assert columns(conn, 'app_setting')
     conn.close()
+
+
+def test_existing_null_units_keep_their_legacy_schedule(tmp_path):
+    path = str(tmp_path / 'app.db')
+    make_old_db(path)
+    conn = sqlite3.connect(path)
+    conn.execute("ALTER TABLE recurring_reminder ADD COLUMN unit TEXT")
+    conn.execute("ALTER TABLE recurring_reminder ADD COLUMN interval INTEGER")
+    conn.execute("INSERT INTO recurring_reminder (id, title, frequency, unit) VALUES (4, 'Daily pill', 'daily', NULL)")
+    conn.execute("INSERT INTO recurring_reminder (id, title, frequency, unit) VALUES (5, 'Kept', 'daily', 'week')")
+    conn.commit()
+    conn.close()
+
+    assert migrations.run(path) is True
+
+    conn = sqlite3.connect(path)
+    units = dict(conn.execute("SELECT id, unit FROM recurring_reminder"))
+    conn.close()
+    # Null units follow the same fallback the scheduler used: daily/weekly by frequency, else monthly
+    assert units == {1: 'week', 2: 'month', 3: 'month', 4: 'day', 5: 'week'}

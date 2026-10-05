@@ -107,7 +107,13 @@ def create_app(test_config: dict | None = None):
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'ok': False, 'error': message}), 413
         flash(message, 'error')
-        return redirect(request.referrer or '/')
+        # Only go back to a page on this site; an outside Referer would make this an open redirect
+        from urllib.parse import urlsplit
+        ref = urlsplit(request.referrer or '')
+        if ref.netloc and ref.netloc != request.host:
+            return redirect('/')
+        back = (ref.path or '/') + (f'?{ref.query}' if ref.query else '')
+        return redirect(back if back.startswith('/') and not back.startswith('//') else '/')
 
     @app.context_processor
     def inject_auth_state():

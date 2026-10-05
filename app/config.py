@@ -45,8 +45,20 @@ _LEGACY_THEME_VALUES = {
     'background_color': {'#f7fafc'},
     'text_color': {'#333', '#333333'},
 }
-_SIDEBAR_KEYS = ('sidebar_background_color', 'sidebar_text_color', 'sidebar_link_color',
-                 'sidebar_link_border_color', 'sidebar_active_color')
+_LEGACY_SIDEBAR_VALUES = {
+    'sidebar_text_color': {'#ffffff', '#fff'},
+    'sidebar_link_color': {'rgba(255,255,255,0.95)'},
+    'sidebar_link_border_color': {'rgba(255,255,255,0.18)'},
+    'sidebar_active_color': {'#3b82f6'},
+    'sidebar_active_text_color': {'#ffffff', '#fff'},
+}
+_LIGHT_SIDEBAR = {
+    'sidebar_text_color': '#0f172a',
+    'sidebar_link_color': '#475569',
+    'sidebar_link_border_color': 'transparent',
+    'sidebar_active_color': 'rgba(var(--primary-rgb), 0.10)',
+    'sidebar_active_text_color': 'var(--primary-color)',
+}
 
 
 def _norm_colour(value):
@@ -72,14 +84,13 @@ def _apply_theme_defaults(theme):
         theme.setdefault('sidebar_active_color', '#3b82f6')
         theme.setdefault('sidebar_active_text_color', '#ffffff')
     else:
-        for key in _SIDEBAR_KEYS:
-            theme.pop(key, None)
+        # New light sidebar. Keys still set to the old example values get the new defaults;
+        # anything else the user customised is kept.
         theme['sidebar_background_color'] = '#ffffff'
-        theme['sidebar_text_color'] = '#0f172a'
-        theme['sidebar_link_color'] = '#475569'
-        theme['sidebar_link_border_color'] = 'transparent'
-        theme['sidebar_active_color'] = 'rgba(var(--primary-rgb), 0.10)'
-        theme.setdefault('sidebar_active_text_color', 'var(--primary-color)')
+        for key, default in _LIGHT_SIDEBAR.items():
+            value = theme.get(key)
+            if not value or _norm_colour(value) in _LEGACY_SIDEBAR_VALUES.get(key, set()):
+                theme[key] = default
     return theme
 
 
