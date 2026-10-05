@@ -130,7 +130,8 @@
             <script src="{{ asset_url('js/base/active_link.js') }}"></script>
         </aside>
         <div id="sidebarBackdrop" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden" aria-hidden="true"></div>
-        <!-- Main Content -->
+        <!-- Main Content; the footer sits under it so the sidebar runs the full height -->
+        <div class="flex-1 flex flex-col">
         <main class="main-content flex-1 p-4 md:p-8 overflow-y-auto md:ml-0 ml-0">
             <div class="max-w-none md:max-w-none mx-auto">
                 <div class="topbar sticky -top-4 md:-top-8 z-20 mb-4 -mx-4 md:-mx-8 -mt-4 md:-mt-8 px-4 md:px-8 py-3">
@@ -155,10 +156,11 @@
                 {% block content %}{% endblock %}
             </div>
         </main>
+        <footer class="border-t text-center text-xs text-gray-500 px-4 py-3" style="border-color: var(--border-color); background-color: var(--background-color);">
+            If you found this useful, consider <a href="https://ko-fi.com/skv" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 hover:underline" style="color: var(--primary-text);"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i> buying me a coffee</a>
+        </footer>
+        </div>
     </div>
-    <footer class="border-t text-center text-xs text-gray-500 px-4 py-3" style="border-color: var(--border-color); background-color: var(--background-color);">
-        If you found this useful, consider <a href="https://ko-fi.com/skv" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 hover:underline" style="color: var(--primary-text);"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i> buying me a coffee</a>
-    </footer>
     <script src="{{ asset_url('js/base/app.js') }}"></script>
     <!-- Admin password prompt -->
     <div id="adminPasswordModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50" style="z-index:60">
