@@ -184,19 +184,19 @@
     function renderPills(host, tags, onRemove){
       host.querySelectorAll('.tag-pill').forEach(n=> n.remove());
       const input = host.querySelector('input');
-      (tags||[]).forEach(t=>{
-        const bg = colorFor(t);
+      (tags||[]).forEach(tag=>{
+        const bg = colorFor(tag);
         const fg = textColorFor(bg);
         const pill = document.createElement('span');
         pill.className = 'tag-pill inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs';
         pill.style.background = bg; pill.style.color = fg;
         const text = document.createElement('span');
-        text.textContent = t;
+        text.textContent = tag;
         const btn = document.createElement('button');
-        btn.type = 'button'; btn.className = 'ml-1'; btn.setAttribute('aria-label','remove');
+        btn.type = 'button'; btn.className = 'ml-1'; btn.setAttribute('aria-label', t('remove'));
         const icon = document.createElement('i'); icon.className = 'fa fa-times';
         btn.appendChild(icon);
-        btn.addEventListener('click', ()=> { onRemove && onRemove(t); }); // Don't call forgetTag here - only remove from current input
+        btn.addEventListener('click', ()=> { onRemove && onRemove(tag); }); // Don't call forgetTag here - only remove from current input
         pill.appendChild(text);
         pill.appendChild(btn);
         host.insertBefore(pill, input);
@@ -206,24 +206,24 @@
     function renderLibrary(host, onAdd){
       const tags = getAllKnownTags().slice().sort((a,b)=> a.localeCompare(b));
       host.innerHTML = '';
-      tags.forEach(t=>{
+      tags.forEach(tag=>{
         const wrap = document.createElement('div');
         wrap.className = 'group inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border cursor-pointer select-none';
-        const bg = colorFor(t); const fg = textColorFor(bg);
+        const bg = colorFor(tag); const fg = textColorFor(bg);
         wrap.style.borderColor = bg; wrap.style.color = bg;
-        const plus = document.createElement('span'); plus.title='Add'; plus.className='opacity-100'; plus.innerHTML='<i class="fa fa-plus"></i>';
-        const text = document.createElement('span'); text.textContent = t;
-        const del = document.createElement('button'); del.type='button'; del.title='Delete';
+        const plus = document.createElement('span'); plus.title=t('Add'); plus.className='opacity-100'; plus.innerHTML='<i class="fa fa-plus"></i>';
+        const text = document.createElement('span'); text.textContent = tag;
+        const del = document.createElement('button'); del.type='button'; del.title=t('Delete');
         del.className = 'opacity-0 group-hover:opacity-100 text-red-600 ml-1';
         del.innerHTML = '<i class="fa fa-times"></i>';
         del.addEventListener('click', (e)=>{
           e.stopPropagation();
-          if(confirm(`Delete tag "${t}"? This removes it from suggestions (items keep their tags).`)){
-            forgetTag(t);
+          if(confirm(t('Delete tag "{tag}"? This removes it from suggestions (items keep their tags).', { tag: tag }))){
+            forgetTag(tag);
             renderLibrary(host, onAdd);
           }
         });
-        wrap.addEventListener('click', ()=> onAdd && onAdd(t));
+        wrap.addEventListener('click', ()=> onAdd && onAdd(tag));
         wrap.appendChild(plus);
         wrap.appendChild(text);
         wrap.appendChild(del);

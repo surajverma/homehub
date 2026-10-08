@@ -35,8 +35,8 @@
 
 <div class="max-w-screen-2xl mx-auto space-y-6">
   <div>
-    <h1 class="page-title">Expense Tracker</h1>
-    <p class="page-subtitle">Spending by day, with shared balances.</p>
+    <h1 class="page-title">{{ _('Expense Tracker') }}</h1>
+    <p class="page-subtitle">{{ _('Spending by day, with shared balances.') }}</p>
   </div>
 
   <!-- Summary Cards -->
@@ -44,14 +44,14 @@
     <div class="card p-4 flex items-center">
       <div class="w-10 h-10 rounded-full inline-flex items-center justify-center" style="background: var(--primary-soft); color: var(--primary-text);"><i class="fas fa-wallet" aria-hidden="true"></i></div>
       <div class="ml-4">
-        <p class="text-gray-500 text-sm">Total This Month</p>
+        <p class="text-gray-500 text-sm">{{ _('Total This Month') }}</p>
         <p class="text-2xl font-bold tabular-nums" id="total-this-month">₹0.00</p>
       </div>
     </div>
     <div class="card p-4 flex items-center">
       <div class="w-10 h-10 rounded-full inline-flex items-center justify-center" style="background: var(--hover-bg); color: var(--muted-text);"><i class="fas fa-user-circle" aria-hidden="true"></i></div>
       <div class="ml-4">
-        <p class="text-gray-500 text-sm">My Spending</p>
+        <p class="text-gray-500 text-sm">{{ _('My Spending') }}</p>
         <p class="text-2xl font-bold tabular-nums" id="my-spending">₹0.00</p>
         <p class="text-xs text-gray-500" id="my-share"></p>
       </div>
@@ -59,12 +59,12 @@
     <div class="card p-4 flex items-center">
       <div class="w-10 h-10 rounded-full inline-flex items-center justify-center" style="background: var(--hover-bg); color: var(--muted-text);"><i class="fas fa-chart-pie" aria-hidden="true"></i></div>
       <div class="ml-4">
-        <p class="text-gray-500 text-sm">Top Category</p>
+        <p class="text-gray-500 text-sm">{{ _('Top Category') }}</p>
         <p class="text-2xl font-bold tabular-nums" id="top-category">-</p>
       </div>
     </div>
     <div class="card p-4 flex items-center justify-center">
-      <a href="/expenses/recurring" class="w-full h-full btn btn-secondary"><i class="fas fa-gear" aria-hidden="true"></i>Recurring rules & config</a>
+      <a href="/expenses/recurring" class="w-full h-full btn btn-secondary"><i class="fas fa-gear" aria-hidden="true"></i>{{ _('Recurring rules & config') }}</a>
     </div>
   </div>
 
@@ -73,12 +73,12 @@
     <!-- Calendar and day panel side by side; the month list joins them as a third column only on wide screens -->
   <div class="xl:col-span-7 2xl:col-span-5 card p-4 relative z-0">
       <div class="flex items-center justify-between mb-3">
-        <button id="prev-month" class="btn btn-secondary btn-icon" title="Previous month" aria-label="Previous month"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+        <button id="prev-month" class="btn btn-secondary btn-icon" title="{{ _('Previous month') }}" aria-label="{{ _('Previous month') }}"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
         <h2 class="text-lg font-semibold" id="calendar-header"></h2>
-        <button id="next-month" class="btn btn-secondary btn-icon" title="Next month" aria-label="Next month"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+        <button id="next-month" class="btn btn-secondary btn-icon" title="{{ _('Next month') }}" aria-label="{{ _('Next month') }}"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
       </div>
     <div class="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-1">
-        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        <div>{{ _('Sun') }}</div><div>{{ _('Mon') }}</div><div>{{ _('Tue') }}</div><div>{{ _('Wed') }}</div><div>{{ _('Thu') }}</div><div>{{ _('Fri') }}</div><div>{{ _('Sat') }}</div>
       </div>
       <div id="calendar-grid" class="grid grid-cols-7 gap-1 pb-4"></div>
     </div>
@@ -91,8 +91,8 @@
     <!-- Monthly Summary Sidebar -->
     <div class="xl:col-span-12 2xl:col-span-4 card p-4 monthly-summary-container relative z-0">
       <div class="flex-shrink-0 flex items-center justify-between mb-3">
-        <h3 class="text-lg font-bold">Entries This Month</h3>
-        <label id="select-all-label" class="text-sm flex items-center gap-2" style="display: none;"><input type="checkbox" id="select-all-month" class="rounded"> Select all</label>
+        <h3 class="text-lg font-bold">{{ _('Entries This Month') }}</h3>
+        <label id="select-all-label" class="text-sm flex items-center gap-2" style="display: none;"><input type="checkbox" id="select-all-month" class="rounded"> {{ _('Select all') }}</label>
       </div>
       <form id="bulk-delete-form" method="POST" action="/expenses/bulk-delete" class="flex-grow overflow-y-auto pr-2 no-scrollbar" style="max-height:480px">
         <input type="hidden" name="user" id="bulk-user">
@@ -100,10 +100,10 @@
       </form>
       <div id="monthly-total-footer" class="flex-shrink-0 border-t pt-3 mt-3 flex justify-between items-center">
         <div class="flex items-center gap-3">
-          <button id="bulk-delete-btn" class="btn btn-danger" style="display: none;">Delete Selected</button>
+          <button id="bulk-delete-btn" class="btn btn-danger" style="display: none;">{{ _('Delete Selected') }}</button>
         </div>
         <div class="flex items-center gap-2">
-          <span class="font-semibold">Month Total:</span>
+          <span class="font-semibold">{{ _('Month Total:') }}</span>
           <span id="monthly-total-amount" class="text-lg font-bold">₹0.00</span>
         </div>
       </div>
@@ -113,20 +113,20 @@
   <!-- Balances: who owes whom (all-time, across months) -->
   <div class="card p-4" id="balances-card">
     <div class="flex items-center justify-between mb-3">
-      <h3 class="text-lg font-bold"><i class="fas fa-scale-balanced mr-2 text-gray-500"></i>Balances</h3>
-      <span class="text-xs text-gray-500">Shared expenses, all months</span>
+      <h3 class="text-lg font-bold"><i class="fas fa-scale-balanced mr-2 text-gray-500"></i>{{ _('Balances') }}</h3>
+      <span class="text-xs text-gray-500">{{ _('Shared expenses, all months') }}</span>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <div class="text-sm font-semibold text-gray-600 mb-2">Net balance</div>
+        <div class="text-sm font-semibold text-gray-600 mb-2">{{ _('Net balance') }}</div>
         <div id="balances-net"></div>
       </div>
       <div>
-        <div class="text-sm font-semibold text-gray-600 mb-2">To settle up</div>
+        <div class="text-sm font-semibold text-gray-600 mb-2">{{ _('To settle up') }}</div>
         <div id="balances-settlements"></div>
       </div>
       <div>
-        <div class="text-sm font-semibold text-gray-600 mb-2">This month: paid vs share</div>
+        <div class="text-sm font-semibold text-gray-600 mb-2">{{ _('This month: paid vs share') }}</div>
         <div id="month-shares"></div>
       </div>
     </div>
@@ -144,42 +144,42 @@
 <!-- Add/Edit Expense Modal -->
 <div id="expense-modal" class="modal fixed inset-0 z-50 bg-black bg-opacity-50 items-center justify-center p-4 hidden">
   <div class="modal-content card w-full max-w-md p-6 transform scale-95">
-    <h2 class="text-2xl font-bold mb-4" id="modal-title">Add Expense</h2>
+    <h2 class="text-2xl font-bold mb-4" id="modal-title">{{ _('Add Expense') }}</h2>
     <form id="expense-form" method="POST" action="/expenses">
       <input type="hidden" name="form_type" value="single">
       <input type="hidden" name="user" id="expense-user">
       <div class="space-y-3">
         <div>
-          <label for="expense-date" class="text-sm text-gray-600">Date</label>
+          <label for="expense-date" class="text-sm text-gray-600">{{ _('Date') }}</label>
           <input type="date" id="expense-date" name="date" class="mt-1 block w-full border rounded p-2" required>
         </div>
         <div>
-          <label for="expense-title" class="text-sm text-gray-600">Title</label>
+          <label for="expense-title" class="text-sm text-gray-600">{{ _('Title') }}</label>
           <input type="text" id="expense-title" name="title" class="mt-1 block w-full border rounded p-2" required>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label for="expense-category" class="text-sm text-gray-600">Category</label>
-            <input type="text" id="expense-category" name="category" class="mt-1 block w-full border rounded p-2" placeholder="e.g., Groceries">
+            <label for="expense-category" class="text-sm text-gray-600">{{ _('Category') }}</label>
+            <input type="text" id="expense-category" name="category" class="mt-1 block w-full border rounded p-2" placeholder="{{ _('e.g., Groceries') }}">
             <div id="modal-category-chips" class="mt-2 flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label for="expense-quantity" class="text-sm text-gray-600">Quantity</label>
-            <input type="number" step="0.01" id="expense-quantity" name="quantity" class="mt-1 block w-full border rounded p-2" placeholder="optional">
+            <label for="expense-quantity" class="text-sm text-gray-600">{{ _('Quantity') }}</label>
+            <input type="number" step="0.01" id="expense-quantity" name="quantity" class="mt-1 block w-full border rounded p-2" placeholder="{{ _('optional') }}">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label for="expense-unit-price" class="text-sm text-gray-600">Unit Price</label>
-            <input type="number" step="0.01" id="expense-unit-price" name="unit_price" class="mt-1 block w-full border rounded p-2" placeholder="optional">
+            <label for="expense-unit-price" class="text-sm text-gray-600">{{ _('Unit Price') }}</label>
+            <input type="number" step="0.01" id="expense-unit-price" name="unit_price" class="mt-1 block w-full border rounded p-2" placeholder="{{ _('optional') }}">
           </div>
           <div>
-            <label for="expense-amount" class="text-sm text-gray-600">Total Amount</label>
+            <label for="expense-amount" class="text-sm text-gray-600">{{ _('Total Amount') }}</label>
             <input type="number" step="0.01" id="expense-amount" name="amount" class="mt-1 block w-full border rounded p-2" required>
           </div>
         </div>
         <div>
-          <label for="expense-payer" class="text-sm text-gray-600">Paid by</label>
+          <label for="expense-payer" class="text-sm text-gray-600">{{ _('Paid by') }}</label>
           {% if split_people %}
           <select id="expense-payer" name="payer" class="mt-1 block w-full border rounded p-2" required>
             {% for member in split_people %}
@@ -195,8 +195,8 @@
         {% endif %}
       </div>
       <div class="mt-5 flex justify-end gap-2">
-        <button type="button" id="cancel-expense" class="btn">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Expense</button>
+        <button type="button" id="cancel-expense" class="btn">{{ _('Cancel') }}</button>
+        <button type="submit" class="btn btn-primary">{{ _('Save Expense') }}</button>
       </div>
     </form>
   </div>

@@ -21,11 +21,11 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
                 const chip = item.querySelector('.status-chip');
                 if (p){
                     if (d.progress && /%$/.test(d.progress)){
-                        chip.textContent = 'Downloading…';
+                        chip.textContent = t('Downloading…');
                         p.textContent = d.progress;
                     } else {
-                        chip.textContent = 'Starting…';
-                        p.textContent = 'Will take a while…';
+                        chip.textContent = t('Starting…');
+                        p.textContent = t('Will take a while…');
                     }
                 }
                 setTimeout(()=>poll(item), 2500);
@@ -34,11 +34,11 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
                 const chip = item.querySelector('.status-chip');
                 if (chip){ 
                     chip.outerHTML = `
-                        <a href="/media/preview/${d.filepath}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" aria-label="Preview ${d.filepath} in new tab">
-                            <i class="fa-solid fa-eye" aria-hidden="true"></i> Preview
+                        <a href="/media/preview/${d.filepath}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" aria-label="${th('Preview {name} in new tab', { name: d.filepath })}">
+                            <i class="fa-solid fa-eye" aria-hidden="true"></i> ${th('Preview')}
                         </a>
                         <a href="/media/${d.filepath}" class="btn btn-secondary btn-sm">
-                            <i class="fa-solid fa-download" aria-hidden="true"></i> Download
+                            <i class="fa-solid fa-download" aria-hidden="true"></i> ${th('Download')}
                         </a>
                     `; 
                 }
@@ -46,7 +46,7 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
                 if (p) p.textContent = '';
             } else if (d.status === 'error'){
                 const chip = item.querySelector('.status-chip');
-                if (chip){ chip.textContent = 'Error'; chip.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 status-chip'; }
+                if (chip){ chip.textContent = t('Error'); chip.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 status-chip'; }
             }
         }).catch(()=> setTimeout(()=>poll(item), 2000));
     }

@@ -44,6 +44,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY . /app
 
+# Compile the translation catalogs (.po) into the .mo files the app reads
+RUN pybabel compile -d translations
+
 # Copy built Tailwind CSS from builder
 COPY --from=builder /app/static/output.css /app/static/output.css
 

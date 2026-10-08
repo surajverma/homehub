@@ -1,0 +1,2506 @@
+# Translations template for HomeHub.
+# Copyright (C) 2026 HomeHub contributors
+# This file is distributed under the same license as the HomeHub project.
+#
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: HomeHub\n"
+"POT-Creation-Date: 2026-10-08 15:07+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: app/__init__.py
+#, python-format
+msgid "Upload is too large. The limit is %(limit)s MB."
+msgstr ""
+
+#: app/blueprints/__init__.py
+msgid "Offline"
+msgstr ""
+
+#: app/blueprints/__init__.py
+msgid "You are offline"
+msgstr ""
+
+#: app/blueprints/__init__.py
+msgid "This page is not available offline."
+msgstr ""
+
+#: app/blueprints/auth.py
+msgid "Logged in successfully."
+msgstr ""
+
+#: app/blueprints/auth.py
+msgid "Invalid password"
+msgstr ""
+
+#: app/blueprints/auth.py
+#, python-format
+msgid "Too many attempts. Try again in %(num)s second."
+msgid_plural "Too many attempts. Try again in %(num)s seconds."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/auth.py
+msgid "Incorrect admin password"
+msgstr ""
+
+#: app/blueprints/auth.py
+msgid "Logged out."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Recurring chore end date cannot be before the start date."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Recurring chore ends in the past. Choose a future end date to create an active chore."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Not allowed to update recurring rule."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Recurring chore updated."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Recurring chore added."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Not allowed to delete recurring rule."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Not allowed to update chore."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Chore updated."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Chore added."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Not allowed to edit chore."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Only admin can update chore settings."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Chore settings updated."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Recurring chore rule deleted."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Chore deleted."
+msgstr ""
+
+#: app/blueprints/chores.py
+msgid "Not allowed to delete chore."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "End date is required when end time is provided"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Invalid start or end date/time"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "End date/time must be the same as or after start date/time"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Not allowed"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Title required"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Invalid date"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "No ids provided"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Reminder is not in trash"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Date and title are required for reminders."
+msgstr ""
+
+#: app/blueprints/dashboard.py app/blueprints/expenses.py
+msgid "Invalid date."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Reminder added."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Reminder moved to trash."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Not allowed to delete this reminder."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+#, python-format
+msgid "Moved %(num)s reminder to trash."
+msgid_plural "Moved %(num)s reminders to trash."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/dashboard.py
+msgid "No reminders deleted (permission?)."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Only admin can update the notice."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Notice updated."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Invalid user for status."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Invalid user"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Status cleared."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "No status to clear."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Status updated."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Status cannot be empty."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Status saved."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Invalid user for status removal."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "Status removed."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Invalid split value for %(name)s."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Enter a split value for at least one person."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Percentages add up to %(entered)s%%, not 100%%."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Split amounts must add up to the expense amount."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Invalid amount."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Recurring expense added."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Expense added."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to edit rule."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Recurring rule fully rewritten. Updated %(num)s entry, removed %(deleted)s outside rule range."
+msgid_plural "Recurring rule fully rewritten. Updated %(num)s entries, removed %(deleted)s outside rule range."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Split at %(split_start)s would create an empty old rule window. Applied changes from %(effective_from)s on the same rule instead."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entry."
+msgid_plural "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entries."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt %(rebuilt)s from that date."
+msgid_plural "Rule updated from %(effective_from)s. Kept %(num)s historical entries, rebuilt %(rebuilt)s from that date."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to delete rule."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Recurring rule deleted. Linked generated entries deleted."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Recurring rule deleted. Linked generated entries kept as history."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Only admin can update settings."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Settings saved."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Failed to save settings."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to delete entry."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Expense deleted."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to edit entry."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Expense updated."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to change entry."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Only recurring days can be skipped."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Day skipped."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Day restored."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to restore this day."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "That day is not part of this recurring rule."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "That day is already there."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s added back for %(date)s."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Invalid settlement."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Only the people involved can record a settlement."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Settlement recorded."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "No entries selected."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s expense deleted."
+msgid_plural "%(num)s expenses deleted."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+msgid "Invalid month parameter. Must be an integer between 1 and 12."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
+msgid "Invalid or disallowed URL. Only external http(s) URLs are allowed."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
+msgid "Download queued. You can switch tabs; refresh to check status."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
+msgid "Only PDF files are allowed."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
+msgid "Invalid filename."
+msgstr ""
+
+#: app/blueprints/recipes.py
+msgid "Invalid link URL."
+msgstr ""
+
+#: app/blueprints/recipes.py static/js/pages/recipes.js
+msgid "Please add ingredients or instructions (or both)."
+msgstr ""
+
+#: app/blueprints/recipes.py
+msgid "Recipe updated."
+msgstr ""
+
+#: app/blueprints/recipes.py
+msgid "Recipe added."
+msgstr ""
+
+#: app/blueprints/recipes.py
+msgid "Not allowed to edit recipe."
+msgstr ""
+
+#: app/blueprints/recipes.py
+msgid "Recipe deleted."
+msgstr ""
+
+#: app/blueprints/shortener.py
+msgid "Please enter a valid http(s) URL."
+msgstr ""
+
+#: app/blueprints/shortener.py
+msgid "Invalid target URL."
+msgstr ""
+
+#: static/js/base/app.js
+msgid "Dismiss"
+msgstr ""
+
+#: static/js/base/app.js
+msgid "Could not unlock admin."
+msgstr ""
+
+#: static/js/base/app.js
+msgid "Could not reach the server."
+msgstr ""
+
+#: static/js/base/app.js templates/base.html
+msgid "Expand sidebar"
+msgstr ""
+
+#: static/js/base/app.js templates/base.html
+msgid "Collapse sidebar"
+msgstr ""
+
+#: static/js/base/app.js
+#, python-brace-format
+msgid "Welcome, {name}! — {date}"
+msgstr ""
+
+#: static/js/expense_split.js
+msgid "Nobody ticked: a personal expense that isn't shared."
+msgstr ""
+
+#: static/js/expense_split.js
+msgid "Enter a value for at least one person."
+msgstr ""
+
+#: static/js/expense_split.js
+msgid "Each person pays in proportion to their shares."
+msgstr ""
+
+#: static/js/expense_split.js
+msgid "Percentages add up to 100%."
+msgstr ""
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Percentages add up to {sum}: {left} left to assign."
+msgstr ""
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Percentages add up to {sum}: {over} too much."
+msgstr ""
+
+#: static/js/expense_split.js
+msgid "Enter the total amount first."
+msgstr ""
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Amounts add up to {total}."
+msgstr ""
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Amounts add up to {sum} of {total}: {left} left to assign."
+msgstr ""
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Amounts add up to {sum} of {total}: {over} too much."
+msgstr ""
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "{name} split value"
+msgstr ""
+
+#: static/js/pages/chores.js
+msgid "Recurring chore ends in the past. Choose a future end date."
+msgstr ""
+
+#: static/js/pages/chores_suggestions.js
+#, python-brace-format
+msgid "Hide suggestion {item}"
+msgstr ""
+
+#: static/js/pages/chores_suggestions.js static/js/pages/home/reminders.js
+msgid "Hide"
+msgstr ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "My share after splits: {amount}"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "No entries this month."
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "recurring"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "manual"
+msgstr ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "skipped {count} day"
+msgid_plural "skipped {count} days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "{qty} × {count} day @ {price}"
+msgid_plural "{qty} × {count} days @ {price}"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "{count} entry"
+msgid_plural "{count} entries"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/expenses.js
+msgid "Select all entries in this period"
+msgstr ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "by {name}"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Pick a day on the calendar to view or add expenses."
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "skipped"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "settlement"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Split:"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Skip day"
+msgstr ""
+
+#: static/js/pages/expenses.js static/js/pages/home/reminders.js
+msgid "Restore"
+msgstr ""
+
+#: static/js/pages/expenses.js static/js/pages/home/reminders.js
+#: templates/chores.html templates/expenses_recurring.html templates/notes.html
+#: templates/recipes.html templates/shopping.html
+msgid "Edit"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Delete this expense?"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "(removed)"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Add back"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Expenses for"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "No expenses yet."
+msgstr ""
+
+#: static/js/pages/expenses.js templates/expenses.html
+msgid "Add Expense"
+msgstr ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "gets back {amount}"
+msgstr ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "owes {amount}"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Everyone is settled up."
+msgstr ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "{from} owes {to} {amount}"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Settle up"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Nothing to settle."
+msgstr ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "paid {paid} · share {share}"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "No spending this month."
+msgstr ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "Record a payment from {from} to {to}. Amount:"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Edit Expense"
+msgstr ""
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "Delete {count} selected entry?"
+msgid_plural "Delete {count} selected entries?"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/expenses_recurring.js
+msgid "Rewrite entire history can delete or overwrite older generated entries. Continue?"
+msgstr ""
+
+#: static/js/pages/expenses_recurring.js
+msgid "This will close the current rule and create a new one from Effective From date. Continue?"
+msgstr ""
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Home"
+msgstr ""
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Away"
+msgstr ""
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Out"
+msgstr ""
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Traveling"
+msgstr ""
+
+#: static/js/pages/home/presence.js
+msgid "Status cleared"
+msgstr ""
+
+#: static/js/pages/home/presence.js
+msgid "No status to clear"
+msgstr ""
+
+#: static/js/pages/home/presence.js
+msgid "Status updated"
+msgstr ""
+
+#: static/js/pages/home/presence.js
+msgid "Update failed"
+msgstr ""
+
+#: static/js/pages/home/presence.js
+msgid "Cannot save empty status"
+msgstr ""
+
+#: static/js/pages/home/presence.js
+msgid "Status saved"
+msgstr ""
+
+#: static/js/pages/home/presence.js static/js/pages/home/reminders.js
+msgid "Save failed"
+msgstr ""
+
+#: static/js/pages/home/presence.js
+msgid "Status removed"
+msgstr ""
+
+#: static/js/pages/home/presence.js
+msgid "Remove failed"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "(No category)"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Deleted"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Delete failed"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Deleted {count}"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Day"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Week"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Month"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} day"
+msgid_plural "Set repeat every {count} days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} week"
+msgid_plural "Set repeat every {count} weeks"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} month"
+msgid_plural "Set repeat every {count} months"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} year"
+msgid_plural "Set repeat every {count} years"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/home/reminders.js
+msgid "This recurrence overlaps with the reminder duration."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Choose one fix to continue:"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Remove end date/time"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Keep as non-recurring"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring schedule overlaps selected date range"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to delete rule after creating single"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to create single reminder"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to delete original reminder after creating recurring rule"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to create recurring rule"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Saved"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring rule updated"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Reminder updated"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring rule saved"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Reminder added"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Network error"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Reminder moved"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Move failed"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Loading..."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} day"
+msgid_plural "Repeats every {count} days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} week"
+msgid_plural "Repeats every {count} weeks"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} month"
+msgid_plural "Repeats every {count} months"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} year"
+msgid_plural "Repeats every {count} years"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "{repeat} till {date}"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "No reminders"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "at {time}"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Edit recurring"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Delete recurring"
+msgstr ""
+
+#: static/js/pages/home/reminders.js templates/index.html
+msgid "Recurring"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "all-day"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Select reminder"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Mark as done"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Move to Trash"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Completed ({count})"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Show"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Done"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Mark as active"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Undo"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Delete this recurring reminder and all its future dates?"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring rule deleted"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Marked done"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Action failed"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Marked active"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Snoozed"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Snooze failed"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "All: {count}"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Deleted (undo available)"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Undo delete"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Move {count} selected reminder to the trash?"
+msgid_plural "Move {count} selected reminders to the trash?"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/pages/home/reminders.js
+msgid "Loading trash…"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to load trash."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Recycle bin is empty. Items auto-purge after 7 days."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Recycle Bin — items auto-purge after 7 days"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Restored"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Failed"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Upcoming (next 7 days)"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "No upcoming reminders."
+msgstr ""
+
+#: static/js/pages/media.js
+msgid "Downloading…"
+msgstr ""
+
+#: static/js/pages/media.js templates/media.html
+msgid "Starting…"
+msgstr ""
+
+#: static/js/pages/media.js templates/media.html
+msgid "Will take a while…"
+msgstr ""
+
+#: static/js/pages/media.js
+#, python-brace-format
+msgid "Preview {name} in new tab"
+msgstr ""
+
+#: static/js/pages/media.js templates/media.html templates/pdfs.html
+#: templates/upload.html
+msgid "Preview"
+msgstr ""
+
+#: static/js/pages/media.js templates/media.html templates/pdfs.html
+#: templates/qr.html templates/upload.html
+msgid "Download"
+msgstr ""
+
+#: static/js/pages/media.js
+msgid "Error"
+msgstr ""
+
+#: static/js/pages/recipes.js
+msgid "Type here..."
+msgstr ""
+
+#: static/js/pages/shopping.js
+msgid "Edit Item"
+msgstr ""
+
+#: static/js/pages/shopping.js templates/shopping.html
+msgid "Item"
+msgstr ""
+
+#: static/js/pages/shopping.js templates/recipes.html
+msgid "Tags"
+msgstr ""
+
+#: static/js/pages/shopping.js templates/chores.html templates/recipes.html
+#: templates/shopping.html
+msgid "Add tag and press Enter"
+msgstr ""
+
+#: static/js/pages/shopping.js templates/base.html templates/chores.html
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html templates/notes.html templates/recipes.html
+msgid "Cancel"
+msgstr ""
+
+#: static/js/pages/shopping.js templates/chores.html
+#: templates/expenses_recurring.html templates/index.html templates/notes.html
+msgid "Save"
+msgstr ""
+
+#: static/js/pages/shopping.js
+msgid "Delete suggestion"
+msgstr ""
+
+#: static/js/pages/shopping.js
+#, python-brace-format
+msgid "Delete suggestion {item}"
+msgstr ""
+
+#: static/js/tags.js
+msgid "remove"
+msgstr ""
+
+#: static/js/tags.js templates/chores.html templates/shopping.html
+msgid "Add"
+msgstr ""
+
+#: static/js/pages/expenses.js static/js/pages/home/reminders.js
+#: static/js/tags.js templates/chores.html templates/expiry.html
+#: templates/media.html templates/notes.html templates/pdfs.html
+#: templates/qr.html templates/recipes.html templates/shopping.html
+#: templates/shorten.html templates/upload.html
+msgid "Delete"
+msgstr ""
+
+#: static/js/tags.js
+#, python-brace-format
+msgid "Delete tag \"{tag}\"? This removes it from suggestions (items keep their tags)."
+msgstr ""
+
+#: static/js/weather.js
+msgctxt "weather"
+msgid "Clear"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Mainly Clear"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Partly Cloudy"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Overcast"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Fog"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Freezing Fog"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Light Drizzle"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Drizzle"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Heavy Drizzle"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Light Rain"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Rain"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Heavy Rain"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Light Snow"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Snow"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Heavy Snow"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Snow Grains"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Light Showers"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Showers"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Heavy Showers"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Snow Showers"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Heavy Snow Showers"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Thunderstorm"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Thunderstorm + Hail"
+msgstr ""
+
+#: static/js/weather.js templates/index.html
+msgid "Unknown"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Invalid weather data received"
+msgstr ""
+
+#: static/js/weather.js
+msgid "No rain"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Today's Forecast"
+msgstr ""
+
+#: static/js/weather.js
+msgid "H:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "L:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Sunrise:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Sunset:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "UV Index:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Rain:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Feels like:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Wind:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Gusts:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Humidity:"
+msgstr ""
+
+#: static/js/weather.js
+msgid "just now"
+msgstr ""
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "{count} minute ago"
+msgid_plural "{count} minutes ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "{count} hour ago"
+msgid_plural "{count} hours ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "Last updated: {time} ({ago})"
+msgstr ""
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "Last updated: {time}"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180."
+msgstr ""
+
+#: static/js/weather.js
+msgid "Failed to load weather data"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Unable to get your location. Please configure coordinates in config.yml"
+msgstr ""
+
+#: static/js/weather.js
+msgid "Geolocation is not available in this context. This may be because the site is not served over HTTPS, or your browser does not support it. Please configure coordinates in config.yml"
+msgstr ""
+
+#: templates/_expense_split.html
+msgid "Split with"
+msgstr ""
+
+#: templates/_expense_split.html
+msgid "Split method"
+msgstr ""
+
+#: templates/_expense_split.html
+msgid "Equally"
+msgstr ""
+
+#: templates/_expense_split.html
+msgid "By shares"
+msgstr ""
+
+#: templates/_expense_split.html
+msgid "By percentage"
+msgstr ""
+
+#: templates/_expense_split.html
+msgid "By amount"
+msgstr ""
+
+#: templates/_expense_split.html
+#, python-format
+msgid "%(name)s split value"
+msgstr ""
+
+#: templates/base.html
+msgid "Close menu"
+msgstr ""
+
+#: templates/base.html
+msgid "Welcome"
+msgstr ""
+
+#: templates/base.html templates/notes.html
+msgid "Shared Notes"
+msgstr ""
+
+#: templates/base.html templates/upload.html
+msgid "Shared Cloud"
+msgstr ""
+
+#: templates/base.html templates/shopping.html
+msgid "Shopping List"
+msgstr ""
+
+#: templates/base.html
+msgid "Calendar"
+msgstr ""
+
+#: templates/base.html
+msgid "To-Do/Chores"
+msgstr ""
+
+#: templates/base.html templates/recipes.html
+msgid "Recipe Book"
+msgstr ""
+
+#: templates/base.html templates/expiry.html
+msgid "Expiry Tracker"
+msgstr ""
+
+#: templates/base.html templates/shorten.html
+msgid "URL Shortener"
+msgstr ""
+
+#: templates/base.html templates/media.html
+msgid "Media Downloader"
+msgstr ""
+
+#: templates/base.html templates/pdfs.html
+msgid "PDF Compressor"
+msgstr ""
+
+#: templates/base.html
+msgid "QR Generator"
+msgstr ""
+
+#: templates/base.html templates/expenses.html
+msgid "Expense Tracker"
+msgstr ""
+
+#: templates/base.html
+msgid "Menu"
+msgstr ""
+
+#: templates/base.html
+msgid "Switch user"
+msgstr ""
+
+#: templates/base.html
+msgid "Current user"
+msgstr ""
+
+#: templates/base.html
+msgid "Log out"
+msgstr ""
+
+#: templates/base.html
+msgid "Logout"
+msgstr ""
+
+#: templates/base.html
+msgid "buying me a coffee"
+msgstr ""
+
+#: templates/base.html
+#, python-format
+msgid "If you found this useful, consider %(link)s"
+msgstr ""
+
+#: templates/base.html
+msgid "Admin password"
+msgstr ""
+
+#: templates/base.html
+#, python-format
+msgid "Enter the admin password to continue as %(name)s."
+msgstr ""
+
+#: templates/base.html templates/login.html
+msgid "Password"
+msgstr ""
+
+#: templates/base.html
+msgid "Unlock"
+msgstr ""
+
+#: templates/base.html
+msgid "Select your user"
+msgstr ""
+
+#: templates/base.html
+msgid "Pick your name to personalize your HomeHub experience."
+msgstr ""
+
+#: templates/base.html
+msgid "User"
+msgstr ""
+
+#: templates/base.html templates/login.html
+msgid "Continue"
+msgstr ""
+
+#: templates/chores.html
+msgid "To-Do / Chores"
+msgstr ""
+
+#: templates/chores.html
+#, python-format
+msgid "%(count)s open, %(done)s done"
+msgstr ""
+
+#: templates/chores.html
+#, python-format
+msgid "%(count)s open"
+msgstr ""
+
+#: templates/chores.html
+msgid "Show on welcome page"
+msgstr ""
+
+#: templates/chores.html
+msgid "Chore"
+msgstr ""
+
+#: templates/chores.html
+msgid "Add a chore"
+msgstr ""
+
+#: templates/chores.html
+msgid "Tags (assignees, context)"
+msgstr ""
+
+#: templates/chores.html templates/index.html
+msgid "Update"
+msgstr ""
+
+#: templates/chores.html
+msgid "Recurring chore"
+msgstr ""
+
+#: templates/chores.html templates/index.html
+msgid "Repeat this every"
+msgstr ""
+
+#: templates/chores.html
+msgid "Unit"
+msgstr ""
+
+#: templates/chores.html templates/index.html
+msgid "day"
+msgstr ""
+
+#: templates/chores.html templates/index.html
+msgid "week"
+msgstr ""
+
+#: templates/chores.html templates/index.html
+msgid "month"
+msgstr ""
+
+#: templates/chores.html templates/index.html
+msgid "year"
+msgstr ""
+
+#: templates/chores.html
+msgid "Starting from"
+msgstr ""
+
+#: templates/chores.html
+msgid "Till"
+msgstr ""
+
+#: templates/chores.html templates/recipes.html templates/shopping.html
+msgid "Filter by tag:"
+msgstr ""
+
+#: templates/chores.html templates/index.html templates/recipes.html
+#: templates/shopping.html
+msgid "Clear"
+msgstr ""
+
+#: templates/chores.html
+msgid "No chores yet."
+msgstr ""
+
+#: templates/chores.html
+msgid "Completed · Undo"
+msgstr ""
+
+#: templates/chores.html
+msgid "Mark Completed"
+msgstr ""
+
+#: templates/chores.html
+#, python-format
+msgid "Undo completed: %(item)s"
+msgstr ""
+
+#: templates/chores.html
+#, python-format
+msgid "Mark completed: %(item)s"
+msgstr ""
+
+#: templates/chores.html templates/expiry.html templates/media.html
+#: templates/notes.html templates/pdfs.html templates/qr.html
+#: templates/shopping.html templates/shorten.html templates/upload.html
+#, python-format
+msgid "By %(name)s at %(time)s"
+msgstr ""
+
+#: templates/chores.html
+#, python-format
+msgid "Next due on %(date)s"
+msgstr ""
+
+#: templates/chores.html templates/index.html
+#, python-format
+msgid "Due %(date)s"
+msgstr ""
+
+#: templates/chores.html templates/shopping.html
+#, python-format
+msgid "Edit %(item)s"
+msgstr ""
+
+#: templates/chores.html
+msgid "Delete this recurring chore and its schedule?"
+msgstr ""
+
+#: templates/chores.html
+msgid "Delete this chore?"
+msgstr ""
+
+#: templates/chores.html templates/expiry.html templates/media.html
+#: templates/pdfs.html templates/shopping.html templates/upload.html
+#, python-format
+msgid "Delete %(item)s"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Spending by day, with shared balances."
+msgstr ""
+
+#: templates/expenses.html
+msgid "Total This Month"
+msgstr ""
+
+#: templates/expenses.html
+msgid "My Spending"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Top Category"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Recurring rules & config"
+msgstr ""
+
+#: templates/expenses.html templates/index.html
+msgid "Previous month"
+msgstr ""
+
+#: templates/expenses.html templates/index.html
+msgid "Next month"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Sun"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Mon"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Tue"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Wed"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Thu"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Fri"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Sat"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Entries This Month"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Select all"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Delete Selected"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Month Total:"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Balances"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Shared expenses, all months"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Net balance"
+msgstr ""
+
+#: templates/expenses.html
+msgid "To settle up"
+msgstr ""
+
+#: templates/expenses.html
+msgid "This month: paid vs share"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Date"
+msgstr ""
+
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Title"
+msgstr ""
+
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Category"
+msgstr ""
+
+#: templates/expenses.html
+msgid "e.g., Groceries"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Quantity"
+msgstr ""
+
+#: templates/expenses.html
+msgid "optional"
+msgstr ""
+
+#: templates/expenses.html templates/expenses_recurring.html
+msgid "Unit Price"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Total Amount"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Paid by"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Save Expense"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Back to Calendar"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Recurring Expense Rules"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Recurring Rules"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "General Settings"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "daily"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "weekly"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "monthly"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "day_of_month"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "calendar"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "by shares"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "by percentage"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "by amount"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Active Rules"
+msgstr ""
+
+#: templates/expenses_recurring.html
+#, python-format
+msgid "by %(name)s"
+msgstr ""
+
+#: templates/expenses_recurring.html
+#, python-format
+msgid "split with %(names)s"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Editing a recurring rule can affect generated entries. Choose a strategy to avoid accidental history loss."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Default Qty"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Frequency"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Daily"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Weekly"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Monthly"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Monthly Mode"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Same day-of-month"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Calendar month"
+msgstr ""
+
+#: templates/expenses_recurring.html templates/index.html
+msgid "Start Date"
+msgstr ""
+
+#: templates/expenses_recurring.html templates/index.html
+msgid "End Date"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Edit Strategy"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Keep history, apply changes from effective date"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Create new rule from effective date (split)"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Rewrite entire rule history (destructive)"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Effective From"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Used by apply/split strategies."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Delete this recurring rule?"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Delete generated entries (unchecked = keep history)"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "This permanently removes linked generated entries."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Delete Rule"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "No recurring rules yet. Add one below."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Add New Rule"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Title (e.g., Milk)"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Category (opt)"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Unit price"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Default qty"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Monthly mode: Same day-of-month"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Monthly mode: Calendar boundary"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Start"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "End (optional)"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Add Recurring Rule"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Expense Settings"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Currency symbol"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Fraction factor"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "How many lower currency units make one main unit, like ₹1 contains 100 paise. Common values: 1, 100, 1000."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Categories (comma separated)"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Groceries, Utilities, Housing"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Save Settings"
+msgstr ""
+
+#: templates/expiry.html
+msgid "Food, medicines and documents, soonest first."
+msgstr ""
+
+#: templates/expiry.html
+msgid "Item name"
+msgstr ""
+
+#: templates/expiry.html
+msgid "Expiry date"
+msgstr ""
+
+#: templates/expiry.html
+msgid "Add item"
+msgstr ""
+
+#: templates/expiry.html
+msgid "Nothing tracked yet."
+msgstr ""
+
+#: templates/expiry.html
+#, python-format
+msgid "%(num)s day left"
+msgid_plural "%(num)s days left"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/expiry.html
+msgid "Expired"
+msgstr ""
+
+#: templates/expiry.html templates/shopping.html
+msgid "Delete this item?"
+msgstr ""
+
+#: templates/index.html
+#, python-format
+msgid "Welcome to %(name)s"
+msgstr ""
+
+#: templates/index.html
+msgid "Pick a tool from the left to get started."
+msgstr ""
+
+#: templates/index.html
+msgid "Weather"
+msgstr ""
+
+#: templates/index.html
+msgid "Loading weather data..."
+msgstr ""
+
+#: templates/index.html
+msgid "Family Notice Board"
+msgstr ""
+
+#: templates/index.html
+#, python-format
+msgid "Last updated by %(name)s at %(time)s"
+msgstr ""
+
+#: templates/index.html
+msgid "No notices yet. Admin can post one below."
+msgstr ""
+
+#: templates/index.html
+msgid "Notice text"
+msgstr ""
+
+#: templates/index.html
+msgid "Leave blank and submit to clear the notice"
+msgstr ""
+
+#: templates/index.html
+msgid "Update Notice (Admin)"
+msgstr ""
+
+#: templates/index.html
+msgid "Who is Home?"
+msgstr ""
+
+#: templates/index.html
+msgid "My status"
+msgstr ""
+
+#: templates/index.html
+msgid "Clear my status"
+msgstr ""
+
+#: templates/index.html
+msgid "Personal Status"
+msgstr ""
+
+#: templates/index.html
+msgid "Remove my status"
+msgstr ""
+
+#: templates/index.html
+msgid "Chores"
+msgstr ""
+
+#: templates/index.html
+msgid "Open full list"
+msgstr ""
+
+#: templates/index.html
+msgid "No open chores right now."
+msgstr ""
+
+#: templates/index.html
+msgid "Calendar & Reminders"
+msgstr ""
+
+#: templates/index.html
+msgid "Reminders"
+msgstr ""
+
+#: templates/index.html
+msgid "Back to Today"
+msgstr ""
+
+#: templates/index.html
+msgid "Add Reminder"
+msgstr ""
+
+#: templates/index.html
+msgid "Open calendar"
+msgstr ""
+
+#: templates/index.html
+msgid "Search reminders"
+msgstr ""
+
+#: templates/index.html
+msgid "Search reminders by title or description"
+msgstr ""
+
+#: templates/index.html
+msgid "Recycle Bin"
+msgstr ""
+
+#: templates/index.html
+msgid "Trash"
+msgstr ""
+
+#: templates/index.html
+msgid "Drag reminder cards onto a date to reschedule."
+msgstr ""
+
+#: templates/index.html
+msgid "Reminder title"
+msgstr ""
+
+#: templates/index.html
+msgid "Start Time"
+msgstr ""
+
+#: templates/index.html
+msgid "(Optional)"
+msgstr ""
+
+#: templates/index.html
+msgid "Start time (optional)"
+msgstr ""
+
+#: templates/index.html
+msgid "End date (optional)"
+msgstr ""
+
+#: templates/index.html
+msgid "End Time"
+msgstr ""
+
+#: templates/index.html
+msgid "End time (optional)"
+msgstr ""
+
+#: templates/index.html
+msgid "If Start Time and End Date/Time are blank, this is treated as an all-day reminder. If End Date/Time is set, this reminder spans that duration."
+msgstr ""
+
+#: templates/index.html
+msgid "Recurrence interval"
+msgstr ""
+
+#: templates/index.html
+msgid "Recurrence unit"
+msgstr ""
+
+#: templates/index.html
+msgid "till"
+msgstr ""
+
+#: templates/index.html
+msgid "Description"
+msgstr ""
+
+#: templates/index.html
+#, python-format
+msgid "%(count)s selected"
+msgstr ""
+
+#: templates/index.html
+msgid "Delete selected"
+msgstr ""
+
+#: templates/index.html
+msgid "Reminders list"
+msgstr ""
+
+#: templates/index.html
+msgid "JavaScript disabled: reminders editing requires JS. Existing reminder counts are shown on the calendar only."
+msgstr ""
+
+#: templates/login.html
+msgid "Sign in"
+msgstr ""
+
+#: templates/login.html
+msgid "This instance requires a password to access."
+msgstr ""
+
+#: templates/login.html
+msgid "Enter password"
+msgstr ""
+
+#: templates/media.html
+msgid "Save a video or its audio from a link."
+msgstr ""
+
+#: templates/media.html
+msgid "Media URL"
+msgstr ""
+
+#: templates/media.html
+msgid "Paste a media URL"
+msgstr ""
+
+#: templates/media.html
+msgid "Format"
+msgstr ""
+
+#: templates/media.html
+msgid "MP4 (video)"
+msgstr ""
+
+#: templates/media.html
+msgid "MP3 (audio)"
+msgstr ""
+
+#: templates/media.html
+msgid "Quality"
+msgstr ""
+
+#: templates/media.html
+msgid "Best Available"
+msgstr ""
+
+#: templates/media.html
+msgid "Up to 1080p"
+msgstr ""
+
+#: templates/media.html
+msgid "Up to 720p"
+msgstr ""
+
+#: templates/media.html
+msgid "No downloads yet."
+msgstr ""
+
+#: templates/media.html templates/pdfs.html templates/upload.html
+#, python-format
+msgid "Preview %(name)s in new tab"
+msgstr ""
+
+#: templates/media.html
+msgid "Not available"
+msgstr ""
+
+#: templates/media.html
+msgid "Delete this download and its file?"
+msgstr ""
+
+#: templates/notes.html
+msgid "Quick notes the whole family can see."
+msgstr ""
+
+#: templates/notes.html
+msgid "Note"
+msgstr ""
+
+#: templates/notes.html
+msgid "Write a note..."
+msgstr ""
+
+#: templates/notes.html
+msgid "No notes yet."
+msgstr ""
+
+#: templates/notes.html
+msgid "Edit note"
+msgstr ""
+
+#: templates/notes.html
+msgid "Delete this note?"
+msgstr ""
+
+#: templates/notes.html
+msgid "Delete note"
+msgstr ""
+
+#: templates/pdfs.html
+msgid "Shrink a PDF so it is easier to share."
+msgstr ""
+
+#: templates/pdfs.html
+msgid "PDF to compress"
+msgstr ""
+
+#: templates/pdfs.html
+msgid "Compress PDF"
+msgstr ""
+
+#: templates/pdfs.html
+msgid "No PDFs yet."
+msgstr ""
+
+#: templates/pdfs.html templates/upload.html
+#, python-format
+msgid "Download %(name)s"
+msgstr ""
+
+#: templates/pdfs.html
+msgid "Delete this PDF?"
+msgstr ""
+
+#: templates/qr.html
+msgid "QR Code Generator"
+msgstr ""
+
+#: templates/qr.html
+msgid "Make a QR code for any text, link or Wi-Fi network."
+msgstr ""
+
+#: templates/qr.html
+msgid "Text to encode"
+msgstr ""
+
+#: templates/qr.html
+msgid "Text or URL to encode"
+msgstr ""
+
+#: templates/qr.html
+msgid "Generate QR"
+msgstr ""
+
+#: templates/qr.html
+msgid "Wi-Fi QR code instructions"
+msgstr ""
+
+#: templates/qr.html
+msgid "To generate a QR code for your wireless network, enter your details in the following format:"
+msgstr ""
+
+#: templates/qr.html
+msgid "your WiFi network name"
+msgstr ""
+
+#: templates/qr.html
+msgid "your WiFi password"
+msgstr ""
+
+#: templates/qr.html
+#, python-format
+msgid "encryption type (%(wpa)s, %(wep)s, or %(nopass)s), default is %(default)s"
+msgstr ""
+
+#: templates/qr.html
+#, python-format
+msgid "%(true)s if the network is hidden, %(false)s otherwise (default is %(default)s)"
+msgstr ""
+
+#: templates/qr.html
+msgid "You can copy and edit the code block above for your network. The minimum required information is ssid:your_network_name pass:your_wifi_password"
+msgstr ""
+
+#: templates/qr.html
+msgid "For other QR codes, enter any text or URL as usual."
+msgstr ""
+
+#: templates/qr.html
+msgid "QR Code"
+msgstr ""
+
+#: templates/qr.html
+msgid "History"
+msgstr ""
+
+#: templates/qr.html
+msgid "No QR codes yet."
+msgstr ""
+
+#: templates/qr.html
+msgid "Generated"
+msgstr ""
+
+#: templates/qr.html
+msgid "View"
+msgstr ""
+
+#: templates/qr.html
+msgid "Delete this QR code?"
+msgstr ""
+
+#: templates/qr.html
+msgid "Delete QR code"
+msgstr ""
+
+#: templates/recipes.html
+msgid "The family's recipes, with ingredients and steps."
+msgstr ""
+
+#: templates/recipes.html
+msgid "Recipe Title"
+msgstr ""
+
+#: templates/recipes.html
+msgid "Chocolate Chip Cookies"
+msgstr ""
+
+#: templates/recipes.html
+msgid "Link (optional)"
+msgstr ""
+
+#: templates/recipes.html
+msgid "Ingredients"
+msgstr ""
+
+#: templates/recipes.html
+msgid "Instructions"
+msgstr ""
+
+#: templates/recipes.html
+msgid "Update Recipe"
+msgstr ""
+
+#: templates/recipes.html
+msgid "Add Recipe"
+msgstr ""
+
+#: templates/recipes.html
+#, python-format
+msgid "By %(name)s • %(date)s"
+msgstr ""
+
+#: templates/recipes.html
+msgid "View Original Recipe"
+msgstr ""
+
+#: templates/recipes.html
+msgid "Delete this recipe?"
+msgstr ""
+
+#: templates/shopping.html
+#, python-format
+msgid "%(count)s to buy, %(done)s purchased"
+msgstr ""
+
+#: templates/shopping.html
+#, python-format
+msgid "%(count)s to buy"
+msgstr ""
+
+#: templates/shopping.html
+msgid "Add an item"
+msgstr ""
+
+#: templates/shopping.html
+msgid "Tags (stores, categories)"
+msgstr ""
+
+#: templates/shopping.html
+msgid "Nothing on the list yet."
+msgstr ""
+
+#: templates/shopping.html
+msgid "Purchased · Undo"
+msgstr ""
+
+#: templates/shopping.html
+msgid "Mark Purchased"
+msgstr ""
+
+#: templates/shopping.html
+#, python-format
+msgid "Undo purchased: %(item)s"
+msgstr ""
+
+#: templates/shopping.html
+#, python-format
+msgid "Mark purchased: %(item)s"
+msgstr ""
+
+#: templates/shorten.html
+msgid "Turn a long link into a short one for the home network."
+msgstr ""
+
+#: templates/shorten.html
+msgid "Long URL"
+msgstr ""
+
+#: templates/shorten.html
+msgid "Paste a long URL"
+msgstr ""
+
+#: templates/shorten.html
+msgid "Shorten"
+msgstr ""
+
+#: templates/shorten.html
+msgid "No short links yet."
+msgstr ""
+
+#: templates/shorten.html
+msgid "Delete this short link?"
+msgstr ""
+
+#: templates/shorten.html
+msgid "Delete short link"
+msgstr ""
+
+#: templates/upload.html
+msgid "Files shared with everyone on the home network."
+msgstr ""
+
+#: templates/upload.html
+msgid "Files to upload"
+msgstr ""
+
+#: templates/upload.html
+msgid "Upload"
+msgstr ""
+
+#: templates/upload.html
+msgid "No files yet."
+msgstr ""
+
+#: templates/upload.html
+msgid "Delete this file? It is removed from the server."
+msgstr ""
+

@@ -27,5 +27,7 @@ package-lock.json
 static/output.css
 static/custom.css
 tests/__pycache__/
+# Compiled translation catalogs (built from the .po files)
+translations/**/*.mo
 # Generated QR codes
 static/qr_*.png

@@ -1,7 +1,11 @@
 from flask import Blueprint, current_app, Response
+from flask_babel import gettext as _
+from markupsafe import escape
 import json
 import os
 import subprocess
+
+from ..i18n import active_language
 
 # Single app-wide blueprint to preserve all existing URL paths and endpoint names
 main_bp = Blueprint('main', __name__)
@@ -66,9 +70,15 @@ def service_worker():
     try:
         # Offline-first SW with runtime caching and navigation fallback
         version = _sw_cache_version()
+        # The language is part of the cache name so switching it drops pages cached in the old one
+        language = active_language()
+        offline_html = (
+            f"<!DOCTYPE html><title>{escape(_('Offline'))}</title><h1>{escape(_('You are offline'))}</h1>"
+            f"<p>{escape(_('This page is not available offline.'))}</p>"
+        )
 
         sw_js = r"""
-        const CACHE_NAME = 'homehub-v__VERSION__';
+        const CACHE_NAME = 'homehub-v__VERSION__-__LANGUAGE__';
         const PRECACHE = [
           '/',
           '/static/output.css',
@@ -106,8 +116,8 @@ def service_worker():
                 .catch(() => caches.match(req))
                 .then(res => res || caches.match('/'))
                 .then(res => res || new Response(
-                  '<!DOCTYPE html><title>Offline</title><h1>You are offline</h1><p>This page is not available offline.</p>',
-                  { status: 503, headers: { 'Content-Type': 'text/html' } }
+                  __OFFLINE_HTML__,
+                  { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
                 ))
             );
             return;
@@ -127,7 +137,8 @@ def service_worker():
             );
           }
         });
-        """.replace('__VERSION__', version)
+        """.replace('__VERSION__', version).replace('__LANGUAGE__', language)
+        sw_js = sw_js.replace('__OFFLINE_HTML__', json.dumps(offline_html))
 
         resp = Response(sw_js, mimetype='application/javascript')
         # Ensure browsers always revalidate sw.js

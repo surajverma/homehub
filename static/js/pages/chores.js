@@ -27,9 +27,9 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
         if (endDate < today) {
             e.preventDefault();
             if (window.globalToast) {
-                globalToast('Recurring chore ends in the past. Choose a future end date.', 'error');
+                globalToast(t('Recurring chore ends in the past. Choose a future end date.'), 'error');
             } else {
-                alert('Recurring chore ends in the past. Choose a future end date.');
+                alert(t('Recurring chore ends in the past. Choose a future end date.'));
             }
         }
     });

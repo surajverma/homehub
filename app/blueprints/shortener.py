@@ -1,4 +1,5 @@
 from flask import render_template, request, redirect, url_for, current_app, flash
+from flask_babel import gettext as _
 from ..models import db, ShortURL
 from ..utils import generate_short_code
 from ..blueprints import main_bp
@@ -12,7 +13,7 @@ def shorten():
         original_url = sanitize_text(request.form['original_url'])
         creator = sanitize_text(request.form['creator'])
         if not is_http_url(original_url):
-            flash('Please enter a valid http(s) URL.', 'error')
+            flash(_('Please enter a valid http(s) URL.'), 'error')
             return redirect(url_for('main.shorten'))
         short_code = generate_short_code()
         while ShortURL.query.filter_by(short_code=short_code).first():
@@ -31,7 +32,7 @@ def redirect_short(short_code):
     short_url = ShortURL.query.filter_by(short_code=short_code).first_or_404()
     target = short_url.original_url or ''
     if not is_http_url(target):
-        flash('Invalid target URL.', 'error')
+        flash(_('Invalid target URL.'), 'error')
         return redirect(url_for('main.shorten'))
     return redirect(target)
 

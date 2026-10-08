@@ -8,34 +8,34 @@
 
 	// Weather code mapping (WMO Weather interpretation codes)
 	const weatherCodes = {
-		0: { desc: 'Clear', icon: 'fa-sun', color: 'text-yellow-400' },
-		1: { desc: 'Mainly Clear', icon: 'fa-cloud-sun', color: 'text-yellow-400' },
-		2: { desc: 'Partly Cloudy', icon: 'fa-cloud', color: 'text-gray-400' },
-		3: { desc: 'Overcast', icon: 'fa-cloud', color: 'text-gray-500' },
-		45: { desc: 'Fog', icon: 'fa-smog', color: 'text-gray-400' },
-		48: { desc: 'Freezing Fog', icon: 'fa-smog', color: 'text-cyan-200' },
-		51: { desc: 'Light Drizzle', icon: 'fa-cloud-rain', color: 'text-blue-400' },
-		53: { desc: 'Drizzle', icon: 'fa-cloud-rain', color: 'text-blue-500' },
-		55: { desc: 'Heavy Drizzle', icon: 'fa-cloud-showers-heavy', color: 'text-blue-600' },
-		61: { desc: 'Light Rain', icon: 'fa-cloud-rain', color: 'text-blue-400' },
-		63: { desc: 'Rain', icon: 'fa-cloud-rain', color: 'text-blue-500' },
-		65: { desc: 'Heavy Rain', icon: 'fa-cloud-showers-heavy', color: 'text-blue-600' },
-		71: { desc: 'Light Snow', icon: 'fa-snowflake', color: 'text-cyan-300' },
-		73: { desc: 'Snow', icon: 'fa-snowflake', color: 'text-cyan-400' },
-		75: { desc: 'Heavy Snow', icon: 'fa-snowflake', color: 'text-cyan-500' },
-		77: { desc: 'Snow Grains', icon: 'fa-snowflake', color: 'text-cyan-400' },
-		80: { desc: 'Light Showers', icon: 'fa-cloud-sun-rain', color: 'text-blue-400' },
-		81: { desc: 'Showers', icon: 'fa-cloud-showers-heavy', color: 'text-blue-500' },
-		82: { desc: 'Heavy Showers', icon: 'fa-cloud-showers-heavy', color: 'text-blue-600' },
-		85: { desc: 'Snow Showers', icon: 'fa-snowflake', color: 'text-cyan-300' },
-		86: { desc: 'Heavy Snow Showers', icon: 'fa-snowflake', color: 'text-cyan-400' },
-		95: { desc: 'Thunderstorm', icon: 'fa-bolt', color: 'text-yellow-500' },
-		96: { desc: 'Thunderstorm + Hail', icon: 'fa-cloud-bolt', color: 'text-yellow-600' },
-		99: { desc: 'Thunderstorm + Hail', icon: 'fa-cloud-bolt', color: 'text-yellow-600' }
+		0: { desc: tc('weather', 'Clear'), icon: 'fa-sun', color: 'text-yellow-400' },
+		1: { desc: t('Mainly Clear'), icon: 'fa-cloud-sun', color: 'text-yellow-400' },
+		2: { desc: t('Partly Cloudy'), icon: 'fa-cloud', color: 'text-gray-400' },
+		3: { desc: t('Overcast'), icon: 'fa-cloud', color: 'text-gray-500' },
+		45: { desc: t('Fog'), icon: 'fa-smog', color: 'text-gray-400' },
+		48: { desc: t('Freezing Fog'), icon: 'fa-smog', color: 'text-cyan-200' },
+		51: { desc: t('Light Drizzle'), icon: 'fa-cloud-rain', color: 'text-blue-400' },
+		53: { desc: t('Drizzle'), icon: 'fa-cloud-rain', color: 'text-blue-500' },
+		55: { desc: t('Heavy Drizzle'), icon: 'fa-cloud-showers-heavy', color: 'text-blue-600' },
+		61: { desc: t('Light Rain'), icon: 'fa-cloud-rain', color: 'text-blue-400' },
+		63: { desc: t('Rain'), icon: 'fa-cloud-rain', color: 'text-blue-500' },
+		65: { desc: t('Heavy Rain'), icon: 'fa-cloud-showers-heavy', color: 'text-blue-600' },
+		71: { desc: t('Light Snow'), icon: 'fa-snowflake', color: 'text-cyan-300' },
+		73: { desc: t('Snow'), icon: 'fa-snowflake', color: 'text-cyan-400' },
+		75: { desc: t('Heavy Snow'), icon: 'fa-snowflake', color: 'text-cyan-500' },
+		77: { desc: t('Snow Grains'), icon: 'fa-snowflake', color: 'text-cyan-400' },
+		80: { desc: t('Light Showers'), icon: 'fa-cloud-sun-rain', color: 'text-blue-400' },
+		81: { desc: t('Showers'), icon: 'fa-cloud-showers-heavy', color: 'text-blue-500' },
+		82: { desc: t('Heavy Showers'), icon: 'fa-cloud-showers-heavy', color: 'text-blue-600' },
+		85: { desc: t('Snow Showers'), icon: 'fa-snowflake', color: 'text-cyan-300' },
+		86: { desc: t('Heavy Snow Showers'), icon: 'fa-snowflake', color: 'text-cyan-400' },
+		95: { desc: t('Thunderstorm'), icon: 'fa-bolt', color: 'text-yellow-500' },
+		96: { desc: t('Thunderstorm + Hail'), icon: 'fa-cloud-bolt', color: 'text-yellow-600' },
+		99: { desc: t('Thunderstorm + Hail'), icon: 'fa-cloud-bolt', color: 'text-yellow-600' }
 	};
 
 	function getWeatherIcon(code) {
-		return weatherCodes[code] || { desc: 'Unknown', icon: 'fa-question', color: 'text-gray-500' };
+		return weatherCodes[code] || { desc: t('Unknown'), icon: 'fa-question', color: 'text-gray-500' };
 	}
 
 	function displayError(container, message) {
@@ -52,7 +52,7 @@
 	function displayWeather(container, data, units, cfg) {
 		const current = data.current;
 		if (!current) {
-			displayError(container, 'Invalid weather data received');
+			displayError(container, th('Invalid weather data received'));
 			return;
 		}
 
@@ -72,13 +72,13 @@
 
 		// Night clear icon adjustment
 		if (current.is_day === 0 && [0, 1].includes(weatherCode)) {
-			weather = { desc: 'Clear', icon: 'fa-moon', color: 'text-indigo-300' };
+			weather = { desc: tc('weather', 'Clear'), icon: 'fa-moon', color: 'text-indigo-300' };
 		}
 
 		// --- Labels and text formatting ---
 		const precipLabel = ((rain !== null && rain !== undefined ? rain : precipitation) || 0) > 0 
 			? `${(rain ?? precipitation).toFixed(1)} mm` 
-			: 'No rain';
+			: th('No rain');
 		const feelsLikeText = typeof feelsLike === 'number' ? `${Math.round(feelsLike)}${tempUnit}` : '—';
 		const humidityText = typeof humidity === 'number' ? `${Math.round(humidity)}%` : '—';
 
@@ -100,7 +100,7 @@
 					const d = new Date(s);
 					const opts = { hour: '2-digit', minute: '2-digit' };
 					if (cfg.timezone) opts.timeZone = cfg.timezone;
-					return d.toLocaleTimeString(undefined, opts);
+					return d.toLocaleTimeString(window.I18N.locale, opts);
 				} catch (e) { return String(s).split('T')[1] || String(s); }
 			};
 
@@ -114,14 +114,14 @@
 			dailyHtml = `
 				<div class="pt-3 mt-3 border-t">
 					<div class="flex items-center justify-between mb-2">
-						<div class="text-base font-semibold">Today's Forecast</div>
-						<div class="text-sm text-gray-700 flex items-center gap-2"><i class="fa-solid fa-arrow-up-long text-red-500"></i> H: <span class="font-semibold">${tMax!=null?Math.round(tMax)+tempUnit:'—'}</span> <i class="fa-solid fa-arrow-down-long text-blue-500 ml-3"></i> L: <span class="font-semibold">${tMin!=null?Math.round(tMin)+tempUnit:'—'}</span></div>
+						<div class="text-base font-semibold">${th("Today's Forecast")}</div>
+						<div class="text-sm text-gray-700 flex items-center gap-2"><i class="fa-solid fa-arrow-up-long text-red-500"></i> ${th('H:')} <span class="font-semibold">${tMax!=null?Math.round(tMax)+tempUnit:'—'}</span> <i class="fa-solid fa-arrow-down-long text-blue-500 ml-3"></i> ${th('L:')} <span class="font-semibold">${tMin!=null?Math.round(tMin)+tempUnit:'—'}</span></div>
 					</div>
 					<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-700">
-						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-amber-500"></i><span>Sunrise: <span class="font-semibold text-gray-900">${sunrise}</span></span></div>
-						<div class="flex items-center gap-2"><i class="fa-solid fa-moon text-indigo-400"></i><span>Sunset: <span class="font-semibold text-gray-900">${sunset}</span></span></div>
-						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-yellow-500"></i><span>UV Index: <span class="font-semibold text-gray-900">${uv!=null?uv:'—'}</span></span></div>
-						<div class="flex items-center gap-2"><i class="fa-solid fa-cloud-rain text-blue-500"></i><span>Rain: <span class="font-semibold text-gray-900">${rainProb!=null?rainProb+'%':'—'}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-amber-500"></i><span>${th('Sunrise:')} <span class="font-semibold text-gray-900">${sunrise}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-moon text-indigo-400"></i><span>${th('Sunset:')} <span class="font-semibold text-gray-900">${sunset}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-sun text-yellow-500"></i><span>${th('UV Index:')} <span class="font-semibold text-gray-900">${uv!=null?uv:'—'}</span></span></div>
+						<div class="flex items-center gap-2"><i class="fa-solid fa-cloud-rain text-blue-500"></i><span>${th('Rain:')} <span class="font-semibold text-gray-900">${rainProb!=null?rainProb+'%':'—'}</span></span></div>
 					</div>
 				</div>
 			`;
@@ -135,7 +135,7 @@
 					<i class="fa-solid ${weather.icon} ${weather.color} text-5xl md:text-6xl"></i>
 					<div>
 						<div class="text-4xl md:text-5xl font-bold">${Math.round(temp)}${tempUnit}</div>
-						<div class="text-gray-600 text-lg">${weather.desc}</div>
+						<div class="text-gray-600 text-lg">${window.I18N.escape(weather.desc)}</div>
 					</div>
 				</div>
 
@@ -143,23 +143,23 @@
 				<div class="grid grid-cols-2 gap-x-6 gap-y-2 w-full md:w-auto text-sm md:text-base text-gray-700">
 					<div class="flex items-center gap-2">
 						<i class="fa-solid fa-temperature-half text-gray-500"></i>
-						<span>Feels like: <span class="font-semibold text-gray-900">${feelsLikeText}</span></span>
+						<span>${th('Feels like:')} <span class="font-semibold text-gray-900">${feelsLikeText}</span></span>
 					</div>
 					<div class="flex items-center gap-2">
 						<i class="fa-solid fa-wind text-gray-500"></i>
-						<span>Wind: <span class="font-semibold text-gray-900">${windLine}</span></span>
+						<span>${th('Wind:')} <span class="font-semibold text-gray-900">${windLine}</span></span>
 					</div>
 					<div class="flex items-center gap-2">
 						<i class="fa-solid fa-wind text-gray-500"></i>
-						<span>Gusts: <span class="font-semibold text-gray-900">${gustLine}</span></span>
+						<span>${th('Gusts:')} <span class="font-semibold text-gray-900">${gustLine}</span></span>
 					</div>
 					<div class="flex items-center gap-2">
 						<i class="fa-solid fa-droplet text-gray-500"></i>
-						<span>Humidity: <span class="font-semibold text-gray-900">${humidityText}</span></span>
+						<span>${th('Humidity:')} <span class="font-semibold text-gray-900">${humidityText}</span></span>
 					</div>
 					<div class="flex items-center gap-2">
 						<i class="fa-solid fa-cloud-rain text-gray-500"></i>
-						<span>Rain: <span class="font-semibold text-gray-900">${precipLabel}</span></span>
+						<span>${th('Rain:')} <span class="font-semibold text-gray-900">${precipLabel}</span></span>
 					</div>
 				</div>
 			</div>
@@ -174,19 +174,17 @@
 				const now = Date.now();
 				const diffMin = Math.floor((now - dt.getTime()) / 60000);
 				let relativeTime = '';
-				if (diffMin < 1) relativeTime = 'just now';
-				else if (diffMin === 1) relativeTime = '1 minute ago';
-				else if (diffMin < 60) relativeTime = `${diffMin} minutes ago`;
-				else if (diffMin < 120) relativeTime = '1 hour ago';
-				else relativeTime = `${Math.floor(diffMin/60)} hours ago`;
+				if (diffMin < 1) relativeTime = t('just now');
+				else if (diffMin < 60) relativeTime = tn('{count} minute ago', '{count} minutes ago', diffMin);
+				else relativeTime = tn('{count} hour ago', '{count} hours ago', Math.floor(diffMin/60));
 				
 				const opts = { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' };
 				if (cfg && cfg.timezone) opts.timeZone = cfg.timezone;
-				const absTime = dt.toLocaleString(undefined, opts);
-				lastUpdatedHtml = `<div class="text-[11px] text-gray-500 mt-3 md:mt-4 text-right">Last updated: ${absTime} (${relativeTime})</div>`;
+				const absTime = dt.toLocaleString(window.I18N.locale, opts);
+				lastUpdatedHtml = `<div class="text-[11px] text-gray-500 mt-3 md:mt-4 text-right">${th('Last updated: {time} ({ago})', { time: absTime, ago: relativeTime })}</div>`;
 			} catch(e) {
 				const fallback = String(current.time).replace('T',' ');
-				lastUpdatedHtml = `<div class="text-[11px] text-gray-500 mt-3 md:mt-4 text-right">Last updated: ${fallback}</div>`;
+				lastUpdatedHtml = `<div class="text-[11px] text-gray-500 mt-3 md:mt-4 text-right">${th('Last updated: {time}', { time: fallback })}</div>`;
 			}
 		}
 		
@@ -301,7 +299,7 @@
 			    isNaN(lat) || isNaN(lon) || 
 			    lat < -90 || lat > 90 || 
 			    lon < -180 || lon > 180) {
-				displayError(weatherContent, 'Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180.');
+				displayError(weatherContent, th('Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180.'));
 				return;
 			}
 			
@@ -319,7 +317,7 @@
 					}
 				} catch (error) {
 					console.error('Weather fetch error:', error);
-					displayError(weatherContent, 'Failed to load weather data');
+					displayError(weatherContent, th('Failed to load weather data'));
 				}
 			};
 
@@ -356,11 +354,11 @@
 				},
 				error => {
 					console.error('Geolocation error:', error);
-					displayError(weatherContent, 'Unable to get your location. Please configure coordinates in config.yml');
+					displayError(weatherContent, th('Unable to get your location. Please configure coordinates in config.yml'));
 				}
 			);
 		} else {
-			displayError(weatherContent, 'Geolocation is not available in this context. This may be because the site is not served over HTTPS, or your browser does not support it. Please configure coordinates in config.yml');
+			displayError(weatherContent, th('Geolocation is not available in this context. This may be because the site is not served over HTTPS, or your browser does not support it. Please configure coordinates in config.yml'));
 		}
 	};
 })();

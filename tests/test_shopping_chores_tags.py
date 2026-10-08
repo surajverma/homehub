@@ -59,11 +59,11 @@ def test_create_items_and_filter_and_edit(client):
     c2 = client.get('/api/chores?tags=' + json.dumps(['Costco'])).get_json()
     assert all(i['description'] != 'Clean kitchen' for i in c2)
 
-    # Edit shopping item via PUT
+    # Edit shopping item via PUT (only the owner or admin may edit, so the request names the user)
     with client.application.app_context():
         s = ShoppingItem.query.first()
         cid = s.id
-    r = client.put(f'/api/shopping/{cid}', json={'item': 'Milk 2%', 'tags': ['Groceries']})
+    r = client.put(f'/api/shopping/{cid}', json={'item': 'Milk 2%', 'tags': ['Groceries'], 'user': 'Alice'})
     assert r.status_code == 200
     jr = r.get_json()
     assert jr['ok'] is True and jr['item']['item'] == 'Milk 2%'
@@ -73,7 +73,7 @@ def test_create_items_and_filter_and_edit(client):
     with client.application.app_context():
         ch = Chore.query.first()
         chid = ch.id
-    r2 = client.put(f'/api/chores/{chid}', json={'description': 'Deep clean kitchen', 'tags': ['Bob']})
+    r2 = client.put(f'/api/chores/{chid}', json={'description': 'Deep clean kitchen', 'tags': ['Bob'], 'user': 'Bob'})
     assert r2.status_code == 200
     jr2 = r2.get_json()
     assert jr2['ok'] is True and 'Deep clean' in jr2['item']['description']

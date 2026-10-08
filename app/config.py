@@ -118,6 +118,8 @@ def _parse_config():
     config.setdefault('admin_name', 'Administrator')
     # Family members default list
     config.setdefault('family_members', [])
+    # UI language; anything without a translation falls back to English
+    config.setdefault('language', 'en')
     _apply_theme_defaults(config.setdefault('theme', {}))
     # Weather widget defaults
     weather = config.setdefault('weather', {})

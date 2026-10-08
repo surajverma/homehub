@@ -3,12 +3,12 @@
 <div class="split-box">
   <input type="hidden" name="split_present" value="1">
   <div class="flex items-center justify-between gap-2">
-    <label class="text-sm text-gray-600">Split with</label>
-    <select name="split_mode" class="split-mode border rounded p-1 text-sm" aria-label="Split method">
-      <option value="equal" {% if mode == 'equal' %}selected{% endif %}>Equally</option>
-      <option value="shares" {% if mode == 'shares' %}selected{% endif %}>By shares</option>
-      <option value="percent" {% if mode == 'percent' %}selected{% endif %}>By percentage</option>
-      {% if allow_amount %}<option value="amount" {% if mode == 'amount' %}selected{% endif %}>By amount</option>{% endif %}
+    <label class="text-sm text-gray-600">{{ _('Split with') }}</label>
+    <select name="split_mode" class="split-mode border rounded p-1 text-sm" aria-label="{{ _('Split method') }}">
+      <option value="equal" {% if mode == 'equal' %}selected{% endif %}>{{ _('Equally') }}</option>
+      <option value="shares" {% if mode == 'shares' %}selected{% endif %}>{{ _('By shares') }}</option>
+      <option value="percent" {% if mode == 'percent' %}selected{% endif %}>{{ _('By percentage') }}</option>
+      {% if allow_amount %}<option value="amount" {% if mode == 'amount' %}selected{% endif %}>{{ _('By amount') }}</option>{% endif %}
     </select>
   </div>
   {# Keep stored participants who have since left the member list, so editing never drops them #}
@@ -24,7 +24,7 @@
           <span class="split-share block text-xs text-gray-500"></span>
         </span>
       </label>
-      <input type="number" step="any" min="0" name="split_weight__{{ member }}" value="{{ weights.get(member, '') }}" class="split-weight border rounded text-right hidden" aria-label="{{ member }} split value">
+      <input type="number" step="any" min="0" name="split_weight__{{ member }}" value="{{ weights.get(member, '') }}" class="split-weight border rounded text-right hidden" aria-label="{{ _('%(name)s split value', name=member) }}">
     </div>
     {% endfor %}
   </div>

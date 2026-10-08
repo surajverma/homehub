@@ -2,23 +2,23 @@
 {% block content %}
 <div class="mx-auto max-w-5xl">
     <div class="page-header">
-        <h1 class="page-title">Shopping List</h1>
-        <p class="page-subtitle">{{ items|rejectattr('checked')|list|length }} to buy{% if items|selectattr('checked')|list %}, {{ items|selectattr('checked')|list|length }} purchased{% endif %}</p>
+        <h1 class="page-title">{{ _('Shopping List') }}</h1>
+        <p class="page-subtitle">{% if items|selectattr('checked')|list %}{{ _('%(count)s to buy, %(done)s purchased', count=items|rejectattr('checked')|list|length, done=items|selectattr('checked')|list|length) }}{% else %}{{ _('%(count)s to buy', count=items|rejectattr('checked')|list|length) }}{% endif %}</p>
     </div>
     <form method="POST" id="shoppingForm" class="card p-4 mb-4">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div class="md:col-span-5">
-                <label for="itemInput" class="block text-sm font-medium text-gray-600 mb-1">Item</label>
+                <label for="itemInput" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Item') }}</label>
                 <div class="relative h-10">
-                    <input type="text" name="item" id="itemInput" class="w-full h-full" placeholder="Add an item" required autocomplete="off">
+                    <input type="text" name="item" id="itemInput" class="w-full h-full" placeholder="{{ _('Add an item') }}" required autocomplete="off">
                     <!-- Autofill dropdown anchored to input width -->
                     <div id="itemAutoFill" class="absolute left-0 right-0 z-10 mt-1 bg-white border rounded-lg shadow-lg max-h-72 overflow-auto hidden"></div>
                 </div>
             </div>
             <div class="md:col-span-4">
-                <label for="tagInput" class="block text-sm font-medium text-gray-600 mb-1">Tags (stores, categories)</label>
+                <label for="tagInput" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Tags (stores, categories)') }}</label>
                 <div class="flex flex-wrap gap-2 rounded items-start h-10" id="tagInputWrap">
-                    <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full" placeholder="Add tag and press Enter">
+                    <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full" placeholder="{{ _('Add tag and press Enter') }}">
                 </div>
                 <input type="hidden" name="tags" id="tagsField" value="[]">
                 <div class="mt-2 flex flex-wrap gap-2 text-xs" id="tagLibrary"></div>
@@ -26,38 +26,38 @@
             <div class="md:col-span-3">
                 <label class="hidden md:block text-sm mb-1 opacity-0" aria-hidden="true">Action</label>
                 <input type="hidden" name="creator" id="creator">
-                <button type="submit" class="w-full btn btn-primary h-10"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add</button>
+                <button type="submit" class="w-full btn btn-primary h-10"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{ _('Add') }}</button>
             </div>
         </div>
     </form>
 
     <div class="mb-3 flex flex-wrap gap-2 items-center">
-        <span class="text-sm text-gray-500">Filter by tag:</span>
+        <span class="text-sm text-gray-500">{{ _('Filter by tag:') }}</span>
         <div id="tagFilters" class="flex flex-wrap gap-2"></div>
-        <button id="clearTagFilters" class="btn btn-ghost btn-sm">Clear</button>
+        <button id="clearTagFilters" class="btn btn-ghost btn-sm">{{ _('Clear') }}</button>
     </div>
 
-    {% if not items %}<div class="card list-empty">Nothing on the list yet.</div>{% endif %}
+    {% if not items %}<div class="card list-empty">{{ _('Nothing on the list yet.') }}</div>{% endif %}
     <ul id="shoppingList" class="card list-card {{ '' if items else 'hidden' }}">
         {% for item in items %}
         {% set tags = (item.tags or '[]') %}
         <li class="list-row items-start" data-id="{{ item.id }}" data-tags="{{ tags }}" data-checked="{{ '1' if item.checked else '0' }}">
             <form method="POST" action="/shopping/check/{{ item.id }}" class="pt-0.5">
-                <button type="submit" class="check-btn {{ 'is-checked' if item.checked else '' }}" aria-pressed="{{ 'true' if item.checked else 'false' }}" title="{{ 'Purchased · Undo' if item.checked else 'Mark Purchased' }}" aria-label="{{ ('Undo purchased: ' if item.checked else 'Mark purchased: ') ~ item.item }}"><i class="fa-solid fa-check" aria-hidden="true"></i></button>
+                <button type="submit" class="check-btn {{ 'is-checked' if item.checked else '' }}" aria-pressed="{{ 'true' if item.checked else 'false' }}" title="{{ _('Purchased · Undo') if item.checked else _('Mark Purchased') }}" aria-label="{{ _('Undo purchased: %(item)s', item=item.item) if item.checked else _('Mark purchased: %(item)s', item=item.item) }}"><i class="fa-solid fa-check" aria-hidden="true"></i></button>
             </form>
             <div class="flex-1 min-w-0">
                 <div class="flex flex-wrap gap-2 items-center">
                     <span class="flex-1 min-w-0 break-words font-medium {% if item.checked %}line-through text-gray-400{% endif %}">{{ item.item }}</span>
                     <div class="hidden md:flex flex-wrap gap-1.5 item-tags" data-id="{{ item.id }}"></div>
                 </div>
-                <div class="meta mt-0.5">By {{ item.creator }} at {{ item.timestamp|localtime }}</div>
+                <div class="meta mt-0.5">{{ _('By %(name)s at %(time)s', name=item.creator, time=item.timestamp|localtime) }}</div>
                 <div class="md:hidden flex flex-wrap gap-1.5 mt-1.5 items-center item-tags empty:hidden" data-id="{{ item.id }}"></div>
             </div>
             <div class="flex items-center gap-0.5 -my-1">
-                <button type="button" class="btn btn-ghost btn-icon edit-btn" data-id="{{ item.id }}" data-creator="{{ item.creator }}" title="Edit" aria-label="Edit {{ item.item }}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
-                <form method="POST" action="/shopping/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}" data-confirm="Delete this item?">
+                <button type="button" class="btn btn-ghost btn-icon edit-btn" data-id="{{ item.id }}" data-creator="{{ item.creator }}" title="{{ _('Edit') }}" aria-label="{{ _('Edit %(item)s', item=item.item) }}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                <form method="POST" action="/shopping/delete/{{ item.id }}" class="delete-form" data-creator="{{ item.creator }}" data-confirm="{{ _('Delete this item?') }}">
                     <input type="hidden" name="user">
-                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="Delete" aria-label="Delete {{ item.item }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="{{ _('Delete') }}" aria-label="{{ _('Delete %(item)s', item=item.item) }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
                 </form>
             </div>
         </li>

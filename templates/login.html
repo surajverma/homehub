@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="max-w-sm mx-auto card p-6 mt-8 md:mt-16">
-    <h1 class="page-title mb-1">Sign in</h1>
-    <p class="text-sm text-gray-500 mb-5">This instance requires a password to access.</p>
+    <h1 class="page-title mb-1">{{ _('Sign in') }}</h1>
+    <p class="text-sm text-gray-500 mb-5">{{ _('This instance requires a password to access.') }}</p>
     <form method="POST" class="space-y-3">
-        <input type="password" name="password" aria-label="Password" class="w-full" placeholder="Enter password" required>
-        <button type="submit" class="w-full btn btn-primary">Continue</button>
+        <input type="password" name="password" aria-label="{{ _('Password') }}" class="w-full" placeholder="{{ _('Enter password') }}" required>
+        <button type="submit" class="w-full btn btn-primary">{{ _('Continue') }}</button>
     </form>
 </div>
 {% endblock %}

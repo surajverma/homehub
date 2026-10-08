@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchVisual: false  // Better paste from Word
             }
         },
-        placeholder: 'Type here...'
+        placeholder: t('Type here...')
     };
     
     const ingredientsQuill = new Quill('#ingredientsEditor', quillConfig);
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!ingText && !insText) {
             e.preventDefault();
-            alert('Please add ingredients or instructions (or both).');
+            alert(t('Please add ingredients or instructions (or both).'));
             return false;
         }
         

@@ -2,26 +2,26 @@
 {% block content %}
 <div class="mx-auto max-w-4xl">
     <div class="page-header">
-        <h1 class="page-title">URL Shortener</h1>
-        <p class="page-subtitle">Turn a long link into a short one for the home network.</p>
+        <h1 class="page-title">{{ _('URL Shortener') }}</h1>
+        <p class="page-subtitle">{{ _('Turn a long link into a short one for the home network.') }}</p>
     </div>
     <form method="POST" class="card p-4 mb-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-        <input type="url" name="original_url" aria-label="Long URL" class="md:col-span-9 w-full" placeholder="Paste a long URL" required>
+        <input type="url" name="original_url" aria-label="{{ _('Long URL') }}" class="md:col-span-9 w-full" placeholder="{{ _('Paste a long URL') }}" required>
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="md:col-span-3 btn btn-primary"><i class="fa-solid fa-link" aria-hidden="true"></i> Shorten</button>
+        <button type="submit" class="md:col-span-3 btn btn-primary"><i class="fa-solid fa-link" aria-hidden="true"></i> {{ _('Shorten') }}</button>
     </form>
-    {% if not urls %}<div class="card list-empty">No short links yet.</div>{% endif %}
+    {% if not urls %}<div class="card list-empty">{{ _('No short links yet.') }}</div>{% endif %}
     <ul class="card list-card {{ '' if urls else 'hidden' }}">
         {% for url in urls %}
         <li class="list-row flex-wrap">
             <div class="flex-1 min-w-0">
                 <a href="/s/{{ url.short_code }}" class="font-medium hover:underline" style="color: var(--primary-text);">{{ (request.host_url ~ 's/' ~ url.short_code) }}</a>
                 <div class="text-sm text-gray-500 truncate" title="{{ url.original_url }}">{{ url.original_url }}</div>
-                <div class="meta mt-0.5">By {{ url.creator }} at {{ url.timestamp|localtime }}</div>
+                <div class="meta mt-0.5">{{ _('By %(name)s at %(time)s', name=url.creator, time=url.timestamp|localtime) }}</div>
             </div>
-            <form method="POST" action="/shorten/delete/{{ url.id }}" class="delete-form -my-1" data-creator="{{ url.creator }}" data-confirm="Delete this short link?">
+            <form method="POST" action="/shorten/delete/{{ url.id }}" class="delete-form -my-1" data-creator="{{ url.creator }}" data-confirm="{{ _('Delete this short link?') }}">
                 <input type="hidden" name="user">
-                <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="Delete" aria-label="Delete short link"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+                <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="{{ _('Delete') }}" aria-label="{{ _('Delete short link') }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
             </form>
         </li>
         {% endfor %}

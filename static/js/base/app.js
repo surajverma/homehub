@@ -22,7 +22,7 @@
                 toastEl.style.pointerEvents='auto';
                 toastEl.textContent='';
                 const text=document.createElement('span'); text.textContent=msg; toastEl.appendChild(text);
-                const close=document.createElement('button'); close.type='button'; close.className='inline-flex items-center justify-center w-5 h-5 shrink-0 opacity-80 hover:opacity-100'; close.setAttribute('aria-label','Dismiss'); close.innerHTML='<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+                const close=document.createElement('button'); close.type='button'; close.className='inline-flex items-center justify-center w-5 h-5 shrink-0 opacity-80 hover:opacity-100'; close.setAttribute('aria-label', t('Dismiss')); close.innerHTML='<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
                 close.addEventListener('click', hide); toastEl.appendChild(close);
                 // Errors stay until dismissed so they can be read
                 if(!isError) hideTimer=setTimeout(hide, 4000);
@@ -83,9 +83,9 @@
                         });
                         const data = await resp.json().catch(function(){ return {}; });
                         if (resp.ok && data.ok){ window.HomeHubAdmin.unlocked = true; close(true); return; }
-                        error.textContent = data.error || 'Could not unlock admin.';
+                        error.textContent = data.error || t('Could not unlock admin.');
                     }catch(e){
-                        error.textContent = 'Could not reach the server.';
+                        error.textContent = t('Could not reach the server.');
                     }
                     input.value = ''; input.focus();
                 };
@@ -200,7 +200,7 @@
                 rootEl.classList.toggle('prefers-sidebar-collapsed', isCollapsed);
                 if(collapseIcon){ collapseIcon.className = 'fa-solid '+(isCollapsed ? 'fa-angles-right' : 'fa-angles-left'); }
                 const btn = document.getElementById('toggleCollapse');
-                if(btn){ btn.title = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'; }
+                if(btn){ btn.title = isCollapsed ? t('Expand sidebar') : t('Collapse sidebar'); }
             }
             // Initialize from saved preference
             try{ const saved = localStorage.getItem(COLLAPSE_KEY); applyCollapsedState(saved==='1'||saved==='true'); }catch(e){}
@@ -215,9 +215,9 @@
         function renderWelcome(){
             const name = localStorage.getItem('username') || '';
             const d = new Date();
-            const ds = d.toLocaleString();
+            const ds = d.toLocaleString(window.I18N.locale);
             const welcome = document.getElementById('welcome');
-            if (welcome) welcome.textContent = name ? `Welcome, ${name}! — ${ds}` : ds;
+            if (welcome) welcome.textContent = name ? t('Welcome, {name}! — {date}', { name: name, date: ds }) : ds;
             const avatar = document.getElementById('userAvatar');
             if (avatar) avatar.textContent = (name || '?').trim().charAt(0).toUpperCase();
         }

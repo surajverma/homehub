@@ -1,4 +1,5 @@
 import os, re, shutil, subprocess
+from flask_babel import gettext as _
 from threading import Thread
 from flask import render_template, request, redirect, url_for, send_from_directory, jsonify, current_app, flash
 from datetime import datetime
@@ -20,7 +21,7 @@ def media():
         url = sanitize_text(request.form['url'])
         creator = sanitize_text(request.form['creator'])
         if not is_url_safe_for_fetch(url):
-            flash('Invalid or disallowed URL. Only external http(s) URLs are allowed.', 'error')
+            flash(_('Invalid or disallowed URL. Only external http(s) URLs are allowed.'), 'error')
             return redirect(url_for('main.media'))
         fmt = sanitize_text(request.form.get('format', 'mp4'))
         quality = sanitize_text(request.form.get('quality', 'best'))
@@ -29,7 +30,7 @@ def media():
         media_obj = Media(title=url, url=url, creator=creator, filepath='', status='pending')
         db.session.add(media_obj)
         db.session.commit()
-        flash('Download queued. You can switch tabs; refresh to check status.', 'info')
+        flash(_('Download queued. You can switch tabs; refresh to check status.'), 'info')
         cmd = ["yt-dlp", "-o", output_tmpl]
         if fmt == 'mp3':
             cmd += ["-x", "--audio-format", "mp3"]
@@ -138,12 +139,12 @@ def pdfs():
             return redirect(url_for('main.pdfs'))
         # Only allow .pdf uploads
         if not filename.lower().endswith('.pdf'):
-            flash('Only PDF files are allowed.', 'error')
+            flash(_('Only PDF files are allowed.'), 'error')
             return redirect(url_for('main.pdfs'))
         # Normalize and secure the user-provided filename to avoid traversal or odd chars
         safe_name = secure_filename(os.path.basename(filename))
         if not safe_name:
-            flash('Invalid filename.', 'error')
+            flash(_('Invalid filename.'), 'error')
             return redirect(url_for('main.pdfs'))
         input_path = os.path.join(PDF_FOLDER, safe_name)
         pdf_file.save(input_path)

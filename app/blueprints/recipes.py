@@ -1,4 +1,5 @@
 from flask import render_template, request, redirect, url_for, current_app, flash, jsonify
+from flask_babel import gettext as _
 from ..models import db, Recipe
 from ..blueprints import main_bp
 from ..admin import can_modify
@@ -13,7 +14,7 @@ def recipes():
         title = sanitize_text(request.form['title'])
         link = sanitize_text(request.form.get('link'))
         if link and not is_http_url(link):
-            flash('Invalid link URL.', 'error')
+            flash(_('Invalid link URL.'), 'error')
             recipes_list = Recipe.query.order_by(Recipe.timestamp.desc()).all()
             config = current_app.config['HOMEHUB_CONFIG']
             return render_template('recipes.html', recipes=recipes_list, config=config, form_title=title, form_link=link)
@@ -34,7 +35,7 @@ def recipes():
         tags_list = [sanitize_text(t) for t in tags_list if isinstance(t, str) and t.strip()]
         
         if not (ingredients and ingredients.strip()) and not (instructions and instructions.strip()):
-            flash('Please add ingredients or instructions (or both).', 'error')
+            flash(_('Please add ingredients or instructions (or both).'), 'error')
             recipes_list = Recipe.query.order_by(Recipe.timestamp.desc()).all()
             config = current_app.config['HOMEHUB_CONFIG']
             return render_template('recipes.html', recipes=recipes_list, config=config, form_title=title, form_link=link, form_ingredients=ingredients or '', form_instructions=instructions or '')
@@ -48,13 +49,13 @@ def recipes():
                 rec.instructions = instructions
                 rec.tags = json.dumps(tags_list)
                 db.session.commit()
-                flash('Recipe updated.', 'success')
+                flash(_('Recipe updated.'), 'success')
             return redirect(url_for('main.recipes'))
         else:
             recipe = Recipe(title=title, link=link, ingredients=ingredients, instructions=instructions, creator=creator, tags=json.dumps(tags_list))
             db.session.add(recipe)
             db.session.commit()
-            flash('Recipe added.', 'success')
+            flash(_('Recipe added.'), 'success')
             return redirect(url_for('main.recipes'))
     
     # Filter by tags if provided
@@ -97,7 +98,7 @@ def edit_recipe(recipe_id):
     rec = db.get_or_404(Recipe, recipe_id)
     user = sanitize_text(request.args.get('user', ''))
     if not can_modify(user, rec.creator or ''):
-        flash('Not allowed to edit recipe.', 'error')
+        flash(_('Not allowed to edit recipe.'), 'error')
         return redirect(url_for('main.recipes'))
     recipes_list = Recipe.query.order_by(Recipe.timestamp.desc()).all()
     
@@ -137,7 +138,7 @@ def delete_recipe(recipe_id):
     if can_modify(user, recipe.creator):
         db.session.delete(recipe)
         db.session.commit()
-        flash('Recipe deleted.', 'success')
+        flash(_('Recipe deleted.'), 'success')
     return redirect(url_for('main.recipes'))
 
 

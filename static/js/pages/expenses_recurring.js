@@ -141,14 +141,14 @@ document.addEventListener('DOMContentLoaded', function(){
       if (!effective || !effective.disabled) ensureEffectiveDate();
       const selected = strategy ? strategy.value : 'apply_from';
       if (selected === 'rewrite_all') {
-        const ok = window.confirm('Rewrite entire history can delete or overwrite older generated entries. Continue?');
+        const ok = window.confirm(t('Rewrite entire history can delete or overwrite older generated entries. Continue?'));
         if (!ok) {
           evt.preventDefault();
           return;
         }
       }
       if (selected === 'split_rule') {
-        const ok = window.confirm('This will close the current rule and create a new one from Effective From date. Continue?');
+        const ok = window.confirm(t('This will close the current rule and create a new one from Effective From date. Continue?'));
         if (!ok) {
           evt.preventDefault();
         }

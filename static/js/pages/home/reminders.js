@@ -46,7 +46,7 @@
 		if(live) live.textContent=msg;
 	}
 	let catPalette={};
-	try{ const cats=JSON.parse(catDataEl?.textContent||'[]'); categorySelect.innerHTML='<option value="">(No category)</option>'+(Array.isArray(cats)?cats.map(c=>`<option value="${c.key}">${c.label||c.key}</option>`).join(''):''); (Array.isArray(cats)?cats:[]).forEach(c=>{ if(c && c.key){ catPalette[c.key]=c.color||'#2563eb'; } }); }catch(e){}
+	try{ const cats=JSON.parse(catDataEl?.textContent||'[]'); categorySelect.innerHTML='<option value="">'+th('(No category)')+'</option>'+(Array.isArray(cats)?cats.map(c=>`<option value="${c.key}">${c.label||c.key}</option>`).join(''):''); (Array.isArray(cats)?cats:[]).forEach(c=>{ if(c && c.key){ catPalette[c.key]=c.color||'#2563eb'; } }); }catch(e){}
 	function categoryColor(k){ return catPalette[k]; }
 	function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
 	// Unified bulk bar updater (delegated-safe)
@@ -80,13 +80,13 @@
 						// If this id was selected, uncheck and update bulk bar
 						const selCb = listWrap.querySelector(`.reminderChk[value="${id}"]`);
 						if(selCb){ selCb.checked = false; }
-						toast('Deleted','success');
+						toast(t('Deleted'),'success');
 						renderList();
 						renderCalendar();
 						updateBulkUI();
 						updateCalendarBadges();
 					}else{
-						toast('Delete failed','error');
+						toast(t('Delete failed'),'error');
 					}
 				});
 			}
@@ -108,10 +108,10 @@
 				const ids = checked.map(cb=>parseInt(cb.value));
 				const creator = localStorage.getItem('username')||'';
 				window.remindersApi.removeMany(ids, creator).then(resp=>{
-					if(!resp || !resp.ok){ toast('Delete failed','error'); return; }
+					if(!resp || !resp.ok){ toast(t('Delete failed'),'error'); return; }
 					highlightedReminderRange = null;
 					Object.values(monthCache).forEach(mc=>{ mc.reminders = (mc.reminders||[]).filter(r=>!ids.includes(r.id)); });
-					toast('Deleted '+ids.length,'success');
+					toast(t('Deleted {count}', { count: ids.length }),'success');
 					// Clear any selections and hide the bulk bar
 					listWrap.querySelectorAll('.reminderChk').forEach(c=>{ c.checked=false; });
 					updateBulkUI();
@@ -125,7 +125,8 @@
 	// Completed visibility is controlled only by the section-level Show/Hide toggle.
 	function setSelectedDate(d){ header.setAttribute('data-selected-date', d); selectedDateDisplay.textContent=d; localStorage.setItem('remindersSelectedDate', d); }
 	function getSelectedDate(){ return header.getAttribute('data-selected-date') || localStorage.getItem('remindersSelectedDate') || formatYmd(new Date()); }
-	const scopeBar=document.createElement('div'); scopeBar.className='flex gap-1'; scopeBar.innerHTML=['day','week','month'].map(s=>`<button type="button" data-scope="${s}" class="px-2 py-0.5 text-xs rounded border scopeBtn ${s===currentScope?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'}">${s[0].toUpperCase()+s.slice(1)}</button>`).join(''); scopeBarWrap.appendChild(scopeBar);
+	const scopeLabels={ day: th('Day'), week: th('Week'), month: th('Month') };
+	const scopeBar=document.createElement('div'); scopeBar.className='flex gap-1'; scopeBar.innerHTML=['day','week','month'].map(s=>`<button type="button" data-scope="${s}" class="px-2 py-0.5 text-xs rounded border scopeBtn ${s===currentScope?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'}">${scopeLabels[s]}</button>`).join(''); scopeBarWrap.appendChild(scopeBar);
 	scopeBar.addEventListener('click', e=>{ const b=e.target.closest('button[data-scope]'); if(!b)return; currentScope=b.getAttribute('data-scope'); localStorage.setItem('remindersScope', currentScope); scopeBar.querySelectorAll('.scopeBtn').forEach(btn=>{ const act=btn.getAttribute('data-scope')===currentScope; btn.className='px-2 py-0.5 text-xs rounded border scopeBtn '+(act?'border-blue-500 text-blue-600 bg-blue-50':'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'); }); renderList(); });
 	function openForm(mode,dateStr,data){ inlineForm.reset(); editingId=null; inlineForm.querySelector('[name=id]').value=''; inlineForm.querySelector('[name=date]').value=dateStr; if(mode==='edit'&&data){ editingId=data.id; inlineForm.querySelector('[name=id]').value=data.id; inlineForm.querySelector('[name=title]').value=data.title; inlineForm.querySelector('[name=description]').value=data.description||''; if(data.category && categorySelect) categorySelect.value=data.category; if(data.time) inlineForm.querySelector('[name=time]').value=data.time; if(data.start_date) inlineForm.querySelector('[name=date]').value=data.start_date; if(data.start_time) inlineForm.querySelector('[name=time]').value=data.start_time; if(data.end_date) inlineForm.querySelector('[name=end_date]').value=data.end_date; if(data.end_time) inlineForm.querySelector('[name=end_time]').value=data.end_time; }
 		// reset recurring toggle state each time the form opens
@@ -199,12 +200,18 @@
 	function showGuardrail(info){
 		if(!recGuardrail) return;
 		recGuardrail.classList.remove('hidden');
-		recGuardrail.innerHTML = `<div class="font-semibold mb-1">This recurrence overlaps with the reminder duration.</div>
-			<div class="mb-2">Choose one fix to continue:</div>
+		const adjustLabel = {
+			day: tn('Set repeat every {count} day', 'Set repeat every {count} days', info.minInterval),
+			week: tn('Set repeat every {count} week', 'Set repeat every {count} weeks', info.minInterval),
+			month: tn('Set repeat every {count} month', 'Set repeat every {count} months', info.minInterval),
+			year: tn('Set repeat every {count} year', 'Set repeat every {count} years', info.minInterval)
+		}[info.unit] || '';
+		recGuardrail.innerHTML = `<div class="font-semibold mb-1">${th('This recurrence overlaps with the reminder duration.')}</div>
+			<div class="mb-2">${th('Choose one fix to continue:')}</div>
 			<div class="flex flex-wrap gap-2">
-				<button type="button" data-guardrail="adjust" class="px-2 py-1 rounded border bg-white hover:bg-amber-100">Set repeat every ${info.minInterval} ${info.unit}${info.minInterval===1?'':'s'}</button>
-				<button type="button" data-guardrail="remove-end" class="px-2 py-1 rounded border bg-white hover:bg-amber-100">Remove end date/time</button>
-				<button type="button" data-guardrail="disable-rec" class="px-2 py-1 rounded border bg-white hover:bg-amber-100">Keep as non-recurring</button>
+				<button type="button" data-guardrail="adjust" class="px-2 py-1 rounded border bg-white hover:bg-amber-100">${escapeHtml(adjustLabel)}</button>
+				<button type="button" data-guardrail="remove-end" class="px-2 py-1 rounded border bg-white hover:bg-amber-100">${th('Remove end date/time')}</button>
+				<button type="button" data-guardrail="disable-rec" class="px-2 py-1 rounded border bg-white hover:bg-amber-100">${th('Keep as non-recurring')}</button>
 			</div>`;
 	}
 	if(recGuardrail && !recGuardrail.dataset.bound){
@@ -286,7 +293,7 @@
 		const overlapInfo = recurrenceOverlapInfo(data);
 		if(overlapInfo.conflict){
 			showGuardrail(overlapInfo);
-			toast('Recurring schedule overlaps selected date range','error');
+			toast(t('Recurring schedule overlaps selected date range'),'error');
 			return;
 		}
 		const creator=localStorage.getItem('username')||'';
@@ -317,10 +324,10 @@
 					if(del && del.ok){
 						res = { ok: true, converted: 'rule-to-single', reminder: createSingle.reminder };
 					}else{
-						res = { ok: false, error: (del && del.error) || 'Failed to delete rule after creating single' };
+						res = { ok: false, error: (del && del.error) || t('Failed to delete rule after creating single') };
 					}
 				}else{
-					res = { ok: false, error: (createSingle && createSingle.error) || 'Failed to create single reminder' };
+					res = { ok: false, error: (createSingle && createSingle.error) || t('Failed to create single reminder') };
 				}
 			}
 			else {
@@ -363,10 +370,10 @@
 						const formKey = (function(){ const d=new Date(data.date+'T00:00:00'); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })();
 						if(formKey !== dispKey){ await fetchMonth(dispKey+'-01', true); }
 					}else{
-						res = { ok: false, error: (del && del.error) || 'Failed to delete original reminder after creating recurring rule' };
+						res = { ok: false, error: (del && del.error) || t('Failed to delete original reminder after creating recurring rule') };
 					}
 				}else{
-					res = { ok: false, error: (makeRule && makeRule.error) || 'Failed to create recurring rule' };
+					res = { ok: false, error: (makeRule && makeRule.error) || t('Failed to create recurring rule') };
 				}
 			} else {
 				// Normal update of single reminder
@@ -386,23 +393,25 @@
 				}
 			}
 		}
-		if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); updateCalendarBadges(); closeForm(); renderList(); let msg='Saved'; if(window.__editingRuleId) msg='Recurring rule updated'; else if(data.id) msg='Reminder updated'; else if(res.recurring_id) msg='Recurring rule saved'; else msg='Reminder added'; toast(msg,'success'); } else { toast((res&&res.error)||'Save failed','error'); }
+		if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); updateCalendarBadges(); closeForm(); renderList(); let msg=t('Saved'); if(window.__editingRuleId) msg=t('Recurring rule updated'); else if(data.id) msg=t('Reminder updated'); else if(res.recurring_id) msg=t('Recurring rule saved'); else msg=t('Reminder added'); toast(msg,'success'); } else { toast((res&&res.error)|| t('Save failed'),'error'); }
 	});
-	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast('Network error','error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{},recurring_rules:[]}; }
+	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast(t('Network error'),'error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{},recurring_rules:[]}; }
 	function buildWeekdayHeader(){
-		const row=document.getElementById('reminderWeekdayRow'); if(!row) return; const base=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+		const row=document.getElementById('reminderWeekdayRow'); if(!row) return;
+		// Short weekday names in the active language (1 Jan 2023 was a Sunday)
+		const base=[0,1,2,3,4,5,6].map(i=> new Date(2023, 0, 1+i).toLocaleDateString(window.I18N.lang || 'en', { weekday: 'short' }));
 		// Convert config start day to index
 		let startName = (window.REMINDERS_CAL_START||'sunday').toLowerCase();
 		const idxMap = {sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
 		let startIdx = idxMap[startName]; if(startIdx===undefined) startIdx=0;
 		const ordered=[]; for(let i=0;i<7;i++){ ordered.push(base[(startIdx+i)%7]); }
-		row.innerHTML=ordered.map(n=>'<div>'+n.slice(0,3)+'</div>').join('');
+		row.innerHTML=ordered.map(n=>'<div>'+escapeHtml(n)+'</div>').join('');
 	}
 	buildWeekdayHeader();
 	function renderCalendar() {
 	    const year = display.getFullYear();
 	    const month = display.getMonth();
-	    calLabel.textContent = display.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+	    calLabel.textContent = display.toLocaleString(window.I18N.locale, { month: 'long', year: 'numeric' });
 	    cal.innerHTML = '';
 	    const today = new Date();
 	    const curKey = year + '-' + month;
@@ -506,9 +515,9 @@
 	                    renderCalendar();
 	                    renderList();
 	                    updateCalendarBadges();
-	                    toast('Reminder moved','success');
+	                    toast(t('Reminder moved'),'success');
 	                }else{
-	                    toast((res&&res.error)||'Move failed','error');
+	                    toast((res&&res.error)|| t('Move failed'),'error');
 	                }
 	            });
 	        }
@@ -518,7 +527,7 @@
 	function updateCalendarBadges(){ // ensure counts are in sync for currently loaded months
 	Object.keys(monthCache).forEach(recalcMonth); renderCalendar(); }
 	let activeCategory = 'ALL';
-	function renderList(){ const dateStr=getSelectedDate(); const dObj=new Date(dateStr+'T00:00:00'); const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]; if(!cache){ listWrap.innerHTML='<div class="text-xs text-gray-400">Loading...</div>'; fetchMonth(dateStr).then(()=>{ renderCalendar(); renderList(); renderUpcomingTimeline(); }); return;} let baseItems=[]; // Unfiltered items for current scope
+	function renderList(){ const dateStr=getSelectedDate(); const dObj=new Date(dateStr+'T00:00:00'); const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]; if(!cache){ listWrap.innerHTML='<div class="text-xs text-gray-400">'+th('Loading...')+'</div>'; fetchMonth(dateStr).then(()=>{ renderCalendar(); renderList(); renderUpcomingTimeline(); }); return;} let baseItems=[]; // Unfiltered items for current scope
 	// Filter baseItems to non-recurring generated occurrences (skip those with recurring_id)
 	if(currentScope==='day'){
 		baseItems=cache.reminders.filter(r=>{
@@ -543,7 +552,16 @@
 	const rulesCats = (cache.recurring_rules||[]).map(rr=>rr.category).filter(Boolean);
 	if(activeCategory!=='ALL' && !baseItems.some(r=>r.category===activeCategory) && !rulesCats.includes(activeCategory)) activeCategory='ALL';
 
-	function formatRepeat(n, unit, endDate){ const label = (n||1)===1? unit : unit+'s'; return 'Repeats every '+(n||1)+' '+label+(endDate? (' till '+endDate):''); }
+	function formatRepeat(n, unit, endDate){
+		const count = n||1;
+		const repeat = {
+			day: tn('Repeats every {count} day', 'Repeats every {count} days', count),
+			week: tn('Repeats every {count} week', 'Repeats every {count} weeks', count),
+			month: tn('Repeats every {count} month', 'Repeats every {count} months', count),
+			year: tn('Repeats every {count} year', 'Repeats every {count} years', count)
+		}[unit] || ('Repeats every '+count+' '+(count===1? unit : unit+'s'));
+		return endDate ? t('{repeat} till {date}', { repeat: repeat, date: endDate }) : repeat;
+	}
 	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
 
 	// Build compressed list = recurring rules intersecting scope + singles
@@ -566,14 +584,14 @@
 	// Render compressed list
 	listWrap.innerHTML='';
 	if(!out.length && !completedSingles.length){
-		listWrap.innerHTML='<div class="text-gray-500">No reminders</div>';
+		listWrap.innerHTML='<div class="text-gray-500">'+th('No reminders')+'</div>';
 		updateBulkUI();
 	} else {
 		const currentUser=localStorage.getItem('username')||''; const adminName=window.HomeHubAdmin.names[0]; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser);
 		if(out.length){
 		out.sort((a,b)=>{ if(a.isRule && !b.isRule) return -1; if(!a.isRule && b.isRule) return 1; if(a.isRule && b.isRule) return (a.title||'').localeCompare(b.title||''); return (a.date||'').localeCompare(b.date||'') || ((a.time||'~').localeCompare(b.time||'~')) || ((a.id||0)-(b.id||0)); });
 		out.forEach(r=>{
-			if(r.isRule){ const row=document.createElement('div'); row.className='group p-2 rounded border bg-white dark:bg-slate-800'; const meta = (r.time? ('at '+escapeHtml(fmtTime(r.time))+' · ') : '')+escapeHtml(r.creator||''); const canEdit = (function(){ const currentUser=localStorage.getItem('username')||''; const adminName=window.HomeHubAdmin.names[0]; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); return isAdmin || (r.creator && r.creator===currentUser); })(); const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; row.innerHTML = `<div class="font-semibold flex items-center">${dot}${escapeHtml(r.title)}<span class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 text-gray-600">Recurring</span>${canEdit?`<button type="button" data-edit-rule="${r.id}" class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600" aria-label="Edit recurring"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}${canEdit?`<button type="button" data-delete-rule="${r.id}" class="ml-1 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" aria-label="Delete recurring"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}</div><div class="text-xs text-gray-500">${escapeHtml(formatRepeat(r.interval, r.unit, r.end_date))}${meta? ' · '+meta:''}${r.category? ' · '+escapeHtml(r.category):''}</div>`; listWrap.appendChild(row); }
+			if(r.isRule){ const row=document.createElement('div'); row.className='group p-2 rounded border bg-white dark:bg-slate-800'; const meta = (r.time? (th('at {time}', { time: fmtTime(r.time) })+' · ') : '')+escapeHtml(r.creator||''); const canEdit = (function(){ const currentUser=localStorage.getItem('username')||''; const adminName=window.HomeHubAdmin.names[0]; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); return isAdmin || (r.creator && r.creator===currentUser); })(); const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; row.innerHTML = `<div class="font-semibold flex items-center">${dot}${escapeHtml(r.title)}<span class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 text-gray-600">${th('Recurring')}</span>${canEdit?`<button type="button" data-edit-rule="${r.id}" class="ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600" aria-label="${th('Edit recurring')}"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}${canEdit?`<button type="button" data-delete-rule="${r.id}" class="ml-1 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" aria-label="${th('Delete recurring')}"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}</div><div class="text-xs text-gray-500">${escapeHtml(formatRepeat(r.interval, r.unit, r.end_date))}${meta? ' · '+meta:''}${r.category? ' · '+escapeHtml(r.category):''}</div>`; listWrap.appendChild(row); }
 				else {
 					const canEdit = isAdmin || (r.creator && r.creator===currentUser);
 					const row=document.createElement('div');
@@ -586,15 +604,15 @@
 					const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:'';
 					const endDateFrag = r.end_date ? ` → ${r.end_date}` : '';
 					const endTimeFrag = r.end_time ? ` ${fmtTime(r.end_time)}` : '';
-					const allDayFrag = r.all_day ? ' · all-day' : '';
+					const allDayFrag = r.all_day ? (' · '+th('all-day')) : '';
 					const meta = `${r.date}${timeFrag}${endDateFrag}${endTimeFrag}${allDayFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`;
-					row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}
+					row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"${th('Select reminder')}\"></label>`:''}
 						<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit>
-							<div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}</div>
+							<div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"${th('Edit')}\"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}</div>
 							<div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>
 							${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}
 						</div>
-						${(window.CALENDAR_ONLY && canEdit)?`<div class=\"flex flex-col gap-1\"><button type=\"button\" data-done=\"${r.id}\" class=\"text-[11px] px-2 py-1 rounded border bg-white hover:bg-green-50\" title=\"Mark as done\" aria-label=\"Mark as done\"><i class='fa-solid fa-check' aria-hidden='true'></i></button></div>`:''}${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\" title=\"Move to Trash\"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}`;
+						${(window.CALENDAR_ONLY && canEdit)?`<div class=\"flex flex-col gap-1\"><button type=\"button\" data-done=\"${r.id}\" class=\"text-[11px] px-2 py-1 rounded border bg-white hover:bg-green-50\" title=\"${th('Mark as done')}\" aria-label=\"${th('Mark as done')}\"><i class='fa-solid fa-check' aria-hidden='true'></i></button></div>`:''}${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"${th('Delete')}\" title=\"${th('Move to Trash')}\"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}`;
 
 					if(window.CALENDAR_ONLY && canEdit){
 						row.setAttribute('draggable', 'true');
@@ -631,7 +649,7 @@
 		if(completedSingles.length){
 			const divider = document.createElement('div');
 			divider.className = 'text-[10px] uppercase tracking-wide text-gray-500 mt-3 mb-1 px-1 flex items-center justify-between';
-			divider.innerHTML = `<span>Completed (${completedSingles.length})</span><button type="button" data-toggle-completed class="normal-case px-2 py-0.5 rounded border bg-white text-[10px]">${(!completedCollapsed) ? 'Hide' : 'Show'}</button>`;
+			divider.innerHTML = `<span>${th('Completed ({count})', { count: completedSingles.length })}</span><button type="button" data-toggle-completed class="normal-case px-2 py-0.5 rounded border bg-white text-[10px]">${(!completedCollapsed) ? th('Hide') : th('Show')}</button>`;
 			listWrap.appendChild(divider);
 			if(!completedCollapsed){
 			completedSingles.forEach(r=>{
@@ -642,7 +660,7 @@
 				row2.setAttribute('data-date', r.date || '');
 				const catClass2 = r.category?'rem-cat-dot-'+r.category:'';
 				const dot2 = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass2||'bg-gray-400'}"></span>`;
-				row2.innerHTML = `<div class="flex-1"><div class="line-through text-gray-400 flex items-center">${dot2}${escapeHtml(r.title||'')} <span class="ml-2 text-[10px] px-1 py-0.5 rounded bg-green-100 text-green-700 font-medium"><i class='fa-solid fa-check' aria-hidden='true'></i> Done</span></div>${r.date?`<div class="text-xs text-gray-400">${r.date}${r.time?' '+r.time:''}</div>`:''}</div><div class="flex items-center gap-1"><button type="button" data-undo-done="${r.id}" class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50" title="Mark as active">Undo</button><button type="button" class="deleteOne text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" title="Move to Trash" aria-label="Move to Trash"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button></div>`;
+				row2.innerHTML = `<div class="flex-1"><div class="line-through text-gray-400 flex items-center">${dot2}${escapeHtml(r.title||'')} <span class="ml-2 text-[10px] px-1 py-0.5 rounded bg-green-100 text-green-700 font-medium"><i class='fa-solid fa-check' aria-hidden='true'></i> ${th('Done')}</span></div>${r.date?`<div class="text-xs text-gray-400">${r.date}${r.time?' '+r.time:''}</div>`:''}</div><div class="flex items-center gap-1"><button type="button" data-undo-done="${r.id}" class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50" title="${th('Mark as active')}">${th('Undo')}</button><button type="button" class="deleteOne text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30" title="${th('Move to Trash')}" aria-label="${th('Move to Trash')}"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button></div>`;
 				listWrap.appendChild(row2);
 			});
 			}
@@ -652,10 +670,10 @@
 		listWrap.querySelectorAll('[data-delete-rule]')?.forEach(btn=>{
 			btn.addEventListener('click', async ()=>{
 				const rid=parseInt(btn.getAttribute('data-delete-rule')); const creator=localStorage.getItem('username')||'';
-				if(!confirm('Delete this recurring reminder and all its future dates?')) return;
+				if(!confirm(t('Delete this recurring reminder and all its future dates?'))) return;
 				const res = await window.remindersApi.deleteRule(rid, creator);
-				if(res && res.ok){ const dateStr=getSelectedDate(); await fetchMonth(dateStr, true); const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); recalcMonth(key); updateCalendarBadges(); renderList(); toast('Recurring rule deleted','success'); }
-				else { toast((res&&res.error)||'Delete failed','error'); }
+				if(res && res.ok){ const dateStr=getSelectedDate(); await fetchMonth(dateStr, true); const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); recalcMonth(key); updateCalendarBadges(); renderList(); toast(t('Recurring rule deleted'),'success'); }
+				else { toast((res&&res.error)|| t('Delete failed'),'error'); }
 			});
 		});
 		if(window.CALENDAR_ONLY){
@@ -679,9 +697,9 @@
 						renderList();
 						renderCalendar();
 						updateCalendarBadges();
-						toast('Marked done','success');
+						toast(t('Marked done'),'success');
 					}else{
-						toast((res&&res.error)||'Action failed','error');
+						toast((res&&res.error)|| t('Action failed'),'error');
 					}
 				});
 			});
@@ -697,9 +715,9 @@
 						renderList();
 						renderCalendar();
 						updateCalendarBadges();
-						toast('Marked active','success');
+						toast(t('Marked active'),'success');
 					}else{
-						toast((res&&res.error)||'Action failed','error');
+						toast((res&&res.error)|| t('Action failed'),'error');
 					}
 				});
 			});
@@ -717,9 +735,9 @@
 						renderCalendar();
 						renderList();
 						updateCalendarBadges();
-						toast('Snoozed','success');
+						toast(t('Snoozed'),'success');
 					}else{
-						toast((res&&res.error)||'Snooze failed','error');
+						toast((res&&res.error)|| t('Snooze failed'),'error');
 					}
 				});
 			});
@@ -761,7 +779,7 @@
 		allBtn.className = 'rem-cat-pill inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50' +
 			(activeCategory === 'ALL' ? ' ring-1 ring-blue-500 bg-blue-50' : '');
 		const totalCount = Object.values(counts).reduce((a,b)=>a+b, 0);
-		allBtn.textContent = `All: ${totalCount}`;
+		allBtn.textContent = t('All: {count}', { count: totalCount });
 		wrap.appendChild(allBtn);
 		// Build key→label lookup from reminderCategoriesData
 		let catDataEl = document.getElementById('reminderCategoriesData');
@@ -789,10 +807,10 @@
 			wrap.appendChild(btn);
 		});
 	}
-	function paintItems(list){ const currentUser=localStorage.getItem('username')||''; const adminName=window.HomeHubAdmin.names[0]; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); const selections=new Set(); listWrap.innerHTML=''; bulkBar.classList.add('hidden'); bulkCount.textContent='0'; if(!list.length){ listWrap.innerHTML='<div class="text-gray-500">No reminders</div>'; return;} list.sort((a,b)=> (a.date.localeCompare(b.date)) || ((a.time||'~').localeCompare(b.time||'~')) || (a.id-b.id));
+	function paintItems(list){ const currentUser=localStorage.getItem('username')||''; const adminName=window.HomeHubAdmin.names[0]; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); const selections=new Set(); listWrap.innerHTML=''; bulkBar.classList.add('hidden'); bulkCount.textContent='0'; if(!list.length){ listWrap.innerHTML='<div class="text-gray-500">'+th('No reminders')+'</div>'; return;} list.sort((a,b)=> (a.date.localeCompare(b.date)) || ((a.time||'~').localeCompare(b.time||'~')) || (a.id-b.id));
 	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
-	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"Select reminder\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"Edit\"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"Delete\"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast('Deleted (undo available)','success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent='Undo delete'; undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast('Delete failed','error');}); }); }
-	listWrap.appendChild(row); }); function updateBulk(){ bulkCount.textContent=selections.size; bulkIds.value=Array.from(selections).join(','); bulkBar.classList.toggle('hidden', !selections.size); } listWrap.querySelectorAll('.reminderChk').forEach(cb=>cb.addEventListener('change',()=>{ const id=parseInt(cb.value); if(cb.checked) selections.add(id); else selections.delete(id); updateBulk(); })); document.getElementById('bulkClearSel').onclick=()=>{ selections.clear(); listWrap.querySelectorAll('.reminderChk').forEach(c=>c.checked=false); updateBulk(); }; const bulkForm=document.getElementById('bulkDeleteForm'); if(bulkForm && !bulkForm.dataset.ajax){ bulkForm.dataset.ajax='1'; bulkForm.addEventListener('submit', e=>{ e.preventDefault(); const ids=Array.from(selections); if(!ids.length) return; if(!confirm('Move '+ids.length+' selected reminder'+(ids.length===1?'':'s')+' to the trash?')) return; const creator=localStorage.getItem('username')||''; window.remindersApi.removeMany(ids,creator).then(resp=>{ if(!resp.ok){ toast('Delete failed','error'); return;} Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(r=>!ids.includes(r.id)); }); toast('Deleted '+ids.length,'success'); selections.clear(); bulkCount.textContent='0'; bulkBar.classList.add('hidden'); renderList(); updateCalendarBadges(); }); }); }
+	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"${th('Select reminder')}\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"${th('Edit')}\"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"${th('Delete')}\"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast(t('Deleted (undo available)'),'success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent=t('Undo delete'); undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast(t('Delete failed'),'error');}); }); }
+	listWrap.appendChild(row); }); function updateBulk(){ bulkCount.textContent=selections.size; bulkIds.value=Array.from(selections).join(','); bulkBar.classList.toggle('hidden', !selections.size); } listWrap.querySelectorAll('.reminderChk').forEach(cb=>cb.addEventListener('change',()=>{ const id=parseInt(cb.value); if(cb.checked) selections.add(id); else selections.delete(id); updateBulk(); })); document.getElementById('bulkClearSel').onclick=()=>{ selections.clear(); listWrap.querySelectorAll('.reminderChk').forEach(c=>c.checked=false); updateBulk(); }; const bulkForm=document.getElementById('bulkDeleteForm'); if(bulkForm && !bulkForm.dataset.ajax){ bulkForm.dataset.ajax='1'; bulkForm.addEventListener('submit', e=>{ e.preventDefault(); const ids=Array.from(selections); if(!ids.length) return; if(!confirm(tn('Move {count} selected reminder to the trash?', 'Move {count} selected reminders to the trash?', ids.length))) return; const creator=localStorage.getItem('username')||''; window.remindersApi.removeMany(ids,creator).then(resp=>{ if(!resp.ok){ toast(t('Delete failed'),'error'); return;} Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(r=>!ids.includes(r.id)); }); toast(t('Deleted {count}', { count: ids.length }),'success'); selections.clear(); bulkCount.textContent='0'; bulkBar.classList.add('hidden'); renderList(); updateCalendarBadges(); }); }); }
 	}
 
 	// Add edit handling for recurring rule cards
@@ -875,27 +893,27 @@
 	let trashVisible = false;
 	async function renderTrashPanel(){
 		if(!trashPanel) return;
-		trashPanel.innerHTML = '<div class="text-xs text-gray-400 p-2">Loading trash…</div>';
+		trashPanel.innerHTML = '<div class="text-xs text-gray-400 p-2">'+th('Loading trash…')+'</div>';
 		trashPanel.classList.remove('hidden');
 		const res = await window.remindersApi.trash();
-		if(!res || !res.ok){ trashPanel.innerHTML='<div class="text-xs text-red-500 p-2">Failed to load trash.</div>'; return; }
+		if(!res || !res.ok){ trashPanel.innerHTML='<div class="text-xs text-red-500 p-2">'+th('Failed to load trash.')+'</div>'; return; }
 		const items = res.reminders || [];
-		if(!items.length){ trashPanel.innerHTML='<div class="text-xs text-gray-400 p-2">Recycle bin is empty. Items auto-purge after 7 days.</div>'; return; }
+		if(!items.length){ trashPanel.innerHTML='<div class="text-xs text-gray-400 p-2">'+th('Recycle bin is empty. Items auto-purge after 7 days.')+'</div>'; return; }
 		const creator = localStorage.getItem('username')||'';
-		trashPanel.innerHTML = `<div class="text-xs font-semibold text-gray-500 mb-2">Recycle Bin — items auto-purge after 7 days</div>`;
+		trashPanel.innerHTML = `<div class="text-xs font-semibold text-gray-500 mb-2">${th('Recycle Bin — items auto-purge after 7 days')}</div>`;
 		items.forEach(r=>{
 			const row = document.createElement('div');
 			row.className = 'flex items-center gap-2 p-1.5 border rounded mb-1 text-sm bg-gray-50 dark:bg-slate-700/50';
 			row.innerHTML = `<div class="flex-1 line-through text-gray-400">${escapeHtml(r.title||'')} <span class="text-[10px] no-underline opacity-70">${r.date||''}</span></div>
-				<button type="button" data-restore="${r.id}" class="text-[11px] px-2 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-green-50">Restore</button>`;
+				<button type="button" data-restore="${r.id}" class="text-[11px] px-2 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-green-50">${th('Restore')}</button>`;
 			trashPanel.appendChild(row);
 		});
 		trashPanel.querySelectorAll('[data-restore]').forEach(btn=>{
 			btn.addEventListener('click', async ()=>{
 				const id = parseInt(btn.getAttribute('data-restore'));
 				const res2 = await window.remindersApi.restore(id, creator);
-				if(res2 && res2.ok){ toast('Restored','success'); Object.keys(monthCache).forEach(k=>delete monthCache[k]); renderTrashPanel(); buildAndEnsure(); renderList(); }
-				else toast((res2&&res2.error)||'Failed','error');
+				if(res2 && res2.ok){ toast(t('Restored'),'success'); Object.keys(monthCache).forEach(k=>delete monthCache[k]); renderTrashPanel(); buildAndEnsure(); renderList(); }
+				else toast((res2&&res2.error)|| t('Failed'),'error');
 			});
 		});
 	}
@@ -941,9 +959,9 @@
 			});
 		});
 		all.sort((a,b)=> (a.date||'').localeCompare(b.date||'') || ((a.time||'~').localeCompare(b.time||'~')) || ((a.id||0)-(b.id||0)));
-		upcomingTimeline.innerHTML = '<div class="text-xs font-semibold mb-1">Upcoming (next 7 days)</div>';
+		upcomingTimeline.innerHTML = '<div class="text-xs font-semibold mb-1">'+th('Upcoming (next 7 days)')+'</div>';
 		if(!all.length){
-			upcomingTimeline.innerHTML += '<div class="text-xs text-gray-500">No upcoming reminders.</div>';
+			upcomingTimeline.innerHTML += '<div class="text-xs text-gray-500">'+th('No upcoming reminders.')+'</div>';
 			return;
 		}
 		upcomingTimeline.innerHTML += all.slice(0,30).map(r=>`<div class="text-xs py-1 border-b last:border-b-0"><span class="font-medium">${escapeHtml(r.title||'')}</span> <span class="text-gray-500">${escapeHtml(r.date||'')}${r.time?(' '+escapeHtml(r.time)):''}</span></div>`).join('');

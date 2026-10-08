@@ -2,48 +2,48 @@
 {% block content %}
 <div class="mx-auto max-w-4xl">
     <div class="page-header">
-        <h1 class="page-title">Media Downloader</h1>
-        <p class="page-subtitle">Save a video or its audio from a link.</p>
+        <h1 class="page-title">{{ _('Media Downloader') }}</h1>
+        <p class="page-subtitle">{{ _('Save a video or its audio from a link.') }}</p>
     </div>
     <form method="POST" class="card p-4 mb-4 grid gap-3 md:grid-cols-12 grid-cols-1 items-end">
-        <input type="url" name="url" aria-label="Media URL" class="w-full md:col-span-6" placeholder="Paste a media URL" required>
-        <select name="format" aria-label="Format" class="md:col-span-2">
-            <option value="mp4">MP4 (video)</option>
-            <option value="mp3">MP3 (audio)</option>
+        <input type="url" name="url" aria-label="{{ _('Media URL') }}" class="w-full md:col-span-6" placeholder="{{ _('Paste a media URL') }}" required>
+        <select name="format" aria-label="{{ _('Format') }}" class="md:col-span-2">
+            <option value="mp4">{{ _('MP4 (video)') }}</option>
+            <option value="mp3">{{ _('MP3 (audio)') }}</option>
         </select>
-        <select name="quality" aria-label="Quality" class="md:col-span-2">
-            <option value="best">Best Available</option>
-            <option value="bestvideo[height<=1080]+bestaudio/best[height<=1080]">Up to 1080p</option>
-            <option value="bestvideo[height<=720]+bestaudio/best[height<=720]">Up to 720p</option>
+        <select name="quality" aria-label="{{ _('Quality') }}" class="md:col-span-2">
+            <option value="best">{{ _('Best Available') }}</option>
+            <option value="bestvideo[height<=1080]+bestaudio/best[height<=1080]">{{ _('Up to 1080p') }}</option>
+            <option value="bestvideo[height<=720]+bestaudio/best[height<=720]">{{ _('Up to 720p') }}</option>
         </select>
         <input type="hidden" name="creator" id="creator">
-        <button type="submit" class="btn btn-primary md:col-span-2"><i class="fa-solid fa-download" aria-hidden="true"></i> Download</button>
+        <button type="submit" class="btn btn-primary md:col-span-2"><i class="fa-solid fa-download" aria-hidden="true"></i> {{ _('Download') }}</button>
     </form>
-    {% if not media_list %}<div class="card list-empty">No downloads yet.</div>{% endif %}
+    {% if not media_list %}<div class="card list-empty">{{ _('No downloads yet.') }}</div>{% endif %}
     <ul class="card list-card {{ '' if media_list else 'hidden' }}">
         {% for media in media_list %}
         <li class="list-row flex-wrap" data-id="{{ media.id }}">
             <div class="flex-1 min-w-0">
                 <div class="font-medium truncate">{{ media.title }}</div>
-                <div class="meta mt-0.5">By {{ media.creator }} at {{ media.download_time|localtime }}</div>
+                <div class="meta mt-0.5">{{ _('By %(name)s at %(time)s', name=media.creator, time=media.download_time|localtime) }}</div>
             </div>
             <div class="flex items-center gap-1 flex-wrap">
                 {% if media.status == 'pending' %}
-                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 status-chip">Starting…</span>
-                <span class="text-xs text-gray-500 progress-line">{{ media.progress or 'Will take a while…' }}</span>
+                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 status-chip">{{ _('Starting…') }}</span>
+                <span class="text-xs text-gray-500 progress-line">{{ media.progress or _('Will take a while…') }}</span>
                 {% elif media.filepath %}
-                <a href="/media/preview/{{ media.filepath }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" aria-label="Preview {{ media.filepath }} in new tab">
-                    <i class="fa-solid fa-eye" aria-hidden="true"></i> Preview
+                <a href="/media/preview/{{ media.filepath }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" aria-label="{{ _('Preview %(name)s in new tab', name=media.filepath) }}">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i> {{ _('Preview') }}
                 </a>
                 <a href="/media/{{ media.filepath }}" class="btn btn-secondary btn-sm">
-                    <i class="fa-solid fa-download" aria-hidden="true"></i> Download
+                    <i class="fa-solid fa-download" aria-hidden="true"></i> {{ _('Download') }}
                 </a>
                 {% else %}
-                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Not available</span>
+                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">{{ _('Not available') }}</span>
                 {% endif %}
-                <form method="POST" action="/media/delete/{{ media.id }}" class="delete-form" data-creator="{{ media.creator }}" data-confirm="Delete this download and its file?">
+                <form method="POST" action="/media/delete/{{ media.id }}" class="delete-form" data-creator="{{ media.creator }}" data-confirm="{{ _('Delete this download and its file?') }}">
                     <input type="hidden" name="user">
-                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text action-delete" title="Delete" aria-label="Delete {{ media.title }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text action-delete" title="{{ _('Delete') }}" aria-label="{{ _('Delete %(item)s', item=media.title) }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
                 </form>
             </div>
         </li>

@@ -5,8 +5,8 @@
 
 <div class="max-w-5xl mx-auto">
     <div class="page-header">
-        <h1 class="page-title">Recipe Book</h1>
-        <p class="page-subtitle">The family's recipes, with ingredients and steps.</p>
+        <h1 class="page-title">{{ _('Recipe Book') }}</h1>
+        <p class="page-subtitle">{{ _("The family's recipes, with ingredients and steps.") }}</p>
     </div>
     
     <!-- Add/Edit Form -->
@@ -15,40 +15,40 @@
         <input type="hidden" name="creator" id="creator">
         
         <div class="mb-3">
-            <label for="recipeTitle" class="block text-sm font-medium text-gray-600 mb-1">Recipe Title</label>
-            <input type="text" name="title" id="recipeTitle" value="{{ form_title if form_title is defined else '' }}" class="w-full" placeholder="Chocolate Chip Cookies" required>
+            <label for="recipeTitle" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Recipe Title') }}</label>
+            <input type="text" name="title" id="recipeTitle" value="{{ form_title if form_title is defined else '' }}" class="w-full" placeholder="{{ _('Chocolate Chip Cookies') }}" required>
         </div>
         
         <div class="mb-3">
-            <label for="recipeLink" class="block text-sm font-medium text-gray-600 mb-1">Link (optional)</label>
+            <label for="recipeLink" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Link (optional)') }}</label>
             <input type="url" name="link" id="recipeLink" value="{{ form_link if form_link is defined else '' }}" class="w-full" placeholder="https://example.com/recipe">
         </div>
         
         <div class="mb-3">
-            <label for="tagInput" class="block text-sm font-medium text-gray-600 mb-1">Tags</label>
+            <label for="tagInput" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Tags') }}</label>
             <div class="flex flex-wrap gap-2 rounded items-start h-10" id="tagInputWrap">
-                <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full" placeholder="Add tag and press Enter">
+                <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full" placeholder="{{ _('Add tag and press Enter') }}">
             </div>
             <input type="hidden" name="tags" id="tagsInput" value="{{ form_tags if form_tags is defined else '[]' }}">
             <div class="mt-2 flex flex-wrap gap-2 text-xs" id="tagLibrary"></div>
         </div>
         
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-600 mb-1">Ingredients</label>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ _('Ingredients') }}</label>
             <div id="ingredientsEditor" class="mb-4"></div>
             <textarea name="ingredients" id="ingredientsHidden" style="display:none;"></textarea>
         </div>
         
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-600 mb-1">Instructions</label>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ _('Instructions') }}</label>
             <div id="instructionsEditor" class="mb-4"></div>
             <textarea name="instructions" id="instructionsHidden" style="display:none;"></textarea>
         </div>
         
         <div class="flex gap-2 mt-6">
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>{{ 'Update Recipe' if form_recipe_id is defined else 'Add Recipe' }}</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>{{ _('Update Recipe') if form_recipe_id is defined else _('Add Recipe') }}</button>
             {% if form_recipe_id is defined %}
-            <a href="/recipes" class="btn btn-secondary">Cancel</a>
+            <a href="/recipes" class="btn btn-secondary">{{ _('Cancel') }}</a>
             {% endif %}
         </div>
     </form>
@@ -62,9 +62,9 @@
     
     <!-- Filter by Tags -->
     <div class="mb-4 flex flex-wrap gap-2 items-center" id="filterSection">
-        <span class="text-sm text-gray-500">Filter by tag:</span>
+        <span class="text-sm text-gray-500">{{ _('Filter by tag:') }}</span>
         <div id="filterTags" class="flex flex-wrap gap-2"></div>
-        <button id="clearTagFilters" class="btn btn-ghost btn-sm">Clear</button>
+        <button id="clearTagFilters" class="btn btn-ghost btn-sm">{{ _('Clear') }}</button>
     </div>
     
     <!-- Recipes List -->
@@ -76,7 +76,7 @@
                 <div class="flex-1">
                     <h3 class="text-base font-semibold">{{ recipe.title }}</h3>
                     <div class="text-xs text-gray-500 mt-1">
-                        By {{ recipe.creator }} • {{ recipe.timestamp|localtime('%b %d, %Y') }}
+                        {{ _('By %(name)s • %(date)s', name=recipe.creator, date=recipe.timestamp|localtime('%b %d, %Y')) }}
                     </div>
                     <div class="mt-2 recipe-tags-display" id="tags-recipe-{{ recipe.id }}" data-tags="{{ recipe.tags }}"></div>
                 </div>
@@ -90,13 +90,13 @@
                 <div class="p-4 grid md:grid-cols-2 gap-6">
                     <div>
                         <h4 class="font-semibold mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-list-ul section-icon" aria-hidden="true"></i>Ingredients
+                            <i class="fa-solid fa-list-ul section-icon" aria-hidden="true"></i>{{ _('Ingredients') }}
                         </h4>
                         <div class="ql-editor prose prose-sm max-w-none">{{ recipe.ingredients|safe }}</div>
                     </div>
                     <div>
                         <h4 class="font-semibold mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-utensils section-icon" aria-hidden="true"></i>Instructions
+                            <i class="fa-solid fa-utensils section-icon" aria-hidden="true"></i>{{ _('Instructions') }}
                         </h4>
                         <div class="ql-editor prose prose-sm max-w-none">{{ recipe.instructions|safe }}</div>
                     </div>
@@ -104,18 +104,18 @@
                 {% if recipe.link %}
                 <div class="px-4 pb-2">
                     <a href="{{ recipe.link }}" class="hover:underline text-sm" style="color: var(--primary-text);" target="_blank" rel="noopener noreferrer">
-                        <i class="fa-solid fa-arrow-up-right-from-square mr-1" aria-hidden="true"></i>View Original Recipe
+                        <i class="fa-solid fa-arrow-up-right-from-square mr-1" aria-hidden="true"></i>{{ _('View Original Recipe') }}
                     </a>
                 </div>
                 {% endif %}
                 <div class="px-4 pb-4 flex gap-2">
                     <a href="/recipes/edit/{{ recipe.id }}" class="btn btn-secondary btn-sm edit-btn" data-creator="{{ recipe.creator }}">
-                        <i class="fa-solid fa-pen" aria-hidden="true"></i>Edit
+                        <i class="fa-solid fa-pen" aria-hidden="true"></i>{{ _('Edit') }}
                     </a>
-                    <form method="POST" action="/recipes/delete/{{ recipe.id }}" class="delete-form inline" data-creator="{{ recipe.creator }}" data-confirm="Delete this recipe?">
+                    <form method="POST" action="/recipes/delete/{{ recipe.id }}" class="delete-form inline" data-creator="{{ recipe.creator }}" data-confirm="{{ _('Delete this recipe?') }}">
                         <input type="hidden" name="user">
                         <button type="submit" class="btn btn-danger btn-sm">
-                            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>Delete
+                            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>{{ _('Delete') }}
                         </button>
                     </form>
                 </div>

@@ -27,26 +27,30 @@ window.ExpenseSplit = {
       if (mode === 'amount' && total() != null) spread(total(), prec());
     }
     function refresh(){
-      const mode = modeSel.value, uneven = mode !== 'equal', t = total();
+      const mode = modeSel.value, uneven = mode !== 'equal', tot = total();
       // Names alone fit two to a row; names with a value and a share need the full width
       rowsBox.classList.toggle('sm:grid-cols-2', !uneven);
       rows.forEach(r=>{ r.w.classList.toggle('hidden', !uneven); r.w.disabled = !uneven || !r.cb.checked; r.out.textContent = ''; });
       const rs = ticked();
       const weights = rs.map(r=> uneven ? (parseFloat(r.w.value) || 0) : 1);
       const sum = weights.reduce((a, b)=>a+b, 0);
-      if (mode !== 'amount' && t != null && t > 0 && sum > 0) rs.forEach((r, i)=>{ r.out.textContent = opts.fmt(t * weights[i] / sum); });
+      if (mode !== 'amount' && tot != null && tot > 0 && sum > 0) rs.forEach((r, i)=>{ r.out.textContent = opts.fmt(tot * weights[i] / sum); });
       let msg = '', bad = false;
-      if (!rs.length) msg = "Nobody ticked: a personal expense that isn't shared.";
-      else if (uneven && sum <= 0){ bad = true; msg = 'Enter a value for at least one person.'; }
-      else if (mode === 'shares') msg = 'Each person pays in proportion to their shares.';
+      if (!rs.length) msg = t("Nobody ticked: a personal expense that isn't shared.");
+      else if (uneven && sum <= 0){ bad = true; msg = t('Enter a value for at least one person.'); }
+      else if (mode === 'shares') msg = t('Each person pays in proportion to their shares.');
       else if (mode === 'percent'){
         const left = 100 - sum; bad = Math.abs(left) > 0.01;
-        msg = bad ? `Percentages add up to ${num(sum)}%: ${left > 0 ? num(left) + '% left to assign' : num(-left) + '% too much'}.` : 'Percentages add up to 100%.';
+        msg = !bad ? t('Percentages add up to 100%.')
+          : left > 0 ? t('Percentages add up to {sum}: {left} left to assign.', { sum: num(sum) + '%', left: num(left) + '%' })
+          : t('Percentages add up to {sum}: {over} too much.', { sum: num(sum) + '%', over: num(-left) + '%' });
       } else if (mode === 'amount'){
-        if (t == null){ bad = true; msg = 'Enter the total amount first.'; }
+        if (tot == null){ bad = true; msg = t('Enter the total amount first.'); }
         else {
-          const left = t - sum; bad = Math.abs(left) > 0.5 / Math.pow(10, prec());
-          msg = bad ? `Amounts add up to ${opts.fmt(sum)} of ${opts.fmt(t)}: ${left > 0 ? opts.fmt(left) + ' left to assign' : opts.fmt(-left) + ' too much'}.` : `Amounts add up to ${opts.fmt(t)}.`;
+          const left = tot - sum; bad = Math.abs(left) > 0.5 / Math.pow(10, prec());
+          msg = !bad ? t('Amounts add up to {total}.', { total: opts.fmt(tot) })
+            : left > 0 ? t('Amounts add up to {sum} of {total}: {left} left to assign.', { sum: opts.fmt(sum), total: opts.fmt(tot), left: opts.fmt(left) })
+            : t('Amounts add up to {sum} of {total}: {over} too much.', { sum: opts.fmt(sum), total: opts.fmt(tot), over: opts.fmt(-left) });
         }
       }
       hint.textContent = msg;
@@ -72,7 +76,7 @@ window.ExpenseSplit = {
       const r = rowOf(el);
       r.cb.value = name;
       r.w.name = `split_weight__${name}`;
-      r.w.setAttribute('aria-label', `${name} split value`);
+      r.w.setAttribute('aria-label', t('{name} split value', { name: name }));
       el.querySelector('.block.truncate').textContent = name;
       rowsBox.appendChild(el);
       wire(r);

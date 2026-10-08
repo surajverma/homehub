@@ -16,6 +16,8 @@
 	// Safe toast alias (previous inline function removed) to avoid ReferenceError breaking listeners
 	const toast = (msg,type)=>{ if(window.globalToast) window.globalToast(msg,type); else console.log('[toast]', type||'', msg); };
 	function currentUser(){ return localStorage.getItem('username')||''; }
+	// Stored status values stay English; only the label shown is translated
+	const WHO_LABELS = { Home: t('Home'), Away: t('Away'), Out: t('Out'), Traveling: t('Traveling') };
 	function updateWhoDOM(data){
 		if(!data) return;
 		let statuses={};
@@ -29,7 +31,7 @@
 				const pill=container.querySelector('.status-pill');
 				if(!pill) return;
 				// Update text content only if changed
-				const newText=st||'—';
+				const newText=(st && WHO_LABELS[st])||st||'—';
 				if(pill.textContent!==newText) pill.textContent=newText;
 				// Compute new classes
 				const baseClasses=['px-1.5','py-0.5','rounded','text-[10px]','leading-none','status-pill'];
@@ -65,7 +67,7 @@
 		const has=Array.from(memberChips.querySelectorAll('span[data-name]')).some(el=>el.dataset.name===user);
 		memberDel.classList.toggle('hidden', !has);
 	}
-		if(whoForm){ whoForm.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(whoForm); const payload=new URLSearchParams(fd); const actionField=document.getElementById('whoAction'); const actVal=actionField?.value; const targetUrl=whoForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:payload}).then(resp=>{ if(resp && resp.ok){ updateWhoDOM(resp); const resType = resp.result || (actVal==='clear'?'cleared':'updated'); if(resType==='cleared') toast('Status cleared','success'); else if(resType==='none') toast('No status to clear','info'); else toast('Status updated','success'); if(actionField) actionField.value='update'; } else toast(resp && resp.error || 'Update failed','error'); }); }); }
+		if(whoForm){ whoForm.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(whoForm); const payload=new URLSearchParams(fd); const actionField=document.getElementById('whoAction'); const actVal=actionField?.value; const targetUrl=whoForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:payload}).then(resp=>{ if(resp && resp.ok){ updateWhoDOM(resp); const resType = resp.result || (actVal==='clear'?'cleared':'updated'); if(resType==='cleared') toast(t('Status cleared'),'success'); else if(resType==='none') toast(t('No status to clear'),'info'); else toast(t('Status updated'),'success'); if(actionField) actionField.value='update'; } else toast(resp && resp.error || t('Update failed'),'error'); }); }); }
 	const whoClear=document.getElementById('whoClearBtn');
 	if(whoClear){
 		whoClear.addEventListener('click', e=>{
@@ -78,17 +80,17 @@
 			fetchJson(whoForm.getAttribute('action'), { method:'POST', body: payload }).then(resp=>{
 				if(resp && resp.ok){
 					updateWhoDOM(resp);
-					if(resp.result==='cleared') toast('Status cleared','success');
-					else if(resp.result==='none') toast('No status to clear','info');
-					else toast('Status updated','success');
+					if(resp.result==='cleared') toast(t('Status cleared'),'success');
+					else if(resp.result==='none') toast(t('No status to clear'),'info');
+					else toast(t('Status updated'),'success');
 				} else {
-					toast((resp && resp.error) || 'Update failed','error');
+					toast((resp && resp.error) || t('Update failed'),'error');
 				}
 			});
 		});
 	}
-		if(memberForm){ memberForm.addEventListener('submit', e=>{ e.preventDefault(); const input=memberForm.querySelector('[name=text]'); const val=(input?.value||'').trim(); if(!val){ toast('Cannot save empty status','info'); return; } const fd=new FormData(memberForm); const qs=new URLSearchParams(fd); const targetUrl=memberForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); memberForm.reset(); memberForm.querySelector('[name=name]').value=currentUser(); toast('Status saved','success'); } else { if(resp && resp.error==='Empty status'){ toast('Cannot save empty status','info'); } else toast(resp && resp.error || 'Save failed','error'); } }); }); }
-		if(memberDel){ memberDel.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(memberDel); const qs=new URLSearchParams(fd); const targetUrl=memberDel.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); toast('Status removed','success'); } else toast(resp && resp.error || 'Remove failed','error'); }); }); }
+		if(memberForm){ memberForm.addEventListener('submit', e=>{ e.preventDefault(); const input=memberForm.querySelector('[name=text]'); const val=(input?.value||'').trim(); if(!val){ toast(t('Cannot save empty status'),'info'); return; } const fd=new FormData(memberForm); const qs=new URLSearchParams(fd); const targetUrl=memberForm.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); memberForm.reset(); memberForm.querySelector('[name=name]').value=currentUser(); toast(t('Status saved'),'success'); } else { if(resp && resp.error==='Empty status'){ toast(t('Cannot save empty status'),'info'); } else toast(resp && resp.error || t('Save failed'),'error'); } }); }); }
+		if(memberDel){ memberDel.addEventListener('submit', e=>{ e.preventDefault(); const fd=new FormData(memberDel); const qs=new URLSearchParams(fd); const targetUrl=memberDel.getAttribute('action'); fetchJson(targetUrl,{method:'POST',body:qs}).then(resp=>{ if(resp && resp.ok){ updateMemberStatusDOM(resp); toast(t('Status removed'),'success'); } else toast(resp && resp.error || t('Remove failed'),'error'); }); }); }
 	// Initialize name fields
 	const cur=currentUser();
 	document.getElementById('whoName')?.setAttribute('value', cur);

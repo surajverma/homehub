@@ -9,6 +9,7 @@ from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..recurrence import serialized
 import bleach
+from flask_babel import gettext as _, ngettext
 
 
 def _fraction_factor_precision(value) -> int:
@@ -186,20 +187,20 @@ def _split_from_form(form, total: float | None = None):
         try:
             w = float(form.get(f'split_weight__{raw}') or 0)
         except (TypeError, ValueError):
-            raise SplitError(f'Invalid split value for {name}.')
+            raise SplitError(_('Invalid split value for %(name)s.', name=name))
         if not math.isfinite(w) or w < 0:
-            raise SplitError(f'Invalid split value for {name}.')
+            raise SplitError(_('Invalid split value for %(name)s.', name=name))
         if w > 0:
             weights[name] = w
     if not weights:
-        raise SplitError('Enter a split value for at least one person.')
+        raise SplitError(_('Enter a split value for at least one person.'))
     entered = sum(weights.values())
     if mode == 'percent' and abs(entered - 100) > 0.01:
-        raise SplitError(f'Percentages add up to {entered:g}%, not 100%.')
+        raise SplitError(_('Percentages add up to %(entered)s%%, not 100%%.', entered=f'{entered:g}'))
     if mode == 'amount':
         precision = _load_expense_settings().get('fraction_precision', 2)
         if total is None or not math.isfinite(total) or abs(entered - total) > 0.5 / (10 ** precision):
-            raise SplitError('Split amounts must add up to the expense amount.')
+            raise SplitError(_('Split amounts must add up to the expense amount.'))
     return json.dumps({'mode': mode, 'weights': weights})
 
 
@@ -391,7 +392,7 @@ def expenses():
             m = request.args.get('m') or today.month
             sel = request.args.get('sel')
             if not _all_finite(unit_price, default_quantity):
-                flash('Invalid amount.', 'error')
+                flash(_('Invalid amount.'), 'error')
                 return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
             try:
                 split_with = _split_from_form(request.form, unit_price * default_quantity)
@@ -400,7 +401,7 @@ def expenses():
                 return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
             db.session.add(RecurringExpense(title=title, unit_price=unit_price, default_quantity=default_quantity, frequency=frequency, monthly_mode=monthly_mode, category=category, start_date=sd, end_date=ed, creator=creator, effective_from=sd, split_with=split_with))
             db.session.commit()
-            flash('Recurring expense added.', 'success')
+            flash(_('Recurring expense added.'), 'success')
             return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
         else:
             title = bleach.clean(request.form.get('title',''))
@@ -419,7 +420,7 @@ def expenses():
             m = request.args.get('m') or d.month
             sel = request.args.get('sel') or d.strftime('%Y-%m-%d')
             if not _all_finite(amount, up, q):
-                flash('Invalid amount.', 'error')
+                flash(_('Invalid amount.'), 'error')
                 return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
             try:
                 split_with = _split_from_form(request.form, amount)
@@ -428,7 +429,7 @@ def expenses():
                 return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
             db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer, split_with=split_with))
             db.session.commit()
-            flash('Expense added.', 'success')
+            flash(_('Expense added.'), 'success')
             return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
 
     try:
@@ -448,7 +449,7 @@ def edit_recurring_expense(rid):
     r = db.get_or_404(RecurringExpense, rid)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, r.creator or ''):
-        flash('Not allowed to edit rule.', 'error')
+        flash(_('Not allowed to edit rule.'), 'error')
         return redirect(url_for('main.expenses'))
 
     def _parse_date(value, fallback):
@@ -484,7 +485,7 @@ def edit_recurring_expense(rid):
     new_end_date = _parse_date(request.form.get('end_date'), r.end_date)
 
     if not _all_finite(new_unit_price, new_default_quantity):
-        flash('Invalid amount.', 'error')
+        flash(_('Invalid amount.'), 'error')
         return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
     if request.form.get('split_present'):
         try:
@@ -541,7 +542,9 @@ def edit_recurring_expense(rid):
             e.split_with = r.split_with
             updated += 1
         db.session.commit()
-        flash(f'Recurring rule fully rewritten. Updated {updated} entry(ies), removed {deleted} outside rule range.', 'warning')
+        flash(ngettext('Recurring rule fully rewritten. Updated %(num)s entry, removed %(deleted)s outside rule range.',
+                       'Recurring rule fully rewritten. Updated %(num)s entries, removed %(deleted)s outside rule range.',
+                       updated, deleted=deleted), 'warning')
     elif strategy == 'split_rule':
         split_start = effective_from
         if r.start_date and split_start < r.start_date:
@@ -572,7 +575,8 @@ def edit_recurring_expense(rid):
             _generate_recurring_entries_until(today)
             _reapply_skips(r.id, skipped)
             flash(
-                f'Split at {split_start} would create an empty old rule window. Applied changes from {effective_from} on the same rule instead.',
+                _('Split at %(split_start)s would create an empty old rule window. Applied changes from %(effective_from)s on the same rule instead.',
+                  split_start=split_start, effective_from=effective_from),
                 'info'
             )
             return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
@@ -604,7 +608,9 @@ def edit_recurring_expense(rid):
         db.session.commit()
         _generate_recurring_entries_until(today)
         _reapply_skips(new_rule.id, skipped)
-        flash(f'Rule split from {split_start}. Old rule preserved; removed {removed_from_old} future old-rule entry(ies).', 'success')
+        flash(ngettext('Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entry.',
+                       'Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entries.',
+                       removed_from_old, split_start=split_start), 'success')
     else:
         if new_start_date and effective_from < new_start_date:
             effective_from = new_start_date
@@ -646,7 +652,9 @@ def edit_recurring_expense(rid):
             ExpenseEntry.date >= effective_from
         ).count()
         flash(
-            f'Rule updated from {effective_from}. Kept {historical_kept} historical entry(ies), rebuilt {regenerated} from that date.',
+            ngettext('Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt %(rebuilt)s from that date.',
+                     'Rule updated from %(effective_from)s. Kept %(num)s historical entries, rebuilt %(rebuilt)s from that date.',
+                     historical_kept, effective_from=effective_from, rebuilt=regenerated),
             'success'
         )
 
@@ -659,7 +667,7 @@ def delete_recurring_expense(rid):
     r = db.get_or_404(RecurringExpense, rid)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, r.creator or ''):
-        flash('Not allowed to delete rule.', 'error')
+        flash(_('Not allowed to delete rule.'), 'error')
         return redirect(url_for('main.expenses'))
     delete_entries = request.form.get('delete_entries') in ('1', 'true', 'on', 'yes')
     if delete_entries:
@@ -670,9 +678,9 @@ def delete_recurring_expense(rid):
     db.session.delete(r)
     db.session.commit()
     if delete_entries:
-        flash('Recurring rule deleted. Linked generated entries deleted.', 'success')
+        flash(_('Recurring rule deleted. Linked generated entries deleted.'), 'success')
     else:
-        flash('Recurring rule deleted. Linked generated entries kept as history.', 'success')
+        flash(_('Recurring rule deleted. Linked generated entries kept as history.'), 'success')
     return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
 
 
@@ -681,7 +689,7 @@ def delete_recurring_expense(rid):
 def expenses_settings():
     user = sanitize_text(request.form.get('user', ''))
     if not is_admin(user):
-        flash('Only admin can update settings.', 'error')
+        flash(_('Only admin can update settings.'), 'error')
         return redirect(url_for('main.expenses'))
     currency = sanitize_text(request.form.get('currency', ''))
     categories = sanitize_text(request.form.get('categories', ''))
@@ -695,9 +703,9 @@ def expenses_settings():
         db.session.execute(db.text("INSERT INTO app_setting(key,value) VALUES('categories', :v) ON CONFLICT(key) DO UPDATE SET value=excluded.value"), {"v": categories})
         db.session.execute(db.text("INSERT INTO app_setting(key,value) VALUES('fraction_factor', :v) ON CONFLICT(key) DO UPDATE SET value=excluded.value"), {"v": str(fraction_factor)})
         db.session.commit()
-        flash('Settings saved.', 'success')
+        flash(_('Settings saved.'), 'success')
     except Exception:
-        flash('Failed to save settings.', 'error')
+        flash(_('Failed to save settings.'), 'error')
     today = date.today()
     tab = request.args.get('tab', 'general-settings')
     return redirect(url_for('main.recurring_expenses_page', tab=tab))
@@ -709,11 +717,11 @@ def delete_expense_entry(entry_id):
     entry = db.get_or_404(ExpenseEntry, entry_id)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, entry.payer or ''):
-        flash('Not allowed to delete entry.', 'error')
+        flash(_('Not allowed to delete entry.'), 'error')
         return redirect(url_for('main.expenses'))
     db.session.delete(entry)
     db.session.commit()
-    flash('Expense deleted.', 'success')
+    flash(_('Expense deleted.'), 'success')
     # Preserve view
     today = date.today()
     y = request.args.get('y') or today.year
@@ -727,7 +735,7 @@ def edit_expense_entry(entry_id):
     entry = db.get_or_404(ExpenseEntry, entry_id)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, entry.payer or ''):
-        flash('Not allowed to edit entry.', 'error')
+        flash(_('Not allowed to edit entry.'), 'error')
         return redirect(url_for('main.expenses'))
     # Update fields
     entry.title = bleach.clean(request.form.get('title', entry.title))
@@ -748,7 +756,7 @@ def edit_expense_entry(entry_id):
         entry.amount = entry.unit_price * (entry.quantity if entry.quantity is not None else 1)
     if not _all_finite(entry.amount, entry.unit_price, entry.quantity):
         db.session.rollback()
-        flash('Invalid amount.', 'error')
+        flash(_('Invalid amount.'), 'error')
         return _redirect_to_view(entry.date)
     if request.form.get('split_present'):
         try:
@@ -758,7 +766,7 @@ def edit_expense_entry(entry_id):
             flash(str(exc), 'error')
             return _redirect_to_view(entry.date)
     db.session.commit()
-    flash('Expense updated.', 'success')
+    flash(_('Expense updated.'), 'success')
     # Preserve view
     today = date.today()
     y = request.args.get('y') or entry.date.year
@@ -781,15 +789,15 @@ def toggle_skip_expense_entry(entry_id):
     entry = db.get_or_404(ExpenseEntry, entry_id)
     user = sanitize_text(request.form.get('user', ''))
     if not can_modify(user, entry.payer or ''):
-        flash('Not allowed to change entry.', 'error')
+        flash(_('Not allowed to change entry.'), 'error')
         return _redirect_to_view(entry.date)
     # Only recurring days can be skipped; a skipped day can always be restored
     if not entry.skipped and (entry.recurring_id is None or entry.is_settlement):
-        flash('Only recurring days can be skipped.', 'error')
+        flash(_('Only recurring days can be skipped.'), 'error')
         return _redirect_to_view(entry.date)
     entry.skipped = not bool(entry.skipped)
     db.session.commit()
-    flash('Day skipped.' if entry.skipped else 'Day restored.', 'success')
+    flash(_('Day skipped.') if entry.skipped else _('Day restored.'), 'success')
     return _redirect_to_view(entry.date)
 
 
@@ -801,22 +809,22 @@ def restore_recurring_day(rid):
     try:
         d = datetime.strptime(request.form.get('date', ''), '%Y-%m-%d').date()
     except Exception:
-        flash('Invalid date.', 'error')
+        flash(_('Invalid date.'), 'error')
         return _redirect_to_view()
     if not can_modify(user, r.creator or ''):
-        flash('Not allowed to restore this day.', 'error')
+        flash(_('Not allowed to restore this day.'), 'error')
         return _redirect_to_view(d)
     # Days before the rule's last apply-from edit followed settings that are no longer stored
     earliest = r.effective_from or r.start_date
     if d > date.today() or (earliest and d < earliest) or not _rule_occurs_on(r, d):
-        flash('That day is not part of this recurring rule.', 'error')
+        flash(_('That day is not part of this recurring rule.'), 'error')
         return _redirect_to_view(d)
     if ExpenseEntry.query.filter_by(recurring_id=r.id, date=d).first():
-        flash('That day is already there.', 'info')
+        flash(_('That day is already there.'), 'info')
         return _redirect_to_view(d)
     db.session.add(_entry_from_rule(r, d))
     db.session.commit()
-    flash(f'{r.title} added back for {d}.', 'success')
+    flash(_('%(title)s added back for %(date)s.', title=r.title, date=d), 'success')
     return _redirect_to_view(d)
 
 
@@ -831,10 +839,10 @@ def settle_up():
     except (TypeError, ValueError):
         amount = 0
     if not from_member or not to_member or from_member == to_member or not math.isfinite(amount) or amount <= 0:
-        flash('Invalid settlement.', 'error')
+        flash(_('Invalid settlement.'), 'error')
         return _redirect_to_view()
     if not (can_modify(user, from_member) or can_modify(user, to_member)):
-        flash('Only the people involved can record a settlement.', 'error')
+        flash(_('Only the people involved can record a settlement.'), 'error')
         return _redirect_to_view()
     today = date.today()
     db.session.add(ExpenseEntry(
@@ -846,7 +854,7 @@ def settle_up():
         is_settlement=True,
     ))
     db.session.commit()
-    flash('Settlement recorded.', 'success')
+    flash(_('Settlement recorded.'), 'success')
     return _redirect_to_view()
 
 
@@ -855,7 +863,7 @@ def bulk_delete_expenses():
     user = sanitize_text(request.form.get('user', ''))
     ids = request.form.getlist('ids')
     if not ids:
-        flash('No entries selected.', 'warning')
+        flash(_('No entries selected.'), 'warning')
         return redirect(url_for('main.expenses'))
     deleted = 0
     for entry_id in ids:
@@ -867,7 +875,7 @@ def bulk_delete_expenses():
         except Exception:
             continue
     db.session.commit()
-    flash(f'{deleted} expense(s) deleted.', 'success')
+    flash(ngettext('%(num)s expense deleted.', '%(num)s expenses deleted.', deleted), 'success')
     # Preserve view
     today = date.today()
     y = request.args.get('y') or today.year
@@ -896,7 +904,7 @@ def api_expenses_month():
     # Validate month range; return helpful 400 if invalid
     if m < 1 or m > 12:
         return jsonify({
-            'error': 'Invalid month parameter. Must be an integer between 1 and 12.',
+            'error': _('Invalid month parameter. Must be an integer between 1 and 12.'),
             'year': year_q if year_q is not None else y,
             'month': month_q if month_q is not None else m,
         }), 400

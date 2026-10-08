@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ html_lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700{% if language_font %}&family={{ language_font|replace(' ', '+') }}:wght@400;600;700{% endif %}&display=swap" rel="stylesheet">
+    {%- if language_font %}
+    <!-- Inter has no glyphs for this language's script, so its font follows Inter in the stack -->
+    <style>html, body { font-family: 'Inter', '{{ language_font }}', system-ui, -apple-system, 'Segoe UI', sans-serif; }</style>
+    {% endif %}
     <!-- Config-driven theme variables (takes priority) -->
     {% set pc = config.theme.primary_color.lstrip('#') %}
     <style id="config-theme-vars">
@@ -54,6 +58,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <script>window.I18N = {{ i18n_js | tojson }};</script>
+    <script src="{{ asset_url('js/base/i18n.js') }}"></script>
     {% block extra_head %}{% endblock %}
     <script>
         // Admin password state. When a password is set, a stored admin name only counts once this session unlocked it.
@@ -82,7 +88,7 @@
                     var icon = document.getElementById('collapseIcon');
                     if(icon){ icon.className = 'fa-solid '+(collapsed ? 'fa-angles-right' : 'fa-angles-left'); }
                     var btn = document.getElementById('toggleCollapse');
-                    if(btn){ btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar'; }
+                    if(btn){ btn.title = collapsed ? {{ _('Expand sidebar')|tojson }} : {{ _('Collapse sidebar')|tojson }}; }
                 }
                 document.addEventListener('DOMContentLoaded', setInitialIcon, { once: true });
             }catch(e){}
@@ -106,26 +112,26 @@
             <div class="sidebar-brand h-16 px-5 flex items-center justify-between gap-2">
                 <span class="brand-name text-base font-bold tracking-tight truncate">{{ config.instance_name }}</span>
                 <div class="flex items-center gap-1">
-                    <button id="toggleCollapse" type="button" class="sidebar-icon-btn hidden md:inline-flex w-8 h-8 items-center justify-center rounded-md" title="Collapse sidebar" aria-label="Collapse sidebar">
+                    <button id="toggleCollapse" type="button" class="sidebar-icon-btn hidden md:inline-flex w-8 h-8 items-center justify-center rounded-md" title="{{ _('Collapse sidebar') }}" aria-label="{{ _('Collapse sidebar') }}">
                         <i id="collapseIcon" class="fa-solid fa-angles-left" aria-hidden="true"></i>
                     </button>
-                    <button id="closeSidebar" type="button" class="sidebar-icon-btn md:hidden inline-flex w-8 h-8 items-center justify-center rounded-md" aria-label="Close menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                    <button id="closeSidebar" type="button" class="sidebar-icon-btn md:hidden inline-flex w-8 h-8 items-center justify-center rounded-md" aria-label="{{ _('Close menu') }}"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 </div>
             </div>
             <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto" id="sidebarNav">
-                <a href="/" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Welcome"><i class="fa-solid fa-house w-5 text-center"></i><span class="nav-label">Welcome</span></a>
-                {% if config.feature_toggles.get('notes') %}<a href="/notes" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Shared Notes"><i class="fa-solid fa-note-sticky w-5 text-center"></i><span class="nav-label">Shared Notes</span></a>{% endif %}
-                {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Shared Cloud"><i class="fa-solid fa-cloud w-5 text-center"></i><span class="nav-label">Shared Cloud</span></a>{% endif %}
-                {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Shopping List"><i class="fa-solid fa-cart-shopping w-5 text-center"></i><span class="nav-label">Shopping List</span></a>{% endif %}
-                {% if config.feature_toggles.get('calendar', True) %}<a href="/calendar" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Calendar"><i class="fa-solid fa-calendar-days w-5 text-center"></i><span class="nav-label">Calendar</span></a>{% endif %}
-                {% if config.feature_toggles.get('chores') %}<a href="/chores" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="To-Do/Chores"><i class="fa-solid fa-list-check w-5 text-center"></i><span class="nav-label">To-Do/Chores</span></a>{% endif %}
-                {% if config.feature_toggles.get('recipes') %}<a href="/recipes" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Recipe Book"><i class="fa-solid fa-utensils w-5 text-center"></i><span class="nav-label">Recipe Book</span></a>{% endif %}
-                {% if config.feature_toggles.get('expiry_tracker') %}<a href="/expiry" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Expiry Tracker"><i class="fa-solid fa-hourglass-half w-5 text-center"></i><span class="nav-label">Expiry Tracker</span></a>{% endif %}
-                {% if config.feature_toggles.get('url_shortener') %}<a href="/shorten" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="URL Shortener"><i class="fa-solid fa-link w-5 text-center"></i><span class="nav-label">URL Shortener</span></a>{% endif %}
-                {% if config.feature_toggles.get('media_downloader') %}<a href="/media" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Media Downloader"><i class="fa-solid fa-download w-5 text-center"></i><span class="nav-label">Media Downloader</span></a>{% endif %}
-                {% if config.feature_toggles.get('pdf_compressor') %}<a href="/pdfs" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="PDF Compressor"><i class="fa-solid fa-file-pdf w-5 text-center"></i><span class="nav-label">PDF Compressor</span></a>{% endif %}
-                {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="QR Generator"><i class="fa-solid fa-qrcode w-5 text-center"></i><span class="nav-label">QR Generator</span></a>{% endif %}
-                {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="Expense Tracker"><i class="fa-solid fa-wallet w-5 text-center"></i><span class="nav-label">Expense Tracker</span></a>{% endif %}
+                <a href="/" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Welcome') }}"><i class="fa-solid fa-house w-5 text-center"></i><span class="nav-label">{{ _('Welcome') }}</span></a>
+                {% if config.feature_toggles.get('notes') %}<a href="/notes" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Shared Notes') }}"><i class="fa-solid fa-note-sticky w-5 text-center"></i><span class="nav-label">{{ _('Shared Notes') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Shared Cloud') }}"><i class="fa-solid fa-cloud w-5 text-center"></i><span class="nav-label">{{ _('Shared Cloud') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Shopping List') }}"><i class="fa-solid fa-cart-shopping w-5 text-center"></i><span class="nav-label">{{ _('Shopping List') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('calendar', True) %}<a href="/calendar" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Calendar') }}"><i class="fa-solid fa-calendar-days w-5 text-center"></i><span class="nav-label">{{ _('Calendar') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('chores') %}<a href="/chores" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('To-Do/Chores') }}"><i class="fa-solid fa-list-check w-5 text-center"></i><span class="nav-label">{{ _('To-Do/Chores') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('recipes') %}<a href="/recipes" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Recipe Book') }}"><i class="fa-solid fa-utensils w-5 text-center"></i><span class="nav-label">{{ _('Recipe Book') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('expiry_tracker') %}<a href="/expiry" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Expiry Tracker') }}"><i class="fa-solid fa-hourglass-half w-5 text-center"></i><span class="nav-label">{{ _('Expiry Tracker') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('url_shortener') %}<a href="/shorten" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('URL Shortener') }}"><i class="fa-solid fa-link w-5 text-center"></i><span class="nav-label">{{ _('URL Shortener') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('media_downloader') %}<a href="/media" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Media Downloader') }}"><i class="fa-solid fa-download w-5 text-center"></i><span class="nav-label">{{ _('Media Downloader') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('pdf_compressor') %}<a href="/pdfs" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('PDF Compressor') }}"><i class="fa-solid fa-file-pdf w-5 text-center"></i><span class="nav-label">{{ _('PDF Compressor') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('QR Generator') }}"><i class="fa-solid fa-qrcode w-5 text-center"></i><span class="nav-label">{{ _('QR Generator') }}</span></a>{% endif %}
+                {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Expense Tracker') }}"><i class="fa-solid fa-wallet w-5 text-center"></i><span class="nav-label">{{ _('Expense Tracker') }}</span></a>{% endif %}
             </nav>
             <script src="{{ asset_url('js/base/active_link.js') }}"></script>
         </aside>
@@ -136,17 +142,17 @@
             <div class="max-w-none md:max-w-none mx-auto">
                 <div class="topbar sticky -top-4 md:-top-8 z-20 mb-4 -mx-4 md:-mx-8 -mt-4 md:-mt-8 px-4 md:px-8 py-3">
                     <div class="flex items-center gap-2">
-                        <button id="openSidebar" type="button" class="md:hidden btn btn-secondary" aria-controls="sidebar" aria-expanded="false"><i class="fa-solid fa-bars" aria-hidden="true"></i> Menu</button>
+                        <button id="openSidebar" type="button" class="md:hidden btn btn-secondary" aria-controls="sidebar" aria-expanded="false"><i class="fa-solid fa-bars" aria-hidden="true"></i> {{ _('Menu') }}</button>
                         {% if not (hide_user_ui | default(false)) %}
                         <div class="ml-auto flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
                             <div id="welcome" class="hidden lg:block text-sm text-gray-500 truncate max-w-[40vw]"></div>
-                            <div class="user-chip" title="Switch user">
+                            <div class="user-chip" title="{{ _('Switch user') }}">
                                 <span id="userAvatar" class="user-chip-avatar" aria-hidden="true"></span>
-                                <select id="userSwitcher" class="user-chip-select" aria-label="Current user"></select>
+                                <select id="userSwitcher" class="user-chip-select" aria-label="{{ _('Current user') }}"></select>
                                 <i class="fa-solid fa-chevron-down user-chip-caret" aria-hidden="true"></i>
                             </div>
                             {% if is_authed %}
-                            <a href="/logout" class="btn btn-ghost btn-icon sm:w-auto sm:px-3" aria-label="Log out" title="Log out"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span class="hidden sm:inline">Logout</span></a>
+                            <a href="/logout" class="btn btn-ghost btn-icon sm:w-auto sm:px-3" aria-label="{{ _('Log out') }}" title="{{ _('Log out') }}"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span class="hidden sm:inline">{{ _('Logout') }}</span></a>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -157,7 +163,8 @@
             </div>
         </main>
         <footer class="border-t text-center text-xs text-gray-500 px-4 py-3" style="border-color: var(--border-color); background-color: var(--background-color);">
-            If you found this useful, consider <a href="https://ko-fi.com/skv" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 hover:underline" style="color: var(--primary-text);"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i> buying me a coffee</a>
+            {% set coffee_link %}<a href="https://ko-fi.com/skv" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 hover:underline" style="color: var(--primary-text);"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i> {{ _('buying me a coffee') }}</a>{% endset -%}
+            {{ _('If you found this useful, consider %(link)s')|html_params(link=coffee_link) }}
         </footer>
         </div>
     </div>
@@ -165,30 +172,30 @@
     <!-- Admin password prompt -->
     <div id="adminPasswordModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50" style="z-index:60">
         <form id="adminPasswordForm" class="card w-full max-w-sm p-5 mx-4 shadow-xl" autocomplete="off">
-            <h3 class="text-lg font-semibold mb-3">Admin password</h3>
-            <p class="text-sm text-gray-600 mb-3">Enter the admin password to continue as {{ config.admin_name }}.</p>
+            <h3 class="text-lg font-semibold mb-3">{{ _('Admin password') }}</h3>
+            <p class="text-sm text-gray-600 mb-3">{{ _('Enter the admin password to continue as %(name)s.', name=config.admin_name) }}</p>
             <div class="mb-3">
-                <label class="block text-sm text-gray-700 mb-1" for="adminPasswordInput">Password</label>
+                <label class="block text-sm text-gray-700 mb-1" for="adminPasswordInput">{{ _('Password') }}</label>
                 <input id="adminPasswordInput" type="password" class="w-full" autocomplete="off" required>
                 <p id="adminPasswordError" class="text-sm text-red-600 mt-1" role="alert"></p>
             </div>
             <div class="flex justify-end gap-2">
-                <button type="button" id="adminPasswordCancel" class="btn btn-secondary">Cancel</button>
-                <button type="submit" class="btn btn-primary">Unlock</button>
+                <button type="button" id="adminPasswordCancel" class="btn btn-secondary">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary">{{ _('Unlock') }}</button>
             </div>
         </form>
     </div>
     <!-- First-visit user selection modal -->
     <div id="userSelectModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
         <div class="card w-full max-w-sm p-5 mx-4 shadow-xl">
-            <h3 class="text-lg font-semibold mb-3">Select your user</h3>
-            <p class="text-sm text-gray-600 mb-3">Pick your name to personalize your HomeHub experience.</p>
+            <h3 class="text-lg font-semibold mb-3">{{ _('Select your user') }}</h3>
+            <p class="text-sm text-gray-600 mb-3">{{ _('Pick your name to personalize your HomeHub experience.') }}</p>
             <div class="mb-3">
-                <label class="block text-sm text-gray-700 mb-1" for="userSelectInput">User</label>
+                <label class="block text-sm text-gray-700 mb-1" for="userSelectInput">{{ _('User') }}</label>
                 <select id="userSelectInput" class="w-full"></select>
             </div>
             <div class="flex justify-end gap-2">
-                <button id="userSelectConfirm" class="btn btn-primary">Continue</button>
+                <button id="userSelectConfirm" class="btn btn-primary">{{ _('Continue') }}</button>
             </div>
         </div>
     </div>

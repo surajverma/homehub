@@ -27,7 +27,7 @@
             const row = document.createElement('div');
             row.className = 'flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer select-none';
             const text = document.createElement('div'); text.textContent = s; text.className='truncate pr-2 flex-1';
-            const del = document.createElement('button'); del.type='button'; del.title='Hide'; del.setAttribute('aria-label','Hide suggestion '+s); del.className='text-gray-400 hover:text-red-600 w-6 h-6 inline-flex items-center justify-center'; del.innerHTML='<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+            const del = document.createElement('button'); del.type='button'; del.title=t('Hide'); del.setAttribute('aria-label', t('Hide suggestion {item}', { item: s })); del.className='text-gray-400 hover:text-red-600 w-6 h-6 inline-flex items-center justify-center'; del.innerHTML='<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
             del.addEventListener('click', (e)=>{ e.stopPropagation(); const h=getHidden(); h.add(s); setHidden(h); render(); });
             row.appendChild(text); const actions=document.createElement('div'); actions.className='flex items-center gap-2'; actions.appendChild(del); row.appendChild(actions);
             row.addEventListener('click', ()=>{ input.value = s; box.classList.add('hidden'); input.focus(); });

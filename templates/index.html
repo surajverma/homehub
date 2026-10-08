@@ -28,8 +28,8 @@ window.REMINDERS_CAL_START = (function(){
 		<div class="card p-6">
 			<div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
 				<div class="flex-1">
-					<h1 class="text-2xl md:text-[1.75rem] md:leading-9 font-bold tracking-tight mb-1">Welcome to {{ config.instance_name }}</h1>
-					<p class="text-sm text-gray-500">Pick a tool from the left to get started.</p>
+					<h1 class="text-2xl md:text-[1.75rem] md:leading-9 font-bold tracking-tight mb-1">{{ _('Welcome to %(name)s', name=config.instance_name) }}</h1>
+					<p class="text-sm text-gray-500">{{ _('Pick a tool from the left to get started.') }}</p>
 				</div>
 				<div class="flex flex-col items-start text-left gap-0.5 md:flex-col md:items-end md:text-right md:gap-1 flex-shrink-0">
 					<div class="text-lg md:text-2xl font-semibold tabular-nums text-gray-800 dark:text-gray-200" id="currentTime">--:--:--</div>
@@ -43,31 +43,31 @@ window.REMINDERS_CAL_START = (function(){
 			<div class="flex items-center justify-between mb-3">
 				<h2 class="section-title">
 					<i class="fa-solid fa-cloud-sun section-icon" aria-hidden="true"></i>
-					Weather
+					{{ _('Weather') }}
 				</h2>
 				<span id="weatherLocation" class="text-sm text-gray-500"></span>
 			</div>
 			<div id="weatherContent">
 				<div class="text-center text-gray-500 py-4" role="status" aria-live="polite">
 					<i class="fa-solid fa-spinner fa-spin text-2xl" aria-hidden="true"></i>
-					<p class="mt-2">Loading weather data...</p>
+					<p class="mt-2">{{ _('Loading weather data...') }}</p>
 				</div>
 			</div>
 		</div>
 		{% endif %}
 
 			<div class="card p-6">
-				<h2 class="section-title mb-3"><i class="fa-solid fa-bullhorn section-icon" aria-hidden="true"></i>Family Notice Board</h2>
+				<h2 class="section-title mb-3"><i class="fa-solid fa-bullhorn section-icon" aria-hidden="true"></i>{{ _('Family Notice Board') }}</h2>
 			{% if notice and notice.content %}
 				<div class="prose max-w-none whitespace-pre-wrap notice-surface p-4">{{ notice.content }}</div>
-				<div class="text-xs text-gray-500 mt-2">Last updated by {{ notice.updated_by }} at {{ notice.updated_at|localtime }}</div>
+				<div class="text-xs text-gray-500 mt-2">{{ _('Last updated by %(name)s at %(time)s', name=notice.updated_by, time=notice.updated_at|localtime) }}</div>
 			{% else %}
-				<div class="text-sm text-gray-500">No notices yet. Admin can post one below.</div>
+				<div class="text-sm text-gray-500">{{ _('No notices yet. Admin can post one below.') }}</div>
 			{% endif %}
 			<form method="POST" action="/notice" class="mt-4 space-y-2" id="noticeForm">
-				<textarea name="content" rows="4" aria-label="Notice text" class="w-full p-2 border rounded" placeholder="Leave blank and submit to clear the notice"></textarea>
+				<textarea name="content" rows="4" aria-label="{{ _('Notice text') }}" class="w-full p-2 border rounded" placeholder="{{ _('Leave blank and submit to clear the notice') }}"></textarea>
 				<input type="hidden" name="user" value="">
-				<button type="submit" class="btn btn-primary">Update Notice (Admin)</button>
+				<button type="submit" class="btn btn-primary">{{ _('Update Notice (Admin)') }}</button>
 			</form>
 		</div> <!-- /card -->
 
@@ -79,7 +79,9 @@ window.REMINDERS_CAL_START = (function(){
 			<!-- Who is Home (compact) -->
 			{% if show_who %}
 			<div class="card p-4" id="whoHomeCard">
-				<h2 class="section-title mb-3"><i class="fa-solid fa-house-user section-icon" aria-hidden="true"></i> Who is Home?</h2>
+				<h2 class="section-title mb-3"><i class="fa-solid fa-house-user section-icon" aria-hidden="true"></i> {{ _('Who is Home?') }}</h2>
+				{# Stored status values stay in English; only the label shown is translated -#}
+				{% set who_labels = {'Home': _('Home'), 'Away': _('Away'), 'Out': _('Out'), 'Traveling': _('Traveling')} -%}
 				<div id="whoStatusList" class="flex flex-wrap gap-2 mb-3 text-xs">
 					{% for member in config.family_members %}
 						{% set st = who_statuses.get(member) %}
@@ -92,21 +94,21 @@ window.REMINDERS_CAL_START = (function(){
 							{% elif st == 'Traveling' %} bg-indigo-100 text-indigo-700 border border-indigo-300
 							{% elif st %} bg-blue-100 text-blue-700 border border-blue-300
 							{% else %} bg-gray-100 text-gray-500 border border-gray-200
-							{% endif %}">{{ st or '—' }}</span>
+							{% endif %}">{{ who_labels.get(st, st) or '—' }}</span>
 						</span>
 					{% endfor %}
 				</div>
 				<form id="whoUnifiedForm" method="POST" action="/whoishome" onsubmit="return false" class="flex flex-wrap items-center gap-2 text-xs" data-ajax="1">
 					<input type="hidden" name="action" id="whoAction" value="update">
 					<input type="hidden" name="name" id="whoName" value="">
-					<select name="status" aria-label="My status" class="border rounded p-1 text-xs">
-						<option>Home</option>
-						<option>Away</option>
-						<option>Out</option>
-						<option>Traveling</option>
+					<select name="status" aria-label="{{ _('My status') }}" class="border rounded p-1 text-xs">
+						<option value="Home">{{ who_labels['Home'] }}</option>
+						<option value="Away">{{ who_labels['Away'] }}</option>
+						<option value="Out">{{ who_labels['Out'] }}</option>
+						<option value="Traveling">{{ who_labels['Traveling'] }}</option>
 					</select>
-					<button id="whoUpdateBtn" type="submit" class="btn btn-primary btn-sm">Update</button>
-					<button id="whoClearBtn" type="button" class="btn btn-secondary btn-sm" title="Clear my status">Clear</button>
+					<button id="whoUpdateBtn" type="submit" class="btn btn-primary btn-sm">{{ _('Update') }}</button>
+					<button id="whoClearBtn" type="button" class="btn btn-secondary btn-sm" title="{{ _('Clear my status') }}">{{ _('Clear') }}</button>
 				</form>
             </div>
 			{% endif %}
@@ -114,7 +116,7 @@ window.REMINDERS_CAL_START = (function(){
 			<!-- Personal Status (compact) -->
 			{% if show_status %}
 			<div class="card p-4" id="personalStatusCard">
-				<h3 class="section-title mb-3"><i class="fa-solid fa-user-pen section-icon" aria-hidden="true"></i> Personal Status</h3>
+				<h3 class="section-title mb-3"><i class="fa-solid fa-user-pen section-icon" aria-hidden="true"></i> {{ _('Personal Status') }}</h3>
 				<div id="memberStatusChips" class="flex flex-wrap gap-2 mb-3 text-xs">
 					{% for name, text in member_statuses.items() %}
 						<span data-name="{{ name }}" class="px-2 py-1 rounded-full border bg-white">{{ text }} <span class="text-gray-500 text-[10px]">— {{ name }}</span></span>
@@ -122,12 +124,12 @@ window.REMINDERS_CAL_START = (function(){
 				</div>
 				<form id="memberStatusForm" action="/status/update" method="POST" class="flex items-center gap-2 text-xs">
 					<input type="hidden" name="name" id="memberStatusName" value="">
-					<input type="text" name="text" placeholder="My status" aria-label="My status" class="flex-1 border rounded p-1" />
-					<button type="submit" class="btn btn-primary">Save</button>
+					<input type="text" name="text" placeholder="{{ _('My status') }}" aria-label="{{ _('My status') }}" class="flex-1 border rounded p-1" />
+					<button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
 				</form>
 				<form id="memberStatusDelete" action="/status/delete" method="POST" class="mt-2 text-right">
 					<input type="hidden" name="name" id="memberStatusDeleteName" value="">
-					<button type="submit" class="btn btn-ghost btn-danger-text btn-sm">Remove my status</button>
+					<button type="submit" class="btn btn-ghost btn-danger-text btn-sm">{{ _('Remove my status') }}</button>
 				</form>
 			</div>
 			{% endif %}
@@ -136,8 +138,8 @@ window.REMINDERS_CAL_START = (function(){
 		{% if show_chores_on_homepage and config.feature_toggles.get('chores', True) %}
 		<div class="card p-4" id="homeChoresCard">
 			<div class="flex items-center justify-between mb-3">
-				<h3 class="section-title"><i class="fa-solid fa-list-check section-icon" aria-hidden="true"></i> Chores</h3>
-				<a href="/chores" class="text-sm hover:underline" style="color: var(--primary-text);">Open full list</a>
+				<h3 class="section-title"><i class="fa-solid fa-list-check section-icon" aria-hidden="true"></i> {{ _('Chores') }}</h3>
+				<a href="/chores" class="text-sm hover:underline" style="color: var(--primary-text);">{{ _('Open full list') }}</a>
 			</div>
 			{% if home_chores and home_chores|length %}
 			<ul class="border rounded-lg overflow-hidden">
@@ -146,16 +148,16 @@ window.REMINDERS_CAL_START = (function(){
 					<div class="min-w-0">
 						<div class="font-medium truncate">{{ chore.description }}</div>
 						<div class="text-xs text-gray-500">
-							{{ chore.creator or 'Unknown' }}
-							{% if chore.due_date %} • Due {{ chore.due_date.strftime('%Y-%m-%d') }}{% endif %}
+							{{ chore.creator or _('Unknown') }}
+							{% if chore.due_date %} • {{ _('Due %(date)s', date=chore.due_date.strftime('%Y-%m-%d')) }}{% endif %}
 						</div>
 					</div>
-					{% if chore.recurring_id %}<span class="text-[10px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">Recurring</span>{% endif %}
+					{% if chore.recurring_id %}<span class="text-[10px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">{{ _('Recurring') }}</span>{% endif %}
 				</li>
 				{% endfor %}
 			</ul>
 			{% else %}
-			<div class="text-sm text-gray-500">No open chores right now.</div>
+			<div class="text-sm text-gray-500">{{ _('No open chores right now.') }}</div>
 			{% endif %}
 		</div>
 		{% endif %}
@@ -165,20 +167,20 @@ window.REMINDERS_CAL_START = (function(){
 	<div class="space-y-6 {{ 'max-w-5xl mx-auto w-full' if calendar_only else '' }}">
 		<!-- Reminders & Calendar (moved to right column) -->
 		<div class="card p-4 md:p-6" id="remindersCard" style="min-height:520px">
-			<h2 class="section-title mb-3"><i class="fa-solid fa-calendar-days section-icon" aria-hidden="true"></i> {{ 'Calendar & Reminders' if calendar_only else 'Reminders' }}</h2>
+			<h2 class="section-title mb-3"><i class="fa-solid fa-calendar-days section-icon" aria-hidden="true"></i> {{ _('Calendar & Reminders') if calendar_only else _('Reminders') }}</h2>
 			<div id="reminderMonthNav" class="flex items-center justify-between mb-2">
-				<button type="button" id="calPrev" class="btn btn-secondary btn-icon" aria-label="Previous month"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+				<button type="button" id="calPrev" class="btn btn-secondary btn-icon" aria-label="{{ _('Previous month') }}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
 				<div id="calLabel" class="font-semibold flex-1 text-center"></div>
-				<button type="button" id="calNext" class="btn btn-secondary btn-icon" aria-label="Next month"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+				<button type="button" id="calNext" class="btn btn-secondary btn-icon" aria-label="{{ _('Next month') }}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
 			</div>
-			<div class="flex justify-end mb-2"><button id="backToToday" type="button" class="hidden text-xs text-blue-600 hover:underline">Back to Today</button></div>
+			<div class="flex justify-end mb-2"><button id="backToToday" type="button" class="hidden text-xs text-blue-600 hover:underline">{{ _('Back to Today') }}</button></div>
 			<div id="reminderWeekdayRow" class="grid grid-cols-7 gap-1 text-xs font-semibold text-gray-600 mb-1"></div>
 			<div id="calendar" class="grid grid-cols-7 gap-1 mb-4"></div>
 			<div class="flex items-center flex-wrap gap-2 mb-2 {{ 'sticky top-[42px] md:top-[26px] z-10 py-2 border-b' if calendar_only else '' }}" id="remindersHeader" {% if calendar_only %}style="background-color: var(--card-background-color); border-color: color-mix(in srgb, var(--text-color) 12%, transparent);"{% endif %}>
-				<button type="button" id="openAdd" class="btn btn-primary text-sm">Add Reminder</button>
+				<button type="button" id="openAdd" class="btn btn-primary text-sm">{{ _('Add Reminder') }}</button>
 				{% if not calendar_only %}
 				{% if config.feature_toggles.get('calendar', True) %}
-				<a href="/calendar" class="text-sm hover:underline" style="color: var(--primary-text);">Open calendar</a>
+				<a href="/calendar" class="text-sm hover:underline" style="color: var(--primary-text);">{{ _('Open calendar') }}</a>
 				{% endif %}
 				{% endif %}
 				<div class="text-sm text-gray-600" id="remindersSelectedDate"></div>
@@ -186,10 +188,10 @@ window.REMINDERS_CAL_START = (function(){
 			</div>
 			<div id="calendarModuleTools" class="{{ '' if calendar_only else 'hidden' }} mb-3 space-y-2">
 				<div class="flex flex-wrap items-center gap-2">
-					<input id="calendarSearch" type="text" aria-label="Search reminders" class="h-10 flex-1 min-w-[220px] border rounded p-2 text-sm" placeholder="Search reminders by title or description">
-					<button type="button" id="trashToggleBtn" class="h-8 px-3 text-xs rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-1" title="Recycle Bin"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Trash</button>
+					<input id="calendarSearch" type="text" aria-label="{{ _('Search reminders') }}" class="h-10 flex-1 min-w-[220px] border rounded p-2 text-sm" placeholder="{{ _('Search reminders by title or description') }}">
+					<button type="button" id="trashToggleBtn" class="h-8 px-3 text-xs rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-1" title="{{ _('Recycle Bin') }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> {{ _('Trash') }}</button>
 				</div>
-				<div class="text-xs text-gray-500">Drag reminder cards onto a date to reschedule.</div>
+				<div class="text-xs text-gray-500">{{ _('Drag reminder cards onto a date to reschedule.') }}</div>
 				<div id="trashPanel" class="hidden border rounded bg-white dark:bg-slate-800 p-2"></div>
 				<div id="upcomingTimeline" class="border rounded bg-white p-2"></div>
 			</div>
@@ -198,85 +200,85 @@ window.REMINDERS_CAL_START = (function(){
 				<form id="reminderInlineForm" class="space-y-3 bg-gray-50 dark:bg-slate-800/60 border rounded p-3">
 					<input type="hidden" name="id" value="">
 					<div>
-						<label for="reminder-title" class="block text-xs font-semibold mb-1">Title</label>
-						<input id="reminder-title" type="text" name="title" required class="w-full h-10 border rounded p-2 text-sm" placeholder="Reminder title">
+						<label for="reminder-title" class="block text-xs font-semibold mb-1">{{ _('Title') }}</label>
+						<input id="reminder-title" type="text" name="title" required class="w-full h-10 border rounded p-2 text-sm" placeholder="{{ _('Reminder title') }}">
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 						<div>
-							<label for="reminder-date" class="block text-xs font-semibold mb-1">Start Date</label>
+							<label for="reminder-date" class="block text-xs font-semibold mb-1">{{ _('Start Date') }}</label>
 							<input id="reminder-date" name="date" required type="date" class="h-10 w-full border rounded p-2 text-sm">
 						</div>
 						<div>
-							<label for="reminder-time" class="block text-xs font-semibold mb-1">Start Time <span class="text-gray-500 font-normal">(Optional)</span></label>
-							<input id="reminder-time" name="time" type="time" class="h-10 w-full border rounded p-2 text-sm" aria-label="Start time (optional)">
+							<label for="reminder-time" class="block text-xs font-semibold mb-1">{{ _('Start Time') }} <span class="text-gray-500 font-normal">{{ _('(Optional)') }}</span></label>
+							<input id="reminder-time" name="time" type="time" class="h-10 w-full border rounded p-2 text-sm" aria-label="{{ _('Start time (optional)') }}">
 						</div>
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 						<div>
-							<label for="reminder-end-date" class="block text-xs font-semibold mb-1">End Date <span class="text-gray-500 font-normal">(Optional)</span></label>
-							<input id="reminder-end-date" name="end_date" type="date" class="h-10 w-full border rounded p-2 text-sm" aria-label="End date (optional)">
+							<label for="reminder-end-date" class="block text-xs font-semibold mb-1">{{ _('End Date') }} <span class="text-gray-500 font-normal">{{ _('(Optional)') }}</span></label>
+							<input id="reminder-end-date" name="end_date" type="date" class="h-10 w-full border rounded p-2 text-sm" aria-label="{{ _('End date (optional)') }}">
 						</div>
 						<div>
-							<label for="reminder-end-time" class="block text-xs font-semibold mb-1">End Time <span class="text-gray-500 font-normal">(Optional)</span></label>
-							<input id="reminder-end-time" name="end_time" type="time" class="h-10 w-full border rounded p-2 text-sm" aria-label="End time (optional)">
+							<label for="reminder-end-time" class="block text-xs font-semibold mb-1">{{ _('End Time') }} <span class="text-gray-500 font-normal">{{ _('(Optional)') }}</span></label>
+							<input id="reminder-end-time" name="end_time" type="time" class="h-10 w-full border rounded p-2 text-sm" aria-label="{{ _('End time (optional)') }}">
 						</div>
 					</div>
-					<div class="text-[11px] text-gray-500">If Start Time and End Date/Time are blank, this is treated as an all-day reminder. If End Date/Time is set, this reminder spans that duration.</div>
+					<div class="text-[11px] text-gray-500">{{ _('If Start Time and End Date/Time are blank, this is treated as an all-day reminder. If End Date/Time is set, this reminder spans that duration.') }}</div>
 					<div id="categorySelectRow">
 						<div class="flex items-end justify-between gap-3">
 							<div class="flex-1">
-								<label for="reminder-category" class="block text-xs font-semibold mb-1">Category</label>
+								<label for="reminder-category" class="block text-xs font-semibold mb-1">{{ _('Category') }}</label>
 								<select id="reminder-category" name="category" class="h-10 w-full border rounded p-2 text-sm"></select>
 							</div>
 							<label class="inline-flex items-center gap-2 text-xs flex-shrink-0 mb-1">
 								<input type="checkbox" name="is_recurring" class="rounded">
-								<span>Recurring</span>
+								<span>{{ _('Recurring') }}</span>
 							</label>
 						</div>
 					</div>
 					<!-- Recurrence controls: hidden until Recurring is checked -->
 					<div id="recurrenceControls" class="hidden space-y-2">
 						<div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-							<label for="reminder-rec-interval" class="text-xs text-gray-700 self-center">Repeat this every</label>
-							<input id="reminder-rec-interval" name="rec_interval" type="number" min="1" step="1" value="1" class="h-10 w-full border rounded p-2 text-sm" aria-label="Recurrence interval">
-							<select name="rec_unit" class="h-10 w-full border rounded p-2 text-sm" aria-label="Recurrence unit">
-								<option value="day">day</option>
-								<option value="week">week</option>
-								<option value="month">month</option>
-								<option value="year">year</option>
+							<label for="reminder-rec-interval" class="text-xs text-gray-700 self-center">{{ _('Repeat this every') }}</label>
+							<input id="reminder-rec-interval" name="rec_interval" type="number" min="1" step="1" value="1" class="h-10 w-full border rounded p-2 text-sm" aria-label="{{ _('Recurrence interval') }}">
+							<select name="rec_unit" class="h-10 w-full border rounded p-2 text-sm" aria-label="{{ _('Recurrence unit') }}">
+								<option value="day">{{ _('day') }}</option>
+								<option value="week">{{ _('week') }}</option>
+								<option value="month">{{ _('month') }}</option>
+								<option value="year">{{ _('year') }}</option>
 							</select>
 						</div>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-							<label for="reminder-rec-end-date" class="text-xs text-gray-700 self-center">till</label>
-							<input id="reminder-rec-end-date" name="rec_end_date" type="date" class="h-10 w-full border rounded p-2 text-sm" placeholder="End date (optional)" aria-label="End date (optional)">
+							<label for="reminder-rec-end-date" class="text-xs text-gray-700 self-center">{{ _('till') }}</label>
+							<input id="reminder-rec-end-date" name="rec_end_date" type="date" class="h-10 w-full border rounded p-2 text-sm" placeholder="{{ _('End date (optional)') }}" aria-label="{{ _('End date (optional)') }}">
 						</div>
 						<div id="recurrenceGuardrail" class="hidden border border-amber-300 bg-amber-50 rounded p-2 text-xs text-amber-800"></div>
 					</div>
 					<div>
-						<label for="reminder-description" class="block text-xs font-semibold mb-1">Description</label>
+						<label for="reminder-description" class="block text-xs font-semibold mb-1">{{ _('Description') }}</label>
 						<textarea id="reminder-description" name="description" rows="2" class="w-full border rounded p-2 text-sm"></textarea>
 					</div>
 					<div class="flex gap-2 justify-end pt-2 border-t">
-						<button type="button" id="reminderCancelBtn" class="btn btn-secondary">Cancel</button>
-						<button type="submit" id="reminderSaveBtn" class="btn btn-primary">Save</button>
+						<button type="button" id="reminderCancelBtn" class="btn btn-secondary">{{ _('Cancel') }}</button>
+						<button type="submit" id="reminderSaveBtn" class="btn btn-primary">{{ _('Save') }}</button>
 					</div>
 				</form>
 			</div>
 			<form id="bulkDeleteForm" class="mb-2" data-creator="" >
 				<div id="remindersBulkBar" class="hidden flex items-center gap-3 bg-red-50 border border-red-200 rounded p-2 text-xs">
-					<span><span id="bulkCount">0</span> selected</span>
+					<span>{{ _('%(count)s selected')|html_params(count='<span id="bulkCount">0</span>'|safe) }}</span>
 					<input type="hidden" id="bulkIds" value="">
 					<input type="hidden" id="bulkUser" name="creator" value="">
-					<button type="submit" class="btn btn-danger btn-sm">Delete selected</button>
-					<button type="button" id="bulkClearSel" class="btn btn-secondary btn-sm">Clear</button>
+					<button type="submit" class="btn btn-danger btn-sm">{{ _('Delete selected') }}</button>
+					<button type="button" id="bulkClearSel" class="btn btn-secondary btn-sm">{{ _('Clear') }}</button>
 				</div>
 			</form>
 			<div class="flex items-center justify-between mb-1 text-[11px] text-gray-500">
 				<div id="reminderCategorySummary" class="flex flex-wrap gap-2"></div>
 			</div>
-			<div id="remindersScroll" class="space-y-2 border rounded p-2 bg-white" aria-label="Reminders list"></div>
+			<div id="remindersScroll" class="space-y-2 border rounded p-2 bg-white" aria-label="{{ _('Reminders list') }}"></div>
 			<noscript>
-				<div class="mt-4 text-sm text-gray-600">JavaScript disabled: reminders editing requires JS. Existing reminder counts are shown on the calendar only.</div>
+				<div class="mt-4 text-sm text-gray-600">{{ _('JavaScript disabled: reminders editing requires JS. Existing reminder counts are shown on the calendar only.') }}</div>
 			</noscript>
 		</div>
 

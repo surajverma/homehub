@@ -61,6 +61,7 @@ instance_name: "My Home Hub"
 password: "" #leave blank for password less access
 admin_name: "Administrator"
 max_upload_mb: 1024 # largest upload in MB (Shared Cloud, PDFs); 0 removes the limit
+language: en # UI language: en (English) or hi (Hindi)
 feature_toggles:
   shopping_list: true
   media_downloader: true
@@ -172,6 +173,50 @@ HomeHub decides what "today" is (due dates, overdue chores, recurring expenses a
 ```
 
 Use a name from the [tz database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), then run `docker compose up -d`. Leaving it out keeps the old UTC behaviour.
+
+## Language
+
+HomeHub can show its interface in another language. Set it for the whole household in `config.yml`:
+
+```yaml
+language: hi # en (English, default) or hi (Hindi)
+```
+
+The change applies on the next page load, no restart needed. A missing or unknown value falls back to English, and so does any text that has no translation yet. What you type into HomeHub (notes, chores, names) is never translated.
+
+### Translating HomeHub
+
+Each language is one file, `translations/<code>/LC_MESSAGES/messages.po`, covering both the pages and the page scripts. To add a language (Marathi, `mr`, as the example):
+
+1. Create the file. This sets up the folder and the right plural rules for the language:
+   ```bash
+   pybabel init -i translations/messages.pot -d translations -l mr --no-wrap
+   ```
+2. Fill in each `msgstr` in `translations/mr/LC_MESSAGES/messages.po`. Any text editor works; [Poedit](https://poedit.net/) makes it easier. Keep placeholders such as `%(name)s` and `{count}` exactly as they are.
+3. Set `language: mr` in `config.yml` and rebuild with `docker compose up -d --build`.
+
+Good to know:
+- Anything left untranslated shows in English, so a partial translation is welcome.
+- Month and weekday names come from the language automatically.
+- If the script is not covered by the Inter font (Tamil or Bengali, for example), add its Noto font to `LANGUAGE_FONTS` in `app/i18n.py`.
+- Right-to-left languages are not supported yet: the text would translate, but the layout is not mirrored.
+- Translations are built into the Docker image; the compiled `.mo` files are not kept in git.
+
+Sending a translation: a pull request for a language should only change that language's file under `translations/` (plus, if needed, the font line and the language list in this README and `config-example.yml`). The tests check that placeholders are intact and that nothing like links or HTML has been added. A review from a second native speaker is very welcome.
+
+<details>
+  <summary>For developers: marking and updating text</summary>
+
+In templates and Python, wrap text in `_()` (`ngettext()` for counts). Page scripts in `static/js` use `t('text', {params})`, `th()` when the result goes into an HTML string, `tn(one, other, count)` for counts and `tc('context', 'text')` when one English word needs different translations. A sentence with a name, number or link in it is always one string with a placeholder, so each language can put the value where its grammar needs it.
+
+```bash
+# After adding or changing text: collect the strings and bring every language file up to date
+flask translations update
+# Compile for a local (non-Docker) run
+flask translations compile
+```
+
+</details>
 
 ## Theming
 

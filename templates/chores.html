@@ -3,16 +3,16 @@
 <div class="mx-auto max-w-5xl">
     <div class="page-header flex items-start justify-between gap-4">
         <div>
-            <h1 class="page-title">To-Do / Chores</h1>
-            <p class="page-subtitle">{{ chores|rejectattr('done')|list|length }} open{% if chores|selectattr('done')|list %}, {{ chores|selectattr('done')|list|length }} done{% endif %}</p>
+            <h1 class="page-title">{{ _('To-Do / Chores') }}</h1>
+            <p class="page-subtitle">{% if chores|selectattr('done')|list %}{{ _('%(count)s open, %(done)s done', count=chores|rejectattr('done')|list|length, done=chores|selectattr('done')|list|length) }}{% else %}{{ _('%(count)s open', count=chores|rejectattr('done')|list|length) }}{% endif %}</p>
         </div>
         <form method="POST" action="/chores/settings" class="flex items-center gap-2 text-sm hidden" id="homepageToggleForm">
             <input type="hidden" name="user" id="settingsUser">
             <label class="inline-flex items-center gap-2 hidden" id="homepageToggleWrap">
                 <input type="checkbox" name="show_chores_on_homepage" class="rounded" {% if show_chores_on_homepage %}checked{% endif %}>
-                <span class="text-gray-600 dark:text-gray-300">Show on welcome page</span>
+                <span class="text-gray-600 dark:text-gray-300">{{ _('Show on welcome page') }}</span>
             </label>
-            <button type="submit" class="btn btn-secondary hidden" id="homepageSaveBtn">Save</button>
+            <button type="submit" class="btn btn-secondary hidden" id="homepageSaveBtn">{{ _('Save') }}</button>
         </form>
     </div>
     <form method="POST" action="/chores" id="choreForm" class="card p-4 mb-4">
@@ -20,16 +20,16 @@
         <input type="hidden" name="recurring_rule_id" id="recurringRuleId" value="{{ form_recurring_rule_id if form_recurring_rule_id is defined else '' }}">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div class="md:col-span-5">
-                <label for="choreInput" class="block text-sm font-medium text-gray-600 mb-1">Chore</label>
+                <label for="choreInput" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Chore') }}</label>
                 <div class="relative h-10">
-                    <input type="text" name="description" id="choreInput" value="{{ form_description if form_description is defined else '' }}" class="w-full h-full" placeholder="Add a chore" required autocomplete="off">
+                    <input type="text" name="description" id="choreInput" value="{{ form_description if form_description is defined else '' }}" class="w-full h-full" placeholder="{{ _('Add a chore') }}" required autocomplete="off">
                     <div id="choreSuggestions" class="absolute left-0 right-0 z-10 mt-1 bg-white border rounded-lg shadow-lg hidden max-h-72 overflow-auto"></div>
                 </div>
             </div>
             <div class="md:col-span-4">
-                <label for="tagInput" class="block text-sm font-medium text-gray-600 mb-1">Tags (assignees, context)</label>
+                <label for="tagInput" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Tags (assignees, context)') }}</label>
                 <div class="flex flex-wrap gap-2 rounded items-start h-10" id="tagInputWrap">
-                    <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full" placeholder="Add tag and press Enter">
+                    <input type="text" id="tagInput" class="flex-1 min-w-[140px] h-full" placeholder="{{ _('Add tag and press Enter') }}">
                 </div>
                 <input type="hidden" name="tags" id="tagsField" value="{{ form_tags if form_tags is defined else '[]' }}">
                 <div class="mt-2 flex flex-wrap gap-2 text-xs" id="tagLibrary"></div>
@@ -39,39 +39,39 @@
                 <input type="hidden" name="creator" id="creator">
                 <input type="hidden" name="user" id="choreUser">
                 <div class="flex gap-2 h-10">
-                    <button type="submit" class="flex-1 btn btn-primary h-10">{% if form_chore_id is defined and form_chore_id %}Update{% else %}<i class="fa-solid fa-plus" aria-hidden="true"></i> Add{% endif %}</button>
+                    <button type="submit" class="flex-1 btn btn-primary h-10">{% if form_chore_id is defined and form_chore_id %}{{ _('Update') }}{% else %}<i class="fa-solid fa-plus" aria-hidden="true"></i> {{ _('Add') }}{% endif %}</button>
                     {% if form_chore_id is defined and form_chore_id %}
-                    <a href="/chores" class="btn btn-secondary h-10">Cancel</a>
+                    <a href="/chores" class="btn btn-secondary h-10">{{ _('Cancel') }}</a>
                     {% endif %}
                 </div>
             </div>
             <div class="md:col-span-12 flex justify-start pt-1">
                 <label class="inline-flex items-center gap-2 text-sm">
                     <input type="checkbox" id="isRecurringChore" name="is_recurring" class="rounded" {% if form_is_recurring is defined and form_is_recurring %}checked{% endif %}>
-                    <span>Recurring chore</span>
+                    <span>{{ _('Recurring chore') }}</span>
                 </label>
             </div>
             <div class="md:col-span-12 hidden" id="recurringChoreControls">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end rounded-lg border p-3" style="background-color: var(--hover-bg);">
                     <div class="md:col-span-3">
-                        <label for="chores-rec-interval" class="block text-sm font-medium text-gray-600 mb-1">Repeat this every</label>
+                        <label for="chores-rec-interval" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Repeat this every') }}</label>
                         <input id="chores-rec-interval" type="number" min="1" max="999" step="1" name="rec_interval" value="{{ form_rec_interval if form_rec_interval is defined else 1 }}" class="w-full h-10">
                     </div>
                     <div class="md:col-span-3">
-                        <label for="chores-rec-unit" class="block text-sm font-medium text-gray-600 mb-1">Unit</label>
+                        <label for="chores-rec-unit" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Unit') }}</label>
                         <select id="chores-rec-unit" name="rec_unit" class="w-full h-10">
-                            <option value="day" {% if form_rec_unit is defined and form_rec_unit == 'day' %}selected{% endif %}>day</option>
-                            <option value="week" {% if form_rec_unit is defined and form_rec_unit == 'week' %}selected{% endif %}>week</option>
-                            <option value="month" {% if form_rec_unit is defined and form_rec_unit == 'month' %}selected{% endif %}>month</option>
-                            <option value="year" {% if form_rec_unit is defined and form_rec_unit == 'year' %}selected{% endif %}>year</option>
+                            <option value="day" {% if form_rec_unit is defined and form_rec_unit == 'day' %}selected{% endif %}>{{ _('day') }}</option>
+                            <option value="week" {% if form_rec_unit is defined and form_rec_unit == 'week' %}selected{% endif %}>{{ _('week') }}</option>
+                            <option value="month" {% if form_rec_unit is defined and form_rec_unit == 'month' %}selected{% endif %}>{{ _('month') }}</option>
+                            <option value="year" {% if form_rec_unit is defined and form_rec_unit == 'year' %}selected{% endif %}>{{ _('year') }}</option>
                         </select>
                     </div>
                     <div class="md:col-span-3">
-                        <label for="chores-rec-start-date" class="block text-sm font-medium text-gray-600 mb-1">Starting from</label>
+                        <label for="chores-rec-start-date" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Starting from') }}</label>
                         <input id="chores-rec-start-date" type="date" name="rec_start_date" value="{{ form_rec_start_date.strftime('%Y-%m-%d') if form_rec_start_date is defined and form_rec_start_date else '' }}" class="w-full h-10">
                     </div>
                     <div class="md:col-span-3">
-                        <label for="chores-rec-end-date" class="block text-sm font-medium text-gray-600 mb-1">Till</label>
+                        <label for="chores-rec-end-date" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Till') }}</label>
                         <input id="chores-rec-end-date" type="date" name="rec_end_date" value="{{ form_rec_end_date.strftime('%Y-%m-%d') if form_rec_end_date is defined and form_rec_end_date else '' }}" class="w-full h-10">
                     </div>
                 </div>
@@ -80,18 +80,18 @@
     </form>
 
     <div class="mb-3 flex flex-wrap gap-2 items-center">
-        <span class="text-sm text-gray-500">Filter by tag:</span>
+        <span class="text-sm text-gray-500">{{ _('Filter by tag:') }}</span>
         <div id="tagFilters" class="flex flex-wrap gap-2"></div>
-        <button id="clearTagFilters" class="btn btn-ghost btn-sm">Clear</button>
+        <button id="clearTagFilters" class="btn btn-ghost btn-sm">{{ _('Clear') }}</button>
     </div>
 
-    {% if not chores %}<div class="card list-empty">No chores yet.</div>{% endif %}
+    {% if not chores %}<div class="card list-empty">{{ _('No chores yet.') }}</div>{% endif %}
     <ul id="choreList" class="card list-card {{ '' if chores else 'hidden' }}">
         {% for chore in chores %}
         {% set tags = (chore.tags or '[]') %}
         <li class="list-row items-start" data-id="{{ chore.id }}" data-tags="{{ tags }}" data-done="{{ '1' if chore.done else '0' }}">
             <form method="POST" action="/chores/toggle/{{ chore.id }}" class="pt-0.5">
-                <button type="submit" class="check-btn {{ 'is-checked' if chore.done else '' }}" aria-pressed="{{ 'true' if chore.done else 'false' }}" title="{{ 'Completed · Undo' if chore.done else 'Mark Completed' }}" aria-label="{{ ('Undo completed: ' if chore.done else 'Mark completed: ') ~ chore.description }}"><i class="fa-solid fa-check" aria-hidden="true"></i></button>
+                <button type="submit" class="check-btn {{ 'is-checked' if chore.done else '' }}" aria-pressed="{{ 'true' if chore.done else 'false' }}" title="{{ _('Completed · Undo') if chore.done else _('Mark Completed') }}" aria-label="{{ _('Undo completed: %(item)s', item=chore.description) if chore.done else _('Mark completed: %(item)s', item=chore.description) }}"><i class="fa-solid fa-check" aria-hidden="true"></i></button>
             </form>
             <div class="flex-1 min-w-0">
                 <div class="flex flex-wrap gap-2 items-center">
@@ -99,25 +99,25 @@
                     <div class="hidden md:flex flex-wrap gap-1.5 item-tags" data-id="{{ chore.id }}"></div>
                 </div>
                 <div class="meta mt-0.5">
-                    By {{ chore.creator }} at {{ chore.timestamp|localtime }}
+                    {{ _('By %(name)s at %(time)s', name=chore.creator, time=chore.timestamp|localtime) }}
                     {% if chore.recurring_id %}
-                        · <span class="font-medium"><i class="fa-solid fa-repeat" aria-hidden="true"></i> Recurring chore</span>
+                        · <span class="font-medium"><i class="fa-solid fa-repeat" aria-hidden="true"></i> {{ _('Recurring chore') }}</span>
                         {% if chore.due_date %}
                             {% set is_overdue = today_date and chore.due_date < today_date %}
                             {% set is_today = today_date and chore.due_date == today_date %}
-                            · <span class="font-semibold {% if is_overdue %}text-red-600{% elif is_today %}text-amber-600{% else %}text-green-600{% endif %}">Next due on {{ chore.due_date.strftime('%Y-%m-%d') }}</span>
+                            · <span class="font-semibold {% if is_overdue %}text-red-600{% elif is_today %}text-amber-600{% else %}text-green-600{% endif %}">{{ _('Next due on %(date)s', date=chore.due_date.strftime('%Y-%m-%d')) }}</span>
                         {% endif %}
                     {% elif chore.due_date %}
-                        · Due {{ chore.due_date.strftime('%Y-%m-%d') }}
+                        · {{ _('Due %(date)s', date=chore.due_date.strftime('%Y-%m-%d')) }}
                     {% endif %}
                 </div>
                 <div class="md:hidden flex flex-wrap gap-1.5 mt-1.5 items-center item-tags empty:hidden" data-id="{{ chore.id }}"></div>
             </div>
             <div class="flex items-center gap-0.5 -my-1">
-                <a href="/chores/edit/{{ chore.id }}" class="btn btn-ghost btn-icon edit-btn" data-creator="{{ chore.creator }}" title="Edit" aria-label="Edit {{ chore.description }}"><i class="fa-solid fa-pen" aria-hidden="true"></i></a>
-                <form method="POST" action="{{ '/chores/recurring/delete/' ~ chore.recurring_id if chore.recurring_id else '/chores/delete/' ~ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}" data-confirm="{{ 'Delete this recurring chore and its schedule?' if chore.recurring_id else 'Delete this chore?' }}">
+                <a href="/chores/edit/{{ chore.id }}" class="btn btn-ghost btn-icon edit-btn" data-creator="{{ chore.creator }}" title="{{ _('Edit') }}" aria-label="{{ _('Edit %(item)s', item=chore.description) }}"><i class="fa-solid fa-pen" aria-hidden="true"></i></a>
+                <form method="POST" action="{{ '/chores/recurring/delete/' ~ chore.recurring_id if chore.recurring_id else '/chores/delete/' ~ chore.id }}" class="delete-form" data-creator="{{ chore.creator }}" data-confirm="{{ _('Delete this recurring chore and its schedule?') if chore.recurring_id else _('Delete this chore?') }}">
                     <input type="hidden" name="user">
-                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="Delete" aria-label="Delete {{ chore.description }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="{{ _('Delete') }}" aria-label="{{ _('Delete %(item)s', item=chore.description) }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
                 </form>
             </div>
         </li>

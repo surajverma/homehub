@@ -72,6 +72,9 @@ def create_app(test_config: dict | None = None):
 
     db.init_app(app)
 
+    from . import i18n
+    i18n.init_app(app)
+
     # Ensure models are imported before creating tables
     with app.app_context():
         from . import models  # noqa: F401 ensures model metadata is registered
@@ -102,8 +105,9 @@ def create_app(test_config: dict | None = None):
     @app.errorhandler(413)
     def upload_too_large(_err):
         from flask import flash, jsonify, redirect, request
+        from flask_babel import gettext as _
         limit_mb = (app.config.get('MAX_CONTENT_LENGTH') or 0) // (1024 * 1024)
-        message = f'Upload is too large. The limit is {limit_mb} MB.'
+        message = _('Upload is too large. The limit is %(limit)s MB.', limit=limit_mb)
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'ok': False, 'error': message}), 413
         flash(message, 'error')
@@ -156,7 +160,8 @@ def create_app(test_config: dict | None = None):
             return value
         if value.tzinfo is None:
             value = value.replace(tzinfo=timezone.utc)
-        return value.astimezone().strftime(fmt)
+        from .i18n import format_local_datetime
+        return format_local_datetime(value.astimezone(), fmt)
 
     # Add Jinja2 filter for JSON parsing
     @app.template_filter('from_json')

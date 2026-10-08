@@ -142,7 +142,8 @@ def test_edit_form_posts_to_chores_route(client):
         assert chore is not None
         cid = chore.id
 
-    page = client.get(f'/chores/edit/{cid}')
+    # The edit page is only served to the chore's owner (or admin)
+    page = client.get(f'/chores/edit/{cid}?user=Alice')
     assert page.status_code == 200
     assert b'form method="POST" action="/chores" id="choreForm"' in page.data
 

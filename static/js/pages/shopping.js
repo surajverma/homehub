@@ -98,21 +98,21 @@ document.addEventListener('user-switched', applyShoppingUserContext);
         modal.className = 'fixed inset-0 hidden items-center justify-center bg-black/50 z-50';
         modal.innerHTML = `
             <div class="card shadow-xl max-w-lg w-full p-5 mx-4">
-                <h3 class="text-lg font-semibold mb-3">Edit Item</h3>
+                <h3 class="text-lg font-semibold mb-3">${th('Edit Item')}</h3>
                 <div class="mb-3">
-                    <label for="editItemInput" class="block text-sm mb-1">Item</label>
+                    <label for="editItemInput" class="block text-sm mb-1">${th('Item')}</label>
                     <input type="text" id="editItemInput" class="w-full" />
                 </div>
                 <div>
-                    <label for="editTagInput" class="block text-sm mb-1">Tags</label>
+                    <label for="editTagInput" class="block text-sm mb-1">${th('Tags')}</label>
                     <div id="editTagWrap" class="flex flex-wrap gap-2 border rounded-lg p-2">
-                        <input type="text" id="editTagInput" class="flex-1 min-w-[140px] outline-none bg-transparent" placeholder="Add tag and press Enter" />
+                        <input type="text" id="editTagInput" class="flex-1 min-w-[140px] outline-none bg-transparent" placeholder="${th('Add tag and press Enter')}" />
                     </div>
                             <div class="mt-2 flex flex-wrap gap-2 text-xs" id="editTagLibrary"></div>
                 </div>
                 <div class="mt-4 flex justify-end gap-2">
-                    <button type="button" id="editCancel" class="btn btn-secondary">Cancel</button>
-                    <button type="button" id="editSave" class="btn btn-primary">Save</button>
+                    <button type="button" id="editCancel" class="btn btn-secondary">${th('Cancel')}</button>
+                    <button type="button" id="editSave" class="btn btn-primary">${th('Save')}</button>
                 </div>
             </div>`;
         document.body.appendChild(modal);
@@ -190,7 +190,7 @@ document.addEventListener('user-switched', applyShoppingUserContext);
             const row = document.createElement('div');
             row.className = 'flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer select-none';
             const text = document.createElement('div'); text.textContent = s; text.className='truncate pr-2 flex-1';
-            const del = document.createElement('button'); del.type='button'; del.title='Delete suggestion'; del.setAttribute('aria-label','Delete suggestion '+s); del.className='text-gray-400 hover:text-red-600 w-6 h-6 inline-flex items-center justify-center'; del.innerHTML='<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+            const del = document.createElement('button'); del.type='button'; del.title=t('Delete suggestion'); del.setAttribute('aria-label', t('Delete suggestion {item}', { item: s })); del.className='text-gray-400 hover:text-red-600 w-6 h-6 inline-flex items-center justify-center'; del.innerHTML='<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
             del.addEventListener('click', async (e)=>{
                 e.stopPropagation();
                 // Hide locally and ask server to drop one history row for this suggestion (best effort)

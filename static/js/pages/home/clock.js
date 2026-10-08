@@ -6,8 +6,8 @@
 		
 		function update() {
 			const now = new Date();
-			timeEl.textContent = now.toLocaleTimeString();
-			dateEl.textContent = now.toLocaleDateString(undefined, { 
+			timeEl.textContent = now.toLocaleTimeString(window.I18N.locale);
+			dateEl.textContent = now.toLocaleDateString(window.I18N.locale, { 
 				weekday: 'long', 
 				year: 'numeric', 
 				month: 'long', 

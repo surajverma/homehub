@@ -2,31 +2,31 @@
 {% block content %}
 <div class="mx-auto max-w-4xl">
     <div class="page-header">
-        <h1 class="page-title">Shared Notes</h1>
-        <p class="page-subtitle">Quick notes the whole family can see.</p>
+        <h1 class="page-title">{{ _('Shared Notes') }}</h1>
+        <p class="page-subtitle">{{ _('Quick notes the whole family can see.') }}</p>
     </div>
     <form method="POST" class="card p-4 mb-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-start" id="noteForm">
-        <textarea name="content" aria-label="Note" rows="2" class="md:col-span-9 w-full" placeholder="Write a note..." required></textarea>
+        <textarea name="content" aria-label="{{ _('Note') }}" rows="2" class="md:col-span-9 w-full" placeholder="{{ _('Write a note...') }}" required></textarea>
         <div class="md:col-span-3 flex gap-2">
-            <button type="submit" class="btn btn-primary flex-1">Save</button>
-            <button type="button" id="cancelEdit" class="btn hidden btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary flex-1">{{ _('Save') }}</button>
+            <button type="button" id="cancelEdit" class="btn hidden btn-secondary">{{ _('Cancel') }}</button>
         </div>
         <input type="hidden" name="note_id" value="">
         <input type="hidden" name="creator" id="creator">
     </form>
-    {% if not notes %}<div class="card list-empty">No notes yet.</div>{% endif %}
+    {% if not notes %}<div class="card list-empty">{{ _('No notes yet.') }}</div>{% endif %}
     <ul class="card list-card {{ '' if notes else 'hidden' }}">
         {% for note in notes %}
         <li class="list-row items-start">
             <div class="flex-1 min-w-0">
                 <div class="font-medium break-words whitespace-pre-line">{{ note.content }}</div>
-                <div class="meta mt-1">By {{ note.creator }} at {{ note.timestamp|localtime }}</div>
+                <div class="meta mt-1">{{ _('By %(name)s at %(time)s', name=note.creator, time=note.timestamp|localtime) }}</div>
             </div>
             <div class="flex items-center gap-0.5 -my-1">
-                <button type="button" class="btn btn-ghost btn-icon edit-btn" data-id="{{ note.id }}" data-content="{{ note.content|e }}" data-creator="{{ note.creator }}" title="Edit" aria-label="Edit note"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
-                <form method="POST" action="/notes/delete/{{ note.id }}" class="delete-form" data-creator="{{ note.creator }}" data-confirm="Delete this note?">
+                <button type="button" class="btn btn-ghost btn-icon edit-btn" data-id="{{ note.id }}" data-content="{{ note.content|e }}" data-creator="{{ note.creator }}" title="{{ _('Edit') }}" aria-label="{{ _('Edit note') }}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                <form method="POST" action="/notes/delete/{{ note.id }}" class="delete-form" data-creator="{{ note.creator }}" data-confirm="{{ _('Delete this note?') }}">
                     <input type="hidden" name="user">
-                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="Delete" aria-label="Delete note"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+                    <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="{{ _('Delete') }}" aria-label="{{ _('Delete note') }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
                 </form>
             </div>
         </li>

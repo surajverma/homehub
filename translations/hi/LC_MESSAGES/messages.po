@@ -1,0 +1,2508 @@
+# Hindi translations for HomeHub.
+# Copyright (C) 2026 HomeHub contributors
+# This file is distributed under the same license as the HomeHub project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  HomeHub\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-10-08 15:07+0530\n"
+"PO-Revision-Date: 2026-10-07 20:49+0530\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: hi\n"
+"Language-Team: hi <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: app/__init__.py
+#, python-format
+msgid "Upload is too large. The limit is %(limit)s MB."
+msgstr "अपलोड बहुत बड़ा है। सीमा %(limit)s MB है।"
+
+#: app/blueprints/__init__.py
+msgid "Offline"
+msgstr "ऑफ़लाइन"
+
+#: app/blueprints/__init__.py
+msgid "You are offline"
+msgstr "आप ऑफ़लाइन हैं"
+
+#: app/blueprints/__init__.py
+msgid "This page is not available offline."
+msgstr "यह पेज ऑफ़लाइन उपलब्ध नहीं है।"
+
+#: app/blueprints/auth.py
+msgid "Logged in successfully."
+msgstr "लॉग इन हो गया।"
+
+#: app/blueprints/auth.py
+msgid "Invalid password"
+msgstr "गलत पासवर्ड"
+
+#: app/blueprints/auth.py
+#, python-format
+msgid "Too many attempts. Try again in %(num)s second."
+msgid_plural "Too many attempts. Try again in %(num)s seconds."
+msgstr[0] "बहुत ज़्यादा कोशिशें हो गईं। %(num)s सेकंड बाद फिर कोशिश करें।"
+msgstr[1] "बहुत ज़्यादा कोशिशें हो गईं। %(num)s सेकंड बाद फिर कोशिश करें।"
+
+#: app/blueprints/auth.py
+msgid "Incorrect admin password"
+msgstr "एडमिन पासवर्ड गलत है"
+
+#: app/blueprints/auth.py
+msgid "Logged out."
+msgstr "लॉग आउट हो गया।"
+
+#: app/blueprints/chores.py
+msgid "Recurring chore end date cannot be before the start date."
+msgstr "दोहराने वाले काम की समाप्ति की तारीख, शुरू की तारीख से पहले नहीं हो सकती।"
+
+#: app/blueprints/chores.py
+msgid "Recurring chore ends in the past. Choose a future end date to create an active chore."
+msgstr "दोहराने वाले काम की समाप्ति की तारीख बीत चुकी है। चालू काम बनाने के लिए आगे की कोई तारीख चुनें।"
+
+#: app/blueprints/chores.py
+msgid "Not allowed to update recurring rule."
+msgstr "आपको दोहराने का नियम अपडेट करने की अनुमति नहीं है।"
+
+#: app/blueprints/chores.py
+msgid "Recurring chore updated."
+msgstr "दोहराने वाला काम अपडेट हो गया।"
+
+#: app/blueprints/chores.py
+msgid "Recurring chore added."
+msgstr "दोहराने वाला काम जोड़ दिया गया।"
+
+#: app/blueprints/chores.py
+msgid "Not allowed to delete recurring rule."
+msgstr "आपको दोहराने का नियम हटाने की अनुमति नहीं है।"
+
+#: app/blueprints/chores.py
+msgid "Not allowed to update chore."
+msgstr "आपको यह काम अपडेट करने की अनुमति नहीं है।"
+
+#: app/blueprints/chores.py
+msgid "Chore updated."
+msgstr "काम अपडेट हो गया।"
+
+#: app/blueprints/chores.py
+msgid "Chore added."
+msgstr "काम जोड़ दिया गया।"
+
+#: app/blueprints/chores.py
+msgid "Not allowed to edit chore."
+msgstr "आपको यह काम संपादित करने की अनुमति नहीं है।"
+
+#: app/blueprints/chores.py
+msgid "Only admin can update chore settings."
+msgstr "कामों की सेटिंग सिर्फ़ एडमिन अपडेट कर सकता है।"
+
+#: app/blueprints/chores.py
+msgid "Chore settings updated."
+msgstr "कामों की सेटिंग अपडेट हो गई।"
+
+#: app/blueprints/chores.py
+msgid "Recurring chore rule deleted."
+msgstr "दोहराने वाले काम का नियम हटा दिया गया।"
+
+#: app/blueprints/chores.py
+msgid "Chore deleted."
+msgstr "काम हटा दिया गया।"
+
+#: app/blueprints/chores.py
+msgid "Not allowed to delete chore."
+msgstr "आपको यह काम हटाने की अनुमति नहीं है।"
+
+#: app/blueprints/dashboard.py
+msgid "End date is required when end time is provided"
+msgstr "समाप्ति का समय देने पर समाप्ति की तारीख भी ज़रूरी है"
+
+#: app/blueprints/dashboard.py
+msgid "Invalid start or end date/time"
+msgstr "शुरू या समाप्ति की तारीख/समय सही नहीं है"
+
+#: app/blueprints/dashboard.py
+msgid "End date/time must be the same as or after start date/time"
+msgstr "समाप्ति की तारीख/समय, शुरू की तारीख/समय के बराबर या उसके बाद होना चाहिए"
+
+#: app/blueprints/dashboard.py
+msgid "Not allowed"
+msgstr "अनुमति नहीं है"
+
+#: app/blueprints/dashboard.py
+msgid "Title required"
+msgstr "शीर्षक ज़रूरी है"
+
+#: app/blueprints/dashboard.py
+msgid "Invalid date"
+msgstr "तारीख सही नहीं है"
+
+#: app/blueprints/dashboard.py
+msgid "No ids provided"
+msgstr "कोई आईडी नहीं दी गई"
+
+#: app/blueprints/dashboard.py
+msgid "Reminder is not in trash"
+msgstr "रिमाइंडर ट्रैश में नहीं है"
+
+#: app/blueprints/dashboard.py
+msgid "Date and title are required for reminders."
+msgstr "रिमाइंडर के लिए तारीख और शीर्षक ज़रूरी हैं।"
+
+#: app/blueprints/dashboard.py
+msgid "Reminder added."
+msgstr "रिमाइंडर जोड़ दिया गया।"
+
+#: app/blueprints/dashboard.py
+msgid "Reminder moved to trash."
+msgstr "रिमाइंडर ट्रैश में भेज दिया गया।"
+
+#: app/blueprints/dashboard.py
+msgid "Not allowed to delete this reminder."
+msgstr "आपको यह रिमाइंडर हटाने की अनुमति नहीं है।"
+
+#: app/blueprints/dashboard.py
+#, python-format
+msgid "Moved %(num)s reminder to trash."
+msgid_plural "Moved %(num)s reminders to trash."
+msgstr[0] "%(num)s रिमाइंडर ट्रैश में भेज दिया गया।"
+msgstr[1] "%(num)s रिमाइंडर ट्रैश में भेज दिए गए।"
+
+#: app/blueprints/dashboard.py
+msgid "No reminders deleted (permission?)."
+msgstr "कोई रिमाइंडर नहीं हटाया गया (शायद अनुमति नहीं है?)।"
+
+#: app/blueprints/dashboard.py
+msgid "Only admin can update the notice."
+msgstr "सूचना सिर्फ़ एडमिन अपडेट कर सकता है।"
+
+#: app/blueprints/dashboard.py
+msgid "Notice updated."
+msgstr "सूचना अपडेट हो गई।"
+
+#: app/blueprints/dashboard.py
+msgid "Invalid user for status."
+msgstr "स्टेटस के लिए यूज़र सही नहीं है।"
+
+#: app/blueprints/dashboard.py
+msgid "Invalid user"
+msgstr "यूज़र सही नहीं है"
+
+#: app/blueprints/dashboard.py
+msgid "Status cleared."
+msgstr "स्टेटस हटा दिया गया।"
+
+#: app/blueprints/dashboard.py
+msgid "No status to clear."
+msgstr "हटाने के लिए कोई स्टेटस नहीं है।"
+
+#: app/blueprints/dashboard.py
+msgid "Status updated."
+msgstr "स्टेटस अपडेट हो गया।"
+
+#: app/blueprints/dashboard.py
+msgid "Status cannot be empty."
+msgstr "स्टेटस खाली नहीं हो सकता।"
+
+#: app/blueprints/dashboard.py
+msgid "Status saved."
+msgstr "स्टेटस सेव हो गया।"
+
+#: app/blueprints/dashboard.py
+msgid "Invalid user for status removal."
+msgstr "स्टेटस हटाने के लिए यूज़र सही नहीं है।"
+
+#: app/blueprints/dashboard.py
+msgid "Status removed."
+msgstr "स्टेटस हटा दिया गया।"
+
+#: app/blueprints/dashboard.py app/blueprints/expenses.py
+msgid "Invalid date."
+msgstr "तारीख सही नहीं है।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Invalid split value for %(name)s."
+msgstr "%(name)s के लिए बंटवारे की वैल्यू सही नहीं है।"
+
+#: app/blueprints/expenses.py
+msgid "Enter a split value for at least one person."
+msgstr "कम से कम एक व्यक्ति के लिए बंटवारे की वैल्यू डालें।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Percentages add up to %(entered)s%%, not 100%%."
+msgstr "प्रतिशत का जोड़ %(entered)s%% है, 100%% नहीं।"
+
+#: app/blueprints/expenses.py
+msgid "Split amounts must add up to the expense amount."
+msgstr "बंटवारे की रकमों का जोड़ खर्च की रकम के बराबर होना चाहिए।"
+
+#: app/blueprints/expenses.py
+msgid "Invalid amount."
+msgstr "रकम सही नहीं है।"
+
+#: app/blueprints/expenses.py
+msgid "Recurring expense added."
+msgstr "दोहराने वाला खर्च जोड़ दिया गया।"
+
+#: app/blueprints/expenses.py
+msgid "Expense added."
+msgstr "खर्च जोड़ दिया गया।"
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to edit rule."
+msgstr "आपको यह नियम संपादित करने की अनुमति नहीं है।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Recurring rule fully rewritten. Updated %(num)s entry, removed %(deleted)s outside rule range."
+msgid_plural "Recurring rule fully rewritten. Updated %(num)s entries, removed %(deleted)s outside rule range."
+msgstr[0] "दोहराने का नियम पूरी तरह दोबारा लिखा गया। %(num)s एंट्री अपडेट हुई, नियम की अवधि से बाहर की %(deleted)s हटाई गईं।"
+msgstr[1] "दोहराने का नियम पूरी तरह दोबारा लिखा गया। %(num)s एंट्री अपडेट हुईं, नियम की अवधि से बाहर की %(deleted)s हटाई गईं।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Split at %(split_start)s would create an empty old rule window. Applied changes from %(effective_from)s on the same rule instead."
+msgstr "%(split_start)s से बांटने पर पुराने नियम की अवधि खाली रह जाती। इसलिए बदलाव उसी नियम पर %(effective_from)s से लागू किए गए।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entry."
+msgid_plural "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entries."
+msgstr[0] "नियम %(split_start)s से बांट दिया गया। पुराना नियम सुरक्षित है; पुराने नियम की आगे की %(num)s एंट्री हटाई गई।"
+msgstr[1] "नियम %(split_start)s से बांट दिया गया। पुराना नियम सुरक्षित है; पुराने नियम की आगे की %(num)s एंट्री हटाई गईं।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt %(rebuilt)s from that date."
+msgid_plural "Rule updated from %(effective_from)s. Kept %(num)s historical entries, rebuilt %(rebuilt)s from that date."
+msgstr[0] "नियम %(effective_from)s से अपडेट हो गया। %(num)s पुरानी एंट्री रखी गई, उस तारीख से %(rebuilt)s दोबारा बनाई गईं।"
+msgstr[1] "नियम %(effective_from)s से अपडेट हो गया। %(num)s पुरानी एंट्री रखी गईं, उस तारीख से %(rebuilt)s दोबारा बनाई गईं।"
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to delete rule."
+msgstr "आपको यह नियम हटाने की अनुमति नहीं है।"
+
+#: app/blueprints/expenses.py
+msgid "Recurring rule deleted. Linked generated entries deleted."
+msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री भी हटा दी गईं।"
+
+#: app/blueprints/expenses.py
+msgid "Recurring rule deleted. Linked generated entries kept as history."
+msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री रिकॉर्ड के तौर पर रखी गई हैं।"
+
+#: app/blueprints/expenses.py
+msgid "Only admin can update settings."
+msgstr "सेटिंग सिर्फ़ एडमिन अपडेट कर सकता है।"
+
+#: app/blueprints/expenses.py
+msgid "Settings saved."
+msgstr "सेटिंग सेव हो गईं।"
+
+#: app/blueprints/expenses.py
+msgid "Failed to save settings."
+msgstr "सेटिंग सेव नहीं हो सकीं।"
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to delete entry."
+msgstr "आपको यह एंट्री हटाने की अनुमति नहीं है।"
+
+#: app/blueprints/expenses.py
+msgid "Expense deleted."
+msgstr "खर्च हटा दिया गया।"
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to edit entry."
+msgstr "आपको यह एंट्री संपादित करने की अनुमति नहीं है।"
+
+#: app/blueprints/expenses.py
+msgid "Expense updated."
+msgstr "खर्च अपडेट हो गया।"
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to change entry."
+msgstr "आपको यह एंट्री बदलने की अनुमति नहीं है।"
+
+#: app/blueprints/expenses.py
+msgid "Only recurring days can be skipped."
+msgstr "सिर्फ़ दोहराने वाले दिन छोड़े जा सकते हैं।"
+
+#: app/blueprints/expenses.py
+msgid "Day skipped."
+msgstr "दिन छोड़ दिया गया।"
+
+#: app/blueprints/expenses.py
+msgid "Day restored."
+msgstr "दिन वापस जोड़ दिया गया।"
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to restore this day."
+msgstr "आपको यह दिन वापस जोड़ने की अनुमति नहीं है।"
+
+#: app/blueprints/expenses.py
+msgid "That day is not part of this recurring rule."
+msgstr "वह दिन इस दोहराने के नियम में नहीं आता।"
+
+#: app/blueprints/expenses.py
+msgid "That day is already there."
+msgstr "वह दिन पहले से मौजूद है।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s added back for %(date)s."
+msgstr "%(title)s को %(date)s के लिए वापस जोड़ दिया गया।"
+
+#: app/blueprints/expenses.py
+msgid "Invalid settlement."
+msgstr "हिसाब चुकाने की जानकारी सही नहीं है।"
+
+#: app/blueprints/expenses.py
+msgid "Only the people involved can record a settlement."
+msgstr "हिसाब चुकाना सिर्फ़ वही लोग दर्ज कर सकते हैं जिनका यह हिसाब है।"
+
+#: app/blueprints/expenses.py
+msgid "Settlement recorded."
+msgstr "हिसाब चुकाना दर्ज हो गया।"
+
+#: app/blueprints/expenses.py
+msgid "No entries selected."
+msgstr "कोई एंट्री नहीं चुनी गई।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s expense deleted."
+msgid_plural "%(num)s expenses deleted."
+msgstr[0] "%(num)s खर्च हटा दिया गया।"
+msgstr[1] "%(num)s खर्च हटा दिए गए।"
+
+#: app/blueprints/expenses.py
+msgid "Invalid month parameter. Must be an integer between 1 and 12."
+msgstr "महीना सही नहीं है। यह 1 से 12 के बीच की संख्या होनी चाहिए।"
+
+#: app/blueprints/media_pdfs.py
+msgid "Invalid or disallowed URL. Only external http(s) URLs are allowed."
+msgstr "यूआरएल सही नहीं है या इसकी अनुमति नहीं है। सिर्फ़ बाहरी http(s) यूआरएल चलेंगे।"
+
+#: app/blueprints/media_pdfs.py
+msgid "Download queued. You can switch tabs; refresh to check status."
+msgstr "डाउनलोड कतार में लग गया है। आप दूसरे टैब पर जा सकते हैं; स्थिति देखने के लिए पेज रीफ़्रेश करें।"
+
+#: app/blueprints/media_pdfs.py
+msgid "Only PDF files are allowed."
+msgstr "सिर्फ़ पीडीएफ फ़ाइलें चलेंगी।"
+
+#: app/blueprints/media_pdfs.py
+msgid "Invalid filename."
+msgstr "फ़ाइल का नाम सही नहीं है।"
+
+#: app/blueprints/recipes.py
+msgid "Invalid link URL."
+msgstr "लिंक का यूआरएल सही नहीं है।"
+
+#: app/blueprints/recipes.py
+msgid "Recipe updated."
+msgstr "व्यंजन अपडेट हो गया।"
+
+#: app/blueprints/recipes.py
+msgid "Recipe added."
+msgstr "व्यंजन जोड़ दिया गया।"
+
+#: app/blueprints/recipes.py
+msgid "Not allowed to edit recipe."
+msgstr "आपको यह व्यंजन संपादित करने की अनुमति नहीं है।"
+
+#: app/blueprints/recipes.py
+msgid "Recipe deleted."
+msgstr "व्यंजन हटा दिया गया।"
+
+#: app/blueprints/recipes.py static/js/pages/recipes.js
+msgid "Please add ingredients or instructions (or both)."
+msgstr "कृपया सामग्री या बनाने की विधि (या दोनों) लिखें।"
+
+#: app/blueprints/shortener.py
+msgid "Please enter a valid http(s) URL."
+msgstr "कृपया सही http(s) यूआरएल डालें।"
+
+#: app/blueprints/shortener.py
+msgid "Invalid target URL."
+msgstr "यूआरएल सही नहीं है।"
+
+#: static/js/base/app.js
+msgid "Dismiss"
+msgstr "बंद करें"
+
+#: static/js/base/app.js
+msgid "Could not unlock admin."
+msgstr "एडमिन अनलॉक नहीं हो सका।"
+
+#: static/js/base/app.js
+msgid "Could not reach the server."
+msgstr "सर्वर से संपर्क नहीं हो सका।"
+
+#: static/js/base/app.js
+#, python-brace-format
+msgid "Welcome, {name}! — {date}"
+msgstr "आपका स्वागत है, {name}! — {date}"
+
+#: static/js/base/app.js templates/base.html
+msgid "Expand sidebar"
+msgstr "साइडबार बड़ा करें"
+
+#: static/js/base/app.js templates/base.html
+msgid "Collapse sidebar"
+msgstr "साइडबार छोटा करें"
+
+#: static/js/expense_split.js
+msgid "Nobody ticked: a personal expense that isn't shared."
+msgstr "किसी को नहीं चुना गया: यह निजी खर्च है, जो बांटा नहीं जाएगा।"
+
+#: static/js/expense_split.js
+msgid "Enter a value for at least one person."
+msgstr "कम से कम एक व्यक्ति के लिए वैल्यू डालें।"
+
+#: static/js/expense_split.js
+msgid "Each person pays in proportion to their shares."
+msgstr "हर व्यक्ति अपने हिस्सों के अनुपात में देगा।"
+
+#: static/js/expense_split.js
+msgid "Percentages add up to 100%."
+msgstr "प्रतिशत का जोड़ 100% है।"
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Percentages add up to {sum}: {left} left to assign."
+msgstr "प्रतिशत का जोड़ {sum} है: {left} बांटना बाकी है।"
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Percentages add up to {sum}: {over} too much."
+msgstr "प्रतिशत का जोड़ {sum} है: {over} ज़्यादा है।"
+
+#: static/js/expense_split.js
+msgid "Enter the total amount first."
+msgstr "पहले कुल रकम डालें।"
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Amounts add up to {total}."
+msgstr "रकमों का जोड़ {total} है।"
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Amounts add up to {sum} of {total}: {left} left to assign."
+msgstr "{total} में से {sum} बांटे गए: {left} बांटना बाकी है।"
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Amounts add up to {sum} of {total}: {over} too much."
+msgstr "{total} में से {sum} बांटे गए: {over} ज़्यादा है।"
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "{name} split value"
+msgstr "{name} के बंटवारे की वैल्यू"
+
+#: static/js/pages/chores.js
+msgid "Recurring chore ends in the past. Choose a future end date."
+msgstr "दोहराने वाले काम की समाप्ति की तारीख बीत चुकी है। आगे की कोई तारीख चुनें।"
+
+#: static/js/pages/chores_suggestions.js
+#, python-brace-format
+msgid "Hide suggestion {item}"
+msgstr "सुझाव छिपाएं: {item}"
+
+#: static/js/pages/chores_suggestions.js static/js/pages/home/reminders.js
+msgid "Hide"
+msgstr "छिपाएं"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "My share after splits: {amount}"
+msgstr "बंटवारे के बाद मेरा हिस्सा: {amount}"
+
+#: static/js/pages/expenses.js
+msgid "No entries this month."
+msgstr "इस महीने कोई एंट्री नहीं है।"
+
+#: static/js/pages/expenses.js
+msgid "recurring"
+msgstr "दोहराने वाला"
+
+#: static/js/pages/expenses.js
+msgid "manual"
+msgstr "मैन्युअल"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "skipped {count} day"
+msgid_plural "skipped {count} days"
+msgstr[0] "{count} दिन छोड़ा गया"
+msgstr[1] "{count} दिन छोड़े गए"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "{qty} × {count} day @ {price}"
+msgid_plural "{qty} × {count} days @ {price}"
+msgstr[0] "{qty} × {count} दिन @ {price}"
+msgstr[1] "{qty} × {count} दिन @ {price}"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "{count} entry"
+msgid_plural "{count} entries"
+msgstr[0] "{count} एंट्री"
+msgstr[1] "{count} एंट्री"
+
+#: static/js/pages/expenses.js
+msgid "Select all entries in this period"
+msgstr "इस अवधि की सभी एंट्री चुनें"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "by {name}"
+msgstr "{name} ने दिया"
+
+#: static/js/pages/expenses.js
+msgid "Pick a day on the calendar to view or add expenses."
+msgstr "खर्च देखने या जोड़ने के लिए कैलेंडर में कोई दिन चुनें।"
+
+#: static/js/pages/expenses.js
+msgid "skipped"
+msgstr "छोड़ा गया"
+
+#: static/js/pages/expenses.js
+msgid "settlement"
+msgstr "हिसाब चुकता"
+
+#: static/js/pages/expenses.js
+msgid "Split:"
+msgstr "बंटवारा:"
+
+#: static/js/pages/expenses.js
+msgid "Skip day"
+msgstr "यह दिन छोड़ें"
+
+#: static/js/pages/expenses.js
+msgid "Delete this expense?"
+msgstr "क्या यह खर्च हटा दें?"
+
+#: static/js/pages/expenses.js
+msgid "(removed)"
+msgstr "(हटाया गया)"
+
+#: static/js/pages/expenses.js
+msgid "Add back"
+msgstr "वापस जोड़ें"
+
+#: static/js/pages/expenses.js
+msgid "Expenses for"
+msgstr "इस दिन के खर्च"
+
+#: static/js/pages/expenses.js
+msgid "No expenses yet."
+msgstr "अभी कोई खर्च नहीं है।"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "gets back {amount}"
+msgstr "{amount} वापस मिलेंगे"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "owes {amount}"
+msgstr "{amount} देने हैं"
+
+#: static/js/pages/expenses.js
+msgid "Everyone is settled up."
+msgstr "सबका हिसाब बराबर है।"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "{from} owes {to} {amount}"
+msgstr "{from} को {to} को {amount} देने हैं"
+
+#: static/js/pages/expenses.js
+msgid "Settle up"
+msgstr "हिसाब चुकाएं"
+
+#: static/js/pages/expenses.js
+msgid "Nothing to settle."
+msgstr "चुकाने के लिए कुछ नहीं है।"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "paid {paid} · share {share}"
+msgstr "दिए {paid} · हिस्सा {share}"
+
+#: static/js/pages/expenses.js
+msgid "No spending this month."
+msgstr "इस महीने कोई खर्च नहीं हुआ।"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "Record a payment from {from} to {to}. Amount:"
+msgstr "{from} से {to} को किया गया भुगतान दर्ज करें। रकम:"
+
+#: static/js/pages/expenses.js
+msgid "Edit Expense"
+msgstr "खर्च संपादित करें"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "Delete {count} selected entry?"
+msgid_plural "Delete {count} selected entries?"
+msgstr[0] "क्या चुनी गई {count} एंट्री हटा दें?"
+msgstr[1] "क्या चुनी गई {count} एंट्री हटा दें?"
+
+#: static/js/pages/expenses.js static/js/pages/home/reminders.js
+msgid "Restore"
+msgstr "वापस लाएं"
+
+#: static/js/pages/expenses.js static/js/pages/home/reminders.js
+#: static/js/tags.js templates/chores.html templates/expiry.html
+#: templates/media.html templates/notes.html templates/pdfs.html
+#: templates/qr.html templates/recipes.html templates/shopping.html
+#: templates/shorten.html templates/upload.html
+msgid "Delete"
+msgstr "हटाएं"
+
+#: static/js/pages/expenses.js static/js/pages/home/reminders.js
+#: templates/chores.html templates/expenses_recurring.html templates/notes.html
+#: templates/recipes.html templates/shopping.html
+msgid "Edit"
+msgstr "संपादित करें"
+
+#: static/js/pages/expenses.js templates/expenses.html
+msgid "Add Expense"
+msgstr "खर्च जोड़ें"
+
+#: static/js/pages/expenses_recurring.js
+msgid "Rewrite entire history can delete or overwrite older generated entries. Continue?"
+msgstr "पूरा रिकॉर्ड दोबारा लिखने से पहले बनी एंट्री हट सकती हैं या बदल सकती हैं। जारी रखें?"
+
+#: static/js/pages/expenses_recurring.js
+msgid "This will close the current rule and create a new one from Effective From date. Continue?"
+msgstr "इससे मौजूदा नियम बंद हो जाएगा और लागू होने की तारीख से नया नियम बनेगा। जारी रखें?"
+
+#: static/js/pages/home/presence.js
+msgid "Status cleared"
+msgstr "स्टेटस हटा दिया गया"
+
+#: static/js/pages/home/presence.js
+msgid "No status to clear"
+msgstr "हटाने के लिए कोई स्टेटस नहीं है"
+
+#: static/js/pages/home/presence.js
+msgid "Status updated"
+msgstr "स्टेटस अपडेट हो गया"
+
+#: static/js/pages/home/presence.js
+msgid "Update failed"
+msgstr "अपडेट नहीं हो सका"
+
+#: static/js/pages/home/presence.js
+msgid "Cannot save empty status"
+msgstr "खाली स्टेटस सेव नहीं हो सकता"
+
+#: static/js/pages/home/presence.js
+msgid "Status saved"
+msgstr "स्टेटस सेव हो गया"
+
+#: static/js/pages/home/presence.js
+msgid "Status removed"
+msgstr "स्टेटस हटा दिया गया"
+
+#: static/js/pages/home/presence.js
+msgid "Remove failed"
+msgstr "हटाया नहीं जा सका"
+
+#: static/js/pages/home/presence.js static/js/pages/home/reminders.js
+msgid "Save failed"
+msgstr "सेव नहीं हो सका"
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Home"
+msgstr "घर पर"
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Away"
+msgstr "घर से दूर"
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Out"
+msgstr "बाहर"
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Traveling"
+msgstr "यात्रा पर"
+
+#: static/js/pages/home/reminders.js
+msgid "(No category)"
+msgstr "(कोई श्रेणी नहीं)"
+
+#: static/js/pages/home/reminders.js
+msgid "Deleted"
+msgstr "हटा दिया गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Delete failed"
+msgstr "हटाया नहीं जा सका"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Deleted {count}"
+msgstr "{count} हटा दिए गए"
+
+#: static/js/pages/home/reminders.js
+msgid "Day"
+msgstr "दिन"
+
+#: static/js/pages/home/reminders.js
+msgid "Week"
+msgstr "सप्ताह"
+
+#: static/js/pages/home/reminders.js
+msgid "Month"
+msgstr "महीना"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} day"
+msgid_plural "Set repeat every {count} days"
+msgstr[0] "हर {count} दिन में दोहराएं"
+msgstr[1] "हर {count} दिन में दोहराएं"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} week"
+msgid_plural "Set repeat every {count} weeks"
+msgstr[0] "हर {count} सप्ताह में दोहराएं"
+msgstr[1] "हर {count} सप्ताह में दोहराएं"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} month"
+msgid_plural "Set repeat every {count} months"
+msgstr[0] "हर {count} महीने में दोहराएं"
+msgstr[1] "हर {count} महीने में दोहराएं"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} year"
+msgid_plural "Set repeat every {count} years"
+msgstr[0] "हर {count} साल में दोहराएं"
+msgstr[1] "हर {count} साल में दोहराएं"
+
+#: static/js/pages/home/reminders.js
+msgid "This recurrence overlaps with the reminder duration."
+msgstr "दोहराने का अंतराल रिमाइंडर की अवधि से टकरा रहा है।"
+
+#: static/js/pages/home/reminders.js
+msgid "Choose one fix to continue:"
+msgstr "आगे बढ़ने के लिए एक विकल्प चुनें:"
+
+#: static/js/pages/home/reminders.js
+msgid "Remove end date/time"
+msgstr "समाप्ति की तारीख/समय हटाएं"
+
+#: static/js/pages/home/reminders.js
+msgid "Keep as non-recurring"
+msgstr "बिना दोहराए रखें"
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring schedule overlaps selected date range"
+msgstr "दोहराने का शेड्यूल चुनी गई तारीखों से टकरा रहा है"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to delete rule after creating single"
+msgstr "एक बार वाला रिमाइंडर बनाने के बाद दोहराने का नियम नहीं हटाया जा सका"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to create single reminder"
+msgstr "एक बार वाला रिमाइंडर नहीं बन सका"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to delete original reminder after creating recurring rule"
+msgstr "दोहराने का नियम बनाने के बाद पुराना रिमाइंडर नहीं हटाया जा सका"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to create recurring rule"
+msgstr "दोहराने का नियम नहीं बन सका"
+
+#: static/js/pages/home/reminders.js
+msgid "Saved"
+msgstr "सेव हो गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring rule updated"
+msgstr "दोहराने का नियम अपडेट हो गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Reminder updated"
+msgstr "रिमाइंडर अपडेट हो गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring rule saved"
+msgstr "दोहराने का नियम सेव हो गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Reminder added"
+msgstr "रिमाइंडर जोड़ दिया गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Network error"
+msgstr "नेटवर्क में गड़बड़ी"
+
+#: static/js/pages/home/reminders.js
+msgid "Reminder moved"
+msgstr "रिमाइंडर की तारीख बदल दी गई"
+
+#: static/js/pages/home/reminders.js
+msgid "Move failed"
+msgstr "तारीख नहीं बदली जा सकी"
+
+#: static/js/pages/home/reminders.js
+msgid "Loading..."
+msgstr "लोड हो रहा है..."
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} day"
+msgid_plural "Repeats every {count} days"
+msgstr[0] "हर {count} दिन में दोहराया जाता है"
+msgstr[1] "हर {count} दिन में दोहराया जाता है"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} week"
+msgid_plural "Repeats every {count} weeks"
+msgstr[0] "हर {count} सप्ताह में दोहराया जाता है"
+msgstr[1] "हर {count} सप्ताह में दोहराया जाता है"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} month"
+msgid_plural "Repeats every {count} months"
+msgstr[0] "हर {count} महीने में दोहराया जाता है"
+msgstr[1] "हर {count} महीने में दोहराया जाता है"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} year"
+msgid_plural "Repeats every {count} years"
+msgstr[0] "हर {count} साल में दोहराया जाता है"
+msgstr[1] "हर {count} साल में दोहराया जाता है"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "{repeat} till {date}"
+msgstr "{repeat}, {date} तक"
+
+#: static/js/pages/home/reminders.js
+msgid "No reminders"
+msgstr "कोई रिमाइंडर नहीं"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "at {time}"
+msgstr "{time} बजे"
+
+#: static/js/pages/home/reminders.js
+msgid "Edit recurring"
+msgstr "दोहराने वाला रिमाइंडर संपादित करें"
+
+#: static/js/pages/home/reminders.js
+msgid "Delete recurring"
+msgstr "दोहराने वाला रिमाइंडर हटाएं"
+
+#: static/js/pages/home/reminders.js
+msgid "all-day"
+msgstr "पूरा दिन"
+
+#: static/js/pages/home/reminders.js
+msgid "Select reminder"
+msgstr "रिमाइंडर चुनें"
+
+#: static/js/pages/home/reminders.js
+msgid "Mark as done"
+msgstr "पूरा हुआ मार्क करें"
+
+#: static/js/pages/home/reminders.js
+msgid "Move to Trash"
+msgstr "ट्रैश में भेजें"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Completed ({count})"
+msgstr "पूरे हो चुके ({count})"
+
+#: static/js/pages/home/reminders.js
+msgid "Show"
+msgstr "दिखाएं"
+
+#: static/js/pages/home/reminders.js
+msgid "Done"
+msgstr "पूरा हुआ"
+
+#: static/js/pages/home/reminders.js
+msgid "Mark as active"
+msgstr "फिर से चालू करें"
+
+#: static/js/pages/home/reminders.js
+msgid "Undo"
+msgstr "वापस लें"
+
+#: static/js/pages/home/reminders.js
+msgid "Delete this recurring reminder and all its future dates?"
+msgstr "क्या यह दोहराने वाला रिमाइंडर और इसकी आगे की सभी तारीखें हटा दें?"
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring rule deleted"
+msgstr "दोहराने का नियम हटा दिया गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Marked done"
+msgstr "पूरा हुआ मार्क किया गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Action failed"
+msgstr "यह काम नहीं हो सका"
+
+#: static/js/pages/home/reminders.js
+msgid "Marked active"
+msgstr "फिर से चालू किया गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Snoozed"
+msgstr "आगे बढ़ा दिया गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Snooze failed"
+msgstr "आगे नहीं बढ़ाया जा सका"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "All: {count}"
+msgstr "सभी: {count}"
+
+#: static/js/pages/home/reminders.js
+msgid "Deleted (undo available)"
+msgstr "हटा दिया गया (वापस लिया जा सकता है)"
+
+#: static/js/pages/home/reminders.js
+msgid "Undo delete"
+msgstr "हटाना वापस लें"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Move {count} selected reminder to the trash?"
+msgid_plural "Move {count} selected reminders to the trash?"
+msgstr[0] "क्या चुना गया {count} रिमाइंडर ट्रैश में भेज दें?"
+msgstr[1] "क्या चुने गए {count} रिमाइंडर ट्रैश में भेज दें?"
+
+#: static/js/pages/home/reminders.js
+msgid "Loading trash…"
+msgstr "ट्रैश लोड हो रहा है…"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to load trash."
+msgstr "ट्रैश लोड नहीं हो सका।"
+
+#: static/js/pages/home/reminders.js
+msgid "Recycle bin is empty. Items auto-purge after 7 days."
+msgstr "रीसायकल बिन खाली है। आइटम 7 दिन बाद अपने आप हट जाते हैं।"
+
+#: static/js/pages/home/reminders.js
+msgid "Recycle Bin — items auto-purge after 7 days"
+msgstr "रीसायकल बिन — आइटम 7 दिन बाद अपने आप हट जाते हैं"
+
+#: static/js/pages/home/reminders.js
+msgid "Restored"
+msgstr "वापस लाया गया"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed"
+msgstr "नहीं हो सका"
+
+#: static/js/pages/home/reminders.js
+msgid "Upcoming (next 7 days)"
+msgstr "आने वाले (अगले 7 दिन)"
+
+#: static/js/pages/home/reminders.js
+msgid "No upcoming reminders."
+msgstr "कोई आने वाला रिमाइंडर नहीं है।"
+
+#: static/js/pages/home/reminders.js templates/index.html
+msgid "Recurring"
+msgstr "दोहराने वाला"
+
+#: static/js/pages/media.js
+msgid "Downloading…"
+msgstr "डाउनलोड हो रहा है…"
+
+#: static/js/pages/media.js
+#, python-brace-format
+msgid "Preview {name} in new tab"
+msgstr "{name} को नए टैब में देखें"
+
+#: static/js/pages/media.js
+msgid "Error"
+msgstr "गड़बड़ी"
+
+#: static/js/pages/media.js templates/media.html
+msgid "Starting…"
+msgstr "शुरू हो रहा है…"
+
+#: static/js/pages/media.js templates/media.html
+msgid "Will take a while…"
+msgstr "थोड़ा समय लगेगा…"
+
+#: static/js/pages/media.js templates/media.html templates/pdfs.html
+#: templates/qr.html templates/upload.html
+msgid "Download"
+msgstr "डाउनलोड"
+
+#: static/js/pages/media.js templates/media.html templates/pdfs.html
+#: templates/upload.html
+msgid "Preview"
+msgstr "देखें"
+
+#: static/js/pages/recipes.js
+msgid "Type here..."
+msgstr "यहां लिखें..."
+
+#: static/js/pages/shopping.js
+msgid "Edit Item"
+msgstr "आइटम संपादित करें"
+
+#: static/js/pages/shopping.js
+msgid "Delete suggestion"
+msgstr "सुझाव हटाएं"
+
+#: static/js/pages/shopping.js
+#, python-brace-format
+msgid "Delete suggestion {item}"
+msgstr "सुझाव हटाएं: {item}"
+
+#: static/js/pages/shopping.js templates/base.html templates/chores.html
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html templates/notes.html templates/recipes.html
+msgid "Cancel"
+msgstr "रद्द करें"
+
+#: static/js/pages/shopping.js templates/chores.html
+#: templates/expenses_recurring.html templates/index.html templates/notes.html
+msgid "Save"
+msgstr "सेव करें"
+
+#: static/js/pages/shopping.js templates/chores.html templates/recipes.html
+#: templates/shopping.html
+msgid "Add tag and press Enter"
+msgstr "टैग लिखें और Enter दबाएं"
+
+#: static/js/pages/shopping.js templates/recipes.html
+msgid "Tags"
+msgstr "टैग"
+
+#: static/js/pages/shopping.js templates/shopping.html
+msgid "Item"
+msgstr "आइटम"
+
+#: static/js/tags.js
+msgid "remove"
+msgstr "हटाएं"
+
+#: static/js/tags.js
+#, python-brace-format
+msgid "Delete tag \"{tag}\"? This removes it from suggestions (items keep their tags)."
+msgstr "क्या टैग \"{tag}\" हटा दें? यह सिर्फ़ सुझावों से हटेगा (आइटम पर लगे टैग बने रहेंगे)।"
+
+#: static/js/tags.js templates/chores.html templates/shopping.html
+msgid "Add"
+msgstr "जोड़ें"
+
+#: static/js/weather.js
+msgctxt "weather"
+msgid "Clear"
+msgstr "साफ़"
+
+#: static/js/weather.js
+msgid "Mainly Clear"
+msgstr "ज़्यादातर साफ़"
+
+#: static/js/weather.js
+msgid "Partly Cloudy"
+msgstr "आंशिक बादल"
+
+#: static/js/weather.js
+msgid "Overcast"
+msgstr "घने बादल"
+
+#: static/js/weather.js
+msgid "Fog"
+msgstr "कोहरा"
+
+#: static/js/weather.js
+msgid "Freezing Fog"
+msgstr "जमा देने वाला कोहरा"
+
+#: static/js/weather.js
+msgid "Light Drizzle"
+msgstr "हल्की बूंदाबांदी"
+
+#: static/js/weather.js
+msgid "Drizzle"
+msgstr "बूंदाबांदी"
+
+#: static/js/weather.js
+msgid "Heavy Drizzle"
+msgstr "तेज़ बूंदाबांदी"
+
+#: static/js/weather.js
+msgid "Light Rain"
+msgstr "हल्की बारिश"
+
+#: static/js/weather.js
+msgid "Rain"
+msgstr "बारिश"
+
+#: static/js/weather.js
+msgid "Heavy Rain"
+msgstr "तेज़ बारिश"
+
+#: static/js/weather.js
+msgid "Light Snow"
+msgstr "हल्की बर्फ़बारी"
+
+#: static/js/weather.js
+msgid "Snow"
+msgstr "बर्फ़बारी"
+
+#: static/js/weather.js
+msgid "Heavy Snow"
+msgstr "भारी बर्फ़बारी"
+
+#: static/js/weather.js
+msgid "Snow Grains"
+msgstr "बर्फ़ के दाने"
+
+#: static/js/weather.js
+msgid "Light Showers"
+msgstr "हल्की बौछारें"
+
+#: static/js/weather.js
+msgid "Showers"
+msgstr "बौछारें"
+
+#: static/js/weather.js
+msgid "Heavy Showers"
+msgstr "तेज़ बौछारें"
+
+#: static/js/weather.js
+msgid "Snow Showers"
+msgstr "बर्फ़ की बौछारें"
+
+#: static/js/weather.js
+msgid "Heavy Snow Showers"
+msgstr "बर्फ़ की तेज़ बौछारें"
+
+#: static/js/weather.js
+msgid "Thunderstorm"
+msgstr "आंधी-तूफ़ान"
+
+#: static/js/weather.js
+msgid "Thunderstorm + Hail"
+msgstr "आंधी-तूफ़ान और ओले"
+
+#: static/js/weather.js
+msgid "Invalid weather data received"
+msgstr "मौसम की जानकारी सही नहीं मिली"
+
+#: static/js/weather.js
+msgid "No rain"
+msgstr "बारिश नहीं"
+
+#: static/js/weather.js
+msgid "Today's Forecast"
+msgstr "आज का पूर्वानुमान"
+
+#: static/js/weather.js
+msgid "H:"
+msgstr "अधिकतम:"
+
+#: static/js/weather.js
+msgid "L:"
+msgstr "न्यूनतम:"
+
+#: static/js/weather.js
+msgid "Sunrise:"
+msgstr "सूर्योदय:"
+
+#: static/js/weather.js
+msgid "Sunset:"
+msgstr "सूर्यास्त:"
+
+#: static/js/weather.js
+msgid "UV Index:"
+msgstr "यूवी इंडेक्स:"
+
+#: static/js/weather.js
+msgid "Rain:"
+msgstr "बारिश:"
+
+#: static/js/weather.js
+msgid "Feels like:"
+msgstr "महसूस होता है:"
+
+#: static/js/weather.js
+msgid "Wind:"
+msgstr "हवा:"
+
+#: static/js/weather.js
+msgid "Gusts:"
+msgstr "हवा के झोंके:"
+
+#: static/js/weather.js
+msgid "Humidity:"
+msgstr "नमी:"
+
+#: static/js/weather.js
+msgid "just now"
+msgstr "अभी-अभी"
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "{count} minute ago"
+msgid_plural "{count} minutes ago"
+msgstr[0] "{count} मिनट पहले"
+msgstr[1] "{count} मिनट पहले"
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "{count} hour ago"
+msgid_plural "{count} hours ago"
+msgstr[0] "{count} घंटा पहले"
+msgstr[1] "{count} घंटे पहले"
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "Last updated: {time} ({ago})"
+msgstr "पिछला अपडेट: {time} ({ago})"
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "Last updated: {time}"
+msgstr "पिछला अपडेट: {time}"
+
+#: static/js/weather.js
+msgid "Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180."
+msgstr "निर्देशांक सही नहीं हैं। अक्षांश -90 से 90 और देशांतर -180 से 180 के बीच होना चाहिए।"
+
+#: static/js/weather.js
+msgid "Failed to load weather data"
+msgstr "मौसम की जानकारी लोड नहीं हो सकी"
+
+#: static/js/weather.js
+msgid "Unable to get your location. Please configure coordinates in config.yml"
+msgstr "आपकी लोकेशन नहीं मिल सकी। कृपया config.yml में निर्देशांक सेट करें"
+
+#: static/js/weather.js
+msgid "Geolocation is not available in this context. This may be because the site is not served over HTTPS, or your browser does not support it. Please configure coordinates in config.yml"
+msgstr "यहां लोकेशन की सुविधा उपलब्ध नहीं है। हो सकता है कि साइट HTTPS पर न चल रही हो या आपका ब्राउज़र इसे सपोर्ट न करता हो। कृपया config.yml में निर्देशांक सेट करें"
+
+#: static/js/weather.js templates/index.html
+msgid "Unknown"
+msgstr "पता नहीं"
+
+#: templates/_expense_split.html
+msgid "Split with"
+msgstr "किनके बीच बांटें"
+
+#: templates/_expense_split.html
+msgid "Split method"
+msgstr "बांटने का तरीका"
+
+#: templates/_expense_split.html
+msgid "Equally"
+msgstr "बराबर"
+
+#: templates/_expense_split.html
+msgid "By shares"
+msgstr "हिस्सों के हिसाब से"
+
+#: templates/_expense_split.html
+msgid "By percentage"
+msgstr "प्रतिशत के हिसाब से"
+
+#: templates/_expense_split.html
+msgid "By amount"
+msgstr "रकम के हिसाब से"
+
+#: templates/_expense_split.html
+#, python-format
+msgid "%(name)s split value"
+msgstr "%(name)s के बंटवारे की वैल्यू"
+
+#: templates/base.html
+msgid "Close menu"
+msgstr "मेन्यू बंद करें"
+
+#: templates/base.html
+msgid "Welcome"
+msgstr "होम"
+
+#: templates/base.html
+msgid "Calendar"
+msgstr "कैलेंडर"
+
+#: templates/base.html
+msgid "To-Do/Chores"
+msgstr "टू-डू/घर के काम"
+
+#: templates/base.html
+msgid "QR Generator"
+msgstr "क्यूआर जेनरेटर"
+
+#: templates/base.html
+msgid "Menu"
+msgstr "मेन्यू"
+
+#: templates/base.html
+msgid "Switch user"
+msgstr "यूज़र बदलें"
+
+#: templates/base.html
+msgid "Current user"
+msgstr "मौजूदा यूज़र"
+
+#: templates/base.html
+msgid "Log out"
+msgstr "लॉग आउट करें"
+
+#: templates/base.html
+msgid "Logout"
+msgstr "लॉग आउट"
+
+#: templates/base.html
+msgid "buying me a coffee"
+msgstr "मुझे एक कॉफ़ी पिलाएं"
+
+#: templates/base.html
+#, python-format
+msgid "If you found this useful, consider %(link)s"
+msgstr "अगर यह आपके काम आया हो, तो %(link)s"
+
+#: templates/base.html
+msgid "Admin password"
+msgstr "एडमिन पासवर्ड"
+
+#: templates/base.html
+#, python-format
+msgid "Enter the admin password to continue as %(name)s."
+msgstr "%(name)s के रूप में जारी रखने के लिए एडमिन पासवर्ड डालें।"
+
+#: templates/base.html
+msgid "Unlock"
+msgstr "अनलॉक करें"
+
+#: templates/base.html
+msgid "Select your user"
+msgstr "अपना यूज़र चुनें"
+
+#: templates/base.html
+msgid "Pick your name to personalize your HomeHub experience."
+msgstr "HomeHub को अपने हिसाब से इस्तेमाल करने के लिए अपना नाम चुनें।"
+
+#: templates/base.html
+msgid "User"
+msgstr "यूज़र"
+
+#: templates/base.html templates/expenses.html
+msgid "Expense Tracker"
+msgstr "खर्च ट्रैकर"
+
+#: templates/base.html templates/expiry.html
+msgid "Expiry Tracker"
+msgstr "एक्सपायरी ट्रैकर"
+
+#: templates/base.html templates/login.html
+msgid "Password"
+msgstr "पासवर्ड"
+
+#: templates/base.html templates/login.html
+msgid "Continue"
+msgstr "जारी रखें"
+
+#: templates/base.html templates/media.html
+msgid "Media Downloader"
+msgstr "मीडिया डाउनलोडर"
+
+#: templates/base.html templates/notes.html
+msgid "Shared Notes"
+msgstr "साझा नोट्स"
+
+#: templates/base.html templates/pdfs.html
+msgid "PDF Compressor"
+msgstr "पीडीएफ कंप्रेसर"
+
+#: templates/base.html templates/recipes.html
+msgid "Recipe Book"
+msgstr "व्यंजन-पुस्तिका"
+
+#: templates/base.html templates/shopping.html
+msgid "Shopping List"
+msgstr "शॉपिंग लिस्ट"
+
+#: templates/base.html templates/shorten.html
+msgid "URL Shortener"
+msgstr "यूआरएल शॉर्टनर"
+
+#: templates/base.html templates/upload.html
+msgid "Shared Cloud"
+msgstr "साझा क्लाउड"
+
+#: templates/chores.html
+msgid "To-Do / Chores"
+msgstr "टू-डू / घर के काम"
+
+#: templates/chores.html
+#, python-format
+msgid "%(count)s open, %(done)s done"
+msgstr "%(count)s बाकी, %(done)s पूरे"
+
+#: templates/chores.html
+#, python-format
+msgid "%(count)s open"
+msgstr "%(count)s बाकी"
+
+#: templates/chores.html
+msgid "Show on welcome page"
+msgstr "होम पेज पर दिखाएं"
+
+#: templates/chores.html
+msgid "Chore"
+msgstr "काम"
+
+#: templates/chores.html
+msgid "Add a chore"
+msgstr "काम जोड़ें"
+
+#: templates/chores.html
+msgid "Tags (assignees, context)"
+msgstr "टैग (किसे करना है, संदर्भ)"
+
+#: templates/chores.html
+msgid "Recurring chore"
+msgstr "दोहराने वाला काम"
+
+#: templates/chores.html
+msgid "Unit"
+msgstr "इकाई"
+
+#: templates/chores.html
+msgid "Starting from"
+msgstr "कब से"
+
+#: templates/chores.html
+msgid "Till"
+msgstr "कब तक"
+
+#: templates/chores.html
+msgid "No chores yet."
+msgstr "अभी कोई काम नहीं है।"
+
+#: templates/chores.html
+msgid "Completed · Undo"
+msgstr "पूरा हुआ · वापस लें"
+
+#: templates/chores.html
+msgid "Mark Completed"
+msgstr "पूरा हुआ मार्क करें"
+
+#: templates/chores.html
+#, python-format
+msgid "Undo completed: %(item)s"
+msgstr "पूरा हुआ वापस लें: %(item)s"
+
+#: templates/chores.html
+#, python-format
+msgid "Mark completed: %(item)s"
+msgstr "पूरा हुआ मार्क करें: %(item)s"
+
+#: templates/chores.html
+#, python-format
+msgid "Next due on %(date)s"
+msgstr "अगली नियत तारीख: %(date)s"
+
+#: templates/chores.html
+msgid "Delete this recurring chore and its schedule?"
+msgstr "क्या यह दोहराने वाला काम और इसका शेड्यूल हटा दें?"
+
+#: templates/chores.html
+msgid "Delete this chore?"
+msgstr "क्या यह काम हटा दें?"
+
+#: templates/chores.html templates/expiry.html templates/media.html
+#: templates/notes.html templates/pdfs.html templates/qr.html
+#: templates/shopping.html templates/shorten.html templates/upload.html
+#, python-format
+msgid "By %(name)s at %(time)s"
+msgstr "%(name)s ने %(time)s पर जोड़ा"
+
+#: templates/chores.html templates/expiry.html templates/media.html
+#: templates/pdfs.html templates/shopping.html templates/upload.html
+#, python-format
+msgid "Delete %(item)s"
+msgstr "%(item)s हटाएं"
+
+#: templates/chores.html templates/index.html
+msgid "Update"
+msgstr "अपडेट करें"
+
+#: templates/chores.html templates/index.html
+msgid "Repeat this every"
+msgstr "इतने अंतराल पर दोहराएं"
+
+#: templates/chores.html templates/index.html
+msgid "day"
+msgstr "दिन"
+
+#: templates/chores.html templates/index.html
+msgid "week"
+msgstr "सप्ताह"
+
+#: templates/chores.html templates/index.html
+msgid "month"
+msgstr "महीना"
+
+#: templates/chores.html templates/index.html
+msgid "year"
+msgstr "साल"
+
+#: templates/chores.html templates/index.html
+#, python-format
+msgid "Due %(date)s"
+msgstr "नियत तारीख: %(date)s"
+
+#: templates/chores.html templates/index.html templates/recipes.html
+#: templates/shopping.html
+msgid "Clear"
+msgstr "हटाएं"
+
+#: templates/chores.html templates/recipes.html templates/shopping.html
+msgid "Filter by tag:"
+msgstr "टैग से फ़िल्टर करें:"
+
+#: templates/chores.html templates/shopping.html
+#, python-format
+msgid "Edit %(item)s"
+msgstr "%(item)s संपादित करें"
+
+#: templates/expenses.html
+msgid "Spending by day, with shared balances."
+msgstr "रोज़ का खर्च और आपस का हिसाब।"
+
+#: templates/expenses.html
+msgid "Total This Month"
+msgstr "इस महीने का कुल खर्च"
+
+#: templates/expenses.html
+msgid "My Spending"
+msgstr "मेरा खर्च"
+
+#: templates/expenses.html
+msgid "Top Category"
+msgstr "सबसे ज़्यादा खर्च वाली श्रेणी"
+
+#: templates/expenses.html
+msgid "Recurring rules & config"
+msgstr "दोहराने के नियम और सेटिंग"
+
+#: templates/expenses.html
+msgid "Sun"
+msgstr "रवि"
+
+#: templates/expenses.html
+msgid "Mon"
+msgstr "सोम"
+
+#: templates/expenses.html
+msgid "Tue"
+msgstr "मंगल"
+
+#: templates/expenses.html
+msgid "Wed"
+msgstr "बुध"
+
+#: templates/expenses.html
+msgid "Thu"
+msgstr "गुरु"
+
+#: templates/expenses.html
+msgid "Fri"
+msgstr "शुक्र"
+
+#: templates/expenses.html
+msgid "Sat"
+msgstr "शनि"
+
+#: templates/expenses.html
+msgid "Entries This Month"
+msgstr "इस महीने की एंट्री"
+
+#: templates/expenses.html
+msgid "Select all"
+msgstr "सभी चुनें"
+
+#: templates/expenses.html
+msgid "Delete Selected"
+msgstr "चुने हुए हटाएं"
+
+#: templates/expenses.html
+msgid "Month Total:"
+msgstr "महीने का कुल:"
+
+#: templates/expenses.html
+msgid "Balances"
+msgstr "हिसाब-किताब"
+
+#: templates/expenses.html
+msgid "Shared expenses, all months"
+msgstr "साझा खर्च, सभी महीने"
+
+#: templates/expenses.html
+msgid "Net balance"
+msgstr "कुल हिसाब"
+
+#: templates/expenses.html
+msgid "To settle up"
+msgstr "हिसाब चुकाने के लिए"
+
+#: templates/expenses.html
+msgid "This month: paid vs share"
+msgstr "इस महीने: दिया बनाम हिस्सा"
+
+#: templates/expenses.html
+msgid "Date"
+msgstr "तारीख"
+
+#: templates/expenses.html
+msgid "e.g., Groceries"
+msgstr "जैसे, किराना"
+
+#: templates/expenses.html
+msgid "Quantity"
+msgstr "मात्रा"
+
+#: templates/expenses.html
+msgid "optional"
+msgstr "वैकल्पिक"
+
+#: templates/expenses.html
+msgid "Total Amount"
+msgstr "कुल रकम"
+
+#: templates/expenses.html
+msgid "Paid by"
+msgstr "किसने दिया"
+
+#: templates/expenses.html
+msgid "Save Expense"
+msgstr "खर्च सेव करें"
+
+#: templates/expenses.html templates/expenses_recurring.html
+msgid "Unit Price"
+msgstr "प्रति यूनिट कीमत"
+
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Title"
+msgstr "शीर्षक"
+
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Category"
+msgstr "श्रेणी"
+
+#: templates/expenses.html templates/index.html
+msgid "Previous month"
+msgstr "पिछला महीना"
+
+#: templates/expenses.html templates/index.html
+msgid "Next month"
+msgstr "अगला महीना"
+
+#: templates/expenses_recurring.html
+msgid "Back to Calendar"
+msgstr "कैलेंडर पर वापस जाएं"
+
+#: templates/expenses_recurring.html
+msgid "Recurring Expense Rules"
+msgstr "दोहराने वाले खर्च के नियम"
+
+#: templates/expenses_recurring.html
+msgid "Recurring Rules"
+msgstr "दोहराने के नियम"
+
+#: templates/expenses_recurring.html
+msgid "General Settings"
+msgstr "सामान्य सेटिंग"
+
+#: templates/expenses_recurring.html
+msgid "daily"
+msgstr "रोज़"
+
+#: templates/expenses_recurring.html
+msgid "weekly"
+msgstr "हर सप्ताह"
+
+#: templates/expenses_recurring.html
+msgid "monthly"
+msgstr "हर महीने"
+
+#: templates/expenses_recurring.html
+msgid "day_of_month"
+msgstr "महीने की वही तारीख"
+
+#: templates/expenses_recurring.html
+msgid "calendar"
+msgstr "कैलेंडर महीना"
+
+#: templates/expenses_recurring.html
+msgid "by shares"
+msgstr "हिस्सों के हिसाब से"
+
+#: templates/expenses_recurring.html
+msgid "by percentage"
+msgstr "प्रतिशत के हिसाब से"
+
+#: templates/expenses_recurring.html
+msgid "by amount"
+msgstr "रकम के हिसाब से"
+
+#: templates/expenses_recurring.html
+msgid "Active Rules"
+msgstr "चालू नियम"
+
+#: templates/expenses_recurring.html
+#, python-format
+msgid "by %(name)s"
+msgstr "%(name)s ने बनाया"
+
+#: templates/expenses_recurring.html
+#, python-format
+msgid "split with %(names)s"
+msgstr "%(names)s के बीच बंटा"
+
+#: templates/expenses_recurring.html
+msgid "Editing a recurring rule can affect generated entries. Choose a strategy to avoid accidental history loss."
+msgstr "दोहराने का नियम संपादित करने से उससे बनी एंट्री पर असर पड़ सकता है। गलती से पुराना रिकॉर्ड न मिट जाए, इसके लिए एक तरीका चुनें।"
+
+#: templates/expenses_recurring.html
+msgid "Default Qty"
+msgstr "डिफ़ॉल्ट मात्रा"
+
+#: templates/expenses_recurring.html
+msgid "Frequency"
+msgstr "कितनी बार"
+
+#: templates/expenses_recurring.html
+msgid "Daily"
+msgstr "रोज़"
+
+#: templates/expenses_recurring.html
+msgid "Weekly"
+msgstr "हर सप्ताह"
+
+#: templates/expenses_recurring.html
+msgid "Monthly"
+msgstr "हर महीने"
+
+#: templates/expenses_recurring.html
+msgid "Monthly Mode"
+msgstr "महीने का तरीका"
+
+#: templates/expenses_recurring.html
+msgid "Same day-of-month"
+msgstr "महीने की वही तारीख"
+
+#: templates/expenses_recurring.html
+msgid "Calendar month"
+msgstr "कैलेंडर महीना"
+
+#: templates/expenses_recurring.html
+msgid "Edit Strategy"
+msgstr "संपादन का तरीका"
+
+#: templates/expenses_recurring.html
+msgid "Keep history, apply changes from effective date"
+msgstr "पुराना रिकॉर्ड रखें, बदलाव लागू होने की तारीख से करें"
+
+#: templates/expenses_recurring.html
+msgid "Create new rule from effective date (split)"
+msgstr "लागू होने की तारीख से नया नियम बनाएं (बांटें)"
+
+#: templates/expenses_recurring.html
+msgid "Rewrite entire rule history (destructive)"
+msgstr "नियम का पूरा रिकॉर्ड दोबारा लिखें (पुराना डेटा मिट सकता है)"
+
+#: templates/expenses_recurring.html
+msgid "Effective From"
+msgstr "कब से लागू"
+
+#: templates/expenses_recurring.html
+msgid "Used by apply/split strategies."
+msgstr "लागू करने/बांटने वाले तरीकों में इस्तेमाल होती है।"
+
+#: templates/expenses_recurring.html
+msgid "Delete this recurring rule?"
+msgstr "क्या यह दोहराने का नियम हटा दें?"
+
+#: templates/expenses_recurring.html
+msgid "Delete generated entries (unchecked = keep history)"
+msgstr "इससे बनी एंट्री भी हटाएं (बिना टिक = रिकॉर्ड रखें)"
+
+#: templates/expenses_recurring.html
+msgid "This permanently removes linked generated entries."
+msgstr "इससे जुड़ी एंट्री हमेशा के लिए हट जाएंगी।"
+
+#: templates/expenses_recurring.html
+msgid "Delete Rule"
+msgstr "नियम हटाएं"
+
+#: templates/expenses_recurring.html
+msgid "No recurring rules yet. Add one below."
+msgstr "अभी दोहराने का कोई नियम नहीं है। नीचे से जोड़ें।"
+
+#: templates/expenses_recurring.html
+msgid "Add New Rule"
+msgstr "नया नियम जोड़ें"
+
+#: templates/expenses_recurring.html
+msgid "Title (e.g., Milk)"
+msgstr "शीर्षक (जैसे, दूध)"
+
+#: templates/expenses_recurring.html
+msgid "Category (opt)"
+msgstr "श्रेणी (वैकल्पिक)"
+
+#: templates/expenses_recurring.html
+msgid "Unit price"
+msgstr "प्रति यूनिट कीमत"
+
+#: templates/expenses_recurring.html
+msgid "Default qty"
+msgstr "डिफ़ॉल्ट मात्रा"
+
+#: templates/expenses_recurring.html
+msgid "Monthly mode: Same day-of-month"
+msgstr "महीने का तरीका: महीने की वही तारीख"
+
+#: templates/expenses_recurring.html
+msgid "Monthly mode: Calendar boundary"
+msgstr "महीने का तरीका: कैलेंडर महीने के हिसाब से"
+
+#: templates/expenses_recurring.html
+msgid "Start"
+msgstr "शुरू"
+
+#: templates/expenses_recurring.html
+msgid "End (optional)"
+msgstr "समाप्ति (वैकल्पिक)"
+
+#: templates/expenses_recurring.html
+msgid "Add Recurring Rule"
+msgstr "दोहराने का नियम जोड़ें"
+
+#: templates/expenses_recurring.html
+msgid "Expense Settings"
+msgstr "खर्च की सेटिंग"
+
+#: templates/expenses_recurring.html
+msgid "Currency symbol"
+msgstr "मुद्रा का चिह्न"
+
+#: templates/expenses_recurring.html
+msgid "Fraction factor"
+msgstr "छोटी इकाई का अनुपात"
+
+#: templates/expenses_recurring.html
+msgid "How many lower currency units make one main unit, like ₹1 contains 100 paise. Common values: 1, 100, 1000."
+msgstr "मुद्रा की एक मुख्य इकाई में कितनी छोटी इकाइयां होती हैं, जैसे ₹1 में 100 पैसे। आम तौर पर: 1, 100, 1000."
+
+#: templates/expenses_recurring.html
+msgid "Categories (comma separated)"
+msgstr "श्रेणियां (कॉमा लगाकर अलग करें)"
+
+#: templates/expenses_recurring.html
+msgid "Groceries, Utilities, Housing"
+msgstr "किराना, बिजली-पानी, मकान"
+
+#: templates/expenses_recurring.html
+msgid "Save Settings"
+msgstr "सेटिंग सेव करें"
+
+#: templates/expenses_recurring.html templates/index.html
+msgid "Start Date"
+msgstr "शुरू की तारीख"
+
+#: templates/expenses_recurring.html templates/index.html
+msgid "End Date"
+msgstr "समाप्ति की तारीख"
+
+#: templates/expiry.html
+msgid "Food, medicines and documents, soonest first."
+msgstr "खाने का सामान, दवाइयां और दस्तावेज़; जो सबसे पहले एक्सपायर होंगे वे सबसे ऊपर।"
+
+#: templates/expiry.html
+msgid "Item name"
+msgstr "आइटम का नाम"
+
+#: templates/expiry.html
+msgid "Expiry date"
+msgstr "एक्सपायरी की तारीख"
+
+#: templates/expiry.html
+msgid "Add item"
+msgstr "आइटम जोड़ें"
+
+#: templates/expiry.html
+msgid "Nothing tracked yet."
+msgstr "अभी कुछ ट्रैक नहीं किया गया है।"
+
+#: templates/expiry.html
+#, python-format
+msgid "%(num)s day left"
+msgid_plural "%(num)s days left"
+msgstr[0] "%(num)s दिन बाकी"
+msgstr[1] "%(num)s दिन बाकी"
+
+#: templates/expiry.html
+msgid "Expired"
+msgstr "एक्सपायर हो चुका"
+
+#: templates/expiry.html templates/shopping.html
+msgid "Delete this item?"
+msgstr "क्या यह आइटम हटा दें?"
+
+#: templates/index.html
+#, python-format
+msgid "Welcome to %(name)s"
+msgstr "%(name)s में आपका स्वागत है"
+
+#: templates/index.html
+msgid "Pick a tool from the left to get started."
+msgstr "शुरू करने के लिए बाईं ओर से कोई टूल चुनें।"
+
+#: templates/index.html
+msgid "Weather"
+msgstr "मौसम"
+
+#: templates/index.html
+msgid "Loading weather data..."
+msgstr "मौसम की जानकारी लोड हो रही है..."
+
+#: templates/index.html
+msgid "Family Notice Board"
+msgstr "परिवार का सूचना पट"
+
+#: templates/index.html
+#, python-format
+msgid "Last updated by %(name)s at %(time)s"
+msgstr "%(name)s ने %(time)s पर आखिरी बार अपडेट किया"
+
+#: templates/index.html
+msgid "No notices yet. Admin can post one below."
+msgstr "अभी कोई सूचना नहीं है। एडमिन नीचे से सूचना लिख सकता है।"
+
+#: templates/index.html
+msgid "Notice text"
+msgstr "सूचना का टेक्स्ट"
+
+#: templates/index.html
+msgid "Leave blank and submit to clear the notice"
+msgstr "सूचना हटाने के लिए खाली छोड़कर सबमिट करें"
+
+#: templates/index.html
+msgid "Update Notice (Admin)"
+msgstr "सूचना अपडेट करें (एडमिन)"
+
+#: templates/index.html
+msgid "Who is Home?"
+msgstr "घर पर कौन है?"
+
+#: templates/index.html
+msgid "My status"
+msgstr "मेरा स्टेटस"
+
+#: templates/index.html
+msgid "Clear my status"
+msgstr "मेरा स्टेटस हटाएं"
+
+#: templates/index.html
+msgid "Personal Status"
+msgstr "निजी स्टेटस"
+
+#: templates/index.html
+msgid "Remove my status"
+msgstr "मेरा स्टेटस हटाएं"
+
+#: templates/index.html
+msgid "Chores"
+msgstr "घर के काम"
+
+#: templates/index.html
+msgid "Open full list"
+msgstr "पूरी लिस्ट खोलें"
+
+#: templates/index.html
+msgid "No open chores right now."
+msgstr "अभी कोई काम बाकी नहीं है।"
+
+#: templates/index.html
+msgid "Calendar & Reminders"
+msgstr "कैलेंडर और रिमाइंडर"
+
+#: templates/index.html
+msgid "Reminders"
+msgstr "रिमाइंडर"
+
+#: templates/index.html
+msgid "Back to Today"
+msgstr "आज पर वापस जाएं"
+
+#: templates/index.html
+msgid "Add Reminder"
+msgstr "रिमाइंडर जोड़ें"
+
+#: templates/index.html
+msgid "Open calendar"
+msgstr "कैलेंडर खोलें"
+
+#: templates/index.html
+msgid "Search reminders"
+msgstr "रिमाइंडर खोजें"
+
+#: templates/index.html
+msgid "Search reminders by title or description"
+msgstr "शीर्षक या विवरण से रिमाइंडर खोजें"
+
+#: templates/index.html
+msgid "Recycle Bin"
+msgstr "रीसायकल बिन"
+
+#: templates/index.html
+msgid "Trash"
+msgstr "ट्रैश"
+
+#: templates/index.html
+msgid "Drag reminder cards onto a date to reschedule."
+msgstr "तारीख बदलने के लिए रिमाइंडर कार्ड को किसी तारीख पर खींचकर छोड़ें।"
+
+#: templates/index.html
+msgid "Reminder title"
+msgstr "रिमाइंडर का शीर्षक"
+
+#: templates/index.html
+msgid "Start Time"
+msgstr "शुरू का समय"
+
+#: templates/index.html
+msgid "(Optional)"
+msgstr "(वैकल्पिक)"
+
+#: templates/index.html
+msgid "Start time (optional)"
+msgstr "शुरू का समय (वैकल्पिक)"
+
+#: templates/index.html
+msgid "End date (optional)"
+msgstr "समाप्ति की तारीख (वैकल्पिक)"
+
+#: templates/index.html
+msgid "End Time"
+msgstr "समाप्ति का समय"
+
+#: templates/index.html
+msgid "End time (optional)"
+msgstr "समाप्ति का समय (वैकल्पिक)"
+
+#: templates/index.html
+msgid "If Start Time and End Date/Time are blank, this is treated as an all-day reminder. If End Date/Time is set, this reminder spans that duration."
+msgstr "अगर शुरू का समय और समाप्ति की तारीख/समय खाली हैं, तो इसे पूरे दिन का रिमाइंडर माना जाएगा। अगर समाप्ति की तारीख/समय दिया गया है, तो रिमाइंडर उतनी अवधि तक चलेगा।"
+
+#: templates/index.html
+msgid "Recurrence interval"
+msgstr "दोहराने का अंतराल"
+
+#: templates/index.html
+msgid "Recurrence unit"
+msgstr "दोहराने की इकाई"
+
+#: templates/index.html
+msgid "till"
+msgstr "कब तक"
+
+#: templates/index.html
+msgid "Description"
+msgstr "विवरण"
+
+#: templates/index.html
+#, python-format
+msgid "%(count)s selected"
+msgstr "%(count)s चुने गए"
+
+#: templates/index.html
+msgid "Delete selected"
+msgstr "चुने हुए हटाएं"
+
+#: templates/index.html
+msgid "Reminders list"
+msgstr "रिमाइंडर की लिस्ट"
+
+#: templates/index.html
+msgid "JavaScript disabled: reminders editing requires JS. Existing reminder counts are shown on the calendar only."
+msgstr "JavaScript बंद है: रिमाइंडर संपादित करने के लिए JavaScript ज़रूरी है। मौजूदा रिमाइंडर की गिनती सिर्फ़ कैलेंडर पर दिखेगी।"
+
+#: templates/login.html
+msgid "Sign in"
+msgstr "साइन इन करें"
+
+#: templates/login.html
+msgid "This instance requires a password to access."
+msgstr "इसे इस्तेमाल करने के लिए पासवर्ड ज़रूरी है।"
+
+#: templates/login.html
+msgid "Enter password"
+msgstr "पासवर्ड डालें"
+
+#: templates/media.html
+msgid "Save a video or its audio from a link."
+msgstr "किसी लिंक से वीडियो या उसका ऑडियो सेव करें।"
+
+#: templates/media.html
+msgid "Media URL"
+msgstr "मीडिया का यूआरएल"
+
+#: templates/media.html
+msgid "Paste a media URL"
+msgstr "मीडिया का यूआरएल पेस्ट करें"
+
+#: templates/media.html
+msgid "Format"
+msgstr "फ़ॉर्मैट"
+
+#: templates/media.html
+msgid "MP4 (video)"
+msgstr "MP4 (वीडियो)"
+
+#: templates/media.html
+msgid "MP3 (audio)"
+msgstr "MP3 (ऑडियो)"
+
+#: templates/media.html
+msgid "Quality"
+msgstr "क्वालिटी"
+
+#: templates/media.html
+msgid "Best Available"
+msgstr "सबसे अच्छी उपलब्ध"
+
+#: templates/media.html
+msgid "Up to 1080p"
+msgstr "1080p तक"
+
+#: templates/media.html
+msgid "Up to 720p"
+msgstr "720p तक"
+
+#: templates/media.html
+msgid "No downloads yet."
+msgstr "अभी कोई डाउनलोड नहीं है।"
+
+#: templates/media.html
+msgid "Not available"
+msgstr "उपलब्ध नहीं"
+
+#: templates/media.html
+msgid "Delete this download and its file?"
+msgstr "क्या यह डाउनलोड और इसकी फ़ाइल हटा दें?"
+
+#: templates/media.html templates/pdfs.html templates/upload.html
+#, python-format
+msgid "Preview %(name)s in new tab"
+msgstr "%(name)s को नए टैब में देखें"
+
+#: templates/notes.html
+msgid "Quick notes the whole family can see."
+msgstr "छोटे नोट्स, जिन्हें पूरा परिवार देख सकता है।"
+
+#: templates/notes.html
+msgid "Note"
+msgstr "नोट"
+
+#: templates/notes.html
+msgid "Write a note..."
+msgstr "नोट लिखें..."
+
+#: templates/notes.html
+msgid "No notes yet."
+msgstr "अभी कोई नोट नहीं है।"
+
+#: templates/notes.html
+msgid "Edit note"
+msgstr "नोट संपादित करें"
+
+#: templates/notes.html
+msgid "Delete this note?"
+msgstr "क्या यह नोट हटा दें?"
+
+#: templates/notes.html
+msgid "Delete note"
+msgstr "नोट हटाएं"
+
+#: templates/pdfs.html
+msgid "Shrink a PDF so it is easier to share."
+msgstr "पीडीएफ को छोटा करें ताकि उसे शेयर करना आसान हो।"
+
+#: templates/pdfs.html
+msgid "PDF to compress"
+msgstr "कंप्रेस करने के लिए पीडीएफ"
+
+#: templates/pdfs.html
+msgid "Compress PDF"
+msgstr "पीडीएफ कंप्रेस करें"
+
+#: templates/pdfs.html
+msgid "No PDFs yet."
+msgstr "अभी कोई पीडीएफ नहीं है।"
+
+#: templates/pdfs.html
+msgid "Delete this PDF?"
+msgstr "क्या यह पीडीएफ हटा दें?"
+
+#: templates/pdfs.html templates/upload.html
+#, python-format
+msgid "Download %(name)s"
+msgstr "%(name)s डाउनलोड करें"
+
+#: templates/qr.html
+msgid "QR Code Generator"
+msgstr "क्यूआर कोड जेनरेटर"
+
+#: templates/qr.html
+msgid "Make a QR code for any text, link or Wi-Fi network."
+msgstr "किसी भी टेक्स्ट, लिंक या वाई-फ़ाई नेटवर्क के लिए क्यूआर कोड बनाएं।"
+
+#: templates/qr.html
+msgid "Text to encode"
+msgstr "क्यूआर कोड में डालने के लिए टेक्स्ट"
+
+#: templates/qr.html
+msgid "Text or URL to encode"
+msgstr "टेक्स्ट या यूआरएल लिखें"
+
+#: templates/qr.html
+msgid "Generate QR"
+msgstr "क्यूआर बनाएं"
+
+#: templates/qr.html
+msgid "Wi-Fi QR code instructions"
+msgstr "वाई-फ़ाई क्यूआर कोड बनाने का तरीका"
+
+#: templates/qr.html
+msgid "To generate a QR code for your wireless network, enter your details in the following format:"
+msgstr "अपने वाई-फ़ाई नेटवर्क का क्यूआर कोड बनाने के लिए, जानकारी इस फ़ॉर्मैट में लिखें:"
+
+#: templates/qr.html
+msgid "your WiFi network name"
+msgstr "आपके वाई-फ़ाई नेटवर्क का नाम"
+
+#: templates/qr.html
+msgid "your WiFi password"
+msgstr "आपके वाई-फ़ाई का पासवर्ड"
+
+#: templates/qr.html
+#, python-format
+msgid "encryption type (%(wpa)s, %(wep)s, or %(nopass)s), default is %(default)s"
+msgstr "एन्क्रिप्शन का प्रकार (%(wpa)s, %(wep)s या %(nopass)s), डिफ़ॉल्ट %(default)s है"
+
+#: templates/qr.html
+#, python-format
+msgid "%(true)s if the network is hidden, %(false)s otherwise (default is %(default)s)"
+msgstr "नेटवर्क छिपा हुआ हो तो %(true)s, नहीं तो %(false)s (डिफ़ॉल्ट %(default)s है)"
+
+#: templates/qr.html
+msgid "You can copy and edit the code block above for your network. The minimum required information is ssid:your_network_name pass:your_wifi_password"
+msgstr "ऊपर दिए गए कोड को कॉपी करके अपने नेटवर्क के हिसाब से संपादित कर सकते हैं। कम से कम इतनी जानकारी ज़रूरी है: ssid:your_network_name pass:your_wifi_password"
+
+#: templates/qr.html
+msgid "For other QR codes, enter any text or URL as usual."
+msgstr "दूसरे क्यूआर कोड के लिए, हमेशा की तरह कोई भी टेक्स्ट या यूआरएल लिखें।"
+
+#: templates/qr.html
+msgid "QR Code"
+msgstr "क्यूआर कोड"
+
+#: templates/qr.html
+msgid "History"
+msgstr "पिछले रिकॉर्ड"
+
+#: templates/qr.html
+msgid "No QR codes yet."
+msgstr "अभी कोई क्यूआर कोड नहीं है।"
+
+#: templates/qr.html
+msgid "Generated"
+msgstr "बनाया गया कोड"
+
+#: templates/qr.html
+msgid "View"
+msgstr "देखें"
+
+#: templates/qr.html
+msgid "Delete this QR code?"
+msgstr "क्या यह क्यूआर कोड हटा दें?"
+
+#: templates/qr.html
+msgid "Delete QR code"
+msgstr "क्यूआर कोड हटाएं"
+
+#: templates/recipes.html
+msgid "The family's recipes, with ingredients and steps."
+msgstr "परिवार के व्यंजन, सामग्री और बनाने की विधि के साथ।"
+
+#: templates/recipes.html
+msgid "Recipe Title"
+msgstr "व्यंजन का नाम"
+
+#: templates/recipes.html
+msgid "Chocolate Chip Cookies"
+msgstr "चॉकलेट चिप कुकीज़"
+
+#: templates/recipes.html
+msgid "Link (optional)"
+msgstr "लिंक (वैकल्पिक)"
+
+#: templates/recipes.html
+msgid "Ingredients"
+msgstr "सामग्री"
+
+#: templates/recipes.html
+msgid "Instructions"
+msgstr "बनाने की विधि"
+
+#: templates/recipes.html
+msgid "Update Recipe"
+msgstr "व्यंजन अपडेट करें"
+
+#: templates/recipes.html
+msgid "Add Recipe"
+msgstr "व्यंजन जोड़ें"
+
+#: templates/recipes.html
+#, python-format
+msgid "By %(name)s • %(date)s"
+msgstr "%(name)s • %(date)s"
+
+#: templates/recipes.html
+msgid "View Original Recipe"
+msgstr "मूल व्यंजन-विधि देखें"
+
+#: templates/recipes.html
+msgid "Delete this recipe?"
+msgstr "क्या यह व्यंजन हटा दें?"
+
+#: templates/shopping.html
+#, python-format
+msgid "%(count)s to buy, %(done)s purchased"
+msgstr "%(count)s खरीदने हैं, %(done)s खरीद लिए"
+
+#: templates/shopping.html
+#, python-format
+msgid "%(count)s to buy"
+msgstr "%(count)s खरीदने हैं"
+
+#: templates/shopping.html
+msgid "Add an item"
+msgstr "आइटम जोड़ें"
+
+#: templates/shopping.html
+msgid "Tags (stores, categories)"
+msgstr "टैग (दुकान, श्रेणी)"
+
+#: templates/shopping.html
+msgid "Nothing on the list yet."
+msgstr "लिस्ट में अभी कुछ नहीं है।"
+
+#: templates/shopping.html
+msgid "Purchased · Undo"
+msgstr "खरीद लिया · वापस लें"
+
+#: templates/shopping.html
+msgid "Mark Purchased"
+msgstr "खरीद लिया मार्क करें"
+
+#: templates/shopping.html
+#, python-format
+msgid "Undo purchased: %(item)s"
+msgstr "खरीद लिया वापस लें: %(item)s"
+
+#: templates/shopping.html
+#, python-format
+msgid "Mark purchased: %(item)s"
+msgstr "खरीद लिया मार्क करें: %(item)s"
+
+#: templates/shorten.html
+msgid "Turn a long link into a short one for the home network."
+msgstr "लंबे लिंक को घर के नेटवर्क के लिए छोटा बनाएं।"
+
+#: templates/shorten.html
+msgid "Long URL"
+msgstr "लंबा यूआरएल"
+
+#: templates/shorten.html
+msgid "Paste a long URL"
+msgstr "लंबा यूआरएल पेस्ट करें"
+
+#: templates/shorten.html
+msgid "Shorten"
+msgstr "छोटा करें"
+
+#: templates/shorten.html
+msgid "No short links yet."
+msgstr "अभी कोई छोटा लिंक नहीं है।"
+
+#: templates/shorten.html
+msgid "Delete this short link?"
+msgstr "क्या यह छोटा लिंक हटा दें?"
+
+#: templates/shorten.html
+msgid "Delete short link"
+msgstr "छोटा लिंक हटाएं"
+
+#: templates/upload.html
+msgid "Files shared with everyone on the home network."
+msgstr "घर के नेटवर्क पर सबके साथ शेयर की गई फ़ाइलें।"
+
+#: templates/upload.html
+msgid "Files to upload"
+msgstr "अपलोड करने के लिए फ़ाइलें"
+
+#: templates/upload.html
+msgid "Upload"
+msgstr "अपलोड करें"
+
+#: templates/upload.html
+msgid "No files yet."
+msgstr "अभी कोई फ़ाइल नहीं है।"
+
+#: templates/upload.html
+msgid "Delete this file? It is removed from the server."
+msgstr "क्या यह फ़ाइल हटा दें? यह सर्वर से हट जाएगी।"
+

@@ -5,6 +5,7 @@ from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..security import sanitize_html, sanitize_text
 from ..recurrence import occurrences_between, rule_interval_unit
+from flask_babel import gettext as _, ngettext
 
 
 def _parse_date_param(value, default=None):
@@ -57,13 +58,13 @@ def _validate_range(start_date, start_time, end_date, end_time):
     if not end_date and not end_time:
         return True, None
     if end_time and not end_date:
-        return False, 'End date is required when end time is provided'
+        return False, _('End date is required when end time is provided')
     sdt = _datetime_from_parts(start_date, start_time, is_end=False)
     edt = _datetime_from_parts(end_date, end_time, is_end=True)
     if not sdt or not edt:
-        return False, 'Invalid start or end date/time'
+        return False, _('Invalid start or end date/time')
     if edt < sdt:
-        return False, 'End date/time must be the same as or after start date/time'
+        return False, _('End date/time must be the same as or after start date/time')
     return True, None
 
 
@@ -313,7 +314,7 @@ def api_recurring_rules_update_delete(rid):
         payload = request.get_json(silent=True) or {}
         user = sanitize_text(payload.get('creator', ''))
         if not can_modify(user, rr.creator or ''):
-            return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+            return jsonify({'ok': False, 'error': _('Not allowed')}), 403
         db.session.delete(rr)
         db.session.commit()
         return jsonify({'ok': True})
@@ -321,7 +322,7 @@ def api_recurring_rules_update_delete(rid):
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, rr.creator or ''):
-        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
     # Updatable fields
     if 'title' in payload: rr.title = sanitize_text(payload.get('title') or rr.title)
     if 'description' in payload: rr.description = sanitize_html(payload.get('description') or '')
@@ -361,10 +362,10 @@ def api_reminders_create():
     creator = sanitize_text(payload.get('creator', ''))
     description = sanitize_html(payload.get('description', ''))
     if not title:
-        return jsonify({'ok': False, 'error': 'Title required'}), 400
+        return jsonify({'ok': False, 'error': _('Title required')}), 400
     start_d = _parse_date_param(payload.get('start_date'), None) or _parse_date_param(payload.get('date'), None)
     if not start_d:
-        return jsonify({'ok': False, 'error': 'Invalid date'}), 400
+        return jsonify({'ok': False, 'error': _('Invalid date')}), 400
     all_day = False
     start_t = _parse_time_param(payload.get('start_time'))
     if start_t is None:
@@ -429,7 +430,7 @@ def api_reminders_update(rid):
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
     if 'title' in payload:
         title = sanitize_text(payload['title'])
         if title:
@@ -519,7 +520,7 @@ def api_reminder_mark_done(rid):
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
     r.completed_at = datetime.utcnow()
     db.session.commit()
     return jsonify({'ok': True})
@@ -531,7 +532,7 @@ def api_reminder_mark_undo(rid):
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
     r.completed_at = None
     db.session.commit()
     return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
@@ -543,7 +544,7 @@ def api_reminder_snooze(rid):
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
 
     minutes = payload.get('minutes')
     days = payload.get('days')
@@ -609,7 +610,7 @@ def api_reminders_delete_bulk():
     ids = payload.get('ids') or []
     user = sanitize_text(payload.get('creator', ''))
     if not isinstance(ids, list) or not ids:
-        return jsonify({'ok': False, 'error': 'No ids provided'}), 400
+        return jsonify({'ok': False, 'error': _('No ids provided')}), 400
     soft_deleted = 0
     dates = set()
     now = datetime.utcnow()
@@ -648,9 +649,9 @@ def api_reminder_restore(rid):
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
     if r.deleted_at is None:
-        return jsonify({'ok': False, 'error': 'Reminder is not in trash'}), 400
+        return jsonify({'ok': False, 'error': _('Reminder is not in trash')}), 400
     r.deleted_at = None
     db.session.commit()
     return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
@@ -663,9 +664,9 @@ def api_reminder_purge(rid):
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': 'Not allowed'}), 403
+        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
     if r.deleted_at is None:
-        return jsonify({'ok': False, 'error': 'Reminder is not in trash'}), 400
+        return jsonify({'ok': False, 'error': _('Reminder is not in trash')}), 400
     db.session.delete(r)
     db.session.commit()
     return jsonify({'ok': True})
@@ -678,17 +679,17 @@ def add_reminder():
     description = sanitize_html(request.form.get('description'))
     creator = sanitize_text(request.form.get('creator'))
     if not (date_s and title):
-        flash('Date and title are required for reminders.', 'error')
+        flash(_('Date and title are required for reminders.'), 'error')
         return redirect(url_for('main.index'))
     try:
         d = datetime.strptime(date_s, '%Y-%m-%d').date()
     except Exception:
-        flash('Invalid date.', 'error')
+        flash(_('Invalid date.'), 'error')
         return redirect(url_for('main.index'))
     r = Reminder(date=d, title=title, description=description, creator=creator)
     db.session.add(r)
     db.session.commit()
-    flash('Reminder added.', 'success')
+    flash(_('Reminder added.'), 'success')
     return redirect(url_for('main.index', date=date_s))
 
 
@@ -699,9 +700,9 @@ def delete_reminder(reminder_id):
     if can_modify(user, r.creator):
         r.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash('Reminder moved to trash.', 'success')
+        flash(_('Reminder moved to trash.'), 'success')
     else:
-        flash('Not allowed to delete this reminder.', 'error')
+        flash(_('Not allowed to delete this reminder.'), 'error')
     date_s = None
     try:
         if r.date:
@@ -741,9 +742,9 @@ def delete_reminders_bulk():
             deleted += 1
     if deleted:
         db.session.commit()
-        flash(f'Moved {deleted} reminder(s) to trash.', 'success')
+        flash(ngettext('Moved %(num)s reminder to trash.', 'Moved %(num)s reminders to trash.', deleted), 'success')
     else:
-        flash('No reminders deleted (permission?).', 'error')
+        flash(_('No reminders deleted (permission?).'), 'error')
     return redirect(url_for('main.index', date=kept_date) if kept_date else url_for('main.index'))
 
 
@@ -752,7 +753,7 @@ def update_notice():
     content = sanitize_html(request.form.get('content', ''))
     user = sanitize_text(request.form.get('user', ''))
     if not is_admin(user):
-        flash('Only admin can update the notice.', 'error')
+        flash(_('Only admin can update the notice.'), 'error')
         return redirect(url_for('main.index'))
     n = Notice.query.order_by(Notice.updated_at.desc()).first()
     now = datetime.utcnow()
@@ -763,7 +764,7 @@ def update_notice():
     else:
         db.session.add(Notice(content=content, updated_by=user, updated_at=now))
     db.session.commit()
-    flash('Notice updated.', 'success')
+    flash(_('Notice updated.'), 'success')
     return redirect(url_for('main.index'))
 
 
@@ -775,9 +776,9 @@ def who_is_home_action():
     name = sanitize_text(request.form.get('name', ''))
     if not name or name not in family:
         if request.headers.get('X-Requested-With') != 'fetch':
-            flash('Invalid user for status.', 'error')
+            flash(_('Invalid user for status.'), 'error')
         if request.headers.get('X-Requested-With') == 'fetch':
-            return jsonify({'ok': False, 'error': 'Invalid user'}), 400
+            return jsonify({'ok': False, 'error': _('Invalid user')}), 400
         return redirect(url_for('main.index'))
     result = None
     if action == 'clear':
@@ -787,11 +788,11 @@ def who_is_home_action():
             db.session.commit()
             result = 'cleared'
             if request.headers.get('X-Requested-With') != 'fetch':
-                flash('Status cleared.', 'success')
+                flash(_('Status cleared.'), 'success')
         else:
             result = 'none'
             if request.headers.get('X-Requested-With') != 'fetch':
-                flash('No status to clear.', 'info')
+                flash(_('No status to clear.'), 'info')
     else:
         status = sanitize_text(request.form.get('status', '')) or 'Away'
         hs = HomeStatus.query.filter_by(name=name).first()
@@ -802,7 +803,7 @@ def who_is_home_action():
         db.session.commit()
         result = 'updated'
         if request.headers.get('X-Requested-With') != 'fetch':
-            flash('Status updated.', 'success')
+            flash(_('Status updated.'), 'success')
     if request.headers.get('X-Requested-With') == 'fetch':
         who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
         member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
@@ -821,15 +822,15 @@ def member_status_update():
     text = sanitize_text(raw_text)
     if not name or name not in family:
         if request.headers.get('X-Requested-With') != 'fetch':
-            flash('Invalid user for status.', 'error')
+            flash(_('Invalid user for status.'), 'error')
         if request.headers.get('X-Requested-With') == 'fetch':
-            return jsonify({'ok': False, 'error': 'Invalid user'}), 400
+            return jsonify({'ok': False, 'error': _('Invalid user')}), 400
         return redirect(url_for('main.index'))
     if not text:
         if request.headers.get('X-Requested-With') == 'fetch':
             return jsonify({'ok': False, 'error': 'Empty status'}), 400
         else:
-            flash('Status cannot be empty.', 'error')
+            flash(_('Status cannot be empty.'), 'error')
             return redirect(url_for('main.index'))
     ms = MemberStatus.query.filter_by(name=name).first()
     now = datetime.utcnow()
@@ -840,7 +841,7 @@ def member_status_update():
         db.session.add(MemberStatus(name=name, text=text, updated_at=now))
     db.session.commit()
     if request.headers.get('X-Requested-With') != 'fetch':
-        flash('Status saved.', 'success')
+        flash(_('Status saved.'), 'success')
     if request.headers.get('X-Requested-With') == 'fetch':
         who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
         member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
@@ -855,9 +856,9 @@ def member_status_delete():
     name = sanitize_text(request.form.get('name', ''))
     if not name or name not in family:
         if request.headers.get('X-Requested-With') != 'fetch':
-            flash('Invalid user for status removal.', 'error')
+            flash(_('Invalid user for status removal.'), 'error')
         if request.headers.get('X-Requested-With') == 'fetch':
-            return jsonify({'ok': False, 'error': 'Invalid user'}), 400
+            return jsonify({'ok': False, 'error': _('Invalid user')}), 400
         return redirect(url_for('main.index'))
     ms = MemberStatus.query.filter_by(name=name).first()
     removed = False
@@ -866,7 +867,7 @@ def member_status_delete():
         db.session.commit()
         removed = True
         if request.headers.get('X-Requested-With') != 'fetch':
-            flash('Status removed.', 'success')
+            flash(_('Status removed.'), 'success')
     if request.headers.get('X-Requested-With') == 'fetch':
         who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
         member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}

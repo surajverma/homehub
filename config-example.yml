@@ -2,6 +2,7 @@ instance_name: "My Home Hub"
 password: "" #leave blank for password less access
 admin_name: "Administrator" # protect it with: docker exec -it homehub flask set-admin-password
 max_upload_mb: 1024 # largest upload (Shared Cloud, PDFs) in MB; 0 removes the limit
+language: en # UI language for the whole household: en (English) or hi (Hindi). Anything else falls back to English
 feature_toggles:
   shopping_list: true
   media_downloader: true

@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const p = summary.per_payer || {}; const mine = p[me] || 0;
     document.getElementById('my-spending').textContent = fmt(mine);
     // What I actually bear once shared expenses are split
-    document.getElementById('my-share').textContent = `My share after splits: ${fmt((summary.per_share || {})[me] || 0)}`;
+    document.getElementById('my-share').textContent = t('My share after splits: {amount}', { amount: fmt((summary.per_share || {})[me] || 0) });
     document.getElementById('top-category').textContent = summary.top_category || '-';
     monthlyTotalAmount.textContent = fmt(summary.total_this_month||0);
   }
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function(){
   function renderCalendar(){
     grid.innerHTML = '';
     const d = new Date(year, month-1, 1);
-    calHeader.textContent = d.toLocaleString('default', { month: 'long' }) + ' ' + year;
+    calHeader.textContent = d.toLocaleString(window.I18N.locale || 'default', { month: 'long' }) + ' ' + year;
     const pad = firstWeekday(year, month);
     for(let i=0;i<pad;i++){ grid.insertAdjacentHTML('beforeend', '<div></div>'); }
     const days = monthDays(year, month);
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function(){
       (byDate[ds]?.entries||[]).filter(e=>e&&e.id&&!e.is_settlement).forEach(e=>allEntries.push({...e, date:ds, counted: e.skipped ? 0 : e.amount}));
     });
     if(allEntries.length===0){
-      monthlyList.innerHTML = '<div class="text-gray-500 p-2 text-sm">No entries this month.</div>';
+      monthlyList.innerHTML = '<div class="text-gray-500 p-2 text-sm">'+th('No entries this month.')+'</div>';
       bulkBtn.style.display = 'none';
       if (selectAllLabel) selectAllLabel.style.display = 'none';
       return;
@@ -168,24 +168,24 @@ document.addEventListener('DOMContentLoaded', function(){
 
       const groupTotal = group.entries.reduce((s,e)=>s+e.counted, 0);
       const badge = group.isRecurring
-        ? `<span class="inline-block text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 leading-none">recurring</span>`
-        : `<span class="inline-block text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 leading-none">manual</span>`;
+        ? `<span class="inline-block text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 leading-none">${th('recurring')}</span>`
+        : `<span class="inline-block text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 leading-none">${th('manual')}</span>`;
 
       const runsHtml = runs.map(run=>{
         const count = run.entries.length;
         const dateRange = run.startDate===run.endDate ? fmtShort(run.startDate) : `${fmtShort(run.startDate)} – ${fmtShort(run.endDate)}`;
         const runDesc = run.skipped
-          ? `skipped ${count} day${count>1?'s':''}`
+          ? tn('skipped {count} day', 'skipped {count} days', count)
           : (run.qty!=null && run.unitPrice!=null)
-            ? `${run.qty} × ${count} day${count>1?'s':''} @ ${fmt(run.unitPrice)}`
-            : `${count} entr${count>1?'ies':'y'}`;
+            ? tn('{qty} × {count} day @ {price}', '{qty} × {count} days @ {price}', count, { qty: run.qty, price: fmt(run.unitPrice) })
+            : tn('{count} entry', '{count} entries', count);
         // Hidden checkboxes carry entry IDs for bulk-delete; toggled by the visible run-check
         const hiddenEntries = run.entries.map(e=>
           `<input type="checkbox" class="entry-select" name="ids" value="${e.id}" hidden tabindex="-1" aria-hidden="true">`
         ).join('');
         return `
           <div class="run-row flex items-center gap-2 px-3 py-2 border-b last:border-b-0 hover:bg-gray-50">
-            <input type="checkbox" class="run-check rounded shrink-0 cursor-pointer" title="Select all entries in this period">
+            <input type="checkbox" class="run-check rounded shrink-0 cursor-pointer" title="${th('Select all entries in this period')}">
             <div class="flex-1 min-w-0">
               <span class="text-sm font-medium">${dateRange}</span>
               <span class="text-xs text-gray-500 ml-1.5">${escapeHtml(runDesc)}</span>
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function(){
           </div>`;
       }).join('');
 
-      const payerLine = !group.isRecurring && group.payer ? `<span class="text-xs text-gray-400">by ${escapeHtml(group.payer)}</span>` : '';
+      const payerLine = !group.isRecurring && group.payer ? `<span class="text-xs text-gray-400">${th('by {name}', { name: group.payer })}</span>` : '';
       return `
         <div class="mb-3 last:mb-0 border rounded overflow-hidden">
           <div class="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 border-b">
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function(){
       panelContent.innerHTML = `<div class="text-center text-gray-500 p-8 h-full flex items-center justify-center">
         <div>
           <div class="text-5xl mb-2">🧾</div>
-          <div class="font-medium">Pick a day on the calendar to view or add expenses.</div>
+          <div class="font-medium">${th('Pick a day on the calendar to view or add expenses.')}</div>
         </div>
       </div>`; return;
     }
@@ -243,31 +243,31 @@ document.addEventListener('DOMContentLoaded', function(){
     const entriesHtml = (dayData.entries||[]).map(e=>{
       const allowed = (currentUser()===e.payer) || isAdmin();
       const badges = [
-        e.skipped ? '<span class="text-xs px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">skipped</span>' : '',
-        e.is_settlement ? '<span class="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700">settlement</span>' : '',
+        e.skipped ? '<span class="text-xs px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">'+th('skipped')+'</span>' : '',
+        e.is_settlement ? '<span class="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700">'+th('settlement')+'</span>' : '',
       ].join(' ');
       const splitLine = (!e.is_settlement && e.split_with && e.split_with.length)
-        ? `<div class="text-xs text-gray-500">Split: ${e.split_with.map(n=>`${escapeHtml(n)} ${fmt((e.shares||{})[n])}`).join(', ')}</div>` : '';
+        ? `<div class="text-xs text-gray-500">${th('Split:')} ${e.split_with.map(n=>`${escapeHtml(n)} ${fmt((e.shares||{})[n])}`).join(', ')}</div>` : '';
       const skipForm = e.recurring_id != null ? `
             <form method="POST" action="/expenses/skip/${e.id}" class="inline skip-form">
               <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
-              <button type="submit" class="text-gray-700 hover:underline">${e.skipped ? 'Restore' : 'Skip day'}</button>
+              <button type="submit" class="text-gray-700 hover:underline">${e.skipped ? th('Restore') : th('Skip day')}</button>
             </form>` : '';
       return `
       <div class="flex items-start justify-between p-2 border rounded mb-2 ${e.skipped ? 'bg-gray-50' : ''}">
         <div>
           <div class="font-medium ${e.skipped ? 'line-through text-gray-400' : ''}">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
-          <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• by ${escapeHtml(e.payer)}`:''} ${badges}</div>
+          <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• ${th('by {name}', { name: e.payer })}`:''} ${badges}</div>
           ${splitLine}
         </div>
         <div class="text-right">
           <div class="font-semibold ${e.skipped ? 'line-through text-gray-400' : ''}">${fmt(e.amount)}</div>
           <div class="text-xs mt-1 space-x-2 ${allowed? '' : 'hidden'}">
-            ${e.skipped || e.is_settlement ? '' : `<button class="text-blue-600 hover:underline edit-expense" data-id="${e.id}" data-date="${ds}">Edit</button>`}
+            ${e.skipped || e.is_settlement ? '' : `<button class="text-blue-600 hover:underline edit-expense" data-id="${e.id}" data-date="${ds}">${th('Edit')}</button>`}
             ${skipForm}
-            <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${escapeHtml(e.payer||'')}" data-confirm="Delete this expense?">
+            <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${escapeHtml(e.payer||'')}" data-confirm="${th('Delete this expense?')}">
               <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
-              <button type="submit" class="text-red-600 hover:underline">Delete</button>
+              <button type="submit" class="text-red-600 hover:underline">${th('Delete')}</button>
             </form>
           </div>
         </div>
@@ -278,24 +278,24 @@ document.addEventListener('DOMContentLoaded', function(){
       const allowed = (currentUser()===m.creator) || isAdmin();
       return `
       <div class="flex items-center justify-between p-2 border border-dashed rounded mb-2 text-gray-500">
-        <div class="text-sm">${escapeHtml(m.title)} <span class="text-xs">(removed)</span></div>
+        <div class="text-sm">${escapeHtml(m.title)} <span class="text-xs">${th('(removed)')}</span></div>
         <form method="POST" action="/expenses/recurring/${m.rule_id}/restore" class="inline restore-form ${allowed ? '' : 'hidden'}">
           <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
           <input type="hidden" name="date" value="${ds}">
-          <button type="submit" class="text-xs text-blue-600 hover:underline">Add back</button>
+          <button type="submit" class="text-xs text-blue-600 hover:underline">${th('Add back')}</button>
         </form>
       </div>`;
     }).join('');
     panelContent.innerHTML = `
       <div class="flex items-center justify-between mb-2">
         <div>
-          <div class="text-sm text-gray-500">Expenses for</div>
-          <div class="text-lg font-semibold">${selectedDate.toLocaleDateString()}</div>
+          <div class="text-sm text-gray-500">${th('Expenses for')}</div>
+          <div class="text-lg font-semibold">${selectedDate.toLocaleDateString(window.I18N.locale)}</div>
         </div>
         <div class="text-lg font-semibold">${fmt(dayData.total||0)}</div>
       </div>
-      <div>${entriesHtml || (missingHtml ? '' : '<div class=\'text-gray-500\'>No expenses yet.</div>')}${missingHtml}</div>
-      <button id="add-expense-btn" class="mt-3 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"><i class="fa-solid fa-plus mr-1"></i> Add Expense</button>
+      <div>${entriesHtml || (missingHtml ? '' : '<div class=\'text-gray-500\'>'+th('No expenses yet.')+'</div>')}${missingHtml}</div>
+      <button id="add-expense-btn" class="mt-3 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"><i class="fa-solid fa-plus mr-1"></i> ${th('Add Expense')}</button>
     `;
   }
 
@@ -305,28 +305,27 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('balances-net').innerHTML = names.length ? names.map(n=>{
       const v = net[n];
       const cls = v > 0 ? 'text-green-700' : 'text-red-600';
-      const label = v > 0 ? 'gets back' : 'owes';
-      return `<div class="flex justify-between text-sm py-1 border-b last:border-b-0"><span>${escapeHtml(n)}</span><span class="${cls}">${label} ${fmt(Math.abs(v))}</span></div>`;
-    }).join('') : '<div class="text-sm text-gray-500">Everyone is settled up.</div>';
+      return `<div class="flex justify-between text-sm py-1 border-b last:border-b-0"><span>${escapeHtml(n)}</span><span class="${cls}">${v > 0 ? th('gets back {amount}', { amount: fmt(Math.abs(v)) }) : th('owes {amount}', { amount: fmt(Math.abs(v)) })}</span></div>`;
+    }).join('') : '<div class="text-sm text-gray-500">'+th('Everyone is settled up.')+'</div>';
     const settlements = balances.settlements || [];
-    document.getElementById('balances-settlements').innerHTML = settlements.length ? settlements.map((t, i)=>{
-      const allowed = isAdmin() || [t.from, t.to].includes(currentUser());
+    document.getElementById('balances-settlements').innerHTML = settlements.length ? settlements.map((s, i)=>{
+      const allowed = isAdmin() || [s.from, s.to].includes(currentUser());
       return `<div class="flex items-center justify-between text-sm py-1 border-b last:border-b-0">
-        <span><strong>${escapeHtml(t.from)}</strong> owes <strong>${escapeHtml(t.to)}</strong> ${fmt(t.amount)}</span>
-        <button type="button" class="text-xs text-blue-600 hover:underline settle-btn ${allowed ? '' : 'hidden'}" data-idx="${i}">Settle up</button>
+        <span>${th('{from} owes {to} {amount}', { amount: fmt(s.amount) }).replace('{from}', '<strong>'+escapeHtml(s.from)+'</strong>').replace('{to}', '<strong>'+escapeHtml(s.to)+'</strong>')}</span>
+        <button type="button" class="text-xs text-blue-600 hover:underline settle-btn ${allowed ? '' : 'hidden'}" data-idx="${i}">${th('Settle up')}</button>
       </div>`;
-    }).join('') : '<div class="text-sm text-gray-500">Nothing to settle.</div>';
+    }).join('') : '<div class="text-sm text-gray-500">'+th('Nothing to settle.')+'</div>';
     // Per person this month: what they paid and what their share comes to
     const paid = summary.per_payer || {}, share = summary.per_share || {};
     const people = [...new Set([...Object.keys(paid), ...Object.keys(share)])].filter(Boolean).sort();
     document.getElementById('month-shares').innerHTML = people.length ? people.map(n=>
-      `<div class="flex justify-between text-sm py-1 border-b last:border-b-0"><span>${escapeHtml(n)}</span><span class="text-gray-600">paid ${fmt(paid[n]||0)} · share ${fmt(share[n]||0)}</span></div>`
-    ).join('') : '<div class="text-sm text-gray-500">No spending this month.</div>';
+      `<div class="flex justify-between text-sm py-1 border-b last:border-b-0"><span>${escapeHtml(n)}</span><span class="text-gray-600">${th('paid {paid} · share {share}', { paid: fmt(paid[n]||0), share: fmt(share[n]||0) })}</span></div>`
+    ).join('') : '<div class="text-sm text-gray-500">'+th('No spending this month.')+'</div>';
   }
   document.getElementById('balances-settlements').addEventListener('click', (e)=>{
     const btn = e.target.closest('.settle-btn'); if (!btn) return;
-    const t = (balances.settlements||[])[Number(btn.getAttribute('data-idx'))]; if (!t) return;
-    const input = window.prompt(`Record a payment from ${t.from} to ${t.to}. Amount:`, String(t.amount));
+    const s = (balances.settlements||[])[Number(btn.getAttribute('data-idx'))]; if (!s) return;
+    const input = window.prompt(t('Record a payment from {from} to {to}. Amount:', { from: s.from, to: s.to }), String(s.amount));
     if (input === null) return;
     const amount = parseFloat(input);
     if (!(amount > 0)) return;
@@ -334,8 +333,8 @@ document.addEventListener('DOMContentLoaded', function(){
     const f = document.getElementById('settle-form');
     f.action = `/expenses/settle?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;
     document.getElementById('settle-user').value = currentUser();
-    document.getElementById('settle-from').value = t.from;
-    document.getElementById('settle-to').value = t.to;
+    document.getElementById('settle-from').value = s.from;
+    document.getElementById('settle-to').value = s.to;
     document.getElementById('settle-amount').value = String(amount);
     f.submit();
   });
@@ -389,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.addEventListener('click', (e)=>{
     if (e.target && e.target.id === 'add-expense-btn'){
   const ds = selectedDate ? isoLocalFromDate(selectedDate) : isoLocalFromDate(new Date());
-      document.getElementById('modal-title').textContent = 'Add Expense';
+      document.getElementById('modal-title').textContent = t('Add Expense');
   const form = document.getElementById('expense-form');
   // preserve current view in action
   const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
@@ -411,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function(){
       // Find entry in byDate
       const entry = (byDate[ds]?.entries||[]).find(x=> String(x.id)===String(id));
       if(!entry) return;
-      document.getElementById('modal-title').textContent = 'Edit Expense';
+      document.getElementById('modal-title').textContent = t('Edit Expense');
   const form = document.getElementById('expense-form');
   // preserve current view in action
   const sel = selectedDate ? isoLocalFromDate(selectedDate) : ds;
@@ -477,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function(){
   bulkBtn.addEventListener('click', (e)=>{
     e.preventDefault();
     const count = bulkForm.querySelectorAll('input[name="ids"]:checked').length;
-    if (!confirm(`Delete ${count} selected entr${count === 1 ? 'y' : 'ies'}?`)) return;
+    if (!confirm(tn('Delete {count} selected entry?', 'Delete {count} selected entries?', count))) return;
     // Attach query params to preserve view
   const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
     bulkForm.action = `/expenses/bulk-delete?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;

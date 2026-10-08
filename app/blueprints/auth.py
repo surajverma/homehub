@@ -4,6 +4,7 @@ from .. import admin
 from ..config import load_config, upload_limit_bytes
 import hashlib
 import bleach
+from flask_babel import gettext as _, ngettext
 
 
 @main_bp.before_app_request
@@ -32,9 +33,9 @@ def login():
         supplied = bleach.clean(request.form.get('password', ''))
         if hashlib.sha256(supplied.encode()).hexdigest() == config.get('password_hash'):
             session['authed'] = True
-            flash('Logged in successfully.', 'success')
+            flash(_('Logged in successfully.'), 'success')
             return redirect(url_for('main.index'))
-        flash('Invalid password', 'error')
+        flash(_('Invalid password'), 'error')
     return render_template('login.html', config=config, hide_user_ui=True)
 
 
@@ -45,11 +46,11 @@ def admin_unlock():
     client = request.remote_addr or 'unknown'
     wait = admin.unlock_wait_seconds(client)
     if wait:
-        return jsonify({'ok': False, 'error': f'Too many attempts. Try again in {wait} seconds.'}), 429
+        return jsonify({'ok': False, 'error': ngettext('Too many attempts. Try again in %(num)s second.', 'Too many attempts. Try again in %(num)s seconds.', wait)}), 429
     payload = request.get_json(silent=True) or {}
     if admin.try_unlock(str(payload.get('password', '')), client):
         return jsonify({'ok': True, 'password_enabled': True})
-    return jsonify({'ok': False, 'error': 'Incorrect admin password'}), 403
+    return jsonify({'ok': False, 'error': _('Incorrect admin password')}), 403
 
 
 @main_bp.route('/admin/lock', methods=['POST'])
@@ -62,5 +63,5 @@ def admin_lock():
 def logout():
     admin.lock()
     session.pop('authed', None)
-    flash('Logged out.', 'info')
+    flash(_('Logged out.'), 'info')
     return redirect(url_for('main.login'))
