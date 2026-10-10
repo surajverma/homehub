@@ -3,9 +3,14 @@
 <div class="max-w-sm mx-auto card p-6 mt-8 md:mt-16">
     <h1 class="page-title mb-1">{{ _('Sign in') }}</h1>
     <p class="text-sm text-gray-500 mb-5">{{ _('This instance requires a password to access.') }}</p>
-    <form method="POST" class="space-y-3">
-        <input type="password" name="password" aria-label="{{ _('Password') }}" class="w-full" placeholder="{{ _('Enter password') }}" required>
-        <button type="submit" class="w-full btn btn-primary">{{ _('Continue') }}</button>
+    <form method="POST" class="space-y-3" id="loginForm">
+        <input type="password" name="password" aria-label="{{ _('Password') }}" class="w-full" placeholder="{{ _('Enter password') }}" required{% if lockout_seconds %} disabled{% endif %}>
+        <button type="submit" class="w-full btn btn-primary"{% if lockout_seconds %} disabled{% endif %}>{{ _('Continue') }}</button>
+        {% if lockout_seconds %}
+        {# __N__ is replaced by the seconds left, counted down in js/pages/login.js #}
+        <p id="loginLockout" class="text-sm text-red-600" role="status" aria-live="polite" data-seconds="{{ lockout_seconds }}" data-text="{{ _('Too many attempts. Try again in %(seconds)s s.', seconds='__N__') }}">{{ _('Too many attempts. Try again in %(seconds)s s.', seconds=lockout_seconds) }}</p>
+        {% endif %}
     </form>
 </div>
+{% if lockout_seconds %}<script src="{{ asset_url('js/pages/login.js') }}"></script>{% endif %}
 {% endblock %}

@@ -218,10 +218,11 @@
         del.innerHTML = '<i class="fa fa-times"></i>';
         del.addEventListener('click', (e)=>{
           e.stopPropagation();
-          if(confirm(t('Delete tag "{tag}"? This removes it from suggestions (items keep their tags).', { tag: tag }))){
+          confirmDialog({ message: t('Delete tag "{tag}"? This removes it from suggestions (items keep their tags).', { tag: tag }), confirmText: t('Delete'), danger: true }).then(ok=>{
+            if(!ok) return;
             forgetTag(tag);
             renderLibrary(host, onAdd);
-          }
+          });
         });
         wrap.addEventListener('click', ()=> onAdd && onAdd(tag));
         wrap.appendChild(plus);

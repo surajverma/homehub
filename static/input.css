@@ -138,10 +138,25 @@ a { text-underline-offset: 2px; }
 
 /* Sidebar */
 .sidebar {
-    background-color: var(--sidebar-background-color);
+    /* A faint tint of the primary colour sets the sidebar apart from the cards beside it */
+    background-color: color-mix(in srgb, var(--sidebar-background-color) 95%, var(--primary-color));
     color: var(--sidebar-text-color);
     border-right: 1px solid var(--border-color);
 }
+/* A light line between menu items, drawn in the gap so the rounded links keep their shape */
+.sidebar #sidebarNav a.sidebar-link { position: relative; }
+.sidebar #sidebarNav a.sidebar-link + a.sidebar-link { margin-top: 5px; }
+.sidebar #sidebarNav a.sidebar-link + a.sidebar-link::before {
+    content: "";
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    top: -4px;
+    border-top: 1px solid color-mix(in srgb, var(--sidebar-link-color) 14%, var(--border-color));
+}
+/* No line touching the highlighted link */
+.sidebar #sidebarNav a.sidebar-link.active::before,
+.sidebar #sidebarNav a.sidebar-link.active + a.sidebar-link::before { display: none; }
 .sidebar .sidebar-brand { border-bottom: 1px solid var(--border-color); }
 .sidebar a.sidebar-link {
     color: var(--sidebar-link-color);
@@ -378,6 +393,42 @@ input[type="file"]::file-selector-button:hover { background-color: var(--hover-b
 .btn-icon { width: 2.25rem; height: 2.25rem; padding: 0; }
 .btn-sm { padding: 0.3125rem 0.625rem; font-size: 0.8125rem; }
 }
+
+/* ========================================
+   Dialogs (static/js/base/ui.js)
+   ======================================== */
+.hh-dialog {
+    width: min(28rem, calc(100vw - 2rem));
+    padding: 0;
+    background-color: var(--card-background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.28);
+}
+.hh-dialog::backdrop { background-color: rgba(15, 23, 42, 0.5); }
+.hh-dialog-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.hh-dialog-title { font-size: 1.0625rem; font-weight: 600; line-height: 1.5rem; }
+.hh-dialog-message { font-size: 0.875rem; line-height: 1.375rem; white-space: pre-line; overflow-wrap: anywhere; }
+.hh-dialog-details {
+    margin: 0;
+    padding: 0.625rem 0.75rem 0.625rem 1.75rem;
+    list-style: disc;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    color: var(--muted-text);
+    background-color: var(--hover-bg);
+    border-radius: var(--control-radius);
+}
+.hh-dialog-details li + li { margin-top: 0.25rem; }
+.hh-dialog-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.hh-dialog-label { font-size: 0.8125rem; font-weight: 500; color: var(--muted-text); }
+.hh-dialog-error { font-size: 0.8125rem; color: var(--danger-color); }
+.hh-dialog-error:empty { display: none; }
+.hh-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.btn-danger-solid { background-color: #dc2626; color: #fff; }
+.btn-danger-solid:hover { filter: brightness(0.92); }
+.btn-danger-solid:focus-visible { outline-color: #dc2626; }
 
 /* Recipe page styles */
 .ql-editor { min-height: 150px; max-height: 300px; overflow-y: auto; }

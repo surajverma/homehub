@@ -25,3 +25,20 @@ def isolated_config(example_config_path, monkeypatch):
     """
     monkeypatch.setattr(config_module, 'CONFIG_PATH', example_config_path)
     monkeypatch.setattr(config_module, '_cache', {'key': None, 'config': None})
+
+
+@pytest.fixture(autouse=True)
+def isolated_storage(tmp_path, monkeypatch):
+    """Uploads and PDFs made by tests go to a temp folder, not the developer's own uploads/ and pdfs/."""
+    from app.blueprints import media_pdfs, uploads
+    for module, name in ((uploads, 'UPLOAD_FOLDER'), (media_pdfs, 'PDF_FOLDER')):
+        folder = tmp_path / name.lower()
+        folder.mkdir()
+        monkeypatch.setattr(module, name, str(folder))
+
+
+@pytest.fixture(autouse=True)
+def no_leftover_lockouts():
+    """Failed password attempts are counted per process; start each test with none."""
+    from app import admin
+    admin._failed_attempts.clear()

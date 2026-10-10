@@ -10,6 +10,27 @@ from datetime import datetime, timezone
 db = SQLAlchemy()
 
 
+_JOURNAL_MODES = {'WAL', 'DELETE', 'TRUNCATE', 'PERSIST'}
+
+
+def _tune_sqlite(dbapi_connection, _connection_record):
+    """WAL lets readers carry on while one request writes; the timeout waits for a lock instead of failing.
+
+    SQLITE_JOURNAL_MODE=DELETE goes back to the old mode, for a data folder on a network share.
+    """
+    mode = (os.environ.get('SQLITE_JOURNAL_MODE') or 'WAL').strip().upper()
+    if mode not in _JOURNAL_MODES:
+        mode = 'WAL'
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute(f'PRAGMA journal_mode={mode}')
+        cursor.execute('PRAGMA busy_timeout=5000')
+    except Exception:
+        logging.getLogger(__name__).warning('Could not switch SQLite to WAL mode; carrying on without it')
+    finally:
+        cursor.close()
+
+
 def _load_or_create_secret_key(data_dir: str) -> str:
     path = os.path.join(data_dir, 'secret_key')
     try:
@@ -59,8 +80,9 @@ def create_app(test_config: dict | None = None):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     # SECRET_KEY from env, else one generated once and kept in data/ so restarts don't log everyone out
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or _load_or_create_secret_key(data_dir)
-    # Explicitly disable CSRF (forms are simple and app runs on home network)
-    app.config['WTF_CSRF_ENABLED'] = False
+    # There are no CSRF tokens (forms are simple and the app runs on a home network).
+    # Lax keeps the session cookie off requests that other sites make in the background.
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
     # Load config.yml
     app.config['HOMEHUB_CONFIG'] = load_config()
@@ -78,14 +100,18 @@ def create_app(test_config: dict | None = None):
     # Ensure models are imported before creating tables
     with app.app_context():
         from . import models  # noqa: F401 ensures model metadata is registered
+        if db.engine.dialect.name == 'sqlite':
+            from sqlalchemy import event
+            event.listen(db.engine, 'connect', _tune_sqlite)
         db.create_all()
         # Upgrade older SQLite files in place (adds missing columns and tables).
         # Skipped in testing so tests never touch the real database file.
         if not app.config.get('TESTING'):
             from . import migrations
-            migrations.run(db_path)
+            migrations.run(db_path, pdf_dir=pdfs_dir)
 
     from .blueprints import main_bp
+    from . import undo  # noqa: F401 registers the /undo route
     # Register modular route modules to attach endpoints to main_bp
     from .blueprints import auth  # noqa: F401
     from .blueprints import dashboard  # noqa: F401

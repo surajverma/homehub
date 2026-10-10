@@ -74,11 +74,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const ingText = ingredientsQuill.getText().trim();
         const insText = instructionsQuill.getText().trim();
         
+        const formError = document.getElementById('recipeFormError');
         if (!ingText && !insText) {
             e.preventDefault();
-            alert(t('Please add ingredients or instructions (or both).'));
+            formError.textContent = t('Please add ingredients or instructions (or both).');
+            formError.classList.remove('hidden');
+            formError.scrollIntoView({ block: 'center', behavior: 'smooth' });
             return false;
         }
+        formError.classList.add('hidden');
         
         document.getElementById('ingredientsHidden').value = ingredientsHTML;
         document.getElementById('instructionsHidden').value = instructionsHTML;

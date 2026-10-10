@@ -92,7 +92,8 @@ def test_single_to_recurring_and_back(client):
     assert j2['ok'] is True and 'reminder' in j2
 
     # Delete the rule
-    del_rule = client.delete(f'/api/recurring_rules/{rrid}', json={'creator': 'Alice'})
+    # scope 'all' is what the UI sends when a rule is turned back into a single reminder
+    del_rule = client.delete(f'/api/recurring_rules/{rrid}', json={'creator': 'Alice', 'scope': 'all'})
     assert del_rule.status_code == 200
     assert del_rule.get_json()['ok'] is True
 

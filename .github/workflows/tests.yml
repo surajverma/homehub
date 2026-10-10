@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+  # Lets the publish workflow run the same tests before it builds an image
+  workflow_call:
 
 jobs:
   pytest:
@@ -22,7 +24,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements-dev.txt
 
       - name: Run tests
-        run: pytest
+        run: python -m pytest

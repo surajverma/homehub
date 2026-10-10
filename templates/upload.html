@@ -16,14 +16,14 @@
         <li class="list-row flex-wrap">
             <i class="fa-regular fa-file text-gray-400" aria-hidden="true"></i>
             <div class="flex-1 min-w-0">
-                <a href="/uploads/{{ file.filename }}" class="font-medium break-all hover:underline">{{ file.filename }}</a>
+                <a href="/uploads/{{ file.disk_name }}" class="font-medium break-all hover:underline">{{ file.filename }}</a>
                 <div class="meta mt-0.5">{{ _('By %(name)s at %(time)s', name=file.creator, time=file.upload_time|localtime) }}</div>
             </div>
             <div class="flex items-center gap-1">
-                <a href="/uploads/preview/{{ file.filename }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" aria-label="{{ _('Preview %(name)s in new tab', name=file.filename) }}">
+                <a href="/uploads/preview/{{ file.disk_name }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" aria-label="{{ _('Preview %(name)s in new tab', name=file.filename) }}">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i> {{ _('Preview') }}
                 </a>
-                <a href="/uploads/{{ file.filename }}" class="btn btn-secondary btn-sm" aria-label="{{ _('Download %(name)s', name=file.filename) }}">
+                <a href="/uploads/{{ file.disk_name }}" class="btn btn-secondary btn-sm" aria-label="{{ _('Download %(name)s', name=file.filename) }}">
                     <i class="fa-solid fa-download" aria-hidden="true"></i> {{ _('Download') }}
                 </a>
                 <form method="POST" action="/upload/delete/{{ file.id }}" class="delete-form" data-creator="{{ file.creator }}" data-confirm="{{ _('Delete this file? It is removed from the server.') }}">

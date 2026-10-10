@@ -107,16 +107,24 @@ def unlock_wait_seconds(client: str) -> int:
     return int(remaining) + 1 if count >= MAX_FAILED_ATTEMPTS and remaining > 0 else 0
 
 
-def try_unlock(password: str, client: str) -> bool:
-    password_hash = get_admin_password_hash()
-    if password_hash and check_password_hash(password_hash, password or ''):
-        _failed_attempts.pop(client, None)
-        session[SESSION_KEY] = _fingerprint(password_hash)
-        return True
+def record_failed_attempt(client: str) -> None:
     count, until = _failed_attempts.get(client, (0, 0.0))
     if count >= MAX_FAILED_ATTEMPTS and until <= time.time():
         count = 0
     _failed_attempts[client] = (count + 1, time.time() + LOCKOUT_SECONDS)
+
+
+def clear_failed_attempts(client: str) -> None:
+    _failed_attempts.pop(client, None)
+
+
+def try_unlock(password: str, client: str) -> bool:
+    password_hash = get_admin_password_hash()
+    if password_hash and check_password_hash(password_hash, password or ''):
+        clear_failed_attempts(client)
+        session[SESSION_KEY] = _fingerprint(password_hash)
+        return True
+    record_failed_attempt(client)
     return False
 
 

@@ -74,7 +74,7 @@ feature_toggles:
   chores: true
   recipes: true
   expiry_tracker: true
-  url_shortener: true
+  url_shortener: false
   expense_tracker: true
   calendar: true
 
@@ -126,6 +126,7 @@ services:
   homehub:
     container_name: homehub
     image: ghcr.io/surajverma/homehub:latest
+    restart: unless-stopped
     ports:
       - "5000:5000" #app listens internally on port 5000
     volumes:
@@ -135,8 +136,7 @@ services:
       - ./data:/app/data
       - ./config.yml:/app/config.yml:ro
     environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-} # set via .env; falls back to one kept in data/secret_key
+      - SECRET_KEY=${SECRET_KEY:-} # optional, from .env; left empty, a key is generated once and kept in data/secret_key
       # - TZ=Asia/Kolkata # optional; see "Timezone" below
 ```
 
@@ -159,7 +159,7 @@ docker exec -it homehub flask set-admin-password
 - `docker exec -it homehub flask set-admin-password --clear` removes it and restores the default behaviour.
 - Not using Docker? Run `flask set-admin-password` from the project folder.
 
-The `password` in `config.yml` is separate: it protects the whole site and keeps working as before.
+The `password` in `config.yml` is separate: it protects the whole site and keeps working as before. You write it in `config.yml` as plain text; HomeHub only keeps a salted hash of it in memory, and after 5 wrong attempts the login form makes that device wait a minute, like the admin password prompt.
 
 Logins and admin unlocks survive a restart: if `SECRET_KEY` is not set, HomeHub generates one on first start and keeps it in `data/secret_key`.
 
@@ -289,7 +289,7 @@ cd homehub
 ```bash
 python -m venv venv
 venv\Scripts\activate  # On Windows
-pip install -r requirements.txt
+pip install -r requirements-dev.txt  # the app's packages plus pytest
 ```
 
 ### 3. Configuration
@@ -317,9 +317,15 @@ npm run watch:css
   (Ensure you have built CSS and set up your config.)
 
 ### 6. Troubleshooting
-- If you see missing dependency errors, ensure you have run both `pip install -r requirements.txt` and `npm install`.
+- If you see missing dependency errors, ensure you have run both `pip install -r requirements-dev.txt` and `npm install`.
 - If port 5000 is in use, stop the conflicting service or change the port in `compose.yml` and `config.yml`.
 - For Docker issues, try `docker compose down` then `docker compose up -d`.
+- If the log says `config.yml is missing` or `config.yml is a folder`, HomeHub is running on the defaults from `config-example.yml`. Docker creates an empty `config.yml` folder when the file is not there at first start: remove that folder, copy `config-example.yml` to `config.yml`, and start the container again.
+- `docker ps` shows the container as `healthy` once the app answers on `/healthz`.
+- The database runs in SQLite's WAL mode. If `data/` sits on a network share (NFS, SMB) and you see `database is locked` or disk I/O errors, add `- SQLITE_JOURNAL_MODE=DELETE` under `environment:` to go back to the previous mode.
+
+### Supported platforms
+The Docker image is built for `linux/amd64` and `linux/arm64`, which includes a Raspberry Pi 4 or 5 running a 64-bit OS. 32-bit ARM (`linux/arm/v7`, e.g. 32-bit Raspberry Pi OS) is no longer built: stay on the last image you pulled, or move to a 64-bit OS to keep getting updates.
 
 
 ## License

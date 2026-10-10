@@ -16,22 +16,38 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
     const form = document.getElementById('choreForm');
     const recurringToggle = document.getElementById('isRecurringChore');
     if (!form || !recurringToggle) return;
+    // Saving changes to an existing recurring chore asks first; the server then offers Undo
+    let confirmed = false;
     form.addEventListener('submit', (e)=>{
         if (!recurringToggle.checked) return;
         const endInput = form.querySelector('input[name="rec_end_date"]');
+        const endError = document.getElementById('chores-rec-end-error');
         const endVal = endInput && endInput.value;
-        if (!endVal) return;
+        if (endError) endError.classList.add('hidden');
+        if (endInput) endInput.removeAttribute('aria-invalid');
         const today = new Date();
         today.setHours(0,0,0,0);
-        const endDate = new Date(endVal + 'T00:00:00');
-        if (endDate < today) {
+        if (endVal && new Date(endVal + 'T00:00:00') < today) {
             e.preventDefault();
-            if (window.globalToast) {
-                globalToast(t('Recurring chore ends in the past. Choose a future end date.'), 'error');
-            } else {
-                alert(t('Recurring chore ends in the past. Choose a future end date.'));
-            }
+            endError.textContent = t('Recurring chore ends in the past. Choose a future end date.');
+            endError.classList.remove('hidden');
+            endInput.setAttribute('aria-invalid', 'true');
+            endInput.focus();
+            return;
         }
+        if (!document.getElementById('recurringRuleId').value) return;
+        if (confirmed) { confirmed = false; return; }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        confirmDialog({
+            title: t('Save changes to this recurring chore?'),
+            message: t('Its schedule and next due date are updated to match.'),
+            confirmText: t('Save changes'),
+        }).then(ok=>{
+            if (!ok) return;
+            confirmed = true;
+            form.requestSubmit();
+        });
     });
 })();
 

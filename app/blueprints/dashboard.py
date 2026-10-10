@@ -2,10 +2,12 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, c
 from datetime import datetime, date, timedelta
 from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringReminder, Chore
 from ..blueprints import main_bp
+from ..clock import utcnow
 from ..admin import is_admin, can_modify
 from ..security import sanitize_html, sanitize_text
-from ..recurrence import occurrences_between, rule_interval_unit
+from ..recurrence import first_on_or_after, occurrences_between, rule_interval_unit
 from flask_babel import gettext as _, ngettext
+from ..undo import restorer, row_to_dict, row_values, stash_undo
 
 
 def _parse_date_param(value, default=None):
@@ -293,6 +295,7 @@ def api_reminders_list():
             'time': rr.time,
             'category': rr.category,
             'color': rr.color,
+            'start_date': rr.start_date.strftime('%Y-%m-%d') if rr.start_date else None,
             'end_date': rr.end_date.strftime('%Y-%m-%d') if rr.end_date else None,
             'dates': [d.strftime('%Y-%m-%d') for d in rule_dates.get(rr.id, [])],
         })
@@ -307,39 +310,72 @@ def api_reminders_list():
     })
 
 
+_RULE_COPY_FIELDS = ('title', 'description', 'creator', 'frequency', 'monthly_mode', 'interval', 'unit',
+                     'time', 'category', 'color', 'start_date', 'end_date')
+
+
+def _stash_reminder_rule(snapshot: dict, successor: RecurringReminder | None = None) -> str:
+    return stash_undo('reminder_rule', {'rule': snapshot, 'successor_id': successor.id if successor else None})
+
+
+@restorer('reminder_rule')
+def _restore_reminder_rule(payload: dict) -> None:
+    if payload.get('successor_id'):
+        RecurringReminder.query.filter_by(id=payload['successor_id']).delete(synchronize_session=False)
+    values = row_values(RecurringReminder, payload['rule'])
+    rule = db.session.get(RecurringReminder, values['id'])
+    if rule is None:
+        db.session.add(RecurringReminder(**values))
+    else:
+        for name, value in values.items():
+            setattr(rule, name, value)
+
+
 @main_bp.route('/api/recurring_rules/<int:rid>', methods=['PATCH', 'DELETE'])
 def api_recurring_rules_update_delete(rid):
+    """Edit or delete a recurring reminder without rewriting the past.
+
+    Occurrences are worked out from the rule each time, so changing or removing the rule
+    itself would also change every earlier date. A rule that has already started is
+    ended yesterday instead, and an edit continues as a new rule from today.
+    """
     rr = db.get_or_404(RecurringReminder, rid)
-    if request.method == 'DELETE':
-        payload = request.get_json(silent=True) or {}
-        user = sanitize_text(payload.get('creator', ''))
-        if not can_modify(user, rr.creator or ''):
-            return jsonify({'ok': False, 'error': _('Not allowed')}), 403
-        db.session.delete(rr)
-        db.session.commit()
-        return jsonify({'ok': True})
-    # PATCH
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, rr.creator or ''):
         return jsonify({'ok': False, 'error': _('Not allowed')}), 403
-    # Updatable fields
-    if 'title' in payload: rr.title = sanitize_text(payload.get('title') or rr.title)
-    if 'description' in payload: rr.description = sanitize_html(payload.get('description') or '')
-    if 'time' in payload:
-        tval = _parse_time_param(payload.get('time'))
-        rr.time = tval
-    if 'category' in payload: rr.category = sanitize_text(payload.get('category')) or None
-    if 'color' in payload: rr.color = sanitize_text(payload.get('color')) or None
-    # interval/unit/end_date/start_date
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+    has_past = bool(rr.start_date and rr.start_date < today)
+    # Every change below hands back a token the page offers as Undo for about a minute
+    before = row_to_dict(rr)
+    if request.method == 'DELETE':
+        # scope 'all' removes the rule and with it every date, past ones included
+        if payload.get('scope') == 'all' or not has_past:
+            db.session.delete(rr)
+            db.session.commit()
+            return jsonify({'ok': True, 'ended': False, 'undo_token': _stash_reminder_rule(before)})
+        if not rr.end_date or rr.end_date > yesterday:
+            rr.end_date = yesterday
+            db.session.commit()
+        return jsonify({'ok': True, 'ended': True, 'undo_token': _stash_reminder_rule(before)})
+    # PATCH
+    current = {name: getattr(rr, name) for name in _RULE_COPY_FIELDS}
+    current['interval'], current['unit'] = rule_interval_unit(rr)
+    new = dict(current)
+    if 'title' in payload: new['title'] = sanitize_text(payload.get('title') or rr.title)
+    if 'description' in payload: new['description'] = sanitize_html(payload.get('description') or '')
+    if 'time' in payload: new['time'] = _parse_time_param(payload.get('time'))
+    if 'category' in payload: new['category'] = sanitize_text(payload.get('category')) or None
+    if 'color' in payload: new['color'] = sanitize_text(payload.get('color')) or None
     interval = payload.get('interval')
     try:
         interval = int(interval) if interval is not None else None
     except Exception:
         interval = None
-    if interval and interval >= 1: rr.interval = interval
+    if interval and interval >= 1: new['interval'] = interval
     unit = (payload.get('unit') or '').lower()
-    if unit in {'day','week','month','year'}: rr.unit = unit
+    if unit in {'day','week','month','year'}: new['unit'] = unit
     def _pd(s):
         try:
             return datetime.strptime(s, '%Y-%m-%d').date() if s else None
@@ -347,12 +383,44 @@ def api_recurring_rules_update_delete(rid):
             return None
     if 'start_date' in payload:
         sd = _pd(payload.get('start_date'))
-        if sd: rr.start_date = sd
+        if sd: new['start_date'] = sd
     if 'end_date' in payload:
-        rr.end_date = _pd(payload.get('end_date'))
-    # Do not force effective_from to today; allow full-rule edits including anchor changes
+        new['end_date'] = _pd(payload.get('end_date'))
+
+    changed = {name for name in _RULE_COPY_FIELDS if (new[name] or None) != (current[name] or None)}
+    if not changed:
+        return jsonify({'ok': True, 'rule': _serialize_recurring_rule(rr), 'split': False})
+
+    if not has_past:
+        # Nothing has happened yet, so the rule itself can change
+        for name in changed:
+            setattr(rr, name, new[name])
+        db.session.commit()
+        return jsonify({'ok': True, 'rule': _serialize_recurring_rule(rr), 'split': False,
+                        'undo_token': _stash_reminder_rule(before)})
+
+    if changed == {'end_date'}:
+        # Moving the end only touches the past when it is pulled back before today
+        rr.end_date = max(new['end_date'], yesterday) if new['end_date'] else None
+        db.session.commit()
+        return jsonify({'ok': True, 'rule': _serialize_recurring_rule(rr), 'split': False,
+                        'undo_token': _stash_reminder_rule(before)})
+
+    if new['end_date'] and new['end_date'] < today:
+        return jsonify({'ok': False, 'error': _('This recurring reminder has already ended, and its past dates are kept as they were. Set a later end date to continue it.')}), 400
+
+    # The new settings continue from today on their own schedule; the old rule keeps the past
+    successor = RecurringReminder(**new)
+    successor.start_date = first_on_or_after(successor, today)
+    if successor.start_date is None:
+        return jsonify({'ok': False, 'error': _('With these settings there are no dates left from today. Choose a later end date.')}), 400
+    successor.effective_from = successor.start_date
+    if not rr.end_date or rr.end_date > yesterday:
+        rr.end_date = yesterday
+    db.session.add(successor)
     db.session.commit()
-    return jsonify({'ok': True, 'rule': _serialize_recurring_rule(rr)})
+    return jsonify({'ok': True, 'rule': _serialize_recurring_rule(successor), 'split': True,
+                    'undo_token': _stash_reminder_rule(before, successor)})
 
 
 @main_bp.route('/api/reminders', methods=['POST'])
@@ -521,7 +589,7 @@ def api_reminder_mark_done(rid):
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
         return jsonify({'ok': False, 'error': _('Not allowed')}), 403
-    r.completed_at = datetime.utcnow()
+    r.completed_at = utcnow()
     db.session.commit()
     return jsonify({'ok': True})
 
@@ -613,7 +681,7 @@ def api_reminders_delete_bulk():
         return jsonify({'ok': False, 'error': _('No ids provided')}), 400
     soft_deleted = 0
     dates = set()
-    now = datetime.utcnow()
+    now = utcnow()
     for rid in ids:
         if not isinstance(rid, int):
             continue
@@ -633,7 +701,7 @@ def api_reminders_delete_bulk():
 @main_bp.route('/api/reminders/trash', methods=['GET'])
 def api_reminders_trash():
     """List soft-deleted (trashed) reminders, auto-purging entries older than 7 days."""
-    cutoff = datetime.utcnow() - timedelta(days=7)
+    cutoff = utcnow() - timedelta(days=7)
     try:
         Reminder.query.filter(Reminder.deleted_at < cutoff).delete(synchronize_session=False)
         db.session.commit()
@@ -698,7 +766,7 @@ def delete_reminder(reminder_id):
     r = db.get_or_404(Reminder, reminder_id)
     user = sanitize_text(request.form.get('user'))
     if can_modify(user, r.creator):
-        r.deleted_at = datetime.utcnow()
+        r.deleted_at = utcnow()
         db.session.commit()
         flash(_('Reminder moved to trash.'), 'success')
     else:
@@ -727,7 +795,7 @@ def delete_reminders_bulk():
         return redirect(url_for('main.index'))
     kept_date = None
     deleted = 0
-    now = datetime.utcnow()
+    now = utcnow()
     for rid in id_list:
         r = db.session.get(Reminder, rid)
         if not r:
@@ -756,7 +824,7 @@ def update_notice():
         flash(_('Only admin can update the notice.'), 'error')
         return redirect(url_for('main.index'))
     n = Notice.query.order_by(Notice.updated_at.desc()).first()
-    now = datetime.utcnow()
+    now = utcnow()
     if n:
         n.content = content
         n.updated_by = user
@@ -833,7 +901,7 @@ def member_status_update():
             flash(_('Status cannot be empty.'), 'error')
             return redirect(url_for('main.index'))
     ms = MemberStatus.query.filter_by(name=name).first()
-    now = datetime.utcnow()
+    now = utcnow()
     if ms:
         ms.text = text
         ms.updated_at = now

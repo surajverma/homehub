@@ -22,7 +22,7 @@ HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja te
 - The usual permission shape is `is_admin(user) or user == <owner field>` (for example `creator` or `payer`). Flag a route that edits or deletes someone's data without an owner/admin check.
 - Secrets (passwords, hashes, `SECRET_KEY`) must never be logged, flashed, rendered or returned in JSON. Password checks must fail closed.
 - The site password in `config.yml` is a separate gate and must keep working.
-- CSRF is disabled on purpose (`WTF_CSRF_ENABLED = False`). Don't ask for CSRF tokens on individual forms; do flag state changes made through GET requests.
+- There are no CSRF tokens, on purpose. Don't ask for CSRF tokens on individual forms; do flag state changes made through GET requests.
 
 ## Input and output safety
 

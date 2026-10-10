@@ -6,6 +6,7 @@ from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..security import sanitize_text
 from ..recurrence import next_occurrence as _next_occurrence, first_on_or_after as _next_due_on_or_after, serialized
+from ..undo import offer_undo, restorer, row_to_dict, row_values
 import json
 
 
@@ -35,8 +36,10 @@ def _ensure_current_recurring_chores(today: date | None = None):
         active_by_rule[row.recurring_id] = row
     changed = False
     for rule in rules:
-        next_due = _next_due_on_or_after(rule, today)
         active = active_by_rule.get(rule.id)
+        # A chore ticked off early is due on a later date; don't pull it back to an earlier one
+        completed_through = rule.last_generated_date if active and rule.last_generated_date else today
+        next_due = _next_due_on_or_after(rule, max(today, completed_through))
         if next_due is None:
             if active and not active.done:
                 active.done = True
@@ -106,6 +109,18 @@ def _set_show_chores_on_homepage(enabled: bool):
     db.session.commit()
 
 
+def _ticked_for_now(chore: Chore, rule: RecurringChore | None, today: date) -> bool:
+    """True when this round of a recurring chore is already ticked off: it is due on a later round.
+
+    The round in play is the rule's first date on or after today. It can be ticked once, early
+    or late; ticking moves the chore to the round after it, where it waits until that date.
+    """
+    if rule is None or chore.done or not chore.due_date:
+        return False
+    current = _next_due_on_or_after(rule, today)
+    return current is not None and chore.due_date > current
+
+
 def _render_chores_page(**form_state):
     _ensure_current_recurring_chores(date.today())
     filter_tags = request.args.get('tags')
@@ -125,9 +140,13 @@ def _render_chores_page(**form_state):
             pass
     show_chores_on_homepage = _get_show_chores_on_homepage()
     config = current_app.config['HOMEHUB_CONFIG']
+    today = date.today()
+    rules = {rule.id: rule for rule in RecurringChore.query.all()}
+    ticked_ids = {c.id for c in chores if c.recurring_id and _ticked_for_now(c, rules.get(c.recurring_id), today)}
     return render_template(
         'chores.html',
         chores=chores,
+        ticked_ids=ticked_ids,
         show_chores_on_homepage=show_chores_on_homepage,
         today_date=date.today(),
         **form_state,
@@ -195,6 +214,7 @@ def chores():
                 if not can_modify(user, rule.creator or ''):
                     flash(_('Not allowed to update recurring rule.'), 'error')
                     return redirect(url_for('main.chores'))
+                snapshot = _chore_rule_snapshot(rule)
                 rule.description = description
                 rule.tags = json.dumps(tags_list)
                 rule.interval = interval
@@ -211,7 +231,7 @@ def chores():
                     active.done = False
                 rule.last_generated_date = next_due
                 db.session.commit()
-                flash(_('Recurring chore updated.'), 'success')
+                offer_undo('chore_rule', snapshot, _('Recurring chore updated.'))
             else:
                 rule = RecurringChore(
                     description=description,
@@ -323,11 +343,51 @@ def delete_recurring_chore(rule_id):
     if not can_modify(user, rule.creator or ''):
         flash(_('Not allowed to delete recurring rule.'), 'error')
         return redirect(url_for('main.chores'))
+    snapshot = _chore_rule_snapshot(rule)
     Chore.query.filter_by(recurring_id=rule.id).delete()
     db.session.delete(rule)
     db.session.commit()
-    flash(_('Recurring chore rule deleted.'), 'success')
+    offer_undo('chore_rule', snapshot, _('Recurring chore rule deleted.'))
     return redirect(url_for('main.chores'))
+
+
+def _chore_rule_snapshot(rule: RecurringChore) -> dict:
+    """The rule and the chores it made, for undo."""
+    rows = Chore.query.filter_by(recurring_id=rule.id).all()
+    return {'rule': row_to_dict(rule), 'chores': [row_to_dict(c) for c in rows]}
+
+
+@restorer('chore_rule')
+@serialized
+def _restore_chore_rule(payload: dict) -> None:
+    values = row_values(RecurringChore, payload['rule'])
+    Chore.query.filter_by(recurring_id=values['id']).delete(synchronize_session=False)
+    rule = db.session.get(RecurringChore, values['id'])
+    if rule is None:
+        db.session.add(RecurringChore(**values))
+    else:
+        for name, value in values.items():
+            setattr(rule, name, value)
+    db.session.flush()
+    for data in payload['chores']:
+        chore_values = row_values(Chore, data)
+        # Keep the old id unless something new took it in the meantime
+        if db.session.get(Chore, chore_values['id']) is not None:
+            chore_values.pop('id')
+        db.session.add(Chore(**chore_values))
+
+
+@restorer('chore_done')
+@serialized
+def _restore_chore_done(payload: dict) -> None:
+    chore = db.session.get(Chore, payload['chore_id'])
+    if chore is not None:
+        chore.due_date = date.fromisoformat(payload['due_date'])
+        chore.done = bool(payload['done'])
+    rule = db.session.get(RecurringChore, payload['rule_id'])
+    if rule is not None:
+        last = payload.get('last_generated_date')
+        rule.last_generated_date = date.fromisoformat(last) if last else None
 
 
 @main_bp.route('/chores/toggle/<int:chore_id>', methods=['POST'])
@@ -336,13 +396,42 @@ def toggle_chore(chore_id):
     if getattr(chore, 'recurring_id', None):
         rule = db.session.get(RecurringChore, getattr(chore, 'recurring_id', None))
         if rule and chore.due_date:
+            today = date.today()
+            current = _next_due_on_or_after(rule, today)
+            if chore.done or _ticked_for_now(chore, rule, today):
+                # Already ticked: a second tap takes the tick back instead of skipping another date
+                if current is None:
+                    flash(_('This recurring chore has ended.'), 'info')
+                    return redirect(url_for('main.chores'))
+                reopened = chore.due_date if chore.done else current
+                chore.done = False
+                chore.due_date = reopened
+                rule.last_generated_date = reopened
+                db.session.commit()
+                flash(_('%(chore)s is open again. Due on %(date)s.', chore=chore.description, date=reopened), 'info')
+                return redirect(url_for('main.chores'))
+            # Ticking a recurring chore moves it to its next date, so offer a way back
+            before = {
+                'chore_id': chore.id,
+                'due_date': chore.due_date.isoformat(),
+                'done': bool(chore.done),
+                'rule_id': rule.id,
+                'last_generated_date': rule.last_generated_date.isoformat() if rule.last_generated_date else None,
+            }
             next_due = _next_occurrence(rule, chore.due_date)
             if rule.end_date and next_due > rule.end_date:
                 chore.done = True
+                # Past the end date, so the next page load leaves it done instead of reopening it
+                rule.last_generated_date = next_due
+                message = _('%(chore)s done. That was its last date.', chore=chore.description)
             else:
                 chore.due_date = next_due
                 chore.done = False
                 rule.last_generated_date = next_due
+                message = _('%(chore)s done. Next due on %(date)s.', chore=chore.description, date=next_due)
+            db.session.commit()
+            offer_undo('chore_done', before, message)
+            return redirect(url_for('main.chores'))
         else:
             chore.done = not getattr(chore, 'done', False)
     else:
@@ -360,12 +449,14 @@ def delete_chore(chore_id):
         rule_creator = (rule.creator if rule else chore.creator) or ''
         if can_modify(user, rule_creator):
             if rule:
+                snapshot = _chore_rule_snapshot(rule)
                 Chore.query.filter_by(recurring_id=rule.id).delete()
                 db.session.delete(rule)
-                flash(_('Recurring chore rule deleted.'), 'success')
+                db.session.commit()
+                offer_undo('chore_rule', snapshot, _('Recurring chore rule deleted.'))
             else:
                 db.session.delete(chore)
-            db.session.commit()
+                db.session.commit()
         else:
             flash(_('Not allowed to delete recurring rule.'), 'error')
         return redirect(url_for('main.chores'))

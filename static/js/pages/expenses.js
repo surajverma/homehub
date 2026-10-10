@@ -322,10 +322,18 @@ document.addEventListener('DOMContentLoaded', function(){
       `<div class="flex justify-between text-sm py-1 border-b last:border-b-0"><span>${escapeHtml(n)}</span><span class="text-gray-600">${th('paid {paid} · share {share}', { paid: fmt(paid[n]||0), share: fmt(share[n]||0) })}</span></div>`
     ).join('') : '<div class="text-sm text-gray-500">'+th('No spending this month.')+'</div>';
   }
-  document.getElementById('balances-settlements').addEventListener('click', (e)=>{
+  document.getElementById('balances-settlements').addEventListener('click', async (e)=>{
     const btn = e.target.closest('.settle-btn'); if (!btn) return;
     const s = (balances.settlements||[])[Number(btn.getAttribute('data-idx'))]; if (!s) return;
-    const input = window.prompt(t('Record a payment from {from} to {to}. Amount:', { from: s.from, to: s.to }), String(s.amount));
+    const input = await promptDialog({
+      title: t('Record payment'),
+      message: t('Record a payment from {from} to {to}.', { from: s.from, to: s.to }),
+      label: t('Amount'),
+      type: 'number', min: '0', step: 'any', inputMode: 'decimal',
+      value: s.amount,
+      confirmText: t('Record payment'),
+      validate: v => (parseFloat(v) > 0 ? '' : t('Enter an amount greater than zero.')),
+    });
     if (input === null) return;
     const amount = parseFloat(input);
     if (!(amount > 0)) return;
@@ -460,6 +468,27 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById(id).addEventListener('input', recalcTotal);
   });
 
+  // An expense needs an amount above zero; a quantity, when given, too. The server checks the same.
+  (function(){
+    const expenseForm = document.getElementById('expense-form');
+    const formError = document.getElementById('expense-form-error');
+    const clearError = ()=>{ formError.textContent = ''; formError.classList.add('hidden'); };
+    expenseForm.addEventListener('input', clearError);
+    document.addEventListener('click', (e)=>{ if (e.target.closest('#add-expense-btn, .edit-entry, #cancel-expense')) clearError(); });
+    expenseForm.addEventListener('submit', (e)=>{
+      const quantity = document.getElementById('expense-quantity').value.trim();
+      const amount = parseFloat(document.getElementById('expense-amount').value);
+      let problem = '';
+      if (quantity !== '' && !(parseFloat(quantity) > 0)) problem = t('Quantity must be greater than zero.');
+      else if (!(amount > 0)) problem = t('Amount must be greater than zero.');
+      if (!problem) { clearError(); return; }
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      formError.textContent = problem;
+      formError.classList.remove('hidden');
+    });
+  })();
+
   // Pre-fill settings UI for modal category chips usability
   const modalChips = document.getElementById('modal-category-chips');
   if (modalChips){
@@ -473,10 +502,10 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   // Bulk delete submit behavior
-  bulkBtn.addEventListener('click', (e)=>{
+  bulkBtn.addEventListener('click', async (e)=>{
     e.preventDefault();
     const count = bulkForm.querySelectorAll('input[name="ids"]:checked').length;
-    if (!confirm(tn('Delete {count} selected entry?', 'Delete {count} selected entries?', count))) return;
+    if (!(await confirmDialog({ message: tn('Delete {count} selected entry?', 'Delete {count} selected entries?', count), confirmText: t('Delete'), danger: true }))) return;
     // Attach query params to preserve view
   const sel = selectedDate ? isoLocalFromDate(selectedDate) : '';
     bulkForm.action = `/expenses/bulk-delete?y=${year}&m=${month}&sel=${encodeURIComponent(sel)}`;

@@ -190,9 +190,13 @@
                   {{ split_box(split_people, r.split_mode, r.split_weights, r.split_members, allow_amount=false) }}
                 </div>
                 {% endif %}
+                {# Today, kept inside the rule's own start/end window -#}
+                {% set eff_default = today -%}
+                {% if r.start_date and eff_default < r.start_date %}{% set eff_default = r.start_date %}{% endif -%}
+                {% if r.end_date and eff_default > r.end_date %}{% set eff_default = r.end_date %}{% endif -%}
                 <div class="effective-from-group">
                   <label for="rule-{{ r.id }}-effective-from" class="text-sm text-gray-600">{{ _('Effective From') }}</label>
-                  <input id="rule-{{ r.id }}-effective-from" type="date" name="effective_from" class="w-full border rounded p-2" value="{{ (r.start_date or '') }}">
+                  <input id="rule-{{ r.id }}-effective-from" type="date" name="effective_from" class="w-full border rounded p-2" value="{{ eff_default }}">
                   <p class="text-xs text-gray-500 mt-1">{{ _('Used by apply/split strategies.') }}</p>
                 </div>
                 <div class="md:col-span-3 flex justify-end gap-2">
@@ -202,7 +206,7 @@
               </form>
 
               <!-- Delete Form -->
-              <form method="POST" action="/expenses/recurring/delete/{{ r.id }}" class="mt-3 pt-3 border-t flex items-center gap-3 delete-form" data-creator="{{ r.creator }}" data-confirm="{{ _('Delete this recurring rule?') }}">
+              <form method="POST" action="/expenses/recurring/delete/{{ r.id }}" class="mt-3 pt-3 border-t flex items-center gap-3 delete-form recurring-delete-form" data-creator="{{ r.creator }}">
                 <input type="hidden" name="user">
                 <label class="text-sm text-gray-600 inline-flex items-center gap-2">
                   <input type="checkbox" name="delete_entries" value="1" class="rounded"> {{ _('Delete generated entries (unchecked = keep history)') }}

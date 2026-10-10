@@ -1,4 +1,5 @@
-from flask import render_template, request, redirect, url_for, current_app
+from flask import render_template, request, redirect, url_for, current_app, flash
+from flask_babel import gettext as _
 from datetime import datetime, date
 from ..models import db, ExpiryItem
 from ..blueprints import main_bp
@@ -15,6 +16,7 @@ def expiry():
         expiry_item = ExpiryItem(name=name, expiry_date=datetime.strptime(expiry_date, '%Y-%m-%d').date(), creator=creator)
         db.session.add(expiry_item)
         db.session.commit()
+        flash(_('Item added.'), 'success')
         return redirect(url_for('main.expiry'))
     items = ExpiryItem.query.order_by(ExpiryItem.expiry_date.asc()).all()
     today = date.today()
@@ -37,4 +39,7 @@ def delete_expiry(item_id):
     if can_modify(user, it.creator):
         db.session.delete(it)
         db.session.commit()
+        flash(_('Item deleted.'), 'success')
+    else:
+        flash(_('Not allowed to delete item.'), 'error')
     return redirect(url_for('main.expiry'))

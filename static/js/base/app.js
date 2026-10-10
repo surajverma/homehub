@@ -1,34 +1,5 @@
         
         (function(){
-            if(window.globalToast) return;
-            const hostId='toastHost';
-            let toastEl = null;
-            let hideTimer = null;
-            let hideEndTimer = null;
-            function ensure(){ let h=document.getElementById(hostId); if(!h){ h=document.createElement('div'); h.id=hostId; h.className='fixed top-4 right-4 left-4 sm:left-auto z-50 pointer-events-none flex justify-end'; h.setAttribute('role','status'); h.setAttribute('aria-live','polite'); document.body.appendChild(h);} return h; }
-            function classFor(type){ return type==='error'?['bg-red-600']:(type==='success'?['bg-green-600']:(type==='info'?['bg-slate-800']:['bg-slate-800'])); }
-            function hide(){
-                if(!toastEl) return;
-                toastEl.style.opacity='0';
-                toastEl.style.pointerEvents='none';
-                hideEndTimer=setTimeout(()=>{ toastEl && (toastEl.style.display='none'); }, 240);
-            }
-            window.globalToast=function(msg,type){ const host=ensure(); if(!toastEl){ toastEl=document.createElement('div'); host.appendChild(toastEl);} if(hideTimer){ clearTimeout(hideTimer); hideTimer=null; } if(hideEndTimer){ clearTimeout(hideEndTimer); hideEndTimer=null; }
-                const isError = type==='error';
-                toastEl.className='toast pointer-events-auto inline-flex items-start gap-3 max-w-md px-4 py-2.5 rounded-lg shadow-lg text-sm text-white transition-opacity duration-200 '+classFor(type).join(' ');
-                toastEl.setAttribute('role', isError ? 'alert' : 'status');
-                toastEl.style.display='';
-                toastEl.style.opacity='1';
-                toastEl.style.pointerEvents='auto';
-                toastEl.textContent='';
-                const text=document.createElement('span'); text.textContent=msg; toastEl.appendChild(text);
-                const close=document.createElement('button'); close.type='button'; close.className='inline-flex items-center justify-center w-5 h-5 shrink-0 opacity-80 hover:opacity-100'; close.setAttribute('aria-label', t('Dismiss')); close.innerHTML='<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
-                close.addEventListener('click', hide); toastEl.appendChild(close);
-                // Errors stay until dismissed so they can be read
-                if(!isError) hideTimer=setTimeout(hide, 4000);
-            };
-        })();        
-        (function(){
             const wrap = document.getElementById('globalFlashWrap');
             if(!wrap) return;
             const msgs = Array.from(wrap.querySelectorAll('.px-3, .flash-msg'));
@@ -46,14 +17,47 @@
             });            
             setTimeout(()=>wrap.remove(), msgs.length*70 + 200);
         })();        
+        // A change that can be taken back: a toast with an Undo button for 20 seconds (the server's UNDO_SECONDS).
+        // Undoing reloads the page, which then shows the server's "Change undone." message.
+        window.undoToast = function(message, token, type, seconds){
+            if (!token) return globalToast(message, type || 'success');
+            return globalToast(message, type || 'success', {
+                duration: (seconds || 20) * 1000,
+                action: { label: t('Undo'), onClick: function(){
+                    fetch('/undo/' + encodeURIComponent(token), { method: 'POST' })
+                        .then(function(resp){ return resp.json().catch(function(){ return {}; }); })
+                        .then(function(data){
+                            if (data.ok) location.reload();
+                            else globalToast(data.error || t('Could not undo that change.'), 'error');
+                        })
+                        .catch(function(){ globalToast(t('Could not reach the server.'), 'error'); });
+                } }
+            });
+        };
+        // Changes made by a form post arrive with their token in the page
+        (function(){
+            let offers = [];
+            try { offers = JSON.parse(document.getElementById('undoOffers')?.textContent || '[]'); } catch(e) { offers = []; }
+            offers.forEach(function(offer){
+                if (offer && offer.token) undoToast(offer.message || '', offer.token, offer.type, offer.seconds);
+            });
+        })();
         // Forms with data-confirm ask before submitting (deletes). Capture phase runs before page handlers.
         document.addEventListener('submit', function(ev){
             const form = ev.target;
             const msg = form && form.getAttribute && form.getAttribute('data-confirm');
-            if (msg && !window.confirm(msg)){
-                ev.preventDefault();
-                ev.stopImmediatePropagation();
-            }
+            if (!msg) return;
+            // Second pass, after the dialog was confirmed: let the submit through
+            if (form.dataset.confirmed){ delete form.dataset.confirmed; return; }
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            const submitter = ev.submitter;
+            confirmDialog({ message: msg, confirmText: form.getAttribute('data-confirm-action') || t('Delete'), danger: true }).then(function(ok){
+                if (!ok) return;
+                form.dataset.confirmed = '1';
+                if (form.requestSubmit) form.requestSubmit(submitter && submitter.form === form ? submitter : undefined);
+                else form.submit();
+            });
         }, true);
         // Ask for the admin password; resolves true once the server unlocked this session
         function requestAdminUnlock(){

@@ -1,23 +1,47 @@
 import copy
-import hashlib
+import logging
 import os
 import threading
 import yaml
+from werkzeug.security import generate_password_hash
+
+log = logging.getLogger(__name__)
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 CONFIG_PATH = os.path.join(BASE_DIR, 'config.yml')
+EXAMPLE_CONFIG_PATH = os.path.join(BASE_DIR, 'config-example.yml')
 
 _cache_lock = threading.Lock()
 _cache = {'key': None, 'config': None}
+_warned = set()
+
+
+def _config_source():
+    """The file to read: config.yml, or config-example.yml when config.yml is not a usable file.
+
+    Docker creates an empty folder called config.yml when the file is missing from the
+    host at first start, so a folder is treated like a missing file.
+    """
+    if os.path.isfile(CONFIG_PATH):
+        return CONFIG_PATH
+    problem = 'is a folder, not a file' if os.path.isdir(CONFIG_PATH) else 'is missing'
+    fallback = EXAMPLE_CONFIG_PATH if os.path.isfile(EXAMPLE_CONFIG_PATH) else None
+    if (CONFIG_PATH, problem) not in _warned:
+        _warned.add((CONFIG_PATH, problem))
+        log.warning(
+            'config.yml %s (%s). HomeHub is running on the defaults from config-example.yml. '
+            'Copy config-example.yml to config.yml, edit it, and restart.', problem, CONFIG_PATH)
+    return fallback
 
 
 def load_config():
     """Return the parsed config.yml, re-reading it only when the file changes."""
-    try:
-        st = os.stat(CONFIG_PATH)
-    except FileNotFoundError:
-        raise FileNotFoundError(f'config.yml not found at {CONFIG_PATH}.')
-    key = (st.st_mtime_ns, st.st_size)
+    source = _config_source()
+    if source:
+        st = os.stat(source)
+        key = (source, st.st_mtime_ns, st.st_size)
+    else:
+        key = (None,)
     with _cache_lock:
         if _cache['key'] != key:
             _cache['config'] = _parse_config()
@@ -95,12 +119,15 @@ def _apply_theme_defaults(theme):
 
 
 def _parse_config():
-    with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
-        config = yaml.safe_load(f) or {}
-    # Hash password if present
-    if 'password' in config and config['password']:
-        config['password_hash'] = hashlib.sha256(config['password'].encode()).hexdigest()
-        del config['password']
+    source = _config_source()
+    config = {}
+    if source:
+        with open(source, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f) or {}
+    # config.yml holds the site password as written; in memory only a salted hash is kept
+    password = config.pop('password', None)
+    if password:
+        config['password_hash'] = generate_password_hash(str(password), method='pbkdf2:sha256')
     # Ensure feature_toggles exists
     config.setdefault('feature_toggles', {})
     # Ensure Who is Home widget is enabled by default unless explicitly disabled in config.yml

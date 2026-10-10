@@ -1,5 +1,7 @@
 # Database files
 data/app.db
+data/app.db-wal
+data/app.db-shm
 data/secret_key
 database.db
 

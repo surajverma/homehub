@@ -1,7 +1,9 @@
-from flask import render_template, request, redirect, url_for, current_app, jsonify
-from datetime import datetime, timedelta
+from flask import render_template, request, redirect, url_for, current_app, jsonify, flash
+from flask_babel import gettext as _
+from datetime import timedelta
 from ..models import db, ShoppingItem, GroceryHistory
 from ..blueprints import main_bp
+from ..clock import utcnow
 from ..admin import can_modify
 from ..security import sanitize_text
 import json
@@ -29,6 +31,7 @@ def shopping():
         db.session.add(shopping_item)
         db.session.add(GroceryHistory(item=item, creator=creator))
         db.session.commit()
+        flash(_('Item added.'), 'success')
         return redirect(url_for('main.shopping'))
     # Filtering by tags (if provided)
     filter_tags = request.args.get('tags')
@@ -47,7 +50,7 @@ def shopping():
                 items = [i for i in items if match(i.tags)]
         except Exception:
             pass
-    cutoff = datetime.utcnow() - timedelta(days=90)
+    cutoff = utcnow() - timedelta(days=90)
     existing = {i.item.lower() for i in items}
     rows = db.session.execute(db.text("""
         SELECT item, COUNT(*) as cnt
@@ -77,6 +80,9 @@ def delete_shopping(item_id):
     if can_modify(user, item.creator):
         db.session.delete(item)
         db.session.commit()
+        flash(_('Item deleted.'), 'success')
+    else:
+        flash(_('Not allowed to delete item.'), 'error')
     return redirect(url_for('main.shopping'))
 
 

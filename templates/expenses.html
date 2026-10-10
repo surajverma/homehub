@@ -194,6 +194,7 @@
         <div id="expense-split">{{ split_box(split_people) }}</div>
         {% endif %}
       </div>
+      <p id="expense-form-error" class="text-sm text-red-600 mt-3 hidden" role="alert"></p>
       <div class="mt-5 flex justify-end gap-2">
         <button type="button" id="cancel-expense" class="btn">{{ _('Cancel') }}</button>
         <button type="submit" class="btn btn-primary">{{ _('Save Expense') }}</button>

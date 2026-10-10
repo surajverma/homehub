@@ -6,6 +6,7 @@ step is additive and safe to run on every start. A step that fails is logged
 and skipped so the rest still run.
 """
 import logging
+import os
 import sqlite3
 from datetime import datetime, timedelta, timezone
 
@@ -33,6 +34,7 @@ COLUMNS = [
     ('reminder', 'all_day', 'INTEGER DEFAULT 0', None),
     ('reminder', 'completed_at', 'TIMESTAMP', None),
     ('reminder', 'deleted_at', 'TIMESTAMP', None),
+    ('file', 'stored_name', 'TEXT', None),
 ]
 
 TABLES = [
@@ -113,6 +115,38 @@ def purge_reminder_trash(cur, now: datetime | None = None) -> int:
     return cur.rowcount
 
 
+def fail_interrupted_downloads(cur) -> int:
+    """Downloads run in a thread of the app, so one still pending at startup was cut off by a restart."""
+    cur.execute("UPDATE media SET status='error', progress=NULL WHERE status='pending'")
+    return cur.rowcount
+
+
+def remove_leftover_pdf_originals(cur, pdf_dir: str) -> list:
+    """Delete the uncompressed PDFs that older versions kept next to each compressed one.
+
+    A file goes only when a row names it as its upload, that row's compressed file is on
+    disk, and no row serves that name as its compressed file. Nothing matches on a later
+    start, so this is safe to run every time.
+    """
+    cur.execute("SELECT filename, compressed_path FROM pdf")
+    rows = cur.fetchall()
+    served = {compressed for _filename, compressed in rows if compressed}
+    removed = []
+    for filename, compressed in rows:
+        name = os.path.basename(filename or '')
+        if not name or name != filename or name in served or name in removed:
+            continue
+        if not compressed or not os.path.isfile(os.path.join(pdf_dir, compressed)):
+            continue
+        path = os.path.join(pdf_dir, name)
+        if os.path.isfile(path):
+            os.remove(path)
+            removed.append(name)
+    if removed:
+        log.warning('Removed %d uncompressed PDF original(s) left by an older version: %s', len(removed), ', '.join(removed))
+    return removed
+
+
 def _step(conn, description: str, fn, *args) -> bool:
     try:
         fn(*args)
@@ -124,7 +158,7 @@ def _step(conn, description: str, fn, *args) -> bool:
         return False
 
 
-def run(db_path: str) -> bool:
+def run(db_path: str, pdf_dir: str | None = None) -> bool:
     """Bring the SQLite database at ``db_path`` up to date. Returns True if every step succeeded."""
     try:
         conn = sqlite3.connect(db_path)
@@ -137,6 +171,7 @@ def run(db_path: str) -> bool:
         for table, column, type_spec, default in COLUMNS:
             ok &= _step(conn, f'add {table}.{column}', ensure_column, cur, table, column, type_spec, default)
         ok &= _step(conn, 'purge old reminder trash', purge_reminder_trash, cur)
+        ok &= _step(conn, 'mark interrupted downloads as failed', fail_interrupted_downloads, cur)
         ok &= _step(conn, 'backfill reminder start_date', cur.execute,
                     "UPDATE reminder SET start_date=date WHERE start_date IS NULL AND date IS NOT NULL")
         ok &= _step(conn, 'backfill reminder start_time', cur.execute,
@@ -153,6 +188,8 @@ def run(db_path: str) -> bool:
         # Anything else is scheduled monthly by the app's legacy fallback, so store that
         ok &= _step(conn, 'default recurring_reminder unit', cur.execute,
                     "UPDATE recurring_reminder SET unit='month' WHERE unit IS NULL OR unit=''")
+        if pdf_dir and os.path.isdir(pdf_dir):
+            ok &= _step(conn, 'remove leftover PDF originals', remove_leftover_pdf_originals, cur, pdf_dir)
     finally:
         conn.close()
     if not ok:
