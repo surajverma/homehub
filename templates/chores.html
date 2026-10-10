@@ -72,8 +72,9 @@
                     </div>
                     <div class="md:col-span-3">
                         <label for="chores-rec-end-date" class="block text-sm font-medium text-gray-600 mb-1">{{ _('Till') }}</label>
-                        <input id="chores-rec-end-date" type="date" name="rec_end_date" value="{{ form_rec_end_date.strftime('%Y-%m-%d') if form_rec_end_date is defined and form_rec_end_date else '' }}" class="w-full h-10">
+                        <input id="chores-rec-end-date" type="date" name="rec_end_date" value="{{ form_rec_end_date.strftime('%Y-%m-%d') if form_rec_end_date is defined and form_rec_end_date else '' }}" class="w-full h-10" aria-describedby="chores-rec-end-error">
                     </div>
+                    <p id="chores-rec-end-error" class="md:col-span-12 text-sm text-red-600 hidden" role="alert"></p>
                 </div>
             </div>
         </div>
@@ -91,7 +92,8 @@
         {% set tags = (chore.tags or '[]') %}
         <li class="list-row items-start" data-id="{{ chore.id }}" data-tags="{{ tags }}" data-done="{{ '1' if chore.done else '0' }}">
             <form method="POST" action="/chores/toggle/{{ chore.id }}" class="pt-0.5">
-                <button type="submit" class="check-btn {{ 'is-checked' if chore.done else '' }}" aria-pressed="{{ 'true' if chore.done else 'false' }}" title="{{ _('Completed · Undo') if chore.done else _('Mark Completed') }}" aria-label="{{ _('Undo completed: %(item)s', item=chore.description) if chore.done else _('Mark completed: %(item)s', item=chore.description) }}"><i class="fa-solid fa-check" aria-hidden="true"></i></button>
+                {% set ticked = chore.done or chore.id in ticked_ids %}
+                <button type="submit" class="check-btn {{ 'is-checked' if ticked else '' }}" aria-pressed="{{ 'true' if ticked else 'false' }}" title="{{ _('Completed · Undo') if ticked else _('Mark Completed') }}" aria-label="{{ _('Undo completed: %(item)s', item=chore.description) if ticked else _('Mark completed: %(item)s', item=chore.description) }}"><i class="fa-solid fa-check" aria-hidden="true"></i></button>
             </form>
             <div class="flex-1 min-w-0">
                 <div class="flex flex-wrap gap-2 items-center">
@@ -102,7 +104,11 @@
                     {{ _('By %(name)s at %(time)s', name=chore.creator, time=chore.timestamp|localtime) }}
                     {% if chore.recurring_id %}
                         · <span class="font-medium"><i class="fa-solid fa-repeat" aria-hidden="true"></i> {{ _('Recurring chore') }}</span>
-                        {% if chore.due_date %}
+                        {% if chore.done %}
+                            · <span class="font-semibold">{{ _('Completed. That was its last date.') }}</span>
+                        {% elif chore.id in ticked_ids %}
+                            · <span class="font-semibold text-green-600">{{ _('Done. Next due on %(date)s', date=chore.due_date.strftime('%Y-%m-%d')) }}</span>
+                        {% elif chore.due_date %}
                             {% set is_overdue = today_date and chore.due_date < today_date %}
                             {% set is_today = today_date and chore.due_date == today_date %}
                             · <span class="font-semibold {% if is_overdue %}text-red-600{% elif is_today %}text-amber-600{% else %}text-green-600{% endif %}">{{ _('Next due on %(date)s', date=chore.due_date.strftime('%Y-%m-%d')) }}</span>

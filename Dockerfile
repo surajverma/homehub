@@ -28,6 +28,8 @@ WORKDIR /app
 # Build argument for app version (injected by CI) and environment variable for runtime
 ARG APP_VERSION=dev
 ENV SW_CACHE_VERSION=$APP_VERSION
+# Log lines reach `docker logs` as they are written
+ENV PYTHONUNBUFFERED=1
 
 # Runtime-only packages
 RUN apk add --no-cache \
@@ -51,6 +53,10 @@ RUN pybabel compile -d translations
 COPY --from=builder /app/static/output.css /app/static/output.css
 
 EXPOSE 5000
+
+# /healthz answers without a login and checks the database
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD wget -q -O /dev/null http://127.0.0.1:5000/healthz || exit 1
 
 # One process (SQLite, in-process download threads) with threads so a slow upload or PDF job does not block everyone
 CMD ["gunicorn", "wsgi:app", "-w", "1", "-k", "gthread", "--threads", "4", "-b", "0.0.0.0:5000", "--access-logfile", "-", "--error-logfile", "-"]

@@ -16,6 +16,7 @@ OLD_SCHEMA = [
     "CREATE TABLE reminder (id INTEGER PRIMARY KEY, date DATE, title TEXT, description TEXT, creator TEXT, timestamp TIMESTAMP)",
     "CREATE TABLE recipe (id INTEGER PRIMARY KEY, title TEXT)",
     "CREATE TABLE qr_code (id INTEGER PRIMARY KEY, filename TEXT)",
+    "CREATE TABLE file (id INTEGER PRIMARY KEY, filename TEXT, creator TEXT, upload_time TIMESTAMP)",
     "CREATE TABLE recurring_reminder (id INTEGER PRIMARY KEY, title TEXT NOT NULL, frequency TEXT)",
     "CREATE TABLE recurring_expense (id INTEGER PRIMARY KEY, title TEXT, frequency TEXT)",
 ]
@@ -49,6 +50,7 @@ def test_old_database_is_upgraded_in_place(tmp_path):
     assert {'start_date', 'start_time', 'deleted_at', 'recurring_id', 'all_day'} <= columns(conn, 'reminder')
     assert 'tags' in columns(conn, 'recipe')
     assert 'original_input' in columns(conn, 'qr_code')
+    assert 'stored_name' in columns(conn, 'file')
     for table in ('member_status', 'grocery_history', 'expense_entry', 'app_setting', 'recurring_chore'):
         assert columns(conn, table), table
     # Backfills

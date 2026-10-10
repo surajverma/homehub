@@ -1,8 +1,10 @@
 import base64
 import os
+import re
 from io import BytesIO
 
-from flask import render_template, request, redirect, url_for, current_app
+from flask import render_template, request, redirect, url_for, current_app, send_file, flash
+from flask_babel import gettext as _
 import qrcode
 
 from ..models import db, QRCode
@@ -61,18 +63,25 @@ def qr_view():
         img.save(buf, format='PNG')
         b64 = base64.b64encode(buf.getvalue()).decode('ascii')
         qr_img = b64
-        # Persist a file for history download
-        os.makedirs(STATIC_DIR, exist_ok=True)
-        filename = f"qr_{len(text)}_{abs(hash(payload)) % (10**8)}.png"
-        out_path = os.path.join(STATIC_DIR, filename)
-        img.save(out_path)
-        # Save DB row
-        rec = QRCode(text=payload, original_input=text, filename=filename, creator=creator)
+        # Only the text is kept; the history draws the image again when it is asked for
+        rec = QRCode(text=payload, original_input=text, filename='', creator=creator)
         db.session.add(rec)
         db.session.commit()
+        flash(_('QR code created.'), 'success')
     history = QRCode.query.order_by(QRCode.timestamp.desc()).limit(50).all()
     config = current_app.config['HOMEHUB_CONFIG']
     return render_template('qr.html', qr_img=qr_img, history=history, config=config)
+
+
+@main_bp.route('/qr/image/<int:qr_id>.png')
+def qr_image(qr_id: int):
+    """A history entry's QR code, drawn from its stored text."""
+    rec = db.get_or_404(QRCode, qr_id)
+    buf = BytesIO()
+    qrcode.make(rec.text).save(buf, format='PNG')
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png', download_name=f'qr-{rec.id}.png',
+                     as_attachment=bool(request.args.get('download')))
 
 
 @main_bp.route('/qr/delete/<int:qr_id>', methods=['POST'])
@@ -80,12 +89,17 @@ def qr_delete(qr_id: int):
     rec = db.get_or_404(QRCode, qr_id)
     user = sanitize_text(request.form.get('user', ''))
     if can_modify(user, rec.creator):
+        # Codes made by older versions left a PNG in static/
         try:
-            path = os.path.join(STATIC_DIR, rec.filename)
-            if os.path.exists(path):
-                os.remove(path)
+            if re.fullmatch(r'qr_\w+\.png', rec.filename or ''):
+                path = os.path.join(STATIC_DIR, rec.filename)
+                if os.path.exists(path):
+                    os.remove(path)
         except Exception:
             pass
         db.session.delete(rec)
         db.session.commit()
+        flash(_('QR code deleted.'), 'success')
+    else:
+        flash(_('Not allowed to delete QR code.'), 'error')
     return redirect(url_for('main.qr_view'))

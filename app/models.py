@@ -1,6 +1,6 @@
 import json
 from . import db
-from datetime import datetime
+from .clock import utcnow
 
 SPLIT_MODES = ('equal', 'shares', 'percent', 'amount')
 
@@ -37,20 +37,26 @@ class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     creator = db.Column(db.String(64), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(256), nullable=False)
+    filename = db.Column(db.String(256), nullable=False)  # the name it was uploaded with, shown and downloaded as
+    # Name on disk when it had to differ from filename (another file already had that name)
+    stored_name = db.Column(db.String(256))
     creator = db.Column(db.String(64), nullable=False)
-    upload_time = db.Column(db.DateTime, default=datetime.utcnow)
+    upload_time = db.Column(db.DateTime, default=utcnow)
+
+    @property
+    def disk_name(self):
+        return self.stored_name or self.filename
 
 class Media(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(256))
     url = db.Column(db.String(512))
     creator = db.Column(db.String(64))
-    download_time = db.Column(db.DateTime, default=datetime.utcnow)
+    download_time = db.Column(db.DateTime, default=utcnow)
     filepath = db.Column(db.String(512))
     status = db.Column(db.String(32), default='done')  # pending, done, error
     progress = db.Column(db.Text)  # latest progress line or JSON
@@ -59,7 +65,7 @@ class PDF(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(256))
     creator = db.Column(db.String(64))
-    upload_time = db.Column(db.DateTime, default=datetime.utcnow)
+    upload_time = db.Column(db.DateTime, default=utcnow)
     compressed_path = db.Column(db.String(512))
 
 class ShoppingItem(db.Model):
@@ -67,7 +73,7 @@ class ShoppingItem(db.Model):
     item = db.Column(db.String(256), nullable=False)
     checked = db.Column(db.Boolean, default=False)
     creator = db.Column(db.String(64))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
     # JSON-encoded list of tags (e.g., ["Costco", "Dairy"]) for filtering/grouping
     tags = db.Column(db.Text, default='[]')
 
@@ -75,7 +81,7 @@ class GroceryHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item = db.Column(db.String(256), nullable=False)
     creator = db.Column(db.String(64))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
 class HomeStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -86,7 +92,7 @@ class Chore(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text, nullable=False)
     creator = db.Column(db.String(64))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
     done = db.Column(db.Boolean, default=False)
     due_date = db.Column(db.Date)
     recurring_id = db.Column(db.Integer)
@@ -104,7 +110,7 @@ class RecurringChore(db.Model):
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     last_generated_date = db.Column(db.Date)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -113,7 +119,7 @@ class Recipe(db.Model):
     ingredients = db.Column(db.Text)
     instructions = db.Column(db.Text)
     creator = db.Column(db.String(64))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
     # JSON-encoded list of tags (e.g., ["Dessert", "Quick", "Vegetarian"]) for filtering/grouping
     tags = db.Column(db.Text, default='[]')
 
@@ -122,28 +128,28 @@ class ExpiryItem(db.Model):
     name = db.Column(db.String(256), nullable=False)
     expiry_date = db.Column(db.Date)
     creator = db.Column(db.String(64))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
 class ShortURL(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     original_url = db.Column(db.String(512), nullable=False)
     short_code = db.Column(db.String(16), unique=True, nullable=False)
     creator = db.Column(db.String(64))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
 class QRCode(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)
-    filename = db.Column(db.String(256), nullable=False)
+    filename = db.Column(db.String(256), nullable=False)  # unused: the image is drawn from text when asked for
     original_input = db.Column(db.Text)  # what user typed (for history display)
     creator = db.Column(db.String(64))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
 class Notice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, default='')
     updated_by = db.Column(db.String(64))
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow)
 
 class Reminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -157,11 +163,11 @@ class Reminder(db.Model):
     title = db.Column(db.String(256), nullable=False)
     description = db.Column(db.Text)
     creator = db.Column(db.String(64))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
     # New fields (phase 1) - added via auto-migration if missing
     category = db.Column(db.String(64))  # key referencing configured category
     color = db.Column(db.String(16))     # optional override hex color
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     # Tie back to a recurring rule (if generated)
     recurring_id = db.Column(db.Integer)
     completed_at = db.Column(db.DateTime)
@@ -171,7 +177,7 @@ class MemberStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
     text = db.Column(db.Text, default='')
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow)
 
 class RecurringExpense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -188,7 +194,7 @@ class RecurringExpense(db.Model):
     creator = db.Column(db.String(64))
     # JSON-encoded split, see parse_split (copied onto generated entries)
     split_with = db.Column(db.Text)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
     @property
     def split_members(self):
@@ -220,7 +226,7 @@ class RecurringReminder(db.Model):
     end_date = db.Column(db.Date)
     last_generated_date = db.Column(db.Date)
     effective_from = db.Column(db.Date)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
 class ExpenseEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -238,4 +244,13 @@ class ExpenseEntry(db.Model):
     split_with = db.Column(db.Text)
     # Settlement: payer paid split_with[0] back; excluded from spending totals
     is_settlement = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
+
+
+class UndoStash(db.Model):
+    """What a change replaced, kept for a few seconds so it can be undone (see app/undo.py)."""
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(32), unique=True, nullable=False)
+    kind = db.Column(db.String(32), nullable=False)
+    payload = db.Column(db.Text, nullable=False)  # JSON
+    expires_at = db.Column(db.DateTime, nullable=False)

@@ -259,10 +259,12 @@ def test_recurring_delete_unchecked_keeps_generated_entries(client):
 
     with client.application.app_context():
         deleted_rule = db.session.get(RecurringExpense, rid)
-        kept_entry = ExpenseEntry.query.filter_by(recurring_id=rid).first()
+        kept_entries = ExpenseEntry.query.all()
 
     assert deleted_rule is None
-    assert kept_entry is not None
+    assert kept_entries
+    # Kept as plain history, no longer tied to the deleted rule's id (which SQLite may hand to a new rule)
+    assert all(e.recurring_id is None for e in kept_entries)
 
 
 def test_split_rule_at_start_falls_back_to_apply_from(client):

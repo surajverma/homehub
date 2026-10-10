@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-10-08 15:07+0530\n"
+"POT-Creation-Date: 2026-10-10 21:29+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -108,6 +108,25 @@ msgid "Recurring chore rule deleted."
 msgstr ""
 
 #: app/blueprints/chores.py
+msgid "This recurring chore has ended."
+msgstr ""
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s is open again. Due on %(date)s."
+msgstr ""
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s done. That was its last date."
+msgstr ""
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s done. Next due on %(date)s."
+msgstr ""
+
+#: app/blueprints/chores.py
 msgid "Chore deleted."
 msgstr ""
 
@@ -129,6 +148,14 @@ msgstr ""
 
 #: app/blueprints/dashboard.py
 msgid "Not allowed"
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "This recurring reminder has already ended, and its past dates are kept as they were. Set a later end date to continue it."
+msgstr ""
+
+#: app/blueprints/dashboard.py
+msgid "With these settings there are no dates left from today. Choose a later end date."
 msgstr ""
 
 #: app/blueprints/dashboard.py
@@ -222,6 +249,19 @@ msgstr ""
 msgid "Status removed."
 msgstr ""
 
+#: app/blueprints/expenses.py static/js/pages/expenses_recurring.js
+msgid "Unit price must be greater than zero."
+msgstr ""
+
+#: app/blueprints/expenses.py static/js/pages/expenses.js
+#: static/js/pages/expenses_recurring.js
+msgid "Quantity must be greater than zero."
+msgstr ""
+
+#: app/blueprints/expenses.py static/js/pages/expenses.js
+msgid "Amount must be greater than zero."
+msgstr ""
+
 #: app/blueprints/expenses.py
 #, python-format
 msgid "Invalid split value for %(name)s."
@@ -253,6 +293,48 @@ msgid "Expense added."
 msgstr ""
 
 #: app/blueprints/expenses.py
+msgid "No existing entries will change."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "These changes apply from %(date)s. Entries before that date stay as they are."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "This will change %(num)s entry from %(date)s."
+msgid_plural "This will change %(num)s entries from %(date)s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s entry will be removed."
+msgid_plural "%(num)s entries will be removed."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s entry will be added."
+msgid_plural "%(num)s entries will be added."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s of them was edited by hand; that edit will be lost."
+msgid_plural "%(num)s of them were edited by hand; those edits will be lost."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "The current rule will end on %(end)s and a new rule will start on %(start)s."
+msgstr ""
+
+#: app/blueprints/expenses.py
 msgid "Not allowed to edit rule."
 msgstr ""
 
@@ -265,11 +347,6 @@ msgstr[1] ""
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid "Split at %(split_start)s would create an empty old rule window. Applied changes from %(effective_from)s on the same rule instead."
-msgstr ""
-
-#: app/blueprints/expenses.py
-#, python-format
 msgid "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entry."
 msgid_plural "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entries."
 msgstr[0] ""
@@ -277,8 +354,38 @@ msgstr[1] ""
 
 #: app/blueprints/expenses.py
 #, python-format
+msgid "Split at %(split_start)s would create an empty old rule window. Applied changes from %(effective_from)s on the same rule instead."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
 msgid "Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt %(rebuilt)s from that date."
 msgid_plural "Rule updated from %(effective_from)s. Kept %(num)s historical entries, rebuilt %(rebuilt)s from that date."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+msgid "It has no generated entries."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "This also deletes its %(num)s generated entry (%(first)s to %(last)s)."
+msgid_plural "This also deletes its %(num)s generated entries (%(first)s to %(last)s)."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s of them was edited by hand."
+msgid_plural "%(num)s of them were edited by hand."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its %(num)s generated entry stays as history."
+msgid_plural "Its %(num)s generated entries stay as history."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -382,6 +489,18 @@ msgstr[1] ""
 msgid "Invalid month parameter. Must be an integer between 1 and 12."
 msgstr ""
 
+#: app/blueprints/expiry.py app/blueprints/shopping.py
+msgid "Item added."
+msgstr ""
+
+#: app/blueprints/expiry.py app/blueprints/shopping.py
+msgid "Item deleted."
+msgstr ""
+
+#: app/blueprints/expiry.py app/blueprints/shopping.py
+msgid "Not allowed to delete item."
+msgstr ""
+
 #: app/blueprints/media_pdfs.py
 msgid "Invalid or disallowed URL. Only external http(s) URLs are allowed."
 msgstr ""
@@ -391,11 +510,63 @@ msgid "Download queued. You can switch tabs; refresh to check status."
 msgstr ""
 
 #: app/blueprints/media_pdfs.py
+msgid "Download deleted."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
+msgid "Not allowed to delete download."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
 msgid "Only PDF files are allowed."
 msgstr ""
 
 #: app/blueprints/media_pdfs.py
 msgid "Invalid filename."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
+msgid "PDF compressed."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
+msgid "PDF deleted."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
+msgid "Not allowed to delete PDF."
+msgstr ""
+
+#: app/blueprints/notes.py
+msgid "Note updated."
+msgstr ""
+
+#: app/blueprints/notes.py
+msgid "Not allowed to edit note."
+msgstr ""
+
+#: app/blueprints/notes.py
+msgid "Note added."
+msgstr ""
+
+#: app/blueprints/notes.py
+msgid "Note deleted."
+msgstr ""
+
+#: app/blueprints/notes.py
+msgid "Not allowed to delete note."
+msgstr ""
+
+#: app/blueprints/qr.py
+msgid "QR code created."
+msgstr ""
+
+#: app/blueprints/qr.py
+msgid "QR code deleted."
+msgstr ""
+
+#: app/blueprints/qr.py
+msgid "Not allowed to delete QR code."
 msgstr ""
 
 #: app/blueprints/recipes.py
@@ -427,19 +598,62 @@ msgid "Please enter a valid http(s) URL."
 msgstr ""
 
 #: app/blueprints/shortener.py
+msgid "Short link created."
+msgstr ""
+
+#: app/blueprints/shortener.py
 msgid "Invalid target URL."
 msgstr ""
 
-#: static/js/base/app.js
-msgid "Dismiss"
+#: app/blueprints/shortener.py
+msgid "Short link deleted."
+msgstr ""
+
+#: app/blueprints/shortener.py
+msgid "Not allowed to delete short link."
+msgstr ""
+
+#: app/blueprints/uploads.py
+#, python-format
+msgid "%(num)s file uploaded."
+msgid_plural "%(num)s files uploaded."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/blueprints/uploads.py
+msgid "No file selected."
+msgstr ""
+
+#: app/blueprints/uploads.py
+msgid "File deleted."
+msgstr ""
+
+#: app/blueprints/uploads.py
+msgid "Not allowed to delete file."
+msgstr ""
+
+#: app/undo.py
+msgid "It is too late to undo that."
+msgstr ""
+
+#: app/undo.py static/js/base/app.js
+msgid "Could not undo that change."
+msgstr ""
+
+#: app/undo.py
+msgid "Change undone."
+msgstr ""
+
+#: static/js/base/app.js static/js/pages/home/reminders.js
+msgid "Undo"
+msgstr ""
+
+#: static/js/base/app.js static/js/pages/shopping.js
+msgid "Could not reach the server."
 msgstr ""
 
 #: static/js/base/app.js
 msgid "Could not unlock admin."
-msgstr ""
-
-#: static/js/base/app.js
-msgid "Could not reach the server."
 msgstr ""
 
 #: static/js/base/app.js templates/base.html
@@ -453,6 +667,26 @@ msgstr ""
 #: static/js/base/app.js
 #, python-brace-format
 msgid "Welcome, {name}! — {date}"
+msgstr ""
+
+#: static/js/base/ui.js static/js/pages/shopping.js templates/base.html
+#: templates/chores.html templates/expenses.html
+#: templates/expenses_recurring.html templates/index.html templates/notes.html
+#: templates/recipes.html
+msgid "Cancel"
+msgstr ""
+
+#: static/js/base/ui.js
+msgid "OK"
+msgstr ""
+
+#: static/js/base/ui.js static/js/pages/shopping.js templates/chores.html
+#: templates/expenses_recurring.html templates/index.html templates/notes.html
+msgid "Save"
+msgstr ""
+
+#: static/js/base/ui.js
+msgid "Dismiss"
 msgstr ""
 
 #: static/js/expense_split.js
@@ -507,6 +741,19 @@ msgstr ""
 
 #: static/js/pages/chores.js
 msgid "Recurring chore ends in the past. Choose a future end date."
+msgstr ""
+
+#: static/js/pages/chores.js
+msgid "Save changes to this recurring chore?"
+msgstr ""
+
+#: static/js/pages/chores.js
+msgid "Its schedule and next due date are updated to match."
+msgstr ""
+
+#: static/js/pages/chores.js static/js/pages/expenses_recurring.js
+#: static/js/pages/home/reminders.js
+msgid "Save changes"
 msgstr ""
 
 #: static/js/pages/chores_suggestions.js
@@ -656,8 +903,20 @@ msgid "No spending this month."
 msgstr ""
 
 #: static/js/pages/expenses.js
+msgid "Record payment"
+msgstr ""
+
+#: static/js/pages/expenses.js
 #, python-brace-format
-msgid "Record a payment from {from} to {to}. Amount:"
+msgid "Record a payment from {from} to {to}."
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Amount"
+msgstr ""
+
+#: static/js/pages/expenses.js
+msgid "Enter an amount greater than zero."
 msgstr ""
 
 #: static/js/pages/expenses.js
@@ -672,11 +931,31 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: static/js/pages/expenses_recurring.js
-msgid "Rewrite entire history can delete or overwrite older generated entries. Continue?"
+msgid "Rewrite the whole history of this rule?"
 msgstr ""
 
 #: static/js/pages/expenses_recurring.js
-msgid "This will close the current rule and create a new one from Effective From date. Continue?"
+msgid "Split this rule?"
+msgstr ""
+
+#: static/js/pages/expenses_recurring.js
+msgid "Change entries that already exist?"
+msgstr ""
+
+#: static/js/pages/expenses_recurring.js
+msgid "Save changes to this rule?"
+msgstr ""
+
+#: static/js/pages/expenses_recurring.js
+msgid "This can change entries that already exist."
+msgstr ""
+
+#: static/js/pages/expenses_recurring.js
+msgid "Delete this recurring rule?"
+msgstr ""
+
+#: static/js/pages/expenses_recurring.js templates/expenses_recurring.html
+msgid "Delete Rule"
 msgstr ""
 
 #: static/js/pages/home/presence.js templates/index.html
@@ -809,11 +1088,31 @@ msgid "Recurring schedule overlaps selected date range"
 msgstr ""
 
 #: static/js/pages/home/reminders.js
+msgid "Turn this into a single reminder?"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "The recurring reminder is removed with all its dates, past ones included. Only the single reminder stays."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
 msgid "Failed to delete rule after creating single"
 msgstr ""
 
 #: static/js/pages/home/reminders.js
 msgid "Failed to create single reminder"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Save changes to this recurring reminder?"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "The changes apply from today. Earlier dates stay as they are."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "The changes apply to all its dates."
 msgstr ""
 
 #: static/js/pages/home/reminders.js
@@ -826,6 +1125,10 @@ msgstr ""
 
 #: static/js/pages/home/reminders.js
 msgid "Saved"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring reminder updated from today. Earlier dates are unchanged."
 msgstr ""
 
 #: static/js/pages/home/reminders.js
@@ -948,11 +1251,19 @@ msgid "Mark as active"
 msgstr ""
 
 #: static/js/pages/home/reminders.js
-msgid "Undo"
+msgid "This recurring reminder has already ended. Deleting it also removes its past dates from the calendar."
 msgstr ""
 
 #: static/js/pages/home/reminders.js
-msgid "Delete this recurring reminder and all its future dates?"
+msgid "Dates from today onwards are removed. Earlier dates stay on the calendar."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Delete this recurring reminder?"
+msgstr ""
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring reminder ended. Earlier dates were kept."
 msgstr ""
 
 #: static/js/pages/home/reminders.js
@@ -1083,15 +1394,12 @@ msgstr ""
 msgid "Add tag and press Enter"
 msgstr ""
 
-#: static/js/pages/shopping.js templates/base.html templates/chores.html
-#: templates/expenses.html templates/expenses_recurring.html
-#: templates/index.html templates/notes.html templates/recipes.html
-msgid "Cancel"
+#: static/js/pages/shopping.js
+msgid "Item updated."
 msgstr ""
 
-#: static/js/pages/shopping.js templates/chores.html
-#: templates/expenses_recurring.html templates/index.html templates/notes.html
-msgid "Save"
+#: static/js/pages/shopping.js
+msgid "Could not save the item."
 msgstr ""
 
 #: static/js/pages/shopping.js
@@ -1111,11 +1419,11 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-#: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: static/js/tags.js templates/chores.html templates/expiry.html
-#: templates/media.html templates/notes.html templates/pdfs.html
-#: templates/qr.html templates/recipes.html templates/shopping.html
-#: templates/shorten.html templates/upload.html
+#: static/js/base/app.js static/js/pages/expenses.js
+#: static/js/pages/home/reminders.js static/js/tags.js templates/chores.html
+#: templates/expiry.html templates/media.html templates/notes.html
+#: templates/pdfs.html templates/qr.html templates/recipes.html
+#: templates/shopping.html templates/shorten.html templates/upload.html
 msgid "Delete"
 msgstr ""
 
@@ -1573,6 +1881,15 @@ msgid "By %(name)s at %(time)s"
 msgstr ""
 
 #: templates/chores.html
+msgid "Completed. That was its last date."
+msgstr ""
+
+#: templates/chores.html
+#, python-format
+msgid "Done. Next due on %(date)s"
+msgstr ""
+
+#: templates/chores.html
 #, python-format
 msgid "Next due on %(date)s"
 msgstr ""
@@ -1866,19 +2183,11 @@ msgid "Used by apply/split strategies."
 msgstr ""
 
 #: templates/expenses_recurring.html
-msgid "Delete this recurring rule?"
-msgstr ""
-
-#: templates/expenses_recurring.html
 msgid "Delete generated entries (unchecked = keep history)"
 msgstr ""
 
 #: templates/expenses_recurring.html
 msgid "This permanently removes linked generated entries."
-msgstr ""
-
-#: templates/expenses_recurring.html
-msgid "Delete Rule"
 msgstr ""
 
 #: templates/expenses_recurring.html
@@ -2177,6 +2486,11 @@ msgstr ""
 
 #: templates/login.html
 msgid "Enter password"
+msgstr ""
+
+#: templates/login.html
+#, python-format
+msgid "Too many attempts. Try again in %(seconds)s s."
 msgstr ""
 
 #: templates/media.html

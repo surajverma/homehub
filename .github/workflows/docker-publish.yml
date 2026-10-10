@@ -7,7 +7,13 @@ on:
   workflow_dispatch:
 
 jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+    permissions:
+      contents: read
+
   build-and-push:
+    needs: tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -15,18 +21,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # Install Node.js and build Tailwind CSS
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-
-      - name: Install npm dependencies
-        run: npm install
-
-      - name: Build Tailwind CSS
-        run: npm run build:css
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -41,15 +35,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version
-        id: vars
-        run: |
-          if [[ "${GITHUB_REF_NAME}" == v* ]]; then
-            echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
-          else
-            echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
-          fi
+      # v1.2.3 publishes 1.2.3, 1.2, v1.2.3 and latest; a pre-release such as v1.3.0-rc.1
+      # publishes only its own version, so latest never points at one
+      - name: Image tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/homehub
+          flavor: |
+            latest=false
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=tag
+            type=ref,event=branch
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
 
+      # The Dockerfile builds the Tailwind CSS itself
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -57,10 +59,8 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64
           build-args: |
-            APP_VERSION=${{ env.VERSION }}
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/homehub:latest
-            ghcr.io/${{ github.repository_owner }}/homehub:${{ github.ref_name }}
-            ghcr.io/${{ github.repository_owner }}/homehub:${{ env.VERSION }}
+            APP_VERSION=${{ steps.meta.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

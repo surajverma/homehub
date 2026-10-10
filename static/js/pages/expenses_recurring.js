@@ -76,6 +76,33 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   });
 
+  // A rule needs a unit price and a quantity above zero; the server checks the same
+  function amountProblem(form){
+    const price = parseFloat(form.querySelector('input[name="unit_price"]').value);
+    const quantity = parseFloat(form.querySelector('input[name="default_quantity"]').value);
+    if (!(price > 0)) return t('Unit price must be greater than zero.');
+    if (!(quantity > 0)) return t('Quantity must be greater than zero.');
+    return '';
+  }
+  function showFormError(form, message){
+    let note = form.querySelector('.form-error');
+    if (!note){
+      note = document.createElement('p');
+      note.className = 'form-error text-sm text-red-600';
+      note.setAttribute('role', 'alert');
+      note.style.gridColumn = '1 / -1';
+      form.querySelector('button[type="submit"]').parentElement.before(note);
+    }
+    note.textContent = message;
+    note.classList.toggle('hidden', !message);
+    return !!message;
+  }
+  const addRuleForm = document.getElementById('recurring-form');
+  if (addRuleForm){
+    addRuleForm.addEventListener('input', ()=> showFormError(addRuleForm, ''));
+    addRuleForm.addEventListener('submit', (evt)=>{ if (showFormError(addRuleForm, amountProblem(addRuleForm))) evt.preventDefault(); });
+  }
+
   // Set user on forms
   function applyUserVisibility(){
     document.querySelectorAll('form.delete-form input[name="user"]').forEach(i=> i.value = currentUser());
@@ -108,11 +135,9 @@ document.addEventListener('DOMContentLoaded', function(){
     const ensureEffectiveDate = () => {
       if (!effective) return;
       if (!effective.value) {
-        if (startDate && startDate.value) effective.value = startDate.value;
-        else {
-          const today = new Date();
-          effective.value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-        }
+        // Today, which syncEffectiveBounds then keeps inside the rule's start/end
+        const today = new Date();
+        effective.value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
       }
       syncEffectiveBounds();
     };
@@ -137,22 +162,63 @@ document.addEventListener('DOMContentLoaded', function(){
     syncEffectiveBounds();
     syncEffectiveVisibility();
 
-    form.addEventListener('submit', (evt) => {
+    // Every save is confirmed first, with what the server says it would do to entries that already exist
+    let confirmed = false;
+    form.addEventListener('submit', async (evt) => {
+      if (confirmed) { confirmed = false; return; }
+      evt.preventDefault();
+      if (showFormError(form, amountProblem(form))) return;
       if (!effective || !effective.disabled) ensureEffectiveDate();
-      const selected = strategy ? strategy.value : 'apply_from';
-      if (selected === 'rewrite_all') {
-        const ok = window.confirm(t('Rewrite entire history can delete or overwrite older generated entries. Continue?'));
-        if (!ok) {
-          evt.preventDefault();
-          return;
-        }
+      form.querySelector('input[name="user"]').value = currentUser();
+      let preview = null;
+      try {
+        const resp = await fetch(form.action + '/preview', { method: 'POST', body: new FormData(form) });
+        preview = await resp.json();
+      } catch (e) { preview = null; }
+      // A form the server would reject is submitted as it is, so its own error message shows
+      if (!preview || preview.ok) {
+        const selected = preview ? preview.strategy : (strategy ? strategy.value : 'apply_from');
+        const destructive = selected === 'rewrite_all';
+        const touchesPast = !preview || preview.past > 0 || preview.hand_edited > 0;
+        const title = destructive ? t('Rewrite the whole history of this rule?')
+          : (selected === 'split_rule' ? t('Split this rule?')
+            : (touchesPast ? t('Change entries that already exist?') : t('Save changes to this rule?')));
+        const ok = await confirmDialog({
+          title: title,
+          message: preview ? preview.summary : t('This can change entries that already exist.'),
+          details: preview ? preview.details : [],
+          confirmText: t('Save changes'),
+          danger: destructive || !preview || preview.removed > 0 || preview.hand_edited > 0,
+        });
+        if (!ok) return;
       }
-      if (selected === 'split_rule') {
-        const ok = window.confirm(t('This will close the current rule and create a new one from Effective From date. Continue?'));
-        if (!ok) {
-          evt.preventDefault();
-        }
-      }
+      confirmed = true;
+      form.requestSubmit();
+    });
+  });
+
+  // Deleting a rule: say how many generated entries go with it (or stay) before asking
+  document.querySelectorAll('form.recurring-delete-form').forEach(form => {
+    let confirmed = false;
+    form.addEventListener('submit', async (evt) => {
+      if (confirmed) { confirmed = false; return; }
+      evt.preventDefault();
+      form.querySelector('input[name="user"]').value = currentUser();
+      let preview = null;
+      try {
+        const resp = await fetch(form.action + '/preview', { method: 'POST', body: new FormData(form) });
+        preview = await resp.json();
+      } catch (e) { preview = null; }
+      const ok = await confirmDialog({
+        title: t('Delete this recurring rule?'),
+        message: preview && preview.ok ? preview.summary : '',
+        details: preview && preview.ok ? preview.details : [],
+        confirmText: t('Delete Rule'),
+        danger: true,
+      });
+      if (!ok) return;
+      confirmed = true;
+      form.requestSubmit();
     });
   });
 

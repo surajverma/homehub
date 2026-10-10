@@ -19,3 +19,6 @@ node_modules/
 package-lock.json
 data/
 docs/
+.github/
+.vscode/
+*.md

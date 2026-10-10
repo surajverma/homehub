@@ -1,4 +1,5 @@
-from flask import render_template, request, redirect, url_for, current_app
+from flask import render_template, request, redirect, url_for, current_app, flash
+from flask_babel import gettext as _
 from ..models import db, Note
 from ..blueprints import main_bp
 from ..admin import can_modify
@@ -16,10 +17,14 @@ def notes():
             if can_modify(creator, n.creator):
                 n.content = content
                 db.session.commit()
+                flash(_('Note updated.'), 'success')
+            else:
+                flash(_('Not allowed to edit note.'), 'error')
         else:
             note = Note(content=content, creator=creator)
             db.session.add(note)
             db.session.commit()
+            flash(_('Note added.'), 'success')
         return redirect(url_for('main.notes'))
     notes = Note.query.order_by(Note.timestamp.desc()).all()
     config = current_app.config['HOMEHUB_CONFIG']
@@ -33,4 +38,7 @@ def delete_note(note_id):
     if can_modify(user, note.creator):
         db.session.delete(note)
         db.session.commit()
+        flash(_('Note deleted.'), 'success')
+    else:
+        flash(_('Not allowed to delete note.'), 'error')
     return redirect(url_for('main.notes'))

@@ -60,6 +60,7 @@
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <script>window.I18N = {{ i18n_js | tojson }};</script>
     <script src="{{ asset_url('js/base/i18n.js') }}"></script>
+    <script src="{{ asset_url('js/base/ui.js') }}"></script>
     {% block extra_head %}{% endblock %}
     <script>
         // Admin password state. When a password is set, a stored admin name only counts once this session unlocked it.
@@ -118,20 +119,27 @@
                     <button id="closeSidebar" type="button" class="sidebar-icon-btn md:hidden inline-flex w-8 h-8 items-center justify-center rounded-md" aria-label="{{ _('Close menu') }}"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 </div>
             </div>
-            <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto" id="sidebarNav">
-                <a href="/" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Welcome') }}"><i class="fa-solid fa-house w-5 text-center"></i><span class="nav-label">{{ _('Welcome') }}</span></a>
-                {% if config.feature_toggles.get('notes') %}<a href="/notes" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Shared Notes') }}"><i class="fa-solid fa-note-sticky w-5 text-center"></i><span class="nav-label">{{ _('Shared Notes') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('shared_cloud') %}<a href="/upload" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Shared Cloud') }}"><i class="fa-solid fa-cloud w-5 text-center"></i><span class="nav-label">{{ _('Shared Cloud') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('shopping_list') %}<a href="/shopping" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Shopping List') }}"><i class="fa-solid fa-cart-shopping w-5 text-center"></i><span class="nav-label">{{ _('Shopping List') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('calendar', True) %}<a href="/calendar" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Calendar') }}"><i class="fa-solid fa-calendar-days w-5 text-center"></i><span class="nav-label">{{ _('Calendar') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('chores') %}<a href="/chores" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('To-Do/Chores') }}"><i class="fa-solid fa-list-check w-5 text-center"></i><span class="nav-label">{{ _('To-Do/Chores') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('recipes') %}<a href="/recipes" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Recipe Book') }}"><i class="fa-solid fa-utensils w-5 text-center"></i><span class="nav-label">{{ _('Recipe Book') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('expiry_tracker') %}<a href="/expiry" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Expiry Tracker') }}"><i class="fa-solid fa-hourglass-half w-5 text-center"></i><span class="nav-label">{{ _('Expiry Tracker') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('url_shortener') %}<a href="/shorten" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('URL Shortener') }}"><i class="fa-solid fa-link w-5 text-center"></i><span class="nav-label">{{ _('URL Shortener') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('media_downloader') %}<a href="/media" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Media Downloader') }}"><i class="fa-solid fa-download w-5 text-center"></i><span class="nav-label">{{ _('Media Downloader') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('pdf_compressor') %}<a href="/pdfs" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('PDF Compressor') }}"><i class="fa-solid fa-file-pdf w-5 text-center"></i><span class="nav-label">{{ _('PDF Compressor') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('qr_generator') %}<a href="/qr" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('QR Generator') }}"><i class="fa-solid fa-qrcode w-5 text-center"></i><span class="nav-label">{{ _('QR Generator') }}</span></a>{% endif %}
-                {% if config.feature_toggles.get('expense_tracker', true) %}<a href="/expenses" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ _('Expense Tracker') }}"><i class="fa-solid fa-wallet w-5 text-center"></i><span class="nav-label">{{ _('Expense Tracker') }}</span></a>{% endif %}
+            {# Sidebar links; a feature that is switched off is left out #}
+            {% set ft = config.feature_toggles %}
+            {% set nav_links = [
+                ('/', 'fa-house', _('Welcome'), true),
+                ('/notes', 'fa-note-sticky', _('Shared Notes'), ft.get('notes')),
+                ('/upload', 'fa-cloud', _('Shared Cloud'), ft.get('shared_cloud')),
+                ('/shopping', 'fa-cart-shopping', _('Shopping List'), ft.get('shopping_list')),
+                ('/calendar', 'fa-calendar-days', _('Calendar'), ft.get('calendar', True)),
+                ('/chores', 'fa-list-check', _('To-Do/Chores'), ft.get('chores')),
+                ('/recipes', 'fa-utensils', _('Recipe Book'), ft.get('recipes')),
+                ('/expiry', 'fa-hourglass-half', _('Expiry Tracker'), ft.get('expiry_tracker')),
+                ('/shorten', 'fa-link', _('URL Shortener'), ft.get('url_shortener')),
+                ('/media', 'fa-download', _('Media Downloader'), ft.get('media_downloader')),
+                ('/pdfs', 'fa-file-pdf', _('PDF Compressor'), ft.get('pdf_compressor')),
+                ('/qr', 'fa-qrcode', _('QR Generator'), ft.get('qr_generator')),
+                ('/expenses', 'fa-wallet', _('Expense Tracker'), ft.get('expense_tracker', true)),
+            ] %}
+            <nav class="flex-1 p-3 overflow-y-auto" id="sidebarNav">
+                {% for href, icon, label, enabled in nav_links if enabled %}
+                <a href="{{ href }}" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ label }}"><i class="fa-solid {{ icon }} w-5 text-center"></i><span class="nav-label">{{ label }}</span></a>
+                {% endfor %}
             </nav>
             <script src="{{ asset_url('js/base/active_link.js') }}"></script>
         </aside>
@@ -159,6 +167,9 @@
                     </div>
                 </div>
                 <div id="globalFlashWrap" class="hidden">{% include "_flash.html" %}</div>
+                {% with undo_offers = get_flashed_messages(category_filter=['undo']) %}{% if undo_offers %}
+                <script id="undoOffers" type="application/json">{{ undo_offers | map('from_json') | list | tojson }}</script>
+                {% endif %}{% endwith %}
                 {% block content %}{% endblock %}
             </div>
         </main>

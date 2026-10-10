@@ -21,6 +21,7 @@ def shorten():
         short_url = ShortURL(original_url=original_url, short_code=short_code, creator=creator)
         db.session.add(short_url)
         db.session.commit()
+        flash(_('Short link created.'), 'success')
         return redirect(url_for('main.shorten'))
     urls = ShortURL.query.order_by(ShortURL.timestamp.desc()).all()
     config = current_app.config['HOMEHUB_CONFIG']
@@ -44,4 +45,7 @@ def delete_short(url_id):
     if can_modify(user, su.creator):
         db.session.delete(su)
         db.session.commit()
+        flash(_('Short link deleted.'), 'success')
+    else:
+        flash(_('Not allowed to delete short link.'), 'error')
     return redirect(url_for('main.shorten'))

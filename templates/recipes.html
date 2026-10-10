@@ -44,6 +44,7 @@
             <div id="instructionsEditor" class="mb-4"></div>
             <textarea name="instructions" id="instructionsHidden" style="display:none;"></textarea>
         </div>
+        <p id="recipeFormError" class="text-sm text-red-600 hidden" role="alert"></p>
         
         <div class="flex gap-2 mt-6">
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>{{ _('Update Recipe') if form_recipe_id is defined else _('Add Recipe') }}</button>

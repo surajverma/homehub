@@ -8,6 +8,7 @@ from ..security import sanitize_text
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..recurrence import serialized
+from ..undo import offer_undo, restore_row, restorer, row_to_dict, same_record, stamp
 import bleach
 from flask_babel import gettext as _, ngettext
 
@@ -160,6 +161,17 @@ def _split_people(config) -> list:
 def _all_finite(*values) -> bool:
     """False when any given number is NaN or infinite (None is allowed)."""
     return all(v is None or math.isfinite(v) for v in values)
+
+
+def _amount_problem(amount, quantity=None, unit_price=None, check_amount=True) -> str | None:
+    """Why these numbers cannot be saved, or None. Older rows may hold zeros; they are fixed when next saved."""
+    if unit_price is not None and unit_price <= 0:
+        return _('Unit price must be greater than zero.')
+    if quantity is not None and quantity <= 0:
+        return _('Quantity must be greater than zero.')
+    if check_amount and (amount is None or amount <= 0):
+        return _('Amount must be greater than zero.')
+    return None
 
 
 class SplitError(ValueError):
@@ -394,6 +406,10 @@ def expenses():
             if not _all_finite(unit_price, default_quantity):
                 flash(_('Invalid amount.'), 'error')
                 return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
+            problem = _amount_problem(None, default_quantity, unit_price, check_amount=False)
+            if problem:
+                flash(problem, 'error')
+                return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
             try:
                 split_with = _split_from_form(request.form, unit_price * default_quantity)
             except SplitError as exc:
@@ -422,6 +438,10 @@ def expenses():
             if not _all_finite(amount, up, q):
                 flash(_('Invalid amount.'), 'error')
                 return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
+            problem = _amount_problem(amount, q)
+            if problem:
+                flash(problem, 'error')
+                return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
             try:
                 split_with = _split_from_form(request.form, amount)
             except SplitError as exc:
@@ -444,14 +464,12 @@ def expenses():
     return render_template('expenses.html', rules=rules, config=config, split_people=_split_people(config), expenses_json=json.dumps(payload), expense_settings=payload.get('settings') or {})
 
 
-@main_bp.route('/expenses/recurring/edit/<int:rid>', methods=['POST'])
-def edit_recurring_expense(rid):
-    r = db.get_or_404(RecurringExpense, rid)
-    user = sanitize_text(request.form.get('user', ''))
-    if not can_modify(user, r.creator or ''):
-        flash(_('Not allowed to edit rule.'), 'error')
-        return redirect(url_for('main.expenses'))
+_RULE_FIELDS = ('title', 'category', 'unit_price', 'default_quantity', 'frequency', 'monthly_mode',
+                'start_date', 'end_date', 'split_with')
 
+
+def _parse_rule_edit(r: RecurringExpense, form, today: date) -> dict:
+    """Read a rule edit form into its strategy, effective date and new values. Raises SplitError/ValueError."""
     def _parse_date(value, fallback):
         if value in (None, ''):
             return fallback
@@ -460,43 +478,40 @@ def edit_recurring_expense(rid):
         except Exception:
             return fallback
 
-    today = date.today()
-    strategy = bleach.clean(request.form.get('edit_strategy', 'apply_from') or 'apply_from')
+    strategy = bleach.clean(form.get('edit_strategy', 'apply_from') or 'apply_from')
     if strategy not in {'apply_from', 'split_rule', 'rewrite_all'}:
         strategy = 'apply_from'
 
-    new_title = bleach.clean(request.form.get('title', r.title))
-    cat_raw = request.form.get('category')
+    new_title = bleach.clean(form.get('title', r.title))
+    cat_raw = form.get('category')
     new_category = r.category
     if cat_raw is not None:
         cat_val = bleach.clean(cat_raw or '')
         new_category = cat_val or None
-    up = request.form.get('unit_price')
-    dq = request.form.get('default_quantity')
+    up = form.get('unit_price')
+    dq = form.get('default_quantity')
     new_unit_price = float(up) if up not in (None, '') else r.unit_price
     new_default_quantity = float(dq) if dq not in (None, '') else r.default_quantity
-    new_frequency = bleach.clean(request.form.get('frequency', r.frequency) or r.frequency)
+    new_frequency = bleach.clean(form.get('frequency', r.frequency) or r.frequency)
     if new_frequency not in {'daily', 'weekly', 'monthly'}:
         new_frequency = r.frequency
-    new_monthly_mode = bleach.clean(request.form.get('monthly_mode', getattr(r, 'monthly_mode', 'day_of_month')) or 'day_of_month')
+    new_monthly_mode = bleach.clean(form.get('monthly_mode', getattr(r, 'monthly_mode', 'day_of_month')) or 'day_of_month')
     if new_monthly_mode not in {'day_of_month', 'calendar'}:
         new_monthly_mode = getattr(r, 'monthly_mode', 'day_of_month') or 'day_of_month'
-    new_start_date = _parse_date(request.form.get('start_date'), r.start_date)
-    new_end_date = _parse_date(request.form.get('end_date'), r.end_date)
+    new_start_date = _parse_date(form.get('start_date'), r.start_date)
+    new_end_date = _parse_date(form.get('end_date'), r.end_date)
 
     if not _all_finite(new_unit_price, new_default_quantity):
-        flash(_('Invalid amount.'), 'error')
-        return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
-    if request.form.get('split_present'):
-        try:
-            qty = new_default_quantity if new_default_quantity is not None else 1.0
-            new_split_with = _split_from_form(request.form, (new_unit_price or 0.0) * qty)
-        except SplitError as exc:
-            flash(str(exc), 'error')
-            return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
+        raise ValueError(_('Invalid amount.'))
+    problem = _amount_problem(None, new_default_quantity, new_unit_price, check_amount=False)
+    if problem:
+        raise ValueError(problem)
+    if form.get('split_present'):
+        qty = new_default_quantity if new_default_quantity is not None else 1.0
+        new_split_with = _split_from_form(form, (new_unit_price or 0.0) * qty)
     else:
         new_split_with = getattr(r, 'split_with', None)
-    effective_from = _parse_date(request.form.get('effective_from'), today)
+    effective_from = _parse_date(form.get('effective_from'), today)
     # Effective date is meaningful only for apply/split strategies and should stay
     # inside the rule's active window.
     if strategy in {'apply_from', 'split_rule'}:
@@ -507,17 +522,215 @@ def edit_recurring_expense(rid):
         if upper_bound and effective_from > upper_bound:
             effective_from = upper_bound
 
+    split_fallback = False
+    if strategy == 'split_rule' and r.start_date and effective_from <= r.start_date:
+        # Splitting at/before the current start creates an empty old window,
+        # so safely fallback to apply-from behavior on the same rule.
+        split_fallback = True
+        strategy = 'apply_from'
+        effective_from = r.start_date
+    elif strategy == 'apply_from':
+        if new_start_date and effective_from < new_start_date:
+            effective_from = new_start_date
+        if new_end_date and effective_from > new_end_date:
+            effective_from = new_end_date
+
+    return {
+        'strategy': strategy,
+        'split_fallback': split_fallback,
+        'effective_from': effective_from,
+        'values': {
+            'title': new_title,
+            'category': new_category,
+            'unit_price': new_unit_price,
+            'default_quantity': new_default_quantity,
+            'frequency': new_frequency,
+            'monthly_mode': new_monthly_mode,
+            'start_date': new_start_date,
+            'end_date': new_end_date,
+            'split_with': new_split_with,
+        },
+    }
+
+
+def _last_occurrence_before(r: RecurringExpense, d: date, today: date) -> date | None:
+    """The rule's last scheduled date before ``d``, so generation resumes on its own schedule."""
+    last = None
+    for occurrence in _rule_occurrences(r, d - timedelta(days=1), today):
+        last = occurrence
+    return last
+
+
+def _same_number(a, b) -> bool:
+    if a is None or b is None:
+        return a is None and b is None
+    return abs(float(a) - float(b)) < 1e-9
+
+
+def _entry_differs(e: ExpenseEntry, rule: RecurringExpense, with_payer: bool = True) -> bool:
+    """True when the entry is not what ``rule`` would generate for that day."""
+    expected = _entry_from_rule(rule, e.date)
+    if (e.title or '') != (expected.title or '') or (e.category or None) != (expected.category or None):
+        return True
+    if not (_same_number(e.unit_price, expected.unit_price) and _same_number(e.quantity, expected.quantity)
+            and _same_number(e.amount, expected.amount)):
+        return True
+    if parse_split(e.split_with) != parse_split(expected.split_with):
+        return True
+    return with_payer and (e.payer or '') != (expected.payer or '')
+
+
+def _is_hand_edited(e: ExpenseEntry, r: RecurringExpense) -> bool:
+    """Entries since the rule's last edit that no longer match it were changed by hand."""
+    since = r.effective_from or r.start_date
+    if since and e.date < since:
+        return False
+    return _entry_differs(e, r)
+
+
+def _preview_rule_edit(r: RecurringExpense, edit: dict, today: date) -> dict:
+    """Count what saving ``edit`` would do to the entries this rule already generated."""
+    values = edit['values']
+    strategy = edit['strategy']
+    effective_from = edit['effective_from']
+    target = RecurringExpense(creator=r.creator, **values)
+    entries = ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id).order_by(ExpenseEntry.date.asc()).all()
+    changed, removed, added = [], [], []
     if strategy == 'rewrite_all':
-        r.title = new_title
-        r.category = new_category
-        r.unit_price = new_unit_price
-        r.default_quantity = new_default_quantity
-        r.frequency = new_frequency
-        r.monthly_mode = new_monthly_mode
-        r.start_date = new_start_date
-        r.end_date = new_end_date
-        r.effective_from = new_start_date
-        r.split_with = new_split_with
+        for e in entries:
+            if (target.start_date and e.date < target.start_date) or (target.end_date and e.date > target.end_date):
+                removed.append(e)
+            elif _entry_differs(e, target, with_payer=False):
+                changed.append(e)
+    else:
+        if strategy == 'split_rule':
+            target.start_date = max(target.start_date or effective_from, effective_from)
+        scheduled = {d for d in _rule_occurrences(target, today, today) if d >= effective_from}
+        existing_dates = set()
+        for e in entries:
+            if e.date < effective_from:
+                continue
+            existing_dates.add(e.date)
+            if e.date not in scheduled:
+                removed.append(e)
+            elif _entry_differs(e, target):
+                changed.append(e)
+        added = sorted(scheduled - existing_dates)
+    touched = changed + removed
+    dates = [e.date for e in touched] + list(added)
+    return {
+        'strategy': strategy,
+        'split_fallback': edit['split_fallback'],
+        'effective_from': effective_from,
+        'changed': len(changed),
+        'removed': len(removed),
+        'added': len(added),
+        'hand_edited': sum(1 for e in touched if _is_hand_edited(e, r)),
+        'past': sum(1 for d in dates if d < today),
+        'first_date': min(dates) if dates else None,
+    }
+
+
+def _preview_messages(preview: dict) -> tuple[str, list]:
+    total = preview['changed'] + preview['removed'] + preview['added']
+    details = []
+    if not total and preview['strategy'] == 'rewrite_all':
+        summary = _('No existing entries will change.')
+    elif not total:
+        summary = _('These changes apply from %(date)s. Entries before that date stay as they are.',
+                    date=preview['effective_from'])
+    else:
+        summary = ngettext('This will change %(num)s entry from %(date)s.',
+                           'This will change %(num)s entries from %(date)s.',
+                           total, date=preview['first_date'])
+        if preview['removed']:
+            details.append(ngettext('%(num)s entry will be removed.', '%(num)s entries will be removed.', preview['removed']))
+        if preview['added']:
+            details.append(ngettext('%(num)s entry will be added.', '%(num)s entries will be added.', preview['added']))
+        if preview['hand_edited']:
+            details.append(ngettext('%(num)s of them was edited by hand; that edit will be lost.',
+                                    '%(num)s of them were edited by hand; those edits will be lost.',
+                                    preview['hand_edited']))
+    if preview['strategy'] == 'split_rule':
+        details.append(_('The current rule will end on %(end)s and a new rule will start on %(start)s.',
+                         end=preview['effective_from'] - timedelta(days=1), start=preview['effective_from']))
+    return summary, details
+
+
+def _rule_snapshot(r: RecurringExpense) -> dict:
+    """The rule and every entry it generated, for undo."""
+    entries = ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id).all()
+    return {'rule': row_to_dict(r), 'entries': [row_to_dict(e) for e in entries], 'new_rule_id': None}
+
+
+@restorer('expense_rule')
+@serialized
+def _restore_rule_snapshot(payload: dict) -> None:
+    rule_data = payload['rule']
+    rid = rule_data['id']
+    # If another rule has taken this id since the delete, its entries are not ours to remove
+    current = db.session.get(RecurringExpense, rid)
+    doomed = [rid] if current is None or same_record(current, rule_data) else []
+    successor = db.session.get(RecurringExpense, payload['new_rule_id']) if payload.get('new_rule_id') else None
+    if successor is not None and stamp(successor) == payload.get('new_rule_timestamp'):
+        doomed.append(successor.id)
+        db.session.delete(successor)
+    if doomed:
+        ExpenseEntry.query.filter(ExpenseEntry.recurring_id.in_(doomed)).delete(synchronize_session=False)
+    db.session.flush()
+    db.session.expire_all()
+    rule = restore_row(RecurringExpense, rule_data)
+    for data in payload['entries']:
+        restore_row(ExpenseEntry, data, recurring_id=rule.id)
+
+
+def _rule_edit_from_request(rid):
+    """(rule, parsed edit, error message) shared by the edit route and its preview."""
+    r = db.get_or_404(RecurringExpense, rid)
+    try:
+        return r, _parse_rule_edit(r, request.form, date.today()), None
+    except (SplitError, ValueError) as exc:
+        return r, None, str(exc)
+
+
+@main_bp.route('/expenses/recurring/edit/<int:rid>/preview', methods=['POST'])
+def preview_recurring_expense_edit(rid):
+    """Dry run of a rule edit: what it would do to entries that already exist. Changes nothing."""
+    today = date.today()
+    _generate_recurring_entries_until(today)
+    r, edit, error = _rule_edit_from_request(rid)
+    if not can_modify(sanitize_text(request.form.get('user', '')), r.creator or ''):
+        return jsonify({'ok': False, 'error': _('Not allowed to edit rule.')}), 403
+    if error:
+        return jsonify({'ok': False, 'error': error}), 400
+    preview = _preview_rule_edit(r, edit, today)
+    summary, details = _preview_messages(preview)
+    preview.update(ok=True, summary=summary, details=details)
+    for key in ('effective_from', 'first_date'):
+        preview[key] = preview[key].strftime('%Y-%m-%d') if preview[key] else None
+    return jsonify(preview)
+
+
+@main_bp.route('/expenses/recurring/edit/<int:rid>', methods=['POST'])
+def edit_recurring_expense(rid):
+    r, edit, error = _rule_edit_from_request(rid)
+    if not can_modify(sanitize_text(request.form.get('user', '')), r.creator or ''):
+        flash(_('Not allowed to edit rule.'), 'error')
+        return redirect(url_for('main.expenses'))
+    if error:
+        flash(error, 'error')
+        return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
+
+    today = date.today()
+    strategy = edit['strategy']
+    effective_from = edit['effective_from']
+    values = edit['values']
+    snapshot = _rule_snapshot(r)
+
+    if strategy == 'rewrite_all':
+        for name in _RULE_FIELDS:
+            setattr(r, name, values[name])
+        r.effective_from = r.start_date
 
         deleted = 0
         if r.start_date:
@@ -542,45 +755,12 @@ def edit_recurring_expense(rid):
             e.split_with = r.split_with
             updated += 1
         db.session.commit()
-        flash(ngettext('Recurring rule fully rewritten. Updated %(num)s entry, removed %(deleted)s outside rule range.',
-                       'Recurring rule fully rewritten. Updated %(num)s entries, removed %(deleted)s outside rule range.',
-                       updated, deleted=deleted), 'warning')
+        message = ngettext('Recurring rule fully rewritten. Updated %(num)s entry, removed %(deleted)s outside rule range.',
+                           'Recurring rule fully rewritten. Updated %(num)s entries, removed %(deleted)s outside rule range.',
+                           updated, deleted=deleted)
+        category = 'warning'
     elif strategy == 'split_rule':
         split_start = effective_from
-        if r.start_date and split_start < r.start_date:
-            split_start = r.start_date
-        if r.start_date and split_start <= r.start_date:
-            # Splitting at/before the current start creates an empty old window,
-            # so safely fallback to apply-from behavior on the same rule.
-            effective_from = r.start_date
-
-            r.title = new_title
-            r.category = new_category
-            r.unit_price = new_unit_price
-            r.default_quantity = new_default_quantity
-            r.frequency = new_frequency
-            r.monthly_mode = new_monthly_mode
-            r.start_date = new_start_date
-            r.end_date = new_end_date
-            r.effective_from = effective_from
-            r.split_with = new_split_with
-
-            skipped = _skipped_dates(r.id, effective_from)
-            ExpenseEntry.query.filter(
-                ExpenseEntry.recurring_id == r.id,
-                ExpenseEntry.date >= effective_from
-            ).delete()
-            r.last_generated_date = effective_from - timedelta(days=1)
-            db.session.commit()
-            _generate_recurring_entries_until(today)
-            _reapply_skips(r.id, skipped)
-            flash(
-                _('Split at %(split_start)s would create an empty old rule window. Applied changes from %(effective_from)s on the same rule instead.',
-                  split_start=split_start, effective_from=effective_from),
-                'info'
-            )
-            return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
-
         old_end = split_start - timedelta(days=1)
         if r.end_date and old_end > r.end_date:
             old_end = r.end_date
@@ -590,76 +770,93 @@ def edit_recurring_expense(rid):
         removed_from_old = ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id, ExpenseEntry.date > old_end).count()
         ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id, ExpenseEntry.date > old_end).delete()
 
-        new_rule = RecurringExpense(
-            title=new_title,
-            category=new_category,
-            unit_price=new_unit_price,
-            default_quantity=new_default_quantity,
-            frequency=new_frequency,
-            monthly_mode=new_monthly_mode,
-            start_date=max(new_start_date or split_start, split_start),
-            end_date=new_end_date,
-            last_generated_date=None,
-            effective_from=split_start,
-            creator=r.creator,
-            split_with=new_split_with,
-        )
+        new_rule = RecurringExpense(creator=r.creator, last_generated_date=None, effective_from=split_start, **values)
+        new_rule.start_date = max(values['start_date'] or split_start, split_start)
         db.session.add(new_rule)
         db.session.commit()
+        snapshot['new_rule_id'] = new_rule.id
+        snapshot['new_rule_timestamp'] = stamp(new_rule)
         _generate_recurring_entries_until(today)
         _reapply_skips(new_rule.id, skipped)
-        flash(ngettext('Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entry.',
-                       'Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entries.',
-                       removed_from_old, split_start=split_start), 'success')
+        message = ngettext('Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entry.',
+                           'Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entries.',
+                           removed_from_old, split_start=split_start)
+        category = 'success'
     else:
-        if new_start_date and effective_from < new_start_date:
-            effective_from = new_start_date
-        if new_end_date and effective_from > new_end_date:
-            effective_from = new_end_date
-
         historical_kept = ExpenseEntry.query.filter(
             ExpenseEntry.recurring_id == r.id,
             ExpenseEntry.date < effective_from
         ).count()
 
-        r.title = new_title
-        r.category = new_category
-        r.unit_price = new_unit_price
-        r.default_quantity = new_default_quantity
-        r.frequency = new_frequency
-        r.monthly_mode = new_monthly_mode
-        r.start_date = new_start_date
-        r.end_date = new_end_date
+        for name in _RULE_FIELDS:
+            setattr(r, name, values[name])
         r.effective_from = effective_from
-        r.split_with = new_split_with
 
         skipped = _skipped_dates(r.id, effective_from)
-        removed_for_rebuild = ExpenseEntry.query.filter(
-            ExpenseEntry.recurring_id == r.id,
-            ExpenseEntry.date >= effective_from
-        ).count()
         ExpenseEntry.query.filter(
             ExpenseEntry.recurring_id == r.id,
             ExpenseEntry.date >= effective_from
         ).delete()
-        r.last_generated_date = effective_from - timedelta(days=1)
+        # Resume on the rule's own schedule, so a weekly or monthly rule keeps its day
+        resume_after = _last_occurrence_before(r, effective_from, today)
+        r.last_generated_date = resume_after or effective_from - timedelta(days=1)
         db.session.commit()
 
         _generate_recurring_entries_until(today)
         _reapply_skips(r.id, skipped)
-        regenerated = ExpenseEntry.query.filter(
-            ExpenseEntry.recurring_id == r.id,
-            ExpenseEntry.date >= effective_from
-        ).count()
-        flash(
-            ngettext('Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt %(rebuilt)s from that date.',
-                     'Rule updated from %(effective_from)s. Kept %(num)s historical entries, rebuilt %(rebuilt)s from that date.',
-                     historical_kept, effective_from=effective_from, rebuilt=regenerated),
-            'success'
-        )
+        if edit['split_fallback']:
+            message = _('Split at %(split_start)s would create an empty old rule window. Applied changes from %(effective_from)s on the same rule instead.',
+                        split_start=effective_from, effective_from=effective_from)
+            category = 'info'
+        else:
+            regenerated = ExpenseEntry.query.filter(
+                ExpenseEntry.recurring_id == r.id,
+                ExpenseEntry.date >= effective_from
+            ).count()
+            message = ngettext('Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt %(rebuilt)s from that date.',
+                               'Rule updated from %(effective_from)s. Kept %(num)s historical entries, rebuilt %(rebuilt)s from that date.',
+                               historical_kept, effective_from=effective_from, rebuilt=regenerated)
+            category = 'success'
 
+    offer_undo('expense_rule', snapshot, message, category)
     return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
 
+
+def _preview_rule_delete(r: RecurringExpense, delete_entries: bool) -> dict:
+    entries = ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id).order_by(ExpenseEntry.date.asc()).all()
+    count = len(entries)
+    hand_edited = sum(1 for e in entries if _is_hand_edited(e, r)) if delete_entries else 0
+    details = []
+    if not count:
+        summary = _('It has no generated entries.')
+    elif delete_entries:
+        summary = ngettext('This also deletes its %(num)s generated entry (%(first)s to %(last)s).',
+                           'This also deletes its %(num)s generated entries (%(first)s to %(last)s).',
+                           count, first=entries[0].date, last=entries[-1].date)
+        if hand_edited:
+            details.append(ngettext('%(num)s of them was edited by hand.', '%(num)s of them were edited by hand.', hand_edited))
+    else:
+        summary = ngettext('Its %(num)s generated entry stays as history.',
+                           'Its %(num)s generated entries stay as history.', count)
+    return {
+        'ok': True,
+        'entries': count,
+        'removed': count if delete_entries else 0,
+        'hand_edited': hand_edited,
+        'summary': summary,
+        'details': details,
+    }
+
+
+@main_bp.route('/expenses/recurring/delete/<int:rid>/preview', methods=['POST'])
+def preview_recurring_expense_delete(rid):
+    """Dry run of a rule delete: how many generated entries go with it. Changes nothing."""
+    r = db.get_or_404(RecurringExpense, rid)
+    user = sanitize_text(request.form.get('user', ''))
+    if not can_modify(user, r.creator or ''):
+        return jsonify({'ok': False, 'error': _('Not allowed to delete rule.')}), 403
+    delete_entries = request.form.get('delete_entries') in ('1', 'true', 'on', 'yes')
+    return jsonify(_preview_rule_delete(r, delete_entries))
 
 
 @main_bp.route('/expenses/recurring/delete/<int:rid>', methods=['POST'])
@@ -670,17 +867,23 @@ def delete_recurring_expense(rid):
         flash(_('Not allowed to delete rule.'), 'error')
         return redirect(url_for('main.expenses'))
     delete_entries = request.form.get('delete_entries') in ('1', 'true', 'on', 'yes')
+    snapshot = _rule_snapshot(r)
     if delete_entries:
         try:
             ExpenseEntry.query.filter_by(recurring_id=r.id).delete()
         except Exception:
             pass
+    else:
+        # Kept as plain history: left pointing at this id, they would attach themselves to
+        # whichever rule SQLite gives the id to next
+        ExpenseEntry.query.filter_by(recurring_id=r.id).update({ExpenseEntry.recurring_id: None})
     db.session.delete(r)
     db.session.commit()
     if delete_entries:
-        flash(_('Recurring rule deleted. Linked generated entries deleted.'), 'success')
+        message = _('Recurring rule deleted. Linked generated entries deleted.')
     else:
-        flash(_('Recurring rule deleted. Linked generated entries kept as history.'), 'success')
+        message = _('Recurring rule deleted. Linked generated entries kept as history.')
+    offer_undo('expense_rule', snapshot, message)
     return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
 
 
@@ -758,6 +961,12 @@ def edit_expense_entry(entry_id):
         db.session.rollback()
         flash(_('Invalid amount.'), 'error')
         return _redirect_to_view(entry.date)
+    problem = _amount_problem(entry.amount, entry.quantity)
+    if problem:
+        entry_date = entry.date
+        db.session.rollback()
+        flash(problem, 'error')
+        return _redirect_to_view(entry_date)
     if request.form.get('split_present'):
         try:
             entry.split_with = _split_from_form(request.form, entry.amount)
@@ -933,5 +1142,6 @@ def recurring_expenses_page():
         config=config,
         split_people=_split_people(config),
         expense_settings=expense_settings,
-        active_tab=active_tab
+        active_tab=active_tab,
+        today=today,
     )

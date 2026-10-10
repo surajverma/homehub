@@ -15,7 +15,7 @@ feature_toggles:
   chores: true
   recipes: true
   expiry_tracker: true
-  url_shortener: true
+  url_shortener: false
   expense_tracker: true
   calendar: true
 

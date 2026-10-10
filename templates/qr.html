@@ -43,8 +43,8 @@
                 <div class="meta mt-0.5">{{ _('By %(name)s at %(time)s', name=q.creator, time=q.timestamp|localtime) }}</div>
             </div>
             <div class="flex items-center gap-1">
-                <a class="btn btn-secondary btn-sm" href="/static/{{ q.filename }}" target="_blank"><i class="fa-solid fa-eye" aria-hidden="true"></i> {{ _('View') }}</a>
-                <a class="btn btn-secondary btn-sm" href="/static/{{ q.filename }}" download><i class="fa-solid fa-download" aria-hidden="true"></i> {{ _('Download') }}</a>
+                <a class="btn btn-secondary btn-sm" href="/qr/image/{{ q.id }}.png" target="_blank"><i class="fa-solid fa-eye" aria-hidden="true"></i> {{ _('View') }}</a>
+                <a class="btn btn-secondary btn-sm" href="/qr/image/{{ q.id }}.png?download=1" download="qr-{{ q.id }}.png"><i class="fa-solid fa-download" aria-hidden="true"></i> {{ _('Download') }}</a>
                 <form method="POST" action="/qr/delete/{{ q.id }}" class="delete-form" data-creator="{{ q.creator }}" data-confirm="{{ _('Delete this QR code?') }}">
                     <input type="hidden" name="user">
                     <button type="submit" class="btn btn-ghost btn-icon btn-danger-text" title="{{ _('Delete') }}" aria-label="{{ _('Delete QR code') }}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>

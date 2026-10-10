@@ -158,8 +158,11 @@ document.addEventListener('user-switched', applyShoppingUserContext);
                                     refreshFiltersAndLibrary();
                     }
                     close();
+                    globalToast(t('Item updated.'), 'success');
+                } else {
+                    globalToast(t('Could not save the item.'), 'error');
                 }
-            }catch(e){ console.error(e); }
+            }catch(e){ console.error(e); globalToast(t('Could not reach the server.'), 'error'); }
         }
         function close(){ modal.classList.add('hidden'); modal.classList.remove('flex'); currentId=null; }
         document.getElementById('editCancel').addEventListener('click', close);

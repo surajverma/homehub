@@ -3,6 +3,7 @@ services:
     container_name: homehub
     image: ghcr.io/surajverma/homehub:latest
     # build: .
+    restart: unless-stopped
     ports:
       - "5000:5000"
     volumes:
@@ -12,6 +13,5 @@ services:
       - ./data:/app/data
       - ./config.yml:/app/config.yml:ro
     environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-}
-      # - TZ=Asia/Kolkata # optional; your timezone for due dates and recurring items (default UTC)
+      - SECRET_KEY=${SECRET_KEY:-} # optional, from .env; left empty, a key is generated once and kept in data/secret_key
+      #- TZ=Asia/Kolkata # optional; your timezone for due dates and recurring items (default UTC)

@@ -1,13 +1,14 @@
-import os, re, shutil, subprocess
+import os, re, secrets, shutil, subprocess
 from flask_babel import gettext as _
 from threading import Thread
 from flask import render_template, request, redirect, url_for, send_from_directory, jsonify, current_app, flash
-from datetime import datetime
 from ..models import db, Media, PDF
 from ..blueprints import main_bp
+from ..clock import utcnow
 from ..admin import can_modify
 from ..security import sanitize_text, is_url_safe_for_fetch
 from werkzeug.utils import secure_filename
+from ..storage import unique_name
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -25,7 +26,7 @@ def media():
             return redirect(url_for('main.media'))
         fmt = sanitize_text(request.form.get('format', 'mp4'))
         quality = sanitize_text(request.form.get('quality', 'best'))
-        base = f"media_{int(datetime.utcnow().timestamp())}"
+        base = f"media_{int(utcnow().timestamp())}"
         output_tmpl = os.path.join(MEDIA_FOLDER, base + ".%(ext)s")
         media_obj = Media(title=url, url=url, creator=creator, filepath='', status='pending')
         db.session.add(media_obj)
@@ -126,6 +127,9 @@ def delete_media(media_id):
             pass
         db.session.delete(m)
         db.session.commit()
+        flash(_('Download deleted.'), 'success')
+    else:
+        flash(_('Not allowed to delete download.'), 'error')
     return redirect(url_for('main.media'))
 
 
@@ -146,22 +150,31 @@ def pdfs():
         if not safe_name:
             flash(_('Invalid filename.'), 'error')
             return redirect(url_for('main.pdfs'))
-        input_path = os.path.join(PDF_FOLDER, safe_name)
+        # The upload is only needed while it is being compressed, so it gets a throwaway name
+        input_path = os.path.join(PDF_FOLDER, f"upload_{secrets.token_hex(8)}.pdf")
         pdf_file.save(input_path)
-        compressed_path = f"compressed_{safe_name}"
+        # Compressing another PDF with the same name must not replace the earlier result
+        compressed_path = unique_name(PDF_FOLDER, f"compressed_{safe_name}")
         output_path = os.path.join(PDF_FOLDER, compressed_path)
         try:
-            gs_cmd = [
-                'gs', '-sDEVICE=pdfwrite', '-dCompatibilityLevel=1.4',
-                '-dPDFSETTINGS=/ebook', '-dNOPAUSE', '-dQUIET', '-dBATCH',
-                f'-sOutputFile={output_path}', input_path
-            ]
-            subprocess.run(gs_cmd, check=True)
-        except Exception:
-            shutil.copy(input_path, output_path)
+            try:
+                gs_cmd = [
+                    'gs', '-sDEVICE=pdfwrite', '-dCompatibilityLevel=1.4',
+                    '-dPDFSETTINGS=/ebook', '-dNOPAUSE', '-dQUIET', '-dBATCH',
+                    f'-sOutputFile={output_path}', input_path
+                ]
+                subprocess.run(gs_cmd, check=True)
+            except Exception:
+                shutil.copy(input_path, output_path)
+        finally:
+            try:
+                os.remove(input_path)
+            except OSError:
+                pass
         pdf_obj = PDF(filename=safe_name, creator=creator, compressed_path=compressed_path)
         db.session.add(pdf_obj)
         db.session.commit()
+        flash(_('PDF compressed.'), 'success')
         return redirect(url_for('main.pdfs'))
     pdfs = PDF.query.order_by(PDF.upload_time.desc()).all()
     config = current_app.config['HOMEHUB_CONFIG']
@@ -170,7 +183,9 @@ def pdfs():
 
 @main_bp.route('/pdfs/<filename>')
 def serve_pdf(filename):
-    return send_from_directory(PDF_FOLDER, filename, as_attachment=True)
+    row = PDF.query.filter_by(compressed_path=filename).first()
+    return send_from_directory(PDF_FOLDER, filename, as_attachment=True,
+                               download_name=f"compressed_{row.filename}" if row and row.filename else None)
 
 
 @main_bp.route('/pdfs/preview/<filename>')
@@ -194,6 +209,17 @@ def delete_pdf(pdf_id):
                 os.remove(os.path.join(PDF_FOLDER, p.compressed_path))
         except Exception:
             pass
+        # Older uploads also left the uncompressed original behind; remove it unless
+        # that name is another row's compressed file
+        try:
+            original = secure_filename(p.filename or '')
+            if original and not PDF.query.filter(PDF.compressed_path == original, PDF.id != p.id).first():
+                os.remove(os.path.join(PDF_FOLDER, original))
+        except Exception:
+            pass
         db.session.delete(p)
         db.session.commit()
+        flash(_('PDF deleted.'), 'success')
+    else:
+        flash(_('Not allowed to delete PDF.'), 'error')
     return redirect(url_for('main.pdfs'))

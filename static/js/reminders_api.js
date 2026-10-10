@@ -21,8 +21,9 @@ window.remindersApi = (function(){
     const r = await fetch('/api/recurring_rules/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
     return r.json();
   }
-  async function deleteRule(id, creator){
-    const r = await fetch('/api/recurring_rules/'+id, {method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({creator})});
+  // scope 'all' removes the rule with its past dates; otherwise a rule that already started only ends
+  async function deleteRule(id, creator, scope){
+    const r = await fetch('/api/recurring_rules/'+id, {method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({creator, scope})});
     return r.json();
   }
   async function markDone(id, creator){

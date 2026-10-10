@@ -2,9 +2,12 @@ from flask import current_app, request, session, redirect, url_for, render_templ
 from ..blueprints import main_bp
 from .. import admin
 from ..config import load_config, upload_limit_bytes
-import hashlib
-import bleach
+from ..models import db
+from werkzeug.security import check_password_hash
 from flask_babel import gettext as _, ngettext
+
+# Endpoints that answer without the site password
+_OPEN_ENDPOINTS = ('main.login', 'main.healthz')
 
 
 @main_bp.before_app_request
@@ -17,7 +20,7 @@ def reload_config_and_auth():
     cfg = current_app.config.get('HOMEHUB_CONFIG', {})
     endpoint = request.endpoint or ''
     if cfg.get('password_hash'):
-        if not session.get('authed') and not endpoint.startswith('static') and endpoint not in ('main.login',):
+        if not session.get('authed') and not endpoint.startswith('static') and endpoint not in _OPEN_ENDPOINTS:
             return redirect(url_for('main.login'))
     else:
         if endpoint == 'main.login':
@@ -29,14 +32,34 @@ def login():
     config = current_app.config['HOMEHUB_CONFIG']
     if not config.get('password_hash'):
         return redirect(url_for('main.index'))
+    # Same lockout as the admin password, counted separately for the site login
+    client = 'login:' + (request.remote_addr or 'unknown')
     if request.method == 'POST':
-        supplied = bleach.clean(request.form.get('password', ''))
-        if hashlib.sha256(supplied.encode()).hexdigest() == config.get('password_hash'):
+        if admin.unlock_wait_seconds(client):
+            # Still locked: the form below says so and counts down
+            pass
+        elif check_password_hash(config.get('password_hash'), request.form.get('password', '')):
+            admin.clear_failed_attempts(client)
             session['authed'] = True
             flash(_('Logged in successfully.'), 'success')
             return redirect(url_for('main.index'))
-        flash(_('Invalid password'), 'error')
-    return render_template('login.html', config=config, hide_user_ui=True)
+        else:
+            admin.record_failed_attempt(client)
+            flash(_('Invalid password'), 'error')
+    # Also on a plain reload, so the form stays disabled for as long as the server refuses attempts
+    return render_template('login.html', config=config, hide_user_ui=True,
+                           lockout_seconds=admin.unlock_wait_seconds(client))
+
+
+@main_bp.route('/healthz')
+def healthz():
+    """For Docker's HEALTHCHECK: the app is up and can reach its database."""
+    try:
+        db.session.execute(db.text('SELECT 1'))
+    except Exception:
+        current_app.logger.exception('Health check could not query the database')
+        return jsonify({'ok': False}), 503
+    return jsonify({'ok': True})
 
 
 @main_bp.route('/admin/unlock', methods=['POST'])
