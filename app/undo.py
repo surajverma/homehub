@@ -55,6 +55,42 @@ def row_values(model, data: dict) -> dict:
     return values
 
 
+def stamp(row):
+    """A row's creation time as stored in a stash; with its id, this says which record it is."""
+    return row_to_dict(row).get('timestamp') if row is not None else None
+
+
+def same_record(row, data: dict) -> bool:
+    """True when ``row`` is the record ``data`` was stashed from.
+
+    SQLite gives a new row the highest id that is free, so after a delete the same id can
+    belong to something else entirely. The creation time tells the two apart.
+    """
+    return row is not None and stamp(row) == data.get('timestamp')
+
+
+def restore_row(model, data: dict, **overrides):
+    """Put a stashed row back and return it.
+
+    The record itself, if it is still there, gets its old values. If it is gone it is added
+    again, under its old id when that is free and under a new one when another record has
+    taken it. ``overrides`` replace stashed values, e.g. to point a child at its parent's new id.
+    """
+    values = row_values(model, data)
+    values.update(overrides)
+    existing = db.session.get(model, values['id'])
+    if same_record(existing, data):
+        for name, value in values.items():
+            setattr(existing, name, value)
+        return existing
+    if existing is not None:
+        values.pop('id')
+    row = model(**values)
+    db.session.add(row)
+    db.session.flush()
+    return row
+
+
 def purge_expired(now: datetime | None = None) -> None:
     UndoStash.query.filter(UndoStash.expires_at < (now or utcnow())).delete(synchronize_session=False)
 

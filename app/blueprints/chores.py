@@ -6,7 +6,7 @@ from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..security import sanitize_text
 from ..recurrence import next_occurrence as _next_occurrence, first_on_or_after as _next_due_on_or_after, serialized
-from ..undo import offer_undo, restorer, row_to_dict, row_values
+from ..undo import offer_undo, restore_row, restorer, row_to_dict, same_record, stamp
 import json
 
 
@@ -360,34 +360,32 @@ def _chore_rule_snapshot(rule: RecurringChore) -> dict:
 @restorer('chore_rule')
 @serialized
 def _restore_chore_rule(payload: dict) -> None:
-    values = row_values(RecurringChore, payload['rule'])
-    Chore.query.filter_by(recurring_id=values['id']).delete(synchronize_session=False)
-    rule = db.session.get(RecurringChore, values['id'])
-    if rule is None:
-        db.session.add(RecurringChore(**values))
-    else:
-        for name, value in values.items():
-            setattr(rule, name, value)
-    db.session.flush()
+    rule_data = payload['rule']
+    current = db.session.get(RecurringChore, rule_data['id'])
+    # If another rule has taken this id since the delete, its chores are not ours to remove
+    if current is None or same_record(current, rule_data):
+        Chore.query.filter_by(recurring_id=rule_data['id']).delete(synchronize_session=False)
+        db.session.flush()
+        db.session.expire_all()
+    rule = restore_row(RecurringChore, rule_data)
     for data in payload['chores']:
-        chore_values = row_values(Chore, data)
-        # Keep the old id unless something new took it in the meantime
-        if db.session.get(Chore, chore_values['id']) is not None:
-            chore_values.pop('id')
-        db.session.add(Chore(**chore_values))
+        restore_row(Chore, data, recurring_id=rule.id)
 
 
 @restorer('chore_done')
 @serialized
 def _restore_chore_done(payload: dict) -> None:
     chore = db.session.get(Chore, payload['chore_id'])
-    if chore is not None:
-        chore.due_date = date.fromisoformat(payload['due_date'])
-        chore.done = bool(payload['done'])
+    # Only the chore that was ticked; its id may belong to another one by now
+    if chore is None or chore.recurring_id != payload['rule_id'] or stamp(chore) != payload.get('chore_timestamp'):
+        return
     rule = db.session.get(RecurringChore, payload['rule_id'])
-    if rule is not None:
-        last = payload.get('last_generated_date')
-        rule.last_generated_date = date.fromisoformat(last) if last else None
+    if rule is None or stamp(rule) != payload.get('rule_timestamp'):
+        return
+    chore.due_date = date.fromisoformat(payload['due_date'])
+    chore.done = bool(payload['done'])
+    last = payload.get('last_generated_date')
+    rule.last_generated_date = date.fromisoformat(last) if last else None
 
 
 @main_bp.route('/chores/toggle/<int:chore_id>', methods=['POST'])
@@ -416,6 +414,8 @@ def toggle_chore(chore_id):
                 'due_date': chore.due_date.isoformat(),
                 'done': bool(chore.done),
                 'rule_id': rule.id,
+                'chore_timestamp': stamp(chore),
+                'rule_timestamp': stamp(rule),
                 'last_generated_date': rule.last_generated_date.isoformat() if rule.last_generated_date else None,
             }
             next_due = _next_occurrence(rule, chore.due_date)

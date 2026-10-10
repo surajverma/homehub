@@ -371,11 +371,11 @@ def test_reminder_rule_that_has_not_started_is_edited_in_place(client):
         assert RecurringReminder.query.count() == 1
 
 
-def test_changing_only_the_end_date_never_cuts_into_the_past(client):
+def test_changing_only_the_end_date_is_done_in_place(client):
     rid = make_reminder_rule(client, days_ago(10))
     resp = client.patch(f'/api/recurring_rules/{rid}', json={'creator': 'Alice', 'end_date': days_ago(6).isoformat()}).get_json()
-    assert resp['split'] is False and resp['rule']['end_date'] == days_ago(1).isoformat()
-    assert occurrences(client, days_ago(2)) == ['Pay rent']
+    assert resp['split'] is False and resp['rule']['end_date'] == days_ago(6).isoformat()
+    assert occurrences(client, days_ago(7)) == ['Pay rent']
     assert occurrences(client, TODAY) == []
 
 

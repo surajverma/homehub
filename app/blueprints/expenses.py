@@ -8,7 +8,7 @@ from ..security import sanitize_text
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..recurrence import serialized
-from ..undo import offer_undo, restorer, row_to_dict, row_values
+from ..undo import offer_undo, restore_row, restorer, row_to_dict, same_record, stamp
 import bleach
 from flask_babel import gettext as _, ngettext
 
@@ -666,25 +666,22 @@ def _rule_snapshot(r: RecurringExpense) -> dict:
 @restorer('expense_rule')
 @serialized
 def _restore_rule_snapshot(payload: dict) -> None:
-    rule_values = row_values(RecurringExpense, payload['rule'])
-    rid = rule_values['id']
-    doomed = [rid] + ([payload['new_rule_id']] if payload.get('new_rule_id') else [])
-    ExpenseEntry.query.filter(ExpenseEntry.recurring_id.in_(doomed)).delete(synchronize_session=False)
-    if payload.get('new_rule_id'):
-        RecurringExpense.query.filter_by(id=payload['new_rule_id']).delete(synchronize_session=False)
-    rule = db.session.get(RecurringExpense, rid)
-    if rule is None:
-        db.session.add(RecurringExpense(**rule_values))
-    else:
-        for name, value in rule_values.items():
-            setattr(rule, name, value)
+    rule_data = payload['rule']
+    rid = rule_data['id']
+    # If another rule has taken this id since the delete, its entries are not ours to remove
+    current = db.session.get(RecurringExpense, rid)
+    doomed = [rid] if current is None or same_record(current, rule_data) else []
+    successor = db.session.get(RecurringExpense, payload['new_rule_id']) if payload.get('new_rule_id') else None
+    if successor is not None and stamp(successor) == payload.get('new_rule_timestamp'):
+        doomed.append(successor.id)
+        db.session.delete(successor)
+    if doomed:
+        ExpenseEntry.query.filter(ExpenseEntry.recurring_id.in_(doomed)).delete(synchronize_session=False)
     db.session.flush()
+    db.session.expire_all()
+    rule = restore_row(RecurringExpense, rule_data)
     for data in payload['entries']:
-        entry_values = row_values(ExpenseEntry, data)
-        # Keep the old id unless something new took it in the meantime
-        if db.session.get(ExpenseEntry, entry_values['id']) is not None:
-            entry_values.pop('id')
-        db.session.add(ExpenseEntry(**entry_values))
+        restore_row(ExpenseEntry, data, recurring_id=rule.id)
 
 
 def _rule_edit_from_request(rid):
@@ -778,6 +775,7 @@ def edit_recurring_expense(rid):
         db.session.add(new_rule)
         db.session.commit()
         snapshot['new_rule_id'] = new_rule.id
+        snapshot['new_rule_timestamp'] = stamp(new_rule)
         _generate_recurring_entries_until(today)
         _reapply_skips(new_rule.id, skipped)
         message = ngettext('Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entry.',
@@ -875,6 +873,10 @@ def delete_recurring_expense(rid):
             ExpenseEntry.query.filter_by(recurring_id=r.id).delete()
         except Exception:
             pass
+    else:
+        # Kept as plain history: left pointing at this id, they would attach themselves to
+        # whichever rule SQLite gives the id to next
+        ExpenseEntry.query.filter_by(recurring_id=r.id).update({ExpenseEntry.recurring_id: None})
     db.session.delete(r)
     db.session.commit()
     if delete_entries:

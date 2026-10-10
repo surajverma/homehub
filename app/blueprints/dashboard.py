@@ -7,7 +7,7 @@ from ..admin import is_admin, can_modify
 from ..security import sanitize_html, sanitize_text
 from ..recurrence import first_on_or_after, occurrences_between, rule_interval_unit
 from flask_babel import gettext as _, ngettext
-from ..undo import restorer, row_to_dict, row_values, stash_undo
+from ..undo import restore_row, restorer, row_to_dict, stamp, stash_undo
 
 
 def _parse_date_param(value, default=None):
@@ -315,20 +315,21 @@ _RULE_COPY_FIELDS = ('title', 'description', 'creator', 'frequency', 'monthly_mo
 
 
 def _stash_reminder_rule(snapshot: dict, successor: RecurringReminder | None = None) -> str:
-    return stash_undo('reminder_rule', {'rule': snapshot, 'successor_id': successor.id if successor else None})
+    return stash_undo('reminder_rule', {
+        'rule': snapshot,
+        'successor_id': successor.id if successor else None,
+        'successor_timestamp': stamp(successor),
+    })
 
 
 @restorer('reminder_rule')
 def _restore_reminder_rule(payload: dict) -> None:
-    if payload.get('successor_id'):
-        RecurringReminder.query.filter_by(id=payload['successor_id']).delete(synchronize_session=False)
-    values = row_values(RecurringReminder, payload['rule'])
-    rule = db.session.get(RecurringReminder, values['id'])
-    if rule is None:
-        db.session.add(RecurringReminder(**values))
-    else:
-        for name, value in values.items():
-            setattr(rule, name, value)
+    # The rule an edit continued as, unless its id belongs to another rule by now
+    successor = db.session.get(RecurringReminder, payload['successor_id']) if payload.get('successor_id') else None
+    if successor is not None and stamp(successor) == payload.get('successor_timestamp'):
+        db.session.delete(successor)
+        db.session.flush()
+    restore_row(RecurringReminder, payload['rule'])
 
 
 @main_bp.route('/api/recurring_rules/<int:rid>', methods=['PATCH', 'DELETE'])
@@ -399,15 +400,21 @@ def api_recurring_rules_update_delete(rid):
         return jsonify({'ok': True, 'rule': _serialize_recurring_rule(rr), 'split': False,
                         'undo_token': _stash_reminder_rule(before)})
 
-    if changed == {'end_date'}:
-        # Moving the end only touches the past when it is pulled back before today
-        rr.end_date = max(new['end_date'], yesterday) if new['end_date'] else None
+    ended = bool(rr.end_date and rr.end_date < today)
+    already_ended = jsonify({'ok': False, 'error': _('This recurring reminder has already ended, and its past dates are kept as they were. Set a later end date to continue it.')}), 400
+    if changed == {'end_date'} and (not ended or (new['end_date'] and new['end_date'] < rr.end_date)):
+        # A rule still running takes whatever end it is given. One that has ended can only end
+        # earlier here: a later end must not bring back the days since it stopped.
+        rr.end_date = new['end_date']
         db.session.commit()
         return jsonify({'ok': True, 'rule': _serialize_recurring_rule(rr), 'split': False,
                         'undo_token': _stash_reminder_rule(before)})
 
     if new['end_date'] and new['end_date'] < today:
-        return jsonify({'ok': False, 'error': _('This recurring reminder has already ended, and its past dates are kept as they were. Set a later end date to continue it.')}), 400
+        return already_ended
+    if ended and 'end_date' not in changed:
+        # Its end is still in the past, so the edit could only change dates that are history
+        return already_ended
 
     # The new settings continue from today on their own schedule; the old rule keeps the past
     successor = RecurringReminder(**new)
