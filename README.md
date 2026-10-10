@@ -3,7 +3,6 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/surajverma/homehub)](https://github.com/surajverma/homehub/commits/main)
 [![GitHub issues](https://img.shields.io/github/issues/surajverma/homehub)](https://github.com/surajverma/homehub/issues)
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/surajverma/homehub?color=brightgreen)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aclosed)
-[![GitHub issues by-label](https://img.shields.io/github/issues/surajverma/homehub/feature%20request?color=blue)](https://github.com/surajverma/homehub/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request)
 [![GitHub Stars](https://img.shields.io/github/stars/surajverma/homehub)](https://github.com/surajverma/homehub/stargazers)
 [![Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Fsurajverma%2Fhomehub&query=downloadCount&style=social&logo=github&label=Docker%20Pulls)](https://github.com/surajverma/homehub/pkgs/container/homehub)
 
@@ -14,6 +13,7 @@
 >  
 > I typically work on the project after office hours or on weekends, depending on my availability and energy. Your patience, understanding, and support mean a lot—thank you for helping make this project better!
 
+**Featured in:** [XDA Developers](https://www.xda-developers.com/self-hosted-dashboard-perfect-hub-for-your-familys-daily-needs/) · [DB Tech](https://dbtechreviews.com/2025/10/01/homehub-your-familys-private-self-hosted-home-organization-center/) ([video](https://www.youtube.com/watch?v=3IRvC1gs4mA)) · [selfh.st](https://selfh.st/post/wrapped-new-software-2025/)
 
 # 🏡 HomeHub: Your All-In-One Family Dashboard
 
@@ -45,6 +45,8 @@ HomeHub is packed with useful tools to make family life a little more organized:
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/homehub-dark.gif">
   <img src="docs/images/homehub-light.gif" alt="A tour of HomeHub: home, calendar, expenses, shopping, chores, recipes and more">
 </picture>
+
+**Featured in:** [XDA Developers](https://www.xda-developers.com/self-hosted-dashboard-perfect-hub-for-your-familys-daily-needs/) · [Noted.lol](https://noted.lol/homehub/) · [DB Tech](https://dbtechreviews.com/2025/10/01/homehub-your-familys-private-self-hosted-home-organization-center/) ([video](https://www.youtube.com/watch?v=3IRvC1gs4mA)) · [selfh.st](https://selfh.st/post/wrapped-new-software-2025/)
 
 ## Getting Started is Easy
 
