@@ -63,7 +63,7 @@ instance_name: "My Home Hub"
 password: "" #leave blank for password less access
 admin_name: "Administrator"
 max_upload_mb: 1024 # largest upload in MB (Shared Cloud, PDFs); 0 removes the limit
-language: en # UI language: en (English) or hi (Hindi)
+language: en # UI language: en (English), hi (Hindi) or zh (Chinese)
 feature_toggles:
   shopping_list: true
   media_downloader: true
@@ -181,7 +181,7 @@ Use a name from the [tz database](https://en.wikipedia.org/wiki/List_of_tz_datab
 HomeHub can show its interface in another language. Set it for the whole household in `config.yml`:
 
 ```yaml
-language: hi # en (English, default) or hi (Hindi)
+language: zh # en (English, default), hi (Hindi) or zh (Chinese)
 ```
 
 The change applies on the next page load, no restart needed. A missing or unknown value falls back to English, and so does any text that has no translation yet. What you type into HomeHub (notes, chores, names) is never translated.

@@ -15,7 +15,7 @@ JS_DIR = os.path.join(BASE_DIR, 'static', 'js')
 
 DEFAULT_LANGUAGE = 'en'
 # Google Fonts family for scripts Inter does not cover; loaded only for these languages
-LANGUAGE_FONTS = {'hi': 'Noto Sans Devanagari'}
+LANGUAGE_FONTS = {'hi': 'Noto Sans Devanagari', 'zh': 'Noto Sans SC'}
 # gettext joins a message's context and text with this character
 CONTEXT_SEPARATOR = '\x04'
 
