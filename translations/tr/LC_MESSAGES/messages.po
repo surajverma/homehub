@@ -1,0 +1,2792 @@
+# Turkish translations for HomeHub.
+# Copyright (C) 2026 HomeHub contributors
+# This file is distributed under the same license as the HomeHub project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: HomeHub\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-10-10 21:29+0530\n"
+"PO-Revision-Date: 2026-10-12 18:40+0300\n"
+"Last-Translator: qwist1233-cpu\n"
+"Language-Team: tr <LL@li.org>\n"
+"Language: tr\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: app/__init__.py
+#, python-format
+msgid "Upload is too large. The limit is %(limit)s MB."
+msgstr "Yükleme çok büyük. Sınır %(limit)s MB."
+
+#: app/blueprints/__init__.py
+msgid "Offline"
+msgstr "Çevrimdışı"
+
+#: app/blueprints/__init__.py
+msgid "You are offline"
+msgstr "Çevrimdışısınız"
+
+#: app/blueprints/__init__.py
+msgid "This page is not available offline."
+msgstr "Bu sayfa çevrimdışı kullanılamıyor."
+
+#: app/blueprints/auth.py
+msgid "Logged in successfully."
+msgstr "Giriş yapıldı."
+
+#: app/blueprints/auth.py
+msgid "Invalid password"
+msgstr "Hatalı şifre"
+
+#: app/blueprints/auth.py
+#, python-format
+msgid "Too many attempts. Try again in %(num)s second."
+msgid_plural "Too many attempts. Try again in %(num)s seconds."
+msgstr[0] "Çok fazla deneme. %(num)s saniye sonra tekrar deneyin."
+
+#: app/blueprints/auth.py
+msgid "Incorrect admin password"
+msgstr "Yönetici şifresi hatalı"
+
+#: app/blueprints/auth.py
+msgid "Logged out."
+msgstr "Çıkış yapıldı."
+
+#: app/blueprints/chores.py
+msgid "Recurring chore end date cannot be before the start date."
+msgstr "Yinelenen görevin bitiş tarihi başlangıç tarihinden önce olamaz."
+
+#: app/blueprints/chores.py
+msgid "Recurring chore ends in the past. Choose a future end date to create an active chore."
+msgstr "Yinelenen görev geçmişte bitiyor. Etkin bir görev oluşturmak için ileri bir bitiş tarihi seçin."
+
+#: app/blueprints/chores.py
+msgid "Not allowed to update recurring rule."
+msgstr "Yinelenme kuralını güncelleme izniniz yok."
+
+#: app/blueprints/chores.py
+msgid "Recurring chore updated."
+msgstr "Yinelenen görev güncellendi."
+
+#: app/blueprints/chores.py
+msgid "Recurring chore added."
+msgstr "Yinelenen görev eklendi."
+
+#: app/blueprints/chores.py
+msgid "Not allowed to delete recurring rule."
+msgstr "Yinelenme kuralını silme izniniz yok."
+
+#: app/blueprints/chores.py
+msgid "Not allowed to update chore."
+msgstr "Görevi güncelleme izniniz yok."
+
+#: app/blueprints/chores.py
+msgid "Chore updated."
+msgstr "Görev güncellendi."
+
+#: app/blueprints/chores.py
+msgid "Chore added."
+msgstr "Görev eklendi."
+
+#: app/blueprints/chores.py
+msgid "Not allowed to edit chore."
+msgstr "Görevi düzenleme izniniz yok."
+
+#: app/blueprints/chores.py
+msgid "Only admin can update chore settings."
+msgstr "Görev ayarlarını yalnızca yönetici güncelleyebilir."
+
+#: app/blueprints/chores.py
+msgid "Chore settings updated."
+msgstr "Görev ayarları güncellendi."
+
+#: app/blueprints/chores.py
+msgid "Recurring chore rule deleted."
+msgstr "Yinelenen görev kuralı silindi."
+
+#: app/blueprints/chores.py
+msgid "This recurring chore has ended."
+msgstr "Bu yinelenen görev sona erdi."
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s is open again. Due on %(date)s."
+msgstr "%(chore)s yeniden açık. Son tarih: %(date)s."
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s done. That was its last date."
+msgstr "%(chore)s tamamlandı. Bu son tarihiydi."
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s done. Next due on %(date)s."
+msgstr "%(chore)s tamamlandı. Sıradaki tarih: %(date)s."
+
+#: app/blueprints/chores.py
+msgid "Chore deleted."
+msgstr "Görev silindi."
+
+#: app/blueprints/chores.py
+msgid "Not allowed to delete chore."
+msgstr "Görevi silme izniniz yok."
+
+#: app/blueprints/dashboard.py
+msgid "End date is required when end time is provided"
+msgstr "Bitiş saati girildiğinde bitiş tarihi zorunludur"
+
+#: app/blueprints/dashboard.py
+msgid "Invalid start or end date/time"
+msgstr "Başlangıç veya bitiş tarihi/saati geçersiz"
+
+#: app/blueprints/dashboard.py
+msgid "End date/time must be the same as or after start date/time"
+msgstr "Bitiş tarihi/saati, başlangıç tarihi/saatiyle aynı ya da ondan sonra olmalı"
+
+#: app/blueprints/dashboard.py
+msgid "Not allowed"
+msgstr "İzin yok"
+
+#: app/blueprints/dashboard.py
+msgid "This recurring reminder has already ended, and its past dates are kept as they were. Set a later end date to continue it."
+msgstr "Bu yinelenen hatırlatıcı zaten sona erdi ve geçmiş tarihleri olduğu gibi korunuyor. Devam etmesi için daha ileri bir bitiş tarihi seçin."
+
+#: app/blueprints/dashboard.py
+msgid "With these settings there are no dates left from today. Choose a later end date."
+msgstr "Bu ayarlarla bugünden sonra hiç tarih kalmıyor. Daha ileri bir bitiş tarihi seçin."
+
+#: app/blueprints/dashboard.py
+msgid "Title required"
+msgstr "Başlık zorunlu"
+
+#: app/blueprints/dashboard.py
+msgid "Invalid date"
+msgstr "Geçersiz tarih"
+
+#: app/blueprints/dashboard.py
+msgid "No ids provided"
+msgstr "Kimlik verilmedi"
+
+#: app/blueprints/dashboard.py
+msgid "Reminder is not in trash"
+msgstr "Hatırlatıcı çöp kutusunda değil"
+
+#: app/blueprints/dashboard.py
+msgid "Date and title are required for reminders."
+msgstr "Hatırlatıcılar için tarih ve başlık zorunludur."
+
+#: app/blueprints/dashboard.py app/blueprints/expenses.py
+msgid "Invalid date."
+msgstr "Geçersiz tarih."
+
+#: app/blueprints/dashboard.py
+msgid "Reminder added."
+msgstr "Hatırlatıcı eklendi."
+
+#: app/blueprints/dashboard.py
+msgid "Reminder moved to trash."
+msgstr "Hatırlatıcı çöp kutusuna taşındı."
+
+#: app/blueprints/dashboard.py
+msgid "Not allowed to delete this reminder."
+msgstr "Bu hatırlatıcıyı silme izniniz yok."
+
+#: app/blueprints/dashboard.py
+#, python-format
+msgid "Moved %(num)s reminder to trash."
+msgid_plural "Moved %(num)s reminders to trash."
+msgstr[0] "%(num)s hatırlatıcı çöp kutusuna taşındı."
+
+#: app/blueprints/dashboard.py
+msgid "No reminders deleted (permission?)."
+msgstr "Hiçbir hatırlatıcı silinmedi (izin?)."
+
+#: app/blueprints/dashboard.py
+msgid "Only admin can update the notice."
+msgstr "Duyuruyu yalnızca yönetici güncelleyebilir."
+
+#: app/blueprints/dashboard.py
+msgid "Notice updated."
+msgstr "Duyuru güncellendi."
+
+#: app/blueprints/dashboard.py
+msgid "Invalid user for status."
+msgstr "Durum için geçersiz kullanıcı."
+
+#: app/blueprints/dashboard.py
+msgid "Invalid user"
+msgstr "Geçersiz kullanıcı"
+
+#: app/blueprints/dashboard.py
+msgid "Status cleared."
+msgstr "Durum temizlendi."
+
+#: app/blueprints/dashboard.py
+msgid "No status to clear."
+msgstr "Temizlenecek durum yok."
+
+#: app/blueprints/dashboard.py
+msgid "Status updated."
+msgstr "Durum güncellendi."
+
+#: app/blueprints/dashboard.py
+msgid "Status cannot be empty."
+msgstr "Durum boş olamaz."
+
+#: app/blueprints/dashboard.py
+msgid "Status saved."
+msgstr "Durum kaydedildi."
+
+#: app/blueprints/dashboard.py
+msgid "Invalid user for status removal."
+msgstr "Durum kaldırma için geçersiz kullanıcı."
+
+#: app/blueprints/dashboard.py
+msgid "Status removed."
+msgstr "Durum kaldırıldı."
+
+#: app/blueprints/expenses.py static/js/pages/expenses_recurring.js
+msgid "Unit price must be greater than zero."
+msgstr "Birim fiyat sıfırdan büyük olmalı."
+
+#: app/blueprints/expenses.py static/js/pages/expenses.js
+#: static/js/pages/expenses_recurring.js
+msgid "Quantity must be greater than zero."
+msgstr "Adet sıfırdan büyük olmalı."
+
+#: app/blueprints/expenses.py static/js/pages/expenses.js
+msgid "Amount must be greater than zero."
+msgstr "Tutar sıfırdan büyük olmalı."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Invalid split value for %(name)s."
+msgstr "%(name)s için geçersiz paylaşım değeri."
+
+#: app/blueprints/expenses.py
+msgid "Enter a split value for at least one person."
+msgstr "En az bir kişi için paylaşım değeri girin."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Percentages add up to %(entered)s%%, not 100%%."
+msgstr "Yüzdelerin toplamı %(entered)s%%, 100%% değil."
+
+#: app/blueprints/expenses.py
+msgid "Split amounts must add up to the expense amount."
+msgstr "Paylaşım tutarlarının toplamı harcama tutarına eşit olmalı."
+
+#: app/blueprints/expenses.py
+msgid "Invalid amount."
+msgstr "Geçersiz tutar."
+
+#: app/blueprints/expenses.py
+msgid "Recurring expense added."
+msgstr "Yinelenen harcama eklendi."
+
+#: app/blueprints/expenses.py
+msgid "Expense added."
+msgstr "Harcama eklendi."
+
+#: app/blueprints/expenses.py
+msgid "No existing entries will change."
+msgstr "Mevcut kayıtlar değişmeyecek."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "These changes apply from %(date)s. Entries before that date stay as they are."
+msgstr "Bu değişiklikler %(date)s tarihinden itibaren geçerli. O tarihten önceki kayıtlar olduğu gibi kalır."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "This will change %(num)s entry from %(date)s."
+msgid_plural "This will change %(num)s entries from %(date)s."
+msgstr[0] "Bu, %(date)s tarihinden itibaren %(num)s kaydı değiştirir."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s entry will be removed."
+msgid_plural "%(num)s entries will be removed."
+msgstr[0] "%(num)s kayıt kaldırılacak."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s entry will be added."
+msgid_plural "%(num)s entries will be added."
+msgstr[0] "%(num)s kayıt eklenecek."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s of them was edited by hand; that edit will be lost."
+msgid_plural "%(num)s of them were edited by hand; those edits will be lost."
+msgstr[0] "Bunlardan %(num)s tanesi elle düzenlenmiş; o düzenleme kaybolacak."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "The current rule will end on %(end)s and a new rule will start on %(start)s."
+msgstr "Mevcut kural %(end)s tarihinde bitecek ve yeni kural %(start)s tarihinde başlayacak."
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to edit rule."
+msgstr "Kuralı düzenleme izniniz yok."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Recurring rule fully rewritten. Updated %(num)s entry, removed %(deleted)s outside rule range."
+msgid_plural "Recurring rule fully rewritten. Updated %(num)s entries, removed %(deleted)s outside rule range."
+msgstr[0] "Yinelenme kuralı tümüyle yeniden yazıldı. %(num)s kayıt güncellendi, kural aralığı dışındaki %(deleted)s kayıt kaldırıldı."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entry."
+msgid_plural "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entries."
+msgstr[0] "Kural %(split_start)s tarihinden ayrıldı. Eski kural korundu; eski kurala ait %(num)s gelecek kayıt kaldırıldı."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Split at %(split_start)s would create an empty old rule window. Applied changes from %(effective_from)s on the same rule instead."
+msgstr "%(split_start)s tarihinde ayırmak eski kurala boş bir aralık bırakırdı. Bunun yerine değişiklikler aynı kural üzerinde %(effective_from)s tarihinden itibaren uygulandı."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt %(rebuilt)s from that date."
+msgid_plural "Rule updated from %(effective_from)s. Kept %(num)s historical entries, rebuilt %(rebuilt)s from that date."
+msgstr[0] "Kural %(effective_from)s tarihinden itibaren güncellendi. %(num)s geçmiş kayıt korundu, o tarihten sonraki %(rebuilt)s kayıt yeniden oluşturuldu."
+
+#: app/blueprints/expenses.py
+msgid "It has no generated entries."
+msgstr "Buna ait oluşturulmuş kayıt yok."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "This also deletes its %(num)s generated entry (%(first)s to %(last)s)."
+msgid_plural "This also deletes its %(num)s generated entries (%(first)s to %(last)s)."
+msgstr[0] "Bu işlem, buna ait %(num)s oluşturulmuş kaydı da siler (%(first)s - %(last)s)."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s of them was edited by hand."
+msgid_plural "%(num)s of them were edited by hand."
+msgstr[0] "Bunlardan %(num)s tanesi elle düzenlenmiş."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its %(num)s generated entry stays as history."
+msgid_plural "Its %(num)s generated entries stay as history."
+msgstr[0] "Buna ait %(num)s oluşturulmuş kayıt geçmiş olarak kalır."
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to delete rule."
+msgstr "Kuralı silme izniniz yok."
+
+#: app/blueprints/expenses.py
+msgid "Recurring rule deleted. Linked generated entries deleted."
+msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar da silindi."
+
+#: app/blueprints/expenses.py
+msgid "Recurring rule deleted. Linked generated entries kept as history."
+msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar geçmiş olarak korundu."
+
+#: app/blueprints/expenses.py
+msgid "Only admin can update settings."
+msgstr "Ayarları yalnızca yönetici güncelleyebilir."
+
+#: app/blueprints/expenses.py
+msgid "Settings saved."
+msgstr "Ayarlar kaydedildi."
+
+#: app/blueprints/expenses.py
+msgid "Failed to save settings."
+msgstr "Ayarlar kaydedilemedi."
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to delete entry."
+msgstr "Kaydı silme izniniz yok."
+
+#: app/blueprints/expenses.py
+msgid "Expense deleted."
+msgstr "Harcama silindi."
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to edit entry."
+msgstr "Kaydı düzenleme izniniz yok."
+
+#: app/blueprints/expenses.py
+msgid "Expense updated."
+msgstr "Harcama güncellendi."
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to change entry."
+msgstr "Kaydı değiştirme izniniz yok."
+
+#: app/blueprints/expenses.py
+msgid "Only recurring days can be skipped."
+msgstr "Yalnızca yinelenen günler atlanabilir."
+
+#: app/blueprints/expenses.py
+msgid "Day skipped."
+msgstr "Gün atlandı."
+
+#: app/blueprints/expenses.py
+msgid "Day restored."
+msgstr "Gün geri alındı."
+
+#: app/blueprints/expenses.py
+msgid "Not allowed to restore this day."
+msgstr "Bu günü geri getirme izniniz yok."
+
+#: app/blueprints/expenses.py
+msgid "That day is not part of this recurring rule."
+msgstr "O gün bu yinelenme kuralına ait değil."
+
+#: app/blueprints/expenses.py
+msgid "That day is already there."
+msgstr "O gün zaten var."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s added back for %(date)s."
+msgstr "%(title)s, %(date)s için geri eklendi."
+
+#: app/blueprints/expenses.py
+msgid "Invalid settlement."
+msgstr "Geçersiz hesaplaşma."
+
+#: app/blueprints/expenses.py
+msgid "Only the people involved can record a settlement."
+msgstr "Hesaplaşmayı yalnızca ilgili kişiler kaydedebilir."
+
+#: app/blueprints/expenses.py
+msgid "Settlement recorded."
+msgstr "Hesaplaşma kaydedildi."
+
+#: app/blueprints/expenses.py
+msgid "No entries selected."
+msgstr "Hiç kayıt seçilmedi."
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(num)s expense deleted."
+msgid_plural "%(num)s expenses deleted."
+msgstr[0] "%(num)s harcama silindi."
+
+#: app/blueprints/expenses.py
+msgid "Invalid month parameter. Must be an integer between 1 and 12."
+msgstr "Geçersiz ay parametresi. 1 ile 12 arasında bir tam sayı olmalı."
+
+#: app/blueprints/expiry.py app/blueprints/shopping.py
+msgid "Item added."
+msgstr "Öğe eklendi."
+
+#: app/blueprints/expiry.py app/blueprints/shopping.py
+msgid "Item deleted."
+msgstr "Öğe silindi."
+
+#: app/blueprints/expiry.py app/blueprints/shopping.py
+msgid "Not allowed to delete item."
+msgstr "Öğeyi silme izniniz yok."
+
+#: app/blueprints/media_pdfs.py
+msgid "Invalid or disallowed URL. Only external http(s) URLs are allowed."
+msgstr "Geçersiz ya da izin verilmeyen adres. Yalnızca dış http(s) adreslerine izin verilir."
+
+#: app/blueprints/media_pdfs.py
+msgid "Download queued. You can switch tabs; refresh to check status."
+msgstr "İndirme kuyruğa alındı. Sekme değiştirebilirsiniz; durumu görmek için sayfayı yenileyin."
+
+#: app/blueprints/media_pdfs.py
+msgid "Download deleted."
+msgstr "İndirme silindi."
+
+#: app/blueprints/media_pdfs.py
+msgid "Not allowed to delete download."
+msgstr "İndirmeyi silme izniniz yok."
+
+#: app/blueprints/media_pdfs.py
+msgid "Only PDF files are allowed."
+msgstr "Yalnızca PDF dosyalarına izin verilir."
+
+#: app/blueprints/media_pdfs.py
+msgid "Invalid filename."
+msgstr "Geçersiz dosya adı."
+
+#: app/blueprints/media_pdfs.py
+msgid "PDF compressed."
+msgstr "PDF sıkıştırıldı."
+
+#: app/blueprints/media_pdfs.py
+msgid "PDF deleted."
+msgstr "PDF silindi."
+
+#: app/blueprints/media_pdfs.py
+msgid "Not allowed to delete PDF."
+msgstr "PDF dosyasını silme izniniz yok."
+
+#: app/blueprints/notes.py
+msgid "Note updated."
+msgstr "Not güncellendi."
+
+#: app/blueprints/notes.py
+msgid "Not allowed to edit note."
+msgstr "Notu düzenleme izniniz yok."
+
+#: app/blueprints/notes.py
+msgid "Note added."
+msgstr "Not eklendi."
+
+#: app/blueprints/notes.py
+msgid "Note deleted."
+msgstr "Not silindi."
+
+#: app/blueprints/notes.py
+msgid "Not allowed to delete note."
+msgstr "Notu silme izniniz yok."
+
+#: app/blueprints/qr.py
+msgid "QR code created."
+msgstr "QR kod oluşturuldu."
+
+#: app/blueprints/qr.py
+msgid "QR code deleted."
+msgstr "QR kod silindi."
+
+#: app/blueprints/qr.py
+msgid "Not allowed to delete QR code."
+msgstr "QR kodu silme izniniz yok."
+
+#: app/blueprints/recipes.py
+msgid "Invalid link URL."
+msgstr "Geçersiz bağlantı adresi."
+
+#: app/blueprints/recipes.py static/js/pages/recipes.js
+msgid "Please add ingredients or instructions (or both)."
+msgstr "Lütfen malzemeleri ya da hazırlanışı (ya da ikisini) ekleyin."
+
+#: app/blueprints/recipes.py
+msgid "Recipe updated."
+msgstr "Tarif güncellendi."
+
+#: app/blueprints/recipes.py
+msgid "Recipe added."
+msgstr "Tarif eklendi."
+
+#: app/blueprints/recipes.py
+msgid "Not allowed to edit recipe."
+msgstr "Tarifi düzenleme izniniz yok."
+
+#: app/blueprints/recipes.py
+msgid "Recipe deleted."
+msgstr "Tarif silindi."
+
+#: app/blueprints/shortener.py
+msgid "Please enter a valid http(s) URL."
+msgstr "Lütfen geçerli bir http(s) adresi girin."
+
+#: app/blueprints/shortener.py
+msgid "Short link created."
+msgstr "Kısa bağlantı oluşturuldu."
+
+#: app/blueprints/shortener.py
+msgid "Invalid target URL."
+msgstr "Geçersiz hedef adres."
+
+#: app/blueprints/shortener.py
+msgid "Short link deleted."
+msgstr "Kısa bağlantı silindi."
+
+#: app/blueprints/shortener.py
+msgid "Not allowed to delete short link."
+msgstr "Kısa bağlantıyı silme izniniz yok."
+
+#: app/blueprints/uploads.py
+#, python-format
+msgid "%(num)s file uploaded."
+msgid_plural "%(num)s files uploaded."
+msgstr[0] "%(num)s dosya yüklendi."
+
+#: app/blueprints/uploads.py
+msgid "No file selected."
+msgstr "Hiç dosya seçilmedi."
+
+#: app/blueprints/uploads.py
+msgid "File deleted."
+msgstr "Dosya silindi."
+
+#: app/blueprints/uploads.py
+msgid "Not allowed to delete file."
+msgstr "Dosyayı silme izniniz yok."
+
+#: app/undo.py
+msgid "It is too late to undo that."
+msgstr "Bunu geri almak için çok geç."
+
+#: app/undo.py static/js/base/app.js
+msgid "Could not undo that change."
+msgstr "Bu değişiklik geri alınamadı."
+
+#: app/undo.py
+msgid "Change undone."
+msgstr "Değişiklik geri alındı."
+
+#: static/js/base/app.js static/js/pages/home/reminders.js
+msgid "Undo"
+msgstr "Geri al"
+
+#: static/js/base/app.js static/js/pages/shopping.js
+msgid "Could not reach the server."
+msgstr "Sunucuya ulaşılamadı."
+
+#: static/js/base/app.js
+msgid "Could not unlock admin."
+msgstr "Yönetici kilidi açılamadı."
+
+#: static/js/base/app.js templates/base.html
+msgid "Expand sidebar"
+msgstr "Kenar çubuğunu genişlet"
+
+#: static/js/base/app.js templates/base.html
+msgid "Collapse sidebar"
+msgstr "Kenar çubuğunu daralt"
+
+#: static/js/base/app.js
+#, python-brace-format
+msgid "Welcome, {name}! — {date}"
+msgstr "Hoş geldin {name}! — {date}"
+
+#: static/js/base/ui.js static/js/pages/shopping.js templates/base.html
+#: templates/chores.html templates/expenses.html
+#: templates/expenses_recurring.html templates/index.html templates/notes.html
+#: templates/recipes.html
+msgid "Cancel"
+msgstr "İptal"
+
+#: static/js/base/ui.js
+msgid "OK"
+msgstr "Tamam"
+
+#: static/js/base/ui.js static/js/pages/shopping.js templates/chores.html
+#: templates/expenses_recurring.html templates/index.html templates/notes.html
+msgid "Save"
+msgstr "Kaydet"
+
+#: static/js/base/ui.js
+msgid "Dismiss"
+msgstr "Kapat"
+
+#: static/js/expense_split.js
+msgid "Nobody ticked: a personal expense that isn't shared."
+msgstr "Kimse işaretlenmedi: paylaşılmayan kişisel bir harcama."
+
+#: static/js/expense_split.js
+msgid "Enter a value for at least one person."
+msgstr "En az bir kişi için değer girin."
+
+#: static/js/expense_split.js
+msgid "Each person pays in proportion to their shares."
+msgstr "Her kişi payı oranında öder."
+
+#: static/js/expense_split.js
+msgid "Percentages add up to 100%."
+msgstr "Yüzdelerin toplamı 100%."
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Percentages add up to {sum}: {left} left to assign."
+msgstr "Yüzdelerin toplamı {sum}: dağıtılacak {left} kaldı."
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Percentages add up to {sum}: {over} too much."
+msgstr "Yüzdelerin toplamı {sum}: {over} fazla."
+
+#: static/js/expense_split.js
+msgid "Enter the total amount first."
+msgstr "Önce toplam tutarı girin."
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Amounts add up to {total}."
+msgstr "Tutarların toplamı {total}."
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Amounts add up to {sum} of {total}: {left} left to assign."
+msgstr "Tutarların toplamı {total} içinden {sum}: dağıtılacak {left} kaldı."
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "Amounts add up to {sum} of {total}: {over} too much."
+msgstr "Tutarların toplamı {total} içinden {sum}: {over} fazla."
+
+#: static/js/expense_split.js
+#, python-brace-format
+msgid "{name} split value"
+msgstr "{name} paylaşım değeri"
+
+#: static/js/pages/chores.js
+msgid "Recurring chore ends in the past. Choose a future end date."
+msgstr "Yinelenen görev geçmişte bitiyor. İleri bir bitiş tarihi seçin."
+
+#: static/js/pages/chores.js
+msgid "Save changes to this recurring chore?"
+msgstr "Bu yinelenen görevdeki değişiklikler kaydedilsin mi?"
+
+#: static/js/pages/chores.js
+msgid "Its schedule and next due date are updated to match."
+msgstr "Programı ve sıradaki tarihi buna göre güncellenir."
+
+#: static/js/pages/chores.js static/js/pages/expenses_recurring.js
+#: static/js/pages/home/reminders.js
+msgid "Save changes"
+msgstr "Değişiklikleri kaydet"
+
+#: static/js/pages/chores_suggestions.js
+#, python-brace-format
+msgid "Hide suggestion {item}"
+msgstr "{item} önerisini gizle"
+
+#: static/js/pages/chores_suggestions.js static/js/pages/home/reminders.js
+msgid "Hide"
+msgstr "Gizle"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "My share after splits: {amount}"
+msgstr "Paylaşımdan sonra payım: {amount}"
+
+#: static/js/pages/expenses.js
+msgid "No entries this month."
+msgstr "Bu ay hiç kayıt yok."
+
+#: static/js/pages/expenses.js
+msgid "recurring"
+msgstr "yinelenen"
+
+#: static/js/pages/expenses.js
+msgid "manual"
+msgstr "elle"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "skipped {count} day"
+msgid_plural "skipped {count} days"
+msgstr[0] "{count} gün atlandı"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "{qty} × {count} day @ {price}"
+msgid_plural "{qty} × {count} days @ {price}"
+msgstr[0] "{qty} × {count} gün @ {price}"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "{count} entry"
+msgid_plural "{count} entries"
+msgstr[0] "{count} kayıt"
+
+#: static/js/pages/expenses.js
+msgid "Select all entries in this period"
+msgstr "Bu dönemdeki tüm kayıtları seç"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "by {name}"
+msgstr "{name} tarafından"
+
+#: static/js/pages/expenses.js
+msgid "Pick a day on the calendar to view or add expenses."
+msgstr "Harcamaları görmek ya da eklemek için takvimden bir gün seçin."
+
+#: static/js/pages/expenses.js
+msgid "skipped"
+msgstr "atlandı"
+
+#: static/js/pages/expenses.js
+msgid "settlement"
+msgstr "hesaplaşma"
+
+#: static/js/pages/expenses.js
+msgid "Split:"
+msgstr "Paylaşım:"
+
+#: static/js/pages/expenses.js
+msgid "Skip day"
+msgstr "Günü atla"
+
+#: static/js/pages/expenses.js static/js/pages/home/reminders.js
+msgid "Restore"
+msgstr "Geri getir"
+
+#: static/js/pages/expenses.js static/js/pages/home/reminders.js
+#: templates/chores.html templates/expenses_recurring.html templates/notes.html
+#: templates/recipes.html templates/shopping.html
+msgid "Edit"
+msgstr "Düzenle"
+
+#: static/js/pages/expenses.js
+msgid "Delete this expense?"
+msgstr "Bu harcama silinsin mi?"
+
+#: static/js/pages/expenses.js
+msgid "(removed)"
+msgstr "(kaldırıldı)"
+
+#: static/js/pages/expenses.js
+msgid "Add back"
+msgstr "Geri ekle"
+
+#: static/js/pages/expenses.js
+msgid "Expenses for"
+msgstr "Harcamalar:"
+
+#: static/js/pages/expenses.js
+msgid "No expenses yet."
+msgstr "Henüz harcama yok."
+
+#: static/js/pages/expenses.js templates/expenses.html
+msgid "Add Expense"
+msgstr "Harcama Ekle"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "gets back {amount}"
+msgstr "{amount} alacak"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "owes {amount}"
+msgstr "{amount} borçlu"
+
+#: static/js/pages/expenses.js
+msgid "Everyone is settled up."
+msgstr "Herkes hesaplaşmış."
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "{from} owes {to} {amount}"
+msgstr "{from}, {to} kişisine {amount} borçlu"
+
+#: static/js/pages/expenses.js
+msgid "Settle up"
+msgstr "Hesaplaş"
+
+#: static/js/pages/expenses.js
+msgid "Nothing to settle."
+msgstr "Hesaplaşılacak bir şey yok."
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "paid {paid} · share {share}"
+msgstr "ödenen {paid} · pay {share}"
+
+#: static/js/pages/expenses.js
+msgid "No spending this month."
+msgstr "Bu ay harcama yok."
+
+#: static/js/pages/expenses.js
+msgid "Record payment"
+msgstr "Ödeme kaydet"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "Record a payment from {from} to {to}."
+msgstr "{from} tarafından {to} kişisine yapılan ödemeyi kaydet."
+
+#: static/js/pages/expenses.js
+msgid "Amount"
+msgstr "Tutar"
+
+#: static/js/pages/expenses.js
+msgid "Enter an amount greater than zero."
+msgstr "Sıfırdan büyük bir tutar girin."
+
+#: static/js/pages/expenses.js
+msgid "Edit Expense"
+msgstr "Harcamayı Düzenle"
+
+#: static/js/pages/expenses.js
+#, python-brace-format
+msgid "Delete {count} selected entry?"
+msgid_plural "Delete {count} selected entries?"
+msgstr[0] "Seçili {count} kayıt silinsin mi?"
+
+#: static/js/pages/expenses_recurring.js
+msgid "Rewrite the whole history of this rule?"
+msgstr "Bu kuralın tüm geçmişi yeniden yazılsın mı?"
+
+#: static/js/pages/expenses_recurring.js
+msgid "Split this rule?"
+msgstr "Bu kural ayrılsın mı?"
+
+#: static/js/pages/expenses_recurring.js
+msgid "Change entries that already exist?"
+msgstr "Hâlihazırda var olan kayıtlar değiştirilsin mi?"
+
+#: static/js/pages/expenses_recurring.js
+msgid "Save changes to this rule?"
+msgstr "Bu kuraldaki değişiklikler kaydedilsin mi?"
+
+#: static/js/pages/expenses_recurring.js
+msgid "This can change entries that already exist."
+msgstr "Bu, var olan kayıtları değiştirebilir."
+
+#: static/js/pages/expenses_recurring.js
+msgid "Delete this recurring rule?"
+msgstr "Bu yinelenme kuralı silinsin mi?"
+
+#: static/js/pages/expenses_recurring.js templates/expenses_recurring.html
+msgid "Delete Rule"
+msgstr "Kuralı Sil"
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Home"
+msgstr "Evde"
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Away"
+msgstr "Uzakta"
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Out"
+msgstr "Dışarıda"
+
+#: static/js/pages/home/presence.js templates/index.html
+msgid "Traveling"
+msgstr "Seyahatte"
+
+#: static/js/pages/home/presence.js
+msgid "Status cleared"
+msgstr "Durum temizlendi"
+
+#: static/js/pages/home/presence.js
+msgid "No status to clear"
+msgstr "Temizlenecek durum yok"
+
+#: static/js/pages/home/presence.js
+msgid "Status updated"
+msgstr "Durum güncellendi"
+
+#: static/js/pages/home/presence.js
+msgid "Update failed"
+msgstr "Güncelleme başarısız"
+
+#: static/js/pages/home/presence.js
+msgid "Cannot save empty status"
+msgstr "Boş durum kaydedilemez"
+
+#: static/js/pages/home/presence.js
+msgid "Status saved"
+msgstr "Durum kaydedildi"
+
+#: static/js/pages/home/presence.js static/js/pages/home/reminders.js
+msgid "Save failed"
+msgstr "Kaydetme başarısız"
+
+#: static/js/pages/home/presence.js
+msgid "Status removed"
+msgstr "Durum kaldırıldı"
+
+#: static/js/pages/home/presence.js
+msgid "Remove failed"
+msgstr "Kaldırma başarısız"
+
+#: static/js/pages/home/reminders.js
+msgid "(No category)"
+msgstr "(Kategori yok)"
+
+#: static/js/pages/home/reminders.js
+msgid "Deleted"
+msgstr "Silindi"
+
+#: static/js/pages/home/reminders.js
+msgid "Delete failed"
+msgstr "Silme başarısız"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Deleted {count}"
+msgstr "{count} öğe silindi"
+
+#: static/js/pages/home/reminders.js
+msgid "Day"
+msgstr "Gün"
+
+#: static/js/pages/home/reminders.js
+msgid "Week"
+msgstr "Hafta"
+
+#: static/js/pages/home/reminders.js
+msgid "Month"
+msgstr "Ay"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} day"
+msgid_plural "Set repeat every {count} days"
+msgstr[0] "Yinelenme {count} günde bir olarak ayarlandı"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} week"
+msgid_plural "Set repeat every {count} weeks"
+msgstr[0] "Yinelenme {count} haftada bir olarak ayarlandı"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} month"
+msgid_plural "Set repeat every {count} months"
+msgstr[0] "Yinelenme {count} ayda bir olarak ayarlandı"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Set repeat every {count} year"
+msgid_plural "Set repeat every {count} years"
+msgstr[0] "Yinelenme {count} yılda bir olarak ayarlandı"
+
+#: static/js/pages/home/reminders.js
+msgid "This recurrence overlaps with the reminder duration."
+msgstr "Bu yinelenme, hatırlatıcının süresiyle çakışıyor."
+
+#: static/js/pages/home/reminders.js
+msgid "Choose one fix to continue:"
+msgstr "Devam etmek için bir çözüm seçin:"
+
+#: static/js/pages/home/reminders.js
+msgid "Remove end date/time"
+msgstr "Bitiş tarihini/saatini kaldır"
+
+#: static/js/pages/home/reminders.js
+msgid "Keep as non-recurring"
+msgstr "Yinelenmeyen olarak bırak"
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring schedule overlaps selected date range"
+msgstr "Yinelenme programı seçili tarih aralığıyla çakışıyor"
+
+#: static/js/pages/home/reminders.js
+msgid "Turn this into a single reminder?"
+msgstr "Bu, tek seferlik hatırlatıcıya dönüştürülsün mü?"
+
+#: static/js/pages/home/reminders.js
+msgid "The recurring reminder is removed with all its dates, past ones included. Only the single reminder stays."
+msgstr "Yinelenen hatırlatıcı, geçmiş olanlar dahil tüm tarihleriyle kaldırılır. Yalnızca tek seferlik hatırlatıcı kalır."
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to delete rule after creating single"
+msgstr "Tek seferlik hatırlatıcı oluşturulduktan sonra kural silinemedi"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to create single reminder"
+msgstr "Tek seferlik hatırlatıcı oluşturulamadı"
+
+#: static/js/pages/home/reminders.js
+msgid "Save changes to this recurring reminder?"
+msgstr "Bu yinelenen hatırlatıcıdaki değişiklikler kaydedilsin mi?"
+
+#: static/js/pages/home/reminders.js
+msgid "The changes apply from today. Earlier dates stay as they are."
+msgstr "Değişiklikler bugünden itibaren geçerli. Önceki tarihler olduğu gibi kalır."
+
+#: static/js/pages/home/reminders.js
+msgid "The changes apply to all its dates."
+msgstr "Değişiklikler tüm tarihleri için geçerli."
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to delete original reminder after creating recurring rule"
+msgstr "Yinelenme kuralı oluşturulduktan sonra özgün hatırlatıcı silinemedi"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to create recurring rule"
+msgstr "Yinelenme kuralı oluşturulamadı"
+
+#: static/js/pages/home/reminders.js
+msgid "Saved"
+msgstr "Kaydedildi"
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring reminder updated from today. Earlier dates are unchanged."
+msgstr "Yinelenen hatırlatıcı bugünden itibaren güncellendi. Önceki tarihler değişmedi."
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring rule updated"
+msgstr "Yinelenme kuralı güncellendi"
+
+#: static/js/pages/home/reminders.js
+msgid "Reminder updated"
+msgstr "Hatırlatıcı güncellendi"
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring rule saved"
+msgstr "Yinelenme kuralı kaydedildi"
+
+#: static/js/pages/home/reminders.js
+msgid "Reminder added"
+msgstr "Hatırlatıcı eklendi"
+
+#: static/js/pages/home/reminders.js
+msgid "Network error"
+msgstr "Ağ hatası"
+
+#: static/js/pages/home/reminders.js
+msgid "Reminder moved"
+msgstr "Hatırlatıcı taşındı"
+
+#: static/js/pages/home/reminders.js
+msgid "Move failed"
+msgstr "Taşıma başarısız"
+
+#: static/js/pages/home/reminders.js
+msgid "Loading..."
+msgstr "Yükleniyor..."
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} day"
+msgid_plural "Repeats every {count} days"
+msgstr[0] "{count} günde bir yinelenir"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} week"
+msgid_plural "Repeats every {count} weeks"
+msgstr[0] "{count} haftada bir yinelenir"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} month"
+msgid_plural "Repeats every {count} months"
+msgstr[0] "{count} ayda bir yinelenir"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Repeats every {count} year"
+msgid_plural "Repeats every {count} years"
+msgstr[0] "{count} yılda bir yinelenir"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "{repeat} till {date}"
+msgstr "{repeat}, {date} tarihine kadar"
+
+#: static/js/pages/home/reminders.js
+msgid "No reminders"
+msgstr "Hatırlatıcı yok"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "at {time}"
+msgstr "saat {time}"
+
+#: static/js/pages/home/reminders.js
+msgid "Edit recurring"
+msgstr "Yinelenmeyi düzenle"
+
+#: static/js/pages/home/reminders.js
+msgid "Delete recurring"
+msgstr "Yinelenmeyi sil"
+
+#: static/js/pages/home/reminders.js templates/index.html
+msgid "Recurring"
+msgstr "Yinelenen"
+
+#: static/js/pages/home/reminders.js
+msgid "all-day"
+msgstr "tüm gün"
+
+#: static/js/pages/home/reminders.js
+msgid "Select reminder"
+msgstr "Hatırlatıcıyı seç"
+
+#: static/js/pages/home/reminders.js
+msgid "Mark as done"
+msgstr "Tamamlandı olarak işaretle"
+
+#: static/js/pages/home/reminders.js
+msgid "Move to Trash"
+msgstr "Çöp Kutusuna Taşı"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Completed ({count})"
+msgstr "Tamamlanan ({count})"
+
+#: static/js/pages/home/reminders.js
+msgid "Show"
+msgstr "Göster"
+
+#: static/js/pages/home/reminders.js
+msgid "Done"
+msgstr "Tamamlandı"
+
+#: static/js/pages/home/reminders.js
+msgid "Mark as active"
+msgstr "Etkin olarak işaretle"
+
+#: static/js/pages/home/reminders.js
+msgid "This recurring reminder has already ended. Deleting it also removes its past dates from the calendar."
+msgstr "Bu yinelenen hatırlatıcı zaten sona erdi. Silmek, geçmiş tarihlerini de takvimden kaldırır."
+
+#: static/js/pages/home/reminders.js
+msgid "Dates from today onwards are removed. Earlier dates stay on the calendar."
+msgstr "Bugünden sonraki tarihler kaldırılır. Önceki tarihler takvimde kalır."
+
+#: static/js/pages/home/reminders.js
+msgid "Delete this recurring reminder?"
+msgstr "Bu yinelenen hatırlatıcı silinsin mi?"
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring reminder ended. Earlier dates were kept."
+msgstr "Yinelenen hatırlatıcı sona erdirildi. Önceki tarihler korundu."
+
+#: static/js/pages/home/reminders.js
+msgid "Recurring rule deleted"
+msgstr "Yinelenme kuralı silindi"
+
+#: static/js/pages/home/reminders.js
+msgid "Marked done"
+msgstr "Tamamlandı olarak işaretlendi"
+
+#: static/js/pages/home/reminders.js
+msgid "Action failed"
+msgstr "İşlem başarısız"
+
+#: static/js/pages/home/reminders.js
+msgid "Marked active"
+msgstr "Etkin olarak işaretlendi"
+
+#: static/js/pages/home/reminders.js
+msgid "Snoozed"
+msgstr "Ertelendi"
+
+#: static/js/pages/home/reminders.js
+msgid "Snooze failed"
+msgstr "Erteleme başarısız"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "All: {count}"
+msgstr "Tümü: {count}"
+
+#: static/js/pages/home/reminders.js
+msgid "Deleted (undo available)"
+msgstr "Silindi (geri alınabilir)"
+
+#: static/js/pages/home/reminders.js
+msgid "Undo delete"
+msgstr "Silmeyi geri al"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "Move {count} selected reminder to the trash?"
+msgid_plural "Move {count} selected reminders to the trash?"
+msgstr[0] "Seçili {count} hatırlatıcı çöp kutusuna taşınsın mı?"
+
+#: static/js/pages/home/reminders.js
+msgid "Loading trash…"
+msgstr "Çöp kutusu yükleniyor…"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed to load trash."
+msgstr "Çöp kutusu yüklenemedi."
+
+#: static/js/pages/home/reminders.js
+msgid "Recycle bin is empty. Items auto-purge after 7 days."
+msgstr "Geri dönüşüm kutusu boş. Öğeler 7 gün sonra kendiliğinden silinir."
+
+#: static/js/pages/home/reminders.js
+msgid "Recycle Bin — items auto-purge after 7 days"
+msgstr "Geri Dönüşüm Kutusu — öğeler 7 gün sonra kendiliğinden silinir"
+
+#: static/js/pages/home/reminders.js
+msgid "Restored"
+msgstr "Geri getirildi"
+
+#: static/js/pages/home/reminders.js
+msgid "Failed"
+msgstr "Başarısız"
+
+#: static/js/pages/home/reminders.js
+msgid "Upcoming (next 7 days)"
+msgstr "Yaklaşanlar (önümüzdeki 7 gün)"
+
+#: static/js/pages/home/reminders.js
+msgid "No upcoming reminders."
+msgstr "Yaklaşan hatırlatıcı yok."
+
+#: static/js/pages/media.js
+msgid "Downloading…"
+msgstr "İndiriliyor…"
+
+#: static/js/pages/media.js templates/media.html
+msgid "Starting…"
+msgstr "Başlıyor…"
+
+#: static/js/pages/media.js templates/media.html
+msgid "Will take a while…"
+msgstr "Biraz sürecek…"
+
+#: static/js/pages/media.js
+#, python-brace-format
+msgid "Preview {name} in new tab"
+msgstr "{name} dosyasını yeni sekmede önizle"
+
+#: static/js/pages/media.js templates/media.html templates/pdfs.html
+#: templates/upload.html
+msgid "Preview"
+msgstr "Önizle"
+
+#: static/js/pages/media.js templates/media.html templates/pdfs.html
+#: templates/qr.html templates/upload.html
+msgid "Download"
+msgstr "İndir"
+
+#: static/js/pages/media.js
+msgid "Error"
+msgstr "Hata"
+
+#: static/js/pages/recipes.js
+msgid "Type here..."
+msgstr "Buraya yazın..."
+
+#: static/js/pages/shopping.js
+msgid "Edit Item"
+msgstr "Öğeyi Düzenle"
+
+#: static/js/pages/shopping.js templates/shopping.html
+msgid "Item"
+msgstr "Öğe"
+
+#: static/js/pages/shopping.js templates/recipes.html
+msgid "Tags"
+msgstr "Etiketler"
+
+#: static/js/pages/shopping.js templates/chores.html templates/recipes.html
+#: templates/shopping.html
+msgid "Add tag and press Enter"
+msgstr "Etiket ekleyip Enter'a basın"
+
+#: static/js/pages/shopping.js
+msgid "Item updated."
+msgstr "Öğe güncellendi."
+
+#: static/js/pages/shopping.js
+msgid "Could not save the item."
+msgstr "Öğe kaydedilemedi."
+
+#: static/js/pages/shopping.js
+msgid "Delete suggestion"
+msgstr "Öneriyi sil"
+
+#: static/js/pages/shopping.js
+#, python-brace-format
+msgid "Delete suggestion {item}"
+msgstr "{item} önerisini sil"
+
+#: static/js/tags.js
+msgid "remove"
+msgstr "kaldır"
+
+#: static/js/tags.js templates/chores.html templates/shopping.html
+msgid "Add"
+msgstr "Ekle"
+
+#: static/js/base/app.js static/js/pages/expenses.js
+#: static/js/pages/home/reminders.js static/js/tags.js templates/chores.html
+#: templates/expiry.html templates/media.html templates/notes.html
+#: templates/pdfs.html templates/qr.html templates/recipes.html
+#: templates/shopping.html templates/shorten.html templates/upload.html
+msgid "Delete"
+msgstr "Sil"
+
+#: static/js/tags.js
+#, python-brace-format
+msgid "Delete tag \"{tag}\"? This removes it from suggestions (items keep their tags)."
+msgstr "\"{tag}\" etiketi silinsin mi? Bu, etiketi önerilerden kaldırır (öğeler etiketlerini korur)."
+
+#: static/js/weather.js
+msgctxt "weather"
+msgid "Clear"
+msgstr "Açık"
+
+#: static/js/weather.js
+msgid "Mainly Clear"
+msgstr "Çoğunlukla Açık"
+
+#: static/js/weather.js
+msgid "Partly Cloudy"
+msgstr "Parçalı Bulutlu"
+
+#: static/js/weather.js
+msgid "Overcast"
+msgstr "Kapalı"
+
+#: static/js/weather.js
+msgid "Fog"
+msgstr "Sis"
+
+#: static/js/weather.js
+msgid "Freezing Fog"
+msgstr "Dondurucu Sis"
+
+#: static/js/weather.js
+msgid "Light Drizzle"
+msgstr "Hafif Çisenti"
+
+#: static/js/weather.js
+msgid "Drizzle"
+msgstr "Çisenti"
+
+#: static/js/weather.js
+msgid "Heavy Drizzle"
+msgstr "Yoğun Çisenti"
+
+#: static/js/weather.js
+msgid "Light Rain"
+msgstr "Hafif Yağmur"
+
+#: static/js/weather.js
+msgid "Rain"
+msgstr "Yağmur"
+
+#: static/js/weather.js
+msgid "Heavy Rain"
+msgstr "Şiddetli Yağmur"
+
+#: static/js/weather.js
+msgid "Light Snow"
+msgstr "Hafif Kar"
+
+#: static/js/weather.js
+msgid "Snow"
+msgstr "Kar"
+
+#: static/js/weather.js
+msgid "Heavy Snow"
+msgstr "Yoğun Kar"
+
+#: static/js/weather.js
+msgid "Snow Grains"
+msgstr "Kar Tanecikleri"
+
+#: static/js/weather.js
+msgid "Light Showers"
+msgstr "Hafif Sağanak"
+
+#: static/js/weather.js
+msgid "Showers"
+msgstr "Sağanak"
+
+#: static/js/weather.js
+msgid "Heavy Showers"
+msgstr "Şiddetli Sağanak"
+
+#: static/js/weather.js
+msgid "Snow Showers"
+msgstr "Kar Sağanağı"
+
+#: static/js/weather.js
+msgid "Heavy Snow Showers"
+msgstr "Şiddetli Kar Sağanağı"
+
+#: static/js/weather.js
+msgid "Thunderstorm"
+msgstr "Gök Gürültülü Fırtına"
+
+#: static/js/weather.js
+msgid "Thunderstorm + Hail"
+msgstr "Gök Gürültülü Fırtına + Dolu"
+
+#: static/js/weather.js templates/index.html
+msgid "Unknown"
+msgstr "Bilinmiyor"
+
+#: static/js/weather.js
+msgid "Invalid weather data received"
+msgstr "Geçersiz hava durumu verisi alındı"
+
+#: static/js/weather.js
+msgid "No rain"
+msgstr "Yağmur yok"
+
+#: static/js/weather.js
+msgid "Today's Forecast"
+msgstr "Bugünün Tahmini"
+
+#: static/js/weather.js
+msgid "H:"
+msgstr "Y:"
+
+#: static/js/weather.js
+msgid "L:"
+msgstr "D:"
+
+#: static/js/weather.js
+msgid "Sunrise:"
+msgstr "Gün doğumu:"
+
+#: static/js/weather.js
+msgid "Sunset:"
+msgstr "Gün batımı:"
+
+#: static/js/weather.js
+msgid "UV Index:"
+msgstr "UV indeksi:"
+
+#: static/js/weather.js
+msgid "Rain:"
+msgstr "Yağmur:"
+
+#: static/js/weather.js
+msgid "Feels like:"
+msgstr "Hissedilen:"
+
+#: static/js/weather.js
+msgid "Wind:"
+msgstr "Rüzgâr:"
+
+#: static/js/weather.js
+msgid "Gusts:"
+msgstr "Rüzgâr hamlesi:"
+
+#: static/js/weather.js
+msgid "Humidity:"
+msgstr "Nem:"
+
+#: static/js/weather.js
+msgid "just now"
+msgstr "az önce"
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "{count} minute ago"
+msgid_plural "{count} minutes ago"
+msgstr[0] "{count} dakika önce"
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "{count} hour ago"
+msgid_plural "{count} hours ago"
+msgstr[0] "{count} saat önce"
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "Last updated: {time} ({ago})"
+msgstr "Son güncelleme: {time} ({ago})"
+
+#: static/js/weather.js
+#, python-brace-format
+msgid "Last updated: {time}"
+msgstr "Son güncelleme: {time}"
+
+#: static/js/weather.js
+msgid "Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180."
+msgstr "Geçersiz koordinat. Enlem -90 ile 90, boylam -180 ile 180 arasında olmalı."
+
+#: static/js/weather.js
+msgid "Failed to load weather data"
+msgstr "Hava durumu verisi yüklenemedi"
+
+#: static/js/weather.js
+msgid "Unable to get your location. Please configure coordinates in config.yml"
+msgstr "Konumunuz alınamadı. Lütfen config.yml içinde koordinatları ayarlayın"
+
+#: static/js/weather.js
+msgid "Geolocation is not available in this context. This may be because the site is not served over HTTPS, or your browser does not support it. Please configure coordinates in config.yml"
+msgstr "Konum servisi bu bağlamda kullanılamıyor. Bunun nedeni sitenin HTTPS üzerinden sunulmaması ya da tarayıcınızın bunu desteklememesi olabilir. Lütfen config.yml içinde koordinatları ayarlayın"
+
+#: templates/_expense_split.html
+msgid "Split with"
+msgstr "Şunlarla paylaş"
+
+#: templates/_expense_split.html
+msgid "Split method"
+msgstr "Paylaşım yöntemi"
+
+#: templates/_expense_split.html
+msgid "Equally"
+msgstr "Eşit olarak"
+
+#: templates/_expense_split.html
+msgid "By shares"
+msgstr "Paya göre"
+
+#: templates/_expense_split.html
+msgid "By percentage"
+msgstr "Yüzdeye göre"
+
+#: templates/_expense_split.html
+msgid "By amount"
+msgstr "Tutara göre"
+
+#: templates/_expense_split.html
+#, python-format
+msgid "%(name)s split value"
+msgstr "%(name)s paylaşım değeri"
+
+#: templates/base.html
+msgid "Close menu"
+msgstr "Menüyü kapat"
+
+#: templates/base.html
+msgid "Welcome"
+msgstr "Hoş Geldiniz"
+
+#: templates/base.html templates/notes.html
+msgid "Shared Notes"
+msgstr "Paylaşılan Notlar"
+
+#: templates/base.html templates/upload.html
+msgid "Shared Cloud"
+msgstr "Paylaşılan Bulut"
+
+#: templates/base.html templates/shopping.html
+msgid "Shopping List"
+msgstr "Alışveriş Listesi"
+
+#: templates/base.html
+msgid "Calendar"
+msgstr "Takvim"
+
+#: templates/base.html
+msgid "To-Do/Chores"
+msgstr "Yapılacaklar/Ev İşleri"
+
+#: templates/base.html templates/recipes.html
+msgid "Recipe Book"
+msgstr "Tarif Defteri"
+
+#: templates/base.html templates/expiry.html
+msgid "Expiry Tracker"
+msgstr "Son Kullanma Takibi"
+
+#: templates/base.html templates/shorten.html
+msgid "URL Shortener"
+msgstr "Bağlantı Kısaltıcı"
+
+#: templates/base.html templates/media.html
+msgid "Media Downloader"
+msgstr "Medya İndirici"
+
+#: templates/base.html templates/pdfs.html
+msgid "PDF Compressor"
+msgstr "PDF Sıkıştırıcı"
+
+#: templates/base.html
+msgid "QR Generator"
+msgstr "QR Üretici"
+
+#: templates/base.html templates/expenses.html
+msgid "Expense Tracker"
+msgstr "Harcama Takibi"
+
+#: templates/base.html
+msgid "Menu"
+msgstr "Menü"
+
+#: templates/base.html
+msgid "Switch user"
+msgstr "Kullanıcı değiştir"
+
+#: templates/base.html
+msgid "Current user"
+msgstr "Geçerli kullanıcı"
+
+#: templates/base.html
+msgid "Log out"
+msgstr "Çıkış yap"
+
+#: templates/base.html
+msgid "Logout"
+msgstr "Çıkış"
+
+#: templates/base.html
+msgid "buying me a coffee"
+msgstr "bana bir kahve ısmarlamayı"
+
+#: templates/base.html
+#, python-format
+msgid "If you found this useful, consider %(link)s"
+msgstr "Bunu faydalı bulduysanız %(link)s düşünebilirsiniz"
+
+#: templates/base.html
+msgid "Admin password"
+msgstr "Yönetici şifresi"
+
+#: templates/base.html
+#, python-format
+msgid "Enter the admin password to continue as %(name)s."
+msgstr "%(name)s olarak devam etmek için yönetici şifresini girin."
+
+#: templates/base.html templates/login.html
+msgid "Password"
+msgstr "Şifre"
+
+#: templates/base.html
+msgid "Unlock"
+msgstr "Kilidi aç"
+
+#: templates/base.html
+msgid "Select your user"
+msgstr "Kullanıcınızı seçin"
+
+#: templates/base.html
+msgid "Pick your name to personalize your HomeHub experience."
+msgstr "HomeHub deneyiminizi kişiselleştirmek için adınızı seçin."
+
+#: templates/base.html
+msgid "User"
+msgstr "Kullanıcı"
+
+#: templates/base.html templates/login.html
+msgid "Continue"
+msgstr "Devam"
+
+#: templates/chores.html
+msgid "To-Do / Chores"
+msgstr "Yapılacaklar / Ev İşleri"
+
+#: templates/chores.html
+#, python-format
+msgid "%(count)s open, %(done)s done"
+msgstr "%(count)s açık, %(done)s tamamlandı"
+
+#: templates/chores.html
+#, python-format
+msgid "%(count)s open"
+msgstr "%(count)s açık"
+
+#: templates/chores.html
+msgid "Show on welcome page"
+msgstr "Karşılama sayfasında göster"
+
+#: templates/chores.html
+msgid "Chore"
+msgstr "Ev işi"
+
+#: templates/chores.html
+msgid "Add a chore"
+msgstr "Ev işi ekle"
+
+#: templates/chores.html
+msgid "Tags (assignees, context)"
+msgstr "Etiketler (sorumlular, bağlam)"
+
+#: templates/chores.html templates/index.html
+msgid "Update"
+msgstr "Güncelle"
+
+#: templates/chores.html
+msgid "Recurring chore"
+msgstr "Yinelenen ev işi"
+
+#: templates/chores.html templates/index.html
+msgid "Repeat this every"
+msgstr "Şu sıklıkta yinele"
+
+#: templates/chores.html
+msgid "Unit"
+msgstr "Birim"
+
+#: templates/chores.html templates/index.html
+msgid "day"
+msgstr "gün"
+
+#: templates/chores.html templates/index.html
+msgid "week"
+msgstr "hafta"
+
+#: templates/chores.html templates/index.html
+msgid "month"
+msgstr "ay"
+
+#: templates/chores.html templates/index.html
+msgid "year"
+msgstr "yıl"
+
+#: templates/chores.html
+msgid "Starting from"
+msgstr "Başlangıç"
+
+#: templates/chores.html
+msgid "Till"
+msgstr "Bitiş"
+
+#: templates/chores.html templates/recipes.html templates/shopping.html
+msgid "Filter by tag:"
+msgstr "Etikete göre süz:"
+
+#: templates/chores.html templates/index.html templates/recipes.html
+#: templates/shopping.html
+msgid "Clear"
+msgstr "Temizle"
+
+#: templates/chores.html
+msgid "No chores yet."
+msgstr "Henüz ev işi yok."
+
+#: templates/chores.html
+msgid "Completed · Undo"
+msgstr "Tamamlandı · Geri al"
+
+#: templates/chores.html
+msgid "Mark Completed"
+msgstr "Tamamlandı İşaretle"
+
+#: templates/chores.html
+#, python-format
+msgid "Undo completed: %(item)s"
+msgstr "Tamamlandıyı geri al: %(item)s"
+
+#: templates/chores.html
+#, python-format
+msgid "Mark completed: %(item)s"
+msgstr "Tamamlandı işaretle: %(item)s"
+
+#: templates/chores.html templates/expiry.html templates/media.html
+#: templates/notes.html templates/pdfs.html templates/qr.html
+#: templates/shopping.html templates/shorten.html templates/upload.html
+#, python-format
+msgid "By %(name)s at %(time)s"
+msgstr "%(name)s, saat %(time)s"
+
+#: templates/chores.html
+msgid "Completed. That was its last date."
+msgstr "Tamamlandı. Bu son tarihiydi."
+
+#: templates/chores.html
+#, python-format
+msgid "Done. Next due on %(date)s"
+msgstr "Tamamlandı. Sıradaki tarih: %(date)s"
+
+#: templates/chores.html
+#, python-format
+msgid "Next due on %(date)s"
+msgstr "Sıradaki tarih: %(date)s"
+
+#: templates/chores.html templates/index.html
+#, python-format
+msgid "Due %(date)s"
+msgstr "Son tarih %(date)s"
+
+#: templates/chores.html templates/shopping.html
+#, python-format
+msgid "Edit %(item)s"
+msgstr "%(item)s düzenle"
+
+#: templates/chores.html
+msgid "Delete this recurring chore and its schedule?"
+msgstr "Bu yinelenen ev işi ve programı silinsin mi?"
+
+#: templates/chores.html
+msgid "Delete this chore?"
+msgstr "Bu ev işi silinsin mi?"
+
+#: templates/chores.html templates/expiry.html templates/media.html
+#: templates/pdfs.html templates/shopping.html templates/upload.html
+#, python-format
+msgid "Delete %(item)s"
+msgstr "%(item)s sil"
+
+#: templates/expenses.html
+msgid "Spending by day, with shared balances."
+msgstr "Güne göre harcamalar ve paylaşılan bakiyeler."
+
+#: templates/expenses.html
+msgid "Total This Month"
+msgstr "Bu Ayın Toplamı"
+
+#: templates/expenses.html
+msgid "My Spending"
+msgstr "Benim Harcamam"
+
+#: templates/expenses.html
+msgid "Top Category"
+msgstr "Öne Çıkan Kategori"
+
+#: templates/expenses.html
+msgid "Recurring rules & config"
+msgstr "Yinelenme kuralları ve ayarlar"
+
+#: templates/expenses.html templates/index.html
+msgid "Previous month"
+msgstr "Önceki ay"
+
+#: templates/expenses.html templates/index.html
+msgid "Next month"
+msgstr "Sonraki ay"
+
+#: templates/expenses.html
+msgid "Sun"
+msgstr "Paz"
+
+#: templates/expenses.html
+msgid "Mon"
+msgstr "Pzt"
+
+#: templates/expenses.html
+msgid "Tue"
+msgstr "Sal"
+
+#: templates/expenses.html
+msgid "Wed"
+msgstr "Çar"
+
+#: templates/expenses.html
+msgid "Thu"
+msgstr "Per"
+
+#: templates/expenses.html
+msgid "Fri"
+msgstr "Cum"
+
+#: templates/expenses.html
+msgid "Sat"
+msgstr "Cmt"
+
+#: templates/expenses.html
+msgid "Entries This Month"
+msgstr "Bu Ayın Kayıtları"
+
+#: templates/expenses.html
+msgid "Select all"
+msgstr "Tümünü seç"
+
+#: templates/expenses.html
+msgid "Delete Selected"
+msgstr "Seçilenleri Sil"
+
+#: templates/expenses.html
+msgid "Month Total:"
+msgstr "Ay Toplamı:"
+
+#: templates/expenses.html
+msgid "Balances"
+msgstr "Bakiyeler"
+
+#: templates/expenses.html
+msgid "Shared expenses, all months"
+msgstr "Paylaşılan harcamalar, tüm aylar"
+
+#: templates/expenses.html
+msgid "Net balance"
+msgstr "Net bakiye"
+
+#: templates/expenses.html
+msgid "To settle up"
+msgstr "Hesaplaşmak için"
+
+#: templates/expenses.html
+msgid "This month: paid vs share"
+msgstr "Bu ay: ödenen / pay"
+
+#: templates/expenses.html
+msgid "Date"
+msgstr "Tarih"
+
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Title"
+msgstr "Başlık"
+
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Category"
+msgstr "Kategori"
+
+#: templates/expenses.html
+msgid "e.g., Groceries"
+msgstr "örn. Market"
+
+#: templates/expenses.html
+msgid "Quantity"
+msgstr "Adet"
+
+#: templates/expenses.html
+msgid "optional"
+msgstr "isteğe bağlı"
+
+#: templates/expenses.html templates/expenses_recurring.html
+msgid "Unit Price"
+msgstr "Birim Fiyat"
+
+#: templates/expenses.html
+msgid "Total Amount"
+msgstr "Toplam Tutar"
+
+#: templates/expenses.html
+msgid "Paid by"
+msgstr "Ödeyen"
+
+#: templates/expenses.html
+msgid "Save Expense"
+msgstr "Harcamayı Kaydet"
+
+#: templates/expenses_recurring.html
+msgid "Back to Calendar"
+msgstr "Takvime Dön"
+
+#: templates/expenses_recurring.html
+msgid "Recurring Expense Rules"
+msgstr "Yinelenen Harcama Kuralları"
+
+#: templates/expenses_recurring.html
+msgid "Recurring Rules"
+msgstr "Yinelenme Kuralları"
+
+#: templates/expenses_recurring.html
+msgid "General Settings"
+msgstr "Genel Ayarlar"
+
+#: templates/expenses_recurring.html
+msgid "daily"
+msgstr "günlük"
+
+#: templates/expenses_recurring.html
+msgid "weekly"
+msgstr "haftalık"
+
+#: templates/expenses_recurring.html
+msgid "monthly"
+msgstr "aylık"
+
+#: templates/expenses_recurring.html
+msgid "day_of_month"
+msgstr "ayın günü"
+
+#: templates/expenses_recurring.html
+msgid "calendar"
+msgstr "takvim"
+
+#: templates/expenses_recurring.html
+msgid "by shares"
+msgstr "paya göre"
+
+#: templates/expenses_recurring.html
+msgid "by percentage"
+msgstr "yüzdeye göre"
+
+#: templates/expenses_recurring.html
+msgid "by amount"
+msgstr "tutara göre"
+
+#: templates/expenses_recurring.html
+msgid "Active Rules"
+msgstr "Etkin Kurallar"
+
+#: templates/expenses_recurring.html
+#, python-format
+msgid "by %(name)s"
+msgstr "%(name)s tarafından"
+
+#: templates/expenses_recurring.html
+#, python-format
+msgid "split with %(names)s"
+msgstr "%(names)s ile paylaşıldı"
+
+#: templates/expenses_recurring.html
+msgid "Editing a recurring rule can affect generated entries. Choose a strategy to avoid accidental history loss."
+msgstr "Bir yinelenme kuralını düzenlemek, oluşturulmuş kayıtları etkileyebilir. Geçmişi yanlışlıkla kaybetmemek için bir yöntem seçin."
+
+#: templates/expenses_recurring.html
+msgid "Default Qty"
+msgstr "Varsayılan Adet"
+
+#: templates/expenses_recurring.html
+msgid "Frequency"
+msgstr "Sıklık"
+
+#: templates/expenses_recurring.html
+msgid "Daily"
+msgstr "Günlük"
+
+#: templates/expenses_recurring.html
+msgid "Weekly"
+msgstr "Haftalık"
+
+#: templates/expenses_recurring.html
+msgid "Monthly"
+msgstr "Aylık"
+
+#: templates/expenses_recurring.html
+msgid "Monthly Mode"
+msgstr "Aylık Yöntem"
+
+#: templates/expenses_recurring.html
+msgid "Same day-of-month"
+msgstr "Ayın aynı günü"
+
+#: templates/expenses_recurring.html
+msgid "Calendar month"
+msgstr "Takvim ayı"
+
+#: templates/expenses_recurring.html templates/index.html
+msgid "Start Date"
+msgstr "Başlangıç Tarihi"
+
+#: templates/expenses_recurring.html templates/index.html
+msgid "End Date"
+msgstr "Bitiş Tarihi"
+
+#: templates/expenses_recurring.html
+msgid "Edit Strategy"
+msgstr "Düzenleme Yöntemi"
+
+#: templates/expenses_recurring.html
+msgid "Keep history, apply changes from effective date"
+msgstr "Geçmişi koru, değişiklikleri geçerlilik tarihinden itibaren uygula"
+
+#: templates/expenses_recurring.html
+msgid "Create new rule from effective date (split)"
+msgstr "Geçerlilik tarihinden yeni kural oluştur (ayır)"
+
+#: templates/expenses_recurring.html
+msgid "Rewrite entire rule history (destructive)"
+msgstr "Kuralın tüm geçmişini yeniden yaz (geri alınamaz)"
+
+#: templates/expenses_recurring.html
+msgid "Effective From"
+msgstr "Geçerlilik Başlangıcı"
+
+#: templates/expenses_recurring.html
+msgid "Used by apply/split strategies."
+msgstr "Uygula/ayır yöntemleri bunu kullanır."
+
+#: templates/expenses_recurring.html
+msgid "Delete generated entries (unchecked = keep history)"
+msgstr "Oluşturulmuş kayıtları sil (işaretsiz = geçmişi koru)"
+
+#: templates/expenses_recurring.html
+msgid "This permanently removes linked generated entries."
+msgstr "Bu, bağlı oluşturulmuş kayıtları kalıcı olarak siler."
+
+#: templates/expenses_recurring.html
+msgid "No recurring rules yet. Add one below."
+msgstr "Henüz yinelenme kuralı yok. Aşağıdan ekleyin."
+
+#: templates/expenses_recurring.html
+msgid "Add New Rule"
+msgstr "Yeni Kural Ekle"
+
+#: templates/expenses_recurring.html
+msgid "Title (e.g., Milk)"
+msgstr "Başlık (örn. Süt)"
+
+#: templates/expenses_recurring.html
+msgid "Category (opt)"
+msgstr "Kategori (isteğe bağlı)"
+
+#: templates/expenses_recurring.html
+msgid "Unit price"
+msgstr "Birim fiyat"
+
+#: templates/expenses_recurring.html
+msgid "Default qty"
+msgstr "Varsayılan adet"
+
+#: templates/expenses_recurring.html
+msgid "Monthly mode: Same day-of-month"
+msgstr "Aylık yöntem: Ayın aynı günü"
+
+#: templates/expenses_recurring.html
+msgid "Monthly mode: Calendar boundary"
+msgstr "Aylık yöntem: Takvim sınırı"
+
+#: templates/expenses_recurring.html
+msgid "Start"
+msgstr "Başlangıç"
+
+#: templates/expenses_recurring.html
+msgid "End (optional)"
+msgstr "Bitiş (isteğe bağlı)"
+
+#: templates/expenses_recurring.html
+msgid "Add Recurring Rule"
+msgstr "Yinelenme Kuralı Ekle"
+
+#: templates/expenses_recurring.html
+msgid "Expense Settings"
+msgstr "Harcama Ayarları"
+
+#: templates/expenses_recurring.html
+msgid "Currency symbol"
+msgstr "Para birimi simgesi"
+
+#: templates/expenses_recurring.html
+msgid "Fraction factor"
+msgstr "Kesir katsayısı"
+
+#: templates/expenses_recurring.html
+msgid "How many lower currency units make one main unit, like ₹1 contains 100 paise. Common values: 1, 100, 1000."
+msgstr "Bir ana birimin kaç alt birimden oluştuğu; örneğin 1 TL 100 kuruş içerir. Sık kullanılan değerler: 1, 100, 1000."
+
+#: templates/expenses_recurring.html
+msgid "Categories (comma separated)"
+msgstr "Kategoriler (virgülle ayrılmış)"
+
+#: templates/expenses_recurring.html
+msgid "Groceries, Utilities, Housing"
+msgstr "Market, Faturalar, Kira"
+
+#: templates/expenses_recurring.html
+msgid "Save Settings"
+msgstr "Ayarları Kaydet"
+
+#: templates/expiry.html
+msgid "Food, medicines and documents, soonest first."
+msgstr "Gıda, ilaç ve belgeler; tarihi en yakın olan önce."
+
+#: templates/expiry.html
+msgid "Item name"
+msgstr "Öğe adı"
+
+#: templates/expiry.html
+msgid "Expiry date"
+msgstr "Son kullanma tarihi"
+
+#: templates/expiry.html
+msgid "Add item"
+msgstr "Öğe ekle"
+
+#: templates/expiry.html
+msgid "Nothing tracked yet."
+msgstr "Henüz takip edilen bir şey yok."
+
+#: templates/expiry.html
+#, python-format
+msgid "%(num)s day left"
+msgid_plural "%(num)s days left"
+msgstr[0] "%(num)s gün kaldı"
+
+#: templates/expiry.html
+msgid "Expired"
+msgstr "Süresi geçti"
+
+#: templates/expiry.html templates/shopping.html
+msgid "Delete this item?"
+msgstr "Bu öğe silinsin mi?"
+
+#: templates/index.html
+#, python-format
+msgid "Welcome to %(name)s"
+msgstr "Hoş geldiniz: %(name)s"
+
+#: templates/index.html
+msgid "Pick a tool from the left to get started."
+msgstr "Başlamak için soldan bir araç seçin."
+
+#: templates/index.html
+msgid "Weather"
+msgstr "Hava Durumu"
+
+#: templates/index.html
+msgid "Loading weather data..."
+msgstr "Hava durumu verisi yükleniyor..."
+
+#: templates/index.html
+msgid "Family Notice Board"
+msgstr "Aile Duyuru Panosu"
+
+#: templates/index.html
+#, python-format
+msgid "Last updated by %(name)s at %(time)s"
+msgstr "Son güncelleyen %(name)s, saat %(time)s"
+
+#: templates/index.html
+msgid "No notices yet. Admin can post one below."
+msgstr "Henüz duyuru yok. Yönetici aşağıdan bir duyuru yazabilir."
+
+#: templates/index.html
+msgid "Notice text"
+msgstr "Duyuru metni"
+
+#: templates/index.html
+msgid "Leave blank and submit to clear the notice"
+msgstr "Duyuruyu silmek için boş bırakıp gönderin"
+
+#: templates/index.html
+msgid "Update Notice (Admin)"
+msgstr "Duyuruyu Güncelle (Yönetici)"
+
+#: templates/index.html
+msgid "Who is Home?"
+msgstr "Kim Evde?"
+
+#: templates/index.html
+msgid "My status"
+msgstr "Durumum"
+
+#: templates/index.html
+msgid "Clear my status"
+msgstr "Durumumu temizle"
+
+#: templates/index.html
+msgid "Personal Status"
+msgstr "Kişisel Durum"
+
+#: templates/index.html
+msgid "Remove my status"
+msgstr "Durumumu kaldır"
+
+#: templates/index.html
+msgid "Chores"
+msgstr "Ev İşleri"
+
+#: templates/index.html
+msgid "Open full list"
+msgstr "Tüm listeyi aç"
+
+#: templates/index.html
+msgid "No open chores right now."
+msgstr "Şu anda açık ev işi yok."
+
+#: templates/index.html
+msgid "Calendar & Reminders"
+msgstr "Takvim ve Hatırlatıcılar"
+
+#: templates/index.html
+msgid "Reminders"
+msgstr "Hatırlatıcılar"
+
+#: templates/index.html
+msgid "Back to Today"
+msgstr "Bugüne Dön"
+
+#: templates/index.html
+msgid "Add Reminder"
+msgstr "Hatırlatıcı Ekle"
+
+#: templates/index.html
+msgid "Open calendar"
+msgstr "Takvimi aç"
+
+#: templates/index.html
+msgid "Search reminders"
+msgstr "Hatırlatıcılarda ara"
+
+#: templates/index.html
+msgid "Search reminders by title or description"
+msgstr "Hatırlatıcıları başlığa ya da açıklamaya göre ara"
+
+#: templates/index.html
+msgid "Recycle Bin"
+msgstr "Geri Dönüşüm Kutusu"
+
+#: templates/index.html
+msgid "Trash"
+msgstr "Çöp Kutusu"
+
+#: templates/index.html
+msgid "Drag reminder cards onto a date to reschedule."
+msgstr "Tarihini değiştirmek için hatırlatıcı kartlarını bir güne sürükleyin."
+
+#: templates/index.html
+msgid "Reminder title"
+msgstr "Hatırlatıcı başlığı"
+
+#: templates/index.html
+msgid "Start Time"
+msgstr "Başlangıç Saati"
+
+#: templates/index.html
+msgid "(Optional)"
+msgstr "(İsteğe bağlı)"
+
+#: templates/index.html
+msgid "Start time (optional)"
+msgstr "Başlangıç saati (isteğe bağlı)"
+
+#: templates/index.html
+msgid "End date (optional)"
+msgstr "Bitiş tarihi (isteğe bağlı)"
+
+#: templates/index.html
+msgid "End Time"
+msgstr "Bitiş Saati"
+
+#: templates/index.html
+msgid "End time (optional)"
+msgstr "Bitiş saati (isteğe bağlı)"
+
+#: templates/index.html
+msgid "If Start Time and End Date/Time are blank, this is treated as an all-day reminder. If End Date/Time is set, this reminder spans that duration."
+msgstr "Başlangıç Saati ile Bitiş Tarihi/Saati boşsa bu, tüm gün süren bir hatırlatıcı sayılır. Bitiş Tarihi/Saati girilirse hatırlatıcı o süre boyunca sürer."
+
+#: templates/index.html
+msgid "Recurrence interval"
+msgstr "Yinelenme aralığı"
+
+#: templates/index.html
+msgid "Recurrence unit"
+msgstr "Yinelenme birimi"
+
+#: templates/index.html
+msgid "till"
+msgstr "bitiş"
+
+#: templates/index.html
+msgid "Description"
+msgstr "Açıklama"
+
+#: templates/index.html
+#, python-format
+msgid "%(count)s selected"
+msgstr "%(count)s seçildi"
+
+#: templates/index.html
+msgid "Delete selected"
+msgstr "Seçilenleri sil"
+
+#: templates/index.html
+msgid "Reminders list"
+msgstr "Hatırlatıcı listesi"
+
+#: templates/index.html
+msgid "JavaScript disabled: reminders editing requires JS. Existing reminder counts are shown on the calendar only."
+msgstr "JavaScript kapalı: hatırlatıcı düzenlemek için JavaScript gerekir. Var olan hatırlatıcı sayıları yalnızca takvimde gösterilir."
+
+#: templates/login.html
+msgid "Sign in"
+msgstr "Giriş yap"
+
+#: templates/login.html
+msgid "This instance requires a password to access."
+msgstr "Bu kuruluma erişmek için şifre gerekir."
+
+#: templates/login.html
+msgid "Enter password"
+msgstr "Şifreyi girin"
+
+#: templates/login.html
+#, python-format
+msgid "Too many attempts. Try again in %(seconds)s s."
+msgstr "Çok fazla deneme. %(seconds)s sn sonra tekrar deneyin."
+
+#: templates/media.html
+msgid "Save a video or its audio from a link."
+msgstr "Bir bağlantıdaki videoyu ya da sesini kaydedin."
+
+#: templates/media.html
+msgid "Media URL"
+msgstr "Medya adresi"
+
+#: templates/media.html
+msgid "Paste a media URL"
+msgstr "Bir medya adresi yapıştırın"
+
+#: templates/media.html
+msgid "Format"
+msgstr "Biçim"
+
+#: templates/media.html
+msgid "MP4 (video)"
+msgstr "MP4 (video)"
+
+#: templates/media.html
+msgid "MP3 (audio)"
+msgstr "MP3 (ses)"
+
+#: templates/media.html
+msgid "Quality"
+msgstr "Kalite"
+
+#: templates/media.html
+msgid "Best Available"
+msgstr "En İyi Mevcut"
+
+#: templates/media.html
+msgid "Up to 1080p"
+msgstr "1080p'ye kadar"
+
+#: templates/media.html
+msgid "Up to 720p"
+msgstr "720p'ye kadar"
+
+#: templates/media.html
+msgid "No downloads yet."
+msgstr "Henüz indirme yok."
+
+#: templates/media.html templates/pdfs.html templates/upload.html
+#, python-format
+msgid "Preview %(name)s in new tab"
+msgstr "%(name)s dosyasını yeni sekmede önizle"
+
+#: templates/media.html
+msgid "Not available"
+msgstr "Kullanılamıyor"
+
+#: templates/media.html
+msgid "Delete this download and its file?"
+msgstr "Bu indirme ve dosyası silinsin mi?"
+
+#: templates/notes.html
+msgid "Quick notes the whole family can see."
+msgstr "Tüm ailenin görebileceği kısa notlar."
+
+#: templates/notes.html
+msgid "Note"
+msgstr "Not"
+
+#: templates/notes.html
+msgid "Write a note..."
+msgstr "Bir not yazın..."
+
+#: templates/notes.html
+msgid "No notes yet."
+msgstr "Henüz not yok."
+
+#: templates/notes.html
+msgid "Edit note"
+msgstr "Notu düzenle"
+
+#: templates/notes.html
+msgid "Delete this note?"
+msgstr "Bu not silinsin mi?"
+
+#: templates/notes.html
+msgid "Delete note"
+msgstr "Notu sil"
+
+#: templates/pdfs.html
+msgid "Shrink a PDF so it is easier to share."
+msgstr "Paylaşması kolay olsun diye bir PDF dosyasını küçültün."
+
+#: templates/pdfs.html
+msgid "PDF to compress"
+msgstr "Sıkıştırılacak PDF"
+
+#: templates/pdfs.html
+msgid "Compress PDF"
+msgstr "PDF Sıkıştır"
+
+#: templates/pdfs.html
+msgid "No PDFs yet."
+msgstr "Henüz PDF yok."
+
+#: templates/pdfs.html templates/upload.html
+#, python-format
+msgid "Download %(name)s"
+msgstr "%(name)s dosyasını indir"
+
+#: templates/pdfs.html
+msgid "Delete this PDF?"
+msgstr "Bu PDF silinsin mi?"
+
+#: templates/qr.html
+msgid "QR Code Generator"
+msgstr "QR Kod Üretici"
+
+#: templates/qr.html
+msgid "Make a QR code for any text, link or Wi-Fi network."
+msgstr "Herhangi bir metin, bağlantı ya da Wi-Fi ağı için QR kod oluşturun."
+
+#: templates/qr.html
+msgid "Text to encode"
+msgstr "Kodlanacak metin"
+
+#: templates/qr.html
+msgid "Text or URL to encode"
+msgstr "Kodlanacak metin ya da adres"
+
+#: templates/qr.html
+msgid "Generate QR"
+msgstr "QR Oluştur"
+
+#: templates/qr.html
+msgid "Wi-Fi QR code instructions"
+msgstr "Wi-Fi QR kod yönergeleri"
+
+#: templates/qr.html
+msgid "To generate a QR code for your wireless network, enter your details in the following format:"
+msgstr "Kablosuz ağınız için QR kod oluşturmak üzere bilgilerinizi şu biçimde girin:"
+
+#: templates/qr.html
+msgid "your WiFi network name"
+msgstr "WiFi ağınızın adı"
+
+#: templates/qr.html
+msgid "your WiFi password"
+msgstr "WiFi şifreniz"
+
+#: templates/qr.html
+#, python-format
+msgid "encryption type (%(wpa)s, %(wep)s, or %(nopass)s), default is %(default)s"
+msgstr "şifreleme türü (%(wpa)s, %(wep)s ya da %(nopass)s), varsayılan %(default)s"
+
+#: templates/qr.html
+#, python-format
+msgid "%(true)s if the network is hidden, %(false)s otherwise (default is %(default)s)"
+msgstr "ağ gizliyse %(true)s, değilse %(false)s (varsayılan %(default)s)"
+
+#: templates/qr.html
+msgid "You can copy and edit the code block above for your network. The minimum required information is ssid:your_network_name pass:your_wifi_password"
+msgstr "Yukarıdaki kod bloğunu kopyalayıp kendi ağınıza göre düzenleyebilirsiniz. En az gereken bilgi ssid:your_network_name pass:your_wifi_password şeklindedir."
+
+#: templates/qr.html
+msgid "For other QR codes, enter any text or URL as usual."
+msgstr "Diğer QR kodlar için her zamanki gibi metin ya da adres girin."
+
+#: templates/qr.html
+msgid "QR Code"
+msgstr "QR Kod"
+
+#: templates/qr.html
+msgid "History"
+msgstr "Geçmiş"
+
+#: templates/qr.html
+msgid "No QR codes yet."
+msgstr "Henüz QR kod yok."
+
+#: templates/qr.html
+msgid "Generated"
+msgstr "Oluşturuldu"
+
+#: templates/qr.html
+msgid "View"
+msgstr "Görüntüle"
+
+#: templates/qr.html
+msgid "Delete this QR code?"
+msgstr "Bu QR kod silinsin mi?"
+
+#: templates/qr.html
+msgid "Delete QR code"
+msgstr "QR kodu sil"
+
+#: templates/recipes.html
+msgid "The family's recipes, with ingredients and steps."
+msgstr "Ailenin tarifleri; malzemeler ve adımlarıyla."
+
+#: templates/recipes.html
+msgid "Recipe Title"
+msgstr "Tarif Başlığı"
+
+#: templates/recipes.html
+msgid "Chocolate Chip Cookies"
+msgstr "Çikolata Parçalı Kurabiye"
+
+#: templates/recipes.html
+msgid "Link (optional)"
+msgstr "Bağlantı (isteğe bağlı)"
+
+#: templates/recipes.html
+msgid "Ingredients"
+msgstr "Malzemeler"
+
+#: templates/recipes.html
+msgid "Instructions"
+msgstr "Hazırlanışı"
+
+#: templates/recipes.html
+msgid "Update Recipe"
+msgstr "Tarifi Güncelle"
+
+#: templates/recipes.html
+msgid "Add Recipe"
+msgstr "Tarif Ekle"
+
+#: templates/recipes.html
+#, python-format
+msgid "By %(name)s • %(date)s"
+msgstr "Ekleyen %(name)s • %(date)s"
+
+#: templates/recipes.html
+msgid "View Original Recipe"
+msgstr "Özgün Tarifi Görüntüle"
+
+#: templates/recipes.html
+msgid "Delete this recipe?"
+msgstr "Bu tarif silinsin mi?"
+
+#: templates/shopping.html
+#, python-format
+msgid "%(count)s to buy, %(done)s purchased"
+msgstr "%(count)s alınacak, %(done)s alındı"
+
+#: templates/shopping.html
+#, python-format
+msgid "%(count)s to buy"
+msgstr "%(count)s alınacak"
+
+#: templates/shopping.html
+msgid "Add an item"
+msgstr "Öğe ekle"
+
+#: templates/shopping.html
+msgid "Tags (stores, categories)"
+msgstr "Etiketler (mağazalar, kategoriler)"
+
+#: templates/shopping.html
+msgid "Nothing on the list yet."
+msgstr "Listede henüz bir şey yok."
+
+#: templates/shopping.html
+msgid "Purchased · Undo"
+msgstr "Alındı · Geri al"
+
+#: templates/shopping.html
+msgid "Mark Purchased"
+msgstr "Alındı İşaretle"
+
+#: templates/shopping.html
+#, python-format
+msgid "Undo purchased: %(item)s"
+msgstr "Alındıyı geri al: %(item)s"
+
+#: templates/shopping.html
+#, python-format
+msgid "Mark purchased: %(item)s"
+msgstr "Alındı işaretle: %(item)s"
+
+#: templates/shorten.html
+msgid "Turn a long link into a short one for the home network."
+msgstr "Uzun bir bağlantıyı ev ağı için kısa bir bağlantıya dönüştürün."
+
+#: templates/shorten.html
+msgid "Long URL"
+msgstr "Uzun adres"
+
+#: templates/shorten.html
+msgid "Paste a long URL"
+msgstr "Uzun bir adres yapıştırın"
+
+#: templates/shorten.html
+msgid "Shorten"
+msgstr "Kısalt"
+
+#: templates/shorten.html
+msgid "No short links yet."
+msgstr "Henüz kısa bağlantı yok."
+
+#: templates/shorten.html
+msgid "Delete this short link?"
+msgstr "Bu kısa bağlantı silinsin mi?"
+
+#: templates/shorten.html
+msgid "Delete short link"
+msgstr "Kısa bağlantıyı sil"
+
+#: templates/upload.html
+msgid "Files shared with everyone on the home network."
+msgstr "Ev ağındaki herkesle paylaşılan dosyalar."
+
+#: templates/upload.html
+msgid "Files to upload"
+msgstr "Yüklenecek dosyalar"
+
+#: templates/upload.html
+msgid "Upload"
+msgstr "Yükle"
+
+#: templates/upload.html
+msgid "No files yet."
+msgstr "Henüz dosya yok."
+
+#: templates/upload.html
+msgid "Delete this file? It is removed from the server."
+msgstr "Bu dosya silinsin mi? Sunucudan kaldırılır."
+

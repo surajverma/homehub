@@ -193,6 +193,7 @@ The change applies on the next page load, no restart needed. A missing or unknow
 | `en` | English (default) | |
 | `hi` | Hindi (हिन्दी) | Noto Sans Devanagari |
 | `zh` | Chinese, Simplified (简体中文) | Noto Sans SC |
+| `tr` | Turkish (Türkçe) | |
 
 This table is the one place to list a new language. Translations are added by the community, so coverage can vary.
 
