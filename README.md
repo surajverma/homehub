@@ -46,8 +46,6 @@ HomeHub is packed with useful tools to make family life a little more organized:
   <img src="docs/images/homehub-light.gif" alt="A tour of HomeHub: home, calendar, expenses, shopping, chores, recipes and more">
 </picture>
 
-**Featured in:** [XDA Developers](https://www.xda-developers.com/self-hosted-dashboard-perfect-hub-for-your-familys-daily-needs/) · [Noted.lol](https://noted.lol/homehub/) · [DB Tech](https://dbtechreviews.com/2025/10/01/homehub-your-familys-private-self-hosted-home-organization-center/) ([video](https://www.youtube.com/watch?v=3IRvC1gs4mA)) · [selfh.st](https://selfh.st/post/wrapped-new-software-2025/)
-
 ## Getting Started is Easy
 
 The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
