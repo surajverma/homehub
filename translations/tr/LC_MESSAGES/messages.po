@@ -157,7 +157,7 @@ msgstr "Bu yinelenen hatırlatıcı zaten sona erdi ve geçmiş tarihleri olduğ
 
 #: app/blueprints/dashboard.py
 msgid "With these settings there are no dates left from today. Choose a later end date."
-msgstr "Bu ayarlarla bugünden sonra hiç tarih kalmıyor. Daha ileri bir bitiş tarihi seçin."
+msgstr "Bu ayarlarla bugünden itibaren hiç tarih kalmıyor. Daha ileri bir bitiş tarihi seçin."
 
 #: app/blueprints/dashboard.py
 msgid "Title required"
@@ -355,7 +355,7 @@ msgstr "%(split_start)s tarihinde ayırmak eski kurala boş bir aralık bırakı
 #, python-format
 msgid "Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt %(rebuilt)s from that date."
 msgid_plural "Rule updated from %(effective_from)s. Kept %(num)s historical entries, rebuilt %(rebuilt)s from that date."
-msgstr[0] "Kural %(effective_from)s tarihinden itibaren güncellendi. %(num)s geçmiş kayıt korundu, o tarihten sonraki %(rebuilt)s kayıt yeniden oluşturuldu."
+msgstr[0] "Kural %(effective_from)s tarihinden itibaren güncellendi. %(num)s geçmiş kayıt korundu, o tarihten itibaren %(rebuilt)s kayıt yeniden oluşturuldu."
 
 #: app/blueprints/expenses.py
 msgid "It has no generated entries."
@@ -1232,7 +1232,7 @@ msgstr "Bu yinelenen hatırlatıcı zaten sona erdi. Silmek, geçmiş tarihlerin
 
 #: static/js/pages/home/reminders.js
 msgid "Dates from today onwards are removed. Earlier dates stay on the calendar."
-msgstr "Bugünden sonraki tarihler kaldırılır. Önceki tarihler takvimde kalır."
+msgstr "Bugün ve sonraki tarihler kaldırılır. Önceki tarihler takvimde kalır."
 
 #: static/js/pages/home/reminders.js
 msgid "Delete this recurring reminder?"
