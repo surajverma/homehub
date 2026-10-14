@@ -14,6 +14,21 @@ from ..storage import unique_name
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 MEDIA_FOLDER = os.path.join(BASE_DIR, 'media')
 PDF_FOLDER = os.path.join(BASE_DIR, 'pdfs')
+# yt-dlp prints these when no supported-site extractor matches the link
+UNSUPPORTED_MARKERS = ('Unsupported URL', 'No suitable extractor')
+_site_extractors = []
+
+
+def is_supported_site(url: str) -> bool:
+    """True when one of yt-dlp's site extractors handles the link (no network needed).
+
+    The generic extractor is left out: it takes any URL and follows redirects, so a
+    direct file or short link could reach other devices on the home network.
+    """
+    if not _site_extractors:
+        from yt_dlp.extractor import gen_extractor_classes
+        _site_extractors.extend(c for c in gen_extractor_classes() if c.ie_key() != 'Generic')
+    return any(extractor.suitable(url) for extractor in _site_extractors)
 
 
 @main_bp.route('/media', methods=['GET', 'POST'])
@@ -24,6 +39,9 @@ def media():
         if not is_url_safe_for_fetch(url):
             flash(_('Invalid or disallowed URL. Only external http(s) URLs are allowed.'), 'error')
             return redirect(url_for('main.media'))
+        if not is_supported_site(url):
+            flash(_('This site is not supported. For a direct file link, open it in your browser and save it from there.'), 'error')
+            return redirect(url_for('main.media'))
         fmt = sanitize_text(request.form.get('format', 'mp4'))
         quality = sanitize_text(request.form.get('quality', 'best'))
         base = f"media_{int(utcnow().timestamp())}"
@@ -33,6 +51,9 @@ def media():
         db.session.commit()
         flash(_('Download queued. You can switch tabs; refresh to check status.'), 'info')
         cmd = ["yt-dlp", "-o", output_tmpl]
+        # yt-dlp's generic extractor downloads any URL and follows redirects past the address
+        # check above, e.g. a short link pointing at the home network, so only supported sites are used
+        cmd += ["--use-extractors", "default,-generic"]
         if fmt == 'mp3':
             cmd += ["-x", "--audio-format", "mp3"]
         else:
@@ -52,7 +73,10 @@ def media():
                 try:
                     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
                     last_percent = -1
+                    unsupported = False
                     for line in proc.stdout:
+                        if any(marker in line for marker in UNSUPPORTED_MARKERS):
+                            unsupported = True
                         try:
                             m = db.session.get(Media, mid)
                             if not m:
@@ -67,6 +91,9 @@ def media():
                         except Exception:
                             pass
                     ret = proc.wait()
+                    if ret != 0 and unsupported:
+                        m.status = 'unsupported'
+                        return
                     if ret != 0:
                         raise RuntimeError(f"yt-dlp exited with {ret}")
                     saved = None

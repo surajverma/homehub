@@ -5,13 +5,39 @@ from ..config import load_config, upload_limit_bytes
 from ..models import db
 from werkzeug.security import check_password_hash
 from flask_babel import gettext as _, ngettext
+from urllib.parse import urlsplit
 
 # Endpoints that answer without the site password
 _OPEN_ENDPOINTS = ('main.login', 'main.healthz')
 
 
+_WRITE_METHODS = ('POST', 'PUT', 'PATCH', 'DELETE')
+
+
+def _is_cross_site_write() -> bool:
+    """True when another site made the browser send this change.
+
+    Without a site password no cookie is needed, so a page anywhere on the internet could
+    otherwise submit forms to HomeHub on the home network. Browsers say where a request
+    came from in Sec-Fetch-Site; older ones only send Origin.
+    """
+    if request.method not in _WRITE_METHODS:
+        return False
+    fetch_site = request.headers.get('Sec-Fetch-Site')
+    if fetch_site:
+        return fetch_site not in ('same-origin', 'none')
+    origin = request.headers.get('Origin')
+    if not origin:
+        # Scripts and tools such as curl send neither header
+        return False
+    return urlsplit(origin).netloc != request.host
+
+
 @main_bp.before_app_request
 def reload_config_and_auth():
+    if _is_cross_site_write():
+        current_app.logger.warning('Blocked a cross-site %s to %s', request.method, request.path)
+        return _('This request came from another website and was blocked.'), 403
     try:
         current_app.config['HOMEHUB_CONFIG'] = load_config()
         current_app.config['MAX_CONTENT_LENGTH'] = upload_limit_bytes(current_app.config['HOMEHUB_CONFIG'])

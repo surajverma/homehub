@@ -31,6 +31,9 @@
                 {% if media.status == 'pending' %}
                 <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 status-chip">{{ _('Starting…') }}</span>
                 <span class="text-xs text-gray-500 progress-line">{{ media.progress or _('Will take a while…') }}</span>
+                {% elif media.status == 'unsupported' %}
+                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">{{ _('Site not supported') }}</span>
+                <span class="text-xs text-gray-500">{{ _('For a direct file link, open it in your browser and save it from there.') }}</span>
                 {% elif media.filepath %}
                 <a href="/media/preview/{{ media.filepath }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" aria-label="{{ _('Preview %(name)s in new tab', name=media.filepath) }}">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i> {{ _('Preview') }}

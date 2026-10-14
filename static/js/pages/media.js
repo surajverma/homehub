@@ -44,6 +44,11 @@ document.querySelectorAll('input[name="user"]').forEach(i=> i.value = localStora
                 }
                 const p = item.querySelector('.progress-line');
                 if (p) p.textContent = '';
+            } else if (d.status === 'unsupported'){
+                const chip = item.querySelector('.status-chip');
+                if (chip){ chip.textContent = t('Site not supported'); chip.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 status-chip'; }
+                const p = item.querySelector('.progress-line');
+                if (p) p.textContent = t('For a direct file link, open it in your browser and save it from there.');
             } else if (d.status === 'error'){
                 const chip = item.querySelector('.status-chip');
                 if (chip){ chip.textContent = t('Error'); chip.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 status-chip'; }

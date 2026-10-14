@@ -102,7 +102,8 @@
                         <div class="ql-editor prose prose-sm max-w-none">{{ recipe.instructions|safe }}</div>
                     </div>
                 </div>
-                {% if recipe.link %}
+                {# Older versions saved links without checking them; only http(s) links are shown #}
+                {% if recipe.link and recipe.link.strip().lower().startswith(('http://', 'https://')) %}
                 <div class="px-4 pb-2">
                     <a href="{{ recipe.link }}" class="hover:underline text-sm" style="color: var(--primary-text);" target="_blank" rel="noopener noreferrer">
                         <i class="fa-solid fa-arrow-up-right-from-square mr-1" aria-hidden="true"></i>{{ _('View Original Recipe') }}

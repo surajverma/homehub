@@ -58,7 +58,7 @@ class Media(db.Model):
     creator = db.Column(db.String(64))
     download_time = db.Column(db.DateTime, default=utcnow)
     filepath = db.Column(db.String(512))
-    status = db.Column(db.String(32), default='done')  # pending, done, error
+    status = db.Column(db.String(32), default='done')  # pending, done, error, unsupported
     progress = db.Column(db.Text)  # latest progress line or JSON
 
 class PDF(db.Model):
