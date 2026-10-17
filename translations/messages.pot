@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-10-10 21:29+0530\n"
+"POT-Creation-Date: 2026-10-17 16:40+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -20,6 +20,10 @@ msgstr ""
 msgid "Upload is too large. The limit is %(limit)s MB."
 msgstr ""
 
+#: app/blueprints/__init__.py app/blueprints/expenses.py
+msgid "Something went wrong. Please try again."
+msgstr ""
+
 #: app/blueprints/__init__.py
 msgid "Offline"
 msgstr ""
@@ -30,6 +34,10 @@ msgstr ""
 
 #: app/blueprints/__init__.py
 msgid "This page is not available offline."
+msgstr ""
+
+#: app/blueprints/auth.py
+msgid "This request came from another website and was blocked."
 msgstr ""
 
 #: app/blueprints/auth.py
@@ -506,6 +514,10 @@ msgid "Invalid or disallowed URL. Only external http(s) URLs are allowed."
 msgstr ""
 
 #: app/blueprints/media_pdfs.py
+msgid "This site is not supported. For a direct file link, open it in your browser and save it from there."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
 msgid "Download queued. You can switch tabs; refresh to check status."
 msgstr ""
 
@@ -737,6 +749,22 @@ msgstr ""
 #: static/js/expense_split.js
 #, python-brace-format
 msgid "{name} split value"
+msgstr ""
+
+#: static/js/month-picker.js templates/expenses.html templates/index.html
+msgid "Choose month and year"
+msgstr ""
+
+#: static/js/month-picker.js
+msgid "Previous year"
+msgstr ""
+
+#: static/js/month-picker.js
+msgid "Next year"
+msgstr ""
+
+#: static/js/month-picker.js
+msgid "This month"
 msgstr ""
 
 #: static/js/pages/chores.js
@@ -1367,6 +1395,14 @@ msgstr ""
 #: static/js/pages/media.js templates/media.html templates/pdfs.html
 #: templates/qr.html templates/upload.html
 msgid "Download"
+msgstr ""
+
+#: static/js/pages/media.js templates/media.html
+msgid "Site not supported"
+msgstr ""
+
+#: static/js/pages/media.js templates/media.html
+msgid "For a direct file link, open it in your browser and save it from there."
 msgstr ""
 
 #: static/js/pages/media.js

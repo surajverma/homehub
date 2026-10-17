@@ -383,6 +383,14 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('next-month').addEventListener('click', ()=>{
     const d = new Date(year, month, 1); fetchMonth(d.getFullYear(), d.getMonth()+1); selectedDate = null;
   });
+  // Month label opens a month/year picker; PageUp/PageDown and swipes change the month too
+  if (window.MonthPicker) window.MonthPicker.attach({
+    label: calHeader,
+    anchor: calHeader.closest('div'),
+    swipeArea: grid,
+    current: ()=> ({ year, month: month-1 }),
+    go: (y, m)=>{ fetchMonth(y, m+1); selectedDate = null; },
+  });
   document.getElementById('calendar-grid').addEventListener('click', (e)=>{
     const btn = e.target.closest('button[data-date]');
     if(!btn) return;

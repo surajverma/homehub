@@ -142,8 +142,15 @@ def create_app(test_config: dict | None = None):
         ref = urlsplit(request.referrer or '')
         if ref.netloc and ref.netloc != request.host:
             return redirect('/')
-        back = (ref.path or '/') + (f'?{ref.query}' if ref.query else '')
-        return redirect(back if back.startswith('/') and not back.startswith('//') else '/')
+        # The target is one of the app's own pages (a plain GET route), never text taken from the Referer,
+        # so tricks like "/\evil.example" cannot lead off the site. The query string is not kept;
+        # the upload pages (/upload, /pdfs) do not use one.
+        back = '/'
+        for rule in app.url_map.iter_rules():
+            if not rule.arguments and 'GET' in (rule.methods or ()) and rule.rule == ref.path:
+                back = rule.rule
+                break
+        return redirect(back)
 
     @app.context_processor
     def inject_auth_state():

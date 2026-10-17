@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, Response
+from flask import Blueprint, current_app, Response, jsonify
 from flask_babel import gettext as _
 from markupsafe import escape
 import json
@@ -6,9 +6,18 @@ import os
 import subprocess
 
 from ..i18n import active_language
+from ..models import db
 
 # Single app-wide blueprint to preserve all existing URL paths and endpoint names
 main_bp = Blueprint('main', __name__)
+
+
+def json_error_response(log_message, *args):
+    """Answer a failed JSON request with a generic message; the details go to the log, not to the browser."""
+    db.session.rollback()
+    current_app.logger.exception(log_message, *args)
+    return jsonify({'ok': False, 'error': _('Something went wrong. Please try again.')}), 400
+
 
 # Default SW cache version; can be overridden by env SW_CACHE_VERSION or git tag
 DEFAULT_SW_CACHE_VERSION = "1"

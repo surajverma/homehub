@@ -326,7 +326,7 @@ npm run watch:css
   ```bash
   python run.py
   ```
-  (Ensure you have built CSS and set up your config.)
+  (Ensure you have built CSS and set up your config.) Set `FLASK_DEBUG=1` to get auto-reload and Flask's debugger; it is off by default.
 
 ### 6. Troubleshooting
 - If you see missing dependency errors, ensure you have run both `pip install -r requirements-dev.txt` and `npm install`.

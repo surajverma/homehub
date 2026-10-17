@@ -4,23 +4,27 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: HomeHub\n"
+"Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-10 21:29+0530\n"
+"POT-Creation-Date: 2026-10-17 16:40+0530\n"
 "PO-Revision-Date: 2026-10-11 13:20+0800\n"
 "Last-Translator: ump45nose\n"
-"Language-Team: zh <LL@li.org>\n"
 "Language: zh\n"
+"Language-Team: zh <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.18.0\n"
 
 #: app/__init__.py
 #, python-format
 msgid "Upload is too large. The limit is %(limit)s MB."
 msgstr "上传内容过大。上限为 %(limit)s MB。"
+
+#: app/blueprints/__init__.py app/blueprints/expenses.py
+msgid "Something went wrong. Please try again."
+msgstr ""
 
 #: app/blueprints/__init__.py
 msgid "Offline"
@@ -33,6 +37,10 @@ msgstr "你已离线"
 #: app/blueprints/__init__.py
 msgid "This page is not available offline."
 msgstr "此页面无法离线使用。"
+
+#: app/blueprints/auth.py
+msgid "This request came from another website and was blocked."
+msgstr ""
 
 #: app/blueprints/auth.py
 msgid "Logged in successfully."
@@ -61,9 +69,7 @@ msgid "Recurring chore end date cannot be before the start date."
 msgstr "循环家务的结束日期不能早于开始日期。"
 
 #: app/blueprints/chores.py
-msgid ""
-"Recurring chore ends in the past. Choose a future end date to create an "
-"active chore."
+msgid "Recurring chore ends in the past. Choose a future end date to create an active chore."
 msgstr "循环家务的结束时间在过去。请选择未来的结束日期，以创建生效的家务。"
 
 #: app/blueprints/chores.py
@@ -154,15 +160,11 @@ msgid "Not allowed"
 msgstr "无权操作"
 
 #: app/blueprints/dashboard.py
-msgid ""
-"This recurring reminder has already ended, and its past dates are kept as "
-"they were. Set a later end date to continue it."
+msgid "This recurring reminder has already ended, and its past dates are kept as they were. Set a later end date to continue it."
 msgstr "此循环提醒已结束，其过去的日期保持原样。设置更晚的结束日期即可继续。"
 
 #: app/blueprints/dashboard.py
-msgid ""
-"With these settings there are no dates left from today. Choose a later end "
-"date."
+msgid "With these settings there are no dates left from today. Choose a later end date."
 msgstr "按这些设置，从今天起已没有剩余日期。请选择更晚的结束日期。"
 
 #: app/blueprints/dashboard.py
@@ -304,9 +306,7 @@ msgstr "已有的条目不会改变。"
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid ""
-"These changes apply from %(date)s. Entries before that date stay as they "
-"are."
+msgid "These changes apply from %(date)s. Entries before that date stay as they are."
 msgstr "这些更改自 %(date)s 起生效。该日期之前的条目保持不变。"
 
 #: app/blueprints/expenses.py
@@ -335,8 +335,7 @@ msgstr[0] "其中 %(num)s 条被手动编辑过；这些编辑将丢失。"
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid ""
-"The current rule will end on %(end)s and a new rule will start on %(start)s."
+msgid "The current rule will end on %(end)s and a new rule will start on %(start)s."
 msgstr "当前规则将于 %(end)s 结束，新规则将于 %(start)s 开始。"
 
 #: app/blueprints/expenses.py
@@ -345,41 +344,26 @@ msgstr "无权编辑规则。"
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid ""
-"Recurring rule fully rewritten. Updated %(num)s entry, removed %(deleted)s "
-"outside rule range."
-msgid_plural ""
-"Recurring rule fully rewritten. Updated %(num)s entries, removed %(deleted)s"
-" outside rule range."
+msgid "Recurring rule fully rewritten. Updated %(num)s entry, removed %(deleted)s outside rule range."
+msgid_plural "Recurring rule fully rewritten. Updated %(num)s entries, removed %(deleted)s outside rule range."
 msgstr[0] "循环规则已完全重写。更新了 %(num)s 条条目，移除了规则范围外的 %(deleted)s 条。"
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid ""
-"Rule split from %(split_start)s. Old rule preserved; removed %(num)s future "
-"old-rule entry."
-msgid_plural ""
-"Rule split from %(split_start)s. Old rule preserved; removed %(num)s future "
-"old-rule entries."
+msgid "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entry."
+msgid_plural "Rule split from %(split_start)s. Old rule preserved; removed %(num)s future old-rule entries."
 msgstr[0] "规则已从 %(split_start)s 拆分。旧规则保留；移除了 %(num)s 条未来的旧规则条目。"
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid ""
-"Split at %(split_start)s would create an empty old rule window. Applied "
-"changes from %(effective_from)s on the same rule instead."
+msgid "Split at %(split_start)s would create an empty old rule window. Applied changes from %(effective_from)s on the same rule instead."
 msgstr "在 %(split_start)s 拆分会产生空的旧规则区间。改为在同一规则上自 %(effective_from)s 起应用更改。"
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid ""
-"Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt"
-" %(rebuilt)s from that date."
-msgid_plural ""
-"Rule updated from %(effective_from)s. Kept %(num)s historical entries, "
-"rebuilt %(rebuilt)s from that date."
-msgstr[0] ""
-"规则已自 %(effective_from)s 起更新。保留了 %(num)s 条历史条目，并从该日期起重建了 %(rebuilt)s 条。"
+msgid "Rule updated from %(effective_from)s. Kept %(num)s historical entry, rebuilt %(rebuilt)s from that date."
+msgid_plural "Rule updated from %(effective_from)s. Kept %(num)s historical entries, rebuilt %(rebuilt)s from that date."
+msgstr[0] "规则已自 %(effective_from)s 起更新。保留了 %(num)s 条历史条目，并从该日期起重建了 %(rebuilt)s 条。"
 
 #: app/blueprints/expenses.py
 msgid "It has no generated entries."
@@ -388,8 +372,7 @@ msgstr "它没有生成的条目。"
 #: app/blueprints/expenses.py
 #, python-format
 msgid "This also deletes its %(num)s generated entry (%(first)s to %(last)s)."
-msgid_plural ""
-"This also deletes its %(num)s generated entries (%(first)s to %(last)s)."
+msgid_plural "This also deletes its %(num)s generated entries (%(first)s to %(last)s)."
 msgstr[0] "这同时会删除它的 %(num)s 条生成条目（%(first)s 至 %(last)s）。"
 
 #: app/blueprints/expenses.py
@@ -518,6 +501,10 @@ msgstr "无权删除条目。"
 #: app/blueprints/media_pdfs.py
 msgid "Invalid or disallowed URL. Only external http(s) URLs are allowed."
 msgstr "URL 无效或不受支持。仅允许外部 http(s) 链接。"
+
+#: app/blueprints/media_pdfs.py
+msgid "This site is not supported. For a direct file link, open it in your browser and save it from there."
+msgstr ""
 
 #: app/blueprints/media_pdfs.py
 msgid "Download queued. You can switch tabs; refresh to check status."
@@ -752,6 +739,22 @@ msgstr "金额合计为 {sum}（共 {total}）：超出 {over}。"
 msgid "{name} split value"
 msgstr "{name} 的分摊值"
 
+#: static/js/month-picker.js templates/expenses.html templates/index.html
+msgid "Choose month and year"
+msgstr ""
+
+#: static/js/month-picker.js
+msgid "Previous year"
+msgstr ""
+
+#: static/js/month-picker.js
+msgid "Next year"
+msgstr ""
+
+#: static/js/month-picker.js
+msgid "This month"
+msgstr ""
+
 #: static/js/pages/chores.js
 msgid "Recurring chore ends in the past. Choose a future end date."
 msgstr "循环家务的结束时间在过去。请选择未来的结束日期。"
@@ -847,8 +850,8 @@ msgid "Restore"
 msgstr "恢复"
 
 #: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/chores.html templates/expenses_recurring.html
-#: templates/notes.html templates/recipes.html templates/shopping.html
+#: templates/chores.html templates/expenses_recurring.html templates/notes.html
+#: templates/recipes.html templates/shopping.html
 msgid "Edit"
 msgstr "编辑"
 
@@ -1097,9 +1100,7 @@ msgid "Turn this into a single reminder?"
 msgstr "将其转换为单次提醒？"
 
 #: static/js/pages/home/reminders.js
-msgid ""
-"The recurring reminder is removed with all its dates, past ones included. "
-"Only the single reminder stays."
+msgid "The recurring reminder is removed with all its dates, past ones included. Only the single reminder stays."
 msgstr "循环提醒及其所有日期（包括过去的日期）都会被移除，只保留这条单次提醒。"
 
 #: static/js/pages/home/reminders.js
@@ -1254,14 +1255,11 @@ msgid "Mark as active"
 msgstr "标记为进行中"
 
 #: static/js/pages/home/reminders.js
-msgid ""
-"This recurring reminder has already ended. Deleting it also removes its past"
-" dates from the calendar."
+msgid "This recurring reminder has already ended. Deleting it also removes its past dates from the calendar."
 msgstr "此循环提醒已结束。删除它同时会从日历中移除其过去的日期。"
 
 #: static/js/pages/home/reminders.js
-msgid ""
-"Dates from today onwards are removed. Earlier dates stay on the calendar."
+msgid "Dates from today onwards are removed. Earlier dates stay on the calendar."
 msgstr "今天及以后的日期会被移除。更早的日期保留在日历上。"
 
 #: static/js/pages/home/reminders.js
@@ -1374,6 +1372,14 @@ msgstr "预览"
 msgid "Download"
 msgstr "下载"
 
+#: static/js/pages/media.js templates/media.html
+msgid "Site not supported"
+msgstr ""
+
+#: static/js/pages/media.js templates/media.html
+msgid "For a direct file link, open it in your browser and save it from there."
+msgstr ""
+
 #: static/js/pages/media.js
 msgid "Error"
 msgstr "错误"
@@ -1434,9 +1440,7 @@ msgstr "删除"
 
 #: static/js/tags.js
 #, python-brace-format
-msgid ""
-"Delete tag \"{tag}\"? This removes it from suggestions (items keep their "
-"tags)."
+msgid "Delete tag \"{tag}\"? This removes it from suggestions (items keep their tags)."
 msgstr "删除标签“{tag}”？这会将其从建议中移除（条目仍保留其标签）。"
 
 #: static/js/weather.js
@@ -1615,8 +1619,7 @@ msgid "Last updated: {time}"
 msgstr "最后更新：{time}"
 
 #: static/js/weather.js
-msgid ""
-"Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180."
+msgid "Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180."
 msgstr "坐标无效。纬度须在 -90 到 90 之间，经度须在 -180 到 180 之间。"
 
 #: static/js/weather.js
@@ -1624,15 +1627,11 @@ msgid "Failed to load weather data"
 msgstr "天气数据加载失败"
 
 #: static/js/weather.js
-msgid ""
-"Unable to get your location. Please configure coordinates in config.yml"
+msgid "Unable to get your location. Please configure coordinates in config.yml"
 msgstr "无法获取你的位置。请在 config.yml 中配置坐标"
 
 #: static/js/weather.js
-msgid ""
-"Geolocation is not available in this context. This may be because the site "
-"is not served over HTTPS, or your browser does not support it. Please "
-"configure coordinates in config.yml"
+msgid "Geolocation is not available in this context. This may be because the site is not served over HTTPS, or your browser does not support it. Please configure coordinates in config.yml"
 msgstr "当前环境无法使用地理定位。可能因为站点未通过 HTTPS 提供，或浏览器不支持。请在 config.yml 中配置坐标"
 
 #: templates/_expense_split.html
@@ -2125,9 +2124,7 @@ msgid "split with %(names)s"
 msgstr "与 %(names)s 分摊"
 
 #: templates/expenses_recurring.html
-msgid ""
-"Editing a recurring rule can affect generated entries. Choose a strategy to "
-"avoid accidental history loss."
+msgid "Editing a recurring rule can affect generated entries. Choose a strategy to avoid accidental history loss."
 msgstr "编辑循环规则可能影响已生成的条目。请选择一种策略，避免误删历史。"
 
 #: templates/expenses_recurring.html
@@ -2259,9 +2256,7 @@ msgid "Fraction factor"
 msgstr "最小单位换算"
 
 #: templates/expenses_recurring.html
-msgid ""
-"How many lower currency units make one main unit, like ₹1 contains 100 "
-"paise. Common values: 1, 100, 1000."
+msgid "How many lower currency units make one main unit, like ₹1 contains 100 paise. Common values: 1, 100, 1000."
 msgstr "多少个最小货币单位等于一个主单位，例如 ₹1 包含 100 派萨。常见值：1、100、1000。"
 
 #: templates/expenses_recurring.html
@@ -2453,9 +2448,7 @@ msgid "End time (optional)"
 msgstr "结束时间（可选）"
 
 #: templates/index.html
-msgid ""
-"If Start Time and End Date/Time are blank, this is treated as an all-day "
-"reminder. If End Date/Time is set, this reminder spans that duration."
+msgid "If Start Time and End Date/Time are blank, this is treated as an all-day reminder. If End Date/Time is set, this reminder spans that duration."
 msgstr "如果开始时间和结束日期/时间留空，将视为全天提醒。如果设置了结束日期/时间，提醒将持续该时间段。"
 
 #: templates/index.html
@@ -2488,9 +2481,7 @@ msgid "Reminders list"
 msgstr "提醒列表"
 
 #: templates/index.html
-msgid ""
-"JavaScript disabled: reminders editing requires JS. Existing reminder counts"
-" are shown on the calendar only."
+msgid "JavaScript disabled: reminders editing requires JS. Existing reminder counts are shown on the calendar only."
 msgstr "JavaScript 已禁用：编辑提醒需要 JS。日历上仅显示现有提醒的数量。"
 
 #: templates/login.html
@@ -2645,9 +2636,7 @@ msgid "Wi-Fi QR code instructions"
 msgstr "Wi-Fi 二维码说明"
 
 #: templates/qr.html
-msgid ""
-"To generate a QR code for your wireless network, enter your details in the "
-"following format:"
+msgid "To generate a QR code for your wireless network, enter your details in the following format:"
 msgstr "要为无线网络生成二维码，请按以下格式输入信息："
 
 #: templates/qr.html
@@ -2660,21 +2649,16 @@ msgstr "你的 WiFi 密码"
 
 #: templates/qr.html
 #, python-format
-msgid ""
-"encryption type (%(wpa)s, %(wep)s, or %(nopass)s), default is %(default)s"
+msgid "encryption type (%(wpa)s, %(wep)s, or %(nopass)s), default is %(default)s"
 msgstr "加密类型（%(wpa)s、%(wep)s 或 %(nopass)s），默认为 %(default)s"
 
 #: templates/qr.html
 #, python-format
-msgid ""
-"%(true)s if the network is hidden, %(false)s otherwise (default is "
-"%(default)s)"
+msgid "%(true)s if the network is hidden, %(false)s otherwise (default is %(default)s)"
 msgstr "网络隐藏时为 %(true)s，否则为 %(false)s（默认为 %(default)s）"
 
 #: templates/qr.html
-msgid ""
-"You can copy and edit the code block above for your network. The minimum "
-"required information is ssid:your_network_name pass:your_wifi_password"
+msgid "You can copy and edit the code block above for your network. The minimum required information is ssid:your_network_name pass:your_wifi_password"
 msgstr "你可以复制并修改上面的代码块以匹配你的网络。最少需要提供 ssid:你的网络名称 pass:你的WiFi密码"
 
 #: templates/qr.html
@@ -2841,3 +2825,4 @@ msgstr "还没有文件。"
 #: templates/upload.html
 msgid "Delete this file? It is removed from the server."
 msgstr "删除此文件？它将从服务器上移除。"
+

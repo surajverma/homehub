@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, current_app, flash, jsonify
 from flask_babel import gettext as _
 from ..models import db, Recipe
-from ..blueprints import main_bp
+from ..blueprints import main_bp, json_error_response
 from ..admin import can_modify
 from ..security import sanitize_text, sanitize_html, is_http_url
 import json
@@ -161,8 +161,8 @@ def update_recipe_tags(recipe_id):
         recipe.tags = json.dumps(cleaned)
         db.session.commit()
         return jsonify({"ok": True, "id": recipe.id, "tags": cleaned})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception:
+        return json_error_response('Could not update tags for recipe %s', recipe_id)
 
 
 @main_bp.route('/api/recipes', methods=['GET'])

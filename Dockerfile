@@ -1,4 +1,4 @@
-FROM python:3.12-alpine AS builder
+FROM python:3.14-alpine AS builder
 
 WORKDIR /app
 
@@ -11,7 +11,8 @@ RUN apk add --no-cache \
     npm
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Installed under /install so the runtime stage can copy just the packages and their scripts
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Copy package files and build Tailwind CSS
 COPY package.json tailwind.config.js ./
@@ -21,7 +22,7 @@ COPY templates ./templates
 COPY static/js ./static/js
 RUN npm install && npm run build:css
 
-FROM python:3.12-alpine
+FROM python:3.14-alpine
 
 WORKDIR /app
 
@@ -39,9 +40,8 @@ RUN apk add --no-cache \
     zlib \
     libstdc++
 
-# Copy installed packages from builder
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Copy installed packages and their scripts (gunicorn, pybabel) from builder
+COPY --from=builder /install /usr/local
 
 # Copy application code
 COPY . /app

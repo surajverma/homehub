@@ -84,7 +84,9 @@ def test_theme_defaults_upgrade_old_example_values_but_keep_custom_colours():
 def test_too_large_upload_never_redirects_off_site(client, monkeypatch):
     monkeypatch.setattr('app.blueprints.auth.upload_limit_bytes', lambda cfg: 1024)
     for referer, expected in [('https://evil.example/phish', '/'), ('//evil.example/x', '/'),
-                              ('http://localhost/upload?x=1', '/upload?x=1')]:
+                              ('/\\evil.example/x', '/'), ('/\\/evil.example', '/'), ('/upload\\x', '/'),
+                              ('/not-a-page', '/'), ('http://localhost/upload?x=1', '/upload'),
+                              ('/upload', '/upload'), ('http://localhost/pdfs', '/pdfs')]:
         resp = client.post('/upload', data={
             'creator': 'Alice',
             'files': (io.BytesIO(b'x' * 4096), 'big.bin'),

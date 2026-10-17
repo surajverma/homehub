@@ -168,9 +168,9 @@ window.REMINDERS_CAL_START = (function(){
 		<!-- Reminders & Calendar (moved to right column) -->
 		<div class="card p-4 md:p-6" id="remindersCard" style="min-height:520px">
 			<h2 class="section-title mb-3"><i class="fa-solid fa-calendar-days section-icon" aria-hidden="true"></i> {{ _('Calendar & Reminders') if calendar_only else _('Reminders') }}</h2>
-			<div id="reminderMonthNav" class="flex items-center justify-between mb-2">
+			<div id="reminderMonthNav" class="relative flex items-center justify-between mb-2">
 				<button type="button" id="calPrev" class="btn btn-secondary btn-icon" aria-label="{{ _('Previous month') }}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
-				<div id="calLabel" class="font-semibold flex-1 text-center"></div>
+				<div class="flex-1 text-center"><button type="button" id="calLabel" class="month-picker-label font-semibold" title="{{ _('Choose month and year') }}"></button></div>
 				<button type="button" id="calNext" class="btn btn-secondary btn-icon" aria-label="{{ _('Next month') }}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
 			</div>
 			<div class="flex justify-end mb-2"><button id="backToToday" type="button" class="hidden text-xs text-blue-600 hover:underline">{{ _('Back to Today') }}</button></div>
@@ -285,6 +285,7 @@ window.REMINDERS_CAL_START = (function(){
 
 		<script id="reminderCategoriesData" type="application/json">{{ reminder_categories|tojson }}</script>
 		<script src="{{ asset_url('js/pages/home/category_colors.js') }}"></script>
+		<script src="{{ asset_url('js/month-picker.js') }}"></script>
 		<script src="{{ asset_url('js/pages/home/reminders.js') }}"></script>
 	</div> <!-- /right col -->
 </div> <!-- /grid -->

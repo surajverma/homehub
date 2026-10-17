@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, current_app, json
 from flask_babel import gettext as _
 from datetime import datetime, date, timedelta
 from ..models import db, Chore, RecurringChore
-from ..blueprints import main_bp
+from ..blueprints import main_bp, json_error_response
 from ..admin import is_admin, can_modify
 from ..security import sanitize_text
 from ..recurrence import next_occurrence as _next_occurrence, first_on_or_after as _next_due_on_or_after, serialized
@@ -487,8 +487,8 @@ def update_chore_tags(chore_id):
         chore.tags = json.dumps(cleaned)
         db.session.commit()
         return jsonify({"ok": True, "id": chore.id, "tags": cleaned})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception:
+        return json_error_response('Could not update tags for chore %s', chore_id)
 
 
 @main_bp.route('/api/chores', methods=['GET'])
@@ -547,5 +547,5 @@ def api_update_chore(chore_id):
         chore.tags = json.dumps(tags)
         db.session.commit()
         return jsonify({"ok": True, "item": {"id": chore.id, "description": chore.description, "tags": tags}})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception:
+        return json_error_response('Could not update chore %s', chore_id)
