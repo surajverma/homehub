@@ -1,0 +1,4 @@
+# Request the repository maintainer's review for all changes.
+# This also assigns ownership of the CODEOWNERS file itself.
+# Required approvals and maintainer exceptions are configured in repository rulesets.
+* @surajverma
