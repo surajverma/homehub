@@ -1,4 +1,4 @@
-FROM python:3.12-alpine AS builder
+FROM python:3.14-alpine AS builder
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ COPY templates ./templates
 COPY static/js ./static/js
 RUN npm install && npm run build:css
 
-FROM python:3.12-alpine
+FROM python:3.14-alpine
 
 WORKDIR /app
 
