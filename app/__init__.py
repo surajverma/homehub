@@ -142,10 +142,14 @@ def create_app(test_config: dict | None = None):
         ref = urlsplit(request.referrer or '')
         if ref.netloc and ref.netloc != request.host:
             return redirect('/')
-        back = (ref.path or '/') + (f'?{ref.query}' if ref.query else '')
-        # Browsers read "/\evil.example" as "//evil.example", so a backslash in the path is never safe
-        if not back.startswith('/') or back.startswith('//') or '\\' in ref.path or any(ord(c) < 32 for c in back):
-            back = '/'
+        # The target is one of the app's own pages (a plain GET route), never text taken from the Referer,
+        # so tricks like "/\evil.example" cannot lead off the site. The query string is not kept;
+        # the upload pages (/upload, /pdfs) do not use one.
+        back = '/'
+        for rule in app.url_map.iter_rules():
+            if not rule.arguments and 'GET' in (rule.methods or ()) and rule.rule == ref.path:
+                back = rule.rule
+                break
         return redirect(back)
 
     @app.context_processor

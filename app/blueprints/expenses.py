@@ -175,7 +175,11 @@ def _amount_problem(amount, quantity=None, unit_price=None, check_amount=True) -
 
 
 class FormError(ValueError):
-    """A submitted value the user has to fix; the message is meant for them."""
+    """A submitted value the user has to fix; user_message is the text to show them."""
+
+    def __init__(self, user_message: str):
+        super().__init__(user_message)
+        self.user_message = user_message
 
 
 class SplitError(FormError):
@@ -431,7 +435,7 @@ def expenses():
             try:
                 split_with = _split_from_form(request.form, unit_price * default_quantity)
             except SplitError as exc:
-                flash(str(exc), 'error')
+                flash(exc.user_message, 'error')
                 return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
             db.session.add(RecurringExpense(title=title, unit_price=unit_price, default_quantity=default_quantity, frequency=frequency, monthly_mode=monthly_mode, category=category, start_date=sd, end_date=ed, creator=creator, effective_from=sd, split_with=split_with))
             db.session.commit()
@@ -463,7 +467,7 @@ def expenses():
             try:
                 split_with = _split_from_form(request.form, amount)
             except SplitError as exc:
-                flash(str(exc), 'error')
+                flash(exc.user_message, 'error')
                 return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
             db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer, split_with=split_with))
             db.session.commit()
@@ -709,7 +713,7 @@ def _rule_edit_from_request(rid):
         return r, _parse_rule_edit(r, request.form, date.today()), None
     except FormError as exc:
         # Our own messages (SplitError too), written for the user
-        return r, None, str(exc)
+        return r, None, exc.user_message
     except ValueError:
         current_app.logger.exception('Could not read the edit for recurring expense %s', rid)
         return r, None, _('Something went wrong. Please try again.')
@@ -991,7 +995,7 @@ def edit_expense_entry(entry_id):
             entry.split_with = _split_from_form(request.form, entry.amount)
         except SplitError as exc:
             db.session.rollback()
-            flash(str(exc), 'error')
+            flash(exc.user_message, 'error')
             return _redirect_to_view(entry.date)
     db.session.commit()
     flash(_('Expense updated.'), 'success')

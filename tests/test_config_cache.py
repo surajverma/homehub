@@ -85,7 +85,8 @@ def test_too_large_upload_never_redirects_off_site(client, monkeypatch):
     monkeypatch.setattr('app.blueprints.auth.upload_limit_bytes', lambda cfg: 1024)
     for referer, expected in [('https://evil.example/phish', '/'), ('//evil.example/x', '/'),
                               ('/\\evil.example/x', '/'), ('/\\/evil.example', '/'), ('/upload\\x', '/'),
-                              ('http://localhost/upload?x=1', '/upload?x=1')]:
+                              ('/not-a-page', '/'), ('http://localhost/upload?x=1', '/upload'),
+                              ('/upload', '/upload'), ('http://localhost/pdfs', '/pdfs')]:
         resp = client.post('/upload', data={
             'creator': 'Alice',
             'files': (io.BytesIO(b'x' * 4096), 'big.bin'),
