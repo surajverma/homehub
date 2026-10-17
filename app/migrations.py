@@ -90,6 +90,7 @@ LATE_COLUMNS = [
     ('recurring_reminder', 'interval', 'INTEGER', 1),
     # Filled from the legacy frequency below, then 'month' for anything left (matches app/recurrence.py)
     ('recurring_reminder', 'unit', 'TEXT', None),
+    ('recurring_reminder', 'anchor_day', 'INTEGER', None),
 ]
 
 

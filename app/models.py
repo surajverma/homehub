@@ -226,6 +226,9 @@ class RecurringReminder(db.Model):
     end_date = db.Column(db.Date)
     last_generated_date = db.Column(db.Date)
     effective_from = db.Column(db.Date)
+    # Day of the month to aim for when start_date itself landed on a shortened month end,
+    # e.g. 31 for a rule continued from an edit that now starts on Nov 30
+    anchor_day = db.Column(db.Integer)
     timestamp = db.Column(db.DateTime, default=utcnow)
 
 class ExpenseEntry(db.Model):

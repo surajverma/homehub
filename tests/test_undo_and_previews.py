@@ -351,6 +351,59 @@ def test_edited_weekly_reminder_keeps_its_weekday(client):
     assert occurrences(client, start + timedelta(days=14)) == ['Pay landlord']
 
 
+def _freeze_reminders_today(monkeypatch, today):
+    import app.blueprints.dashboard as dashboard
+
+    class FrozenDate(date):
+        @classmethod
+        def today(cls):
+            return today
+
+    monkeypatch.setattr(dashboard, 'date', FrozenDate)
+
+
+def month_dates(client, year, month, title):
+    data = client.get(f'/api/reminders?scope=month&date={date(year, month, 1).isoformat()}').get_json()
+    return sorted({r['date'] for r in data['reminders'] if r['title'] == title})
+
+
+def test_edited_month_end_reminder_keeps_the_31st(client, monkeypatch):
+    rid = make_reminder_rule(client, date(2026, 10, 31), unit='month')
+    _freeze_reminders_today(monkeypatch, date(2026, 11, 15))
+    resp = client.patch(f'/api/recurring_rules/{rid}', json={
+        'creator': 'Alice', 'title': 'Pay landlord', 'start_date': '2026-10-31', 'interval': 1, 'unit': 'month',
+    }).get_json()
+    assert resp['split'] is True and resp['rule']['start_date'] == '2026-11-30'
+    assert month_dates(client, 2026, 11, 'Pay landlord') == ['2026-11-30']
+    assert month_dates(client, 2026, 12, 'Pay landlord') == ['2026-12-31']
+    assert month_dates(client, 2027, 2, 'Pay landlord') == ['2027-02-28']
+    assert month_dates(client, 2027, 3, 'Pay landlord') == ['2027-03-31']
+
+    # Editing the continued rule again, later on, still aims for the 31st
+    _freeze_reminders_today(monkeypatch, date(2027, 2, 10))
+    second = client.patch(f"/api/recurring_rules/{resp['rule']['id']}", json={
+        'creator': 'Alice', 'title': 'Rent', 'start_date': '2026-11-30', 'interval': 1, 'unit': 'month',
+    }).get_json()
+    assert second['split'] is True and second['rule']['start_date'] == '2027-02-28'
+    assert month_dates(client, 2027, 3, 'Rent') == ['2027-03-31']
+
+
+def test_new_start_date_replaces_the_kept_day(client, monkeypatch):
+    rid = make_reminder_rule(client, date(2026, 10, 31), unit='month')
+    _freeze_reminders_today(monkeypatch, date(2026, 11, 15))
+    split = client.patch(f'/api/recurring_rules/{rid}', json={
+        'creator': 'Alice', 'title': 'Pay landlord', 'start_date': '2026-10-31', 'interval': 1, 'unit': 'month',
+    }).get_json()['rule']
+    # The continued rule hasn't started yet, so a new start date edits it in place
+    resp = client.patch(f"/api/recurring_rules/{split['id']}", json={
+        'creator': 'Alice', 'title': 'Pay landlord', 'start_date': '2026-11-20', 'interval': 1, 'unit': 'month',
+    }).get_json()
+    assert resp['split'] is False
+    assert month_dates(client, 2026, 12, 'Pay landlord') == ['2026-12-20']
+    with client.application.app_context():
+        assert db.session.get(RecurringReminder, split['id']).anchor_day is None
+
+
 def test_saving_a_reminder_rule_unchanged_does_not_split_it(client):
     start = days_ago(10)
     rid = make_reminder_rule(client, start)

@@ -396,6 +396,9 @@ def api_recurring_rules_update_delete(rid):
         # Nothing has happened yet, so the rule itself can change
         for name in changed:
             setattr(rr, name, new[name])
+        if 'start_date' in changed:
+            # A new start date sets its own day of the month
+            rr.anchor_day = None
         db.session.commit()
         return jsonify({'ok': True, 'rule': _serialize_recurring_rule(rr), 'split': False,
                         'undo_token': _stash_reminder_rule(before)})
@@ -418,9 +421,14 @@ def api_recurring_rules_update_delete(rid):
 
     # The new settings continue from today on their own schedule; the old rule keeps the past
     successor = RecurringReminder(**new)
+    # Keep the rule's day of the month: its first date from today may be a shortened month end
+    # (the 31st falling on Nov 30), and later months should still go back to the 31st
+    successor.anchor_day = new['start_date'].day if 'start_date' in changed else (rr.anchor_day or rr.start_date.day)
     successor.start_date = first_on_or_after(successor, today)
     if successor.start_date is None:
         return jsonify({'ok': False, 'error': _('With these settings there are no dates left from today. Choose a later end date.')}), 400
+    if successor.unit not in ('month', 'year') or successor.anchor_day <= successor.start_date.day:
+        successor.anchor_day = None
     successor.effective_from = successor.start_date
     if not rr.end_date or rr.end_date > yesterday:
         rr.end_date = yesterday
