@@ -81,6 +81,11 @@ def test_monthly_clamp_end_of_month(client):
     assert r.status_code == 200
     feb = list_month(client, 2025, 2)
     assert_dates_for_title(feb, 'MonthlyClamp', ['2025-02-28'])
+    # Later months go back to the 31st instead of staying on the 28th
+    mar = list_month(client, 2025, 3)
+    assert_dates_for_title(mar, 'MonthlyClamp', ['2025-03-31'])
+    apr = list_month(client, 2025, 4)
+    assert_dates_for_title(apr, 'MonthlyClamp', ['2025-04-30'])
 
 
 def test_yearly_leap_day_fallback(client):
@@ -97,6 +102,8 @@ def test_yearly_leap_day_fallback(client):
     assert r.status_code == 200
     feb25 = list_month(client, 2025, 2)
     assert_dates_for_title(feb25, 'LeapYear', ['2025-02-28'])
+    feb28 = list_month(client, 2028, 2)
+    assert_dates_for_title(feb28, 'LeapYear', ['2028-02-29'])
 
 
 def test_end_date_inclusive(client):

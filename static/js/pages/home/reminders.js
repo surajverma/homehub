@@ -342,6 +342,8 @@
 				res = await window.remindersApi.updateRule(rid, rulePayload);
 			}
 			if(res && res.ok){
+				// The rule's dates span many months, so drop every cached one
+				dropMonthCache();
 				// Refresh the displayed month so calendar badges update correctly
 				const dispKey = display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0');
 				await fetchMonth(dispKey+'-01', true);
@@ -360,13 +362,8 @@
 					const del = await window.remindersApi.removeMany([id], creator);
 					if(del && del.ok){
 						res = { ok: true, converted: 'single-to-rule', recurring_id: makeRule.recurring_id };
-						// Update local caches: remove old single, refresh month(s) for new rule
-						let origMonthKey = null;
-						Object.entries(monthCache).forEach(([k,mc])=>{
-							const before = (mc.reminders||[]).length;
-							mc.reminders = (mc.reminders||[]).filter(r=>r.id!==id);
-							if(before !== (mc.reminders||[]).length){ origMonthKey = k; }
-						});
+						// The new rule's dates span many months, so drop every cached one
+						dropMonthCache();
 						// Fetch the month for the selected/form date to pick up the new rule
 						if(data.date){
 							await fetchMonth(data.date, true);
@@ -393,14 +390,19 @@
 					await fetchMonth(res.reminder.date, true);
 					const d=new Date(res.reminder.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key);
 				} else if(res.recurring_id){
-					// For recurring rules, just refresh the month of the selected date to synthesize occurrences
+					// The rule's dates span many months, so drop every cached one and refetch what's shown
+					dropMonthCache();
 					await fetchMonth(data.date, true);
 					const d=new Date(data.date+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); touchedMonths.add(key);
+					const dispKey=display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0');
+					if(dispKey!==key){ await fetchMonth(dispKey+'-01', true); touchedMonths.add(dispKey); }
 				}
 			}
 		}
 		if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); updateCalendarBadges(); closeForm(); renderList(); let msg=t('Saved'); if(res.rule) msg=(res.split ? t('Recurring reminder updated from today. Earlier dates are unchanged.') : t('Recurring rule updated')); else if(data.id) msg=t('Reminder updated'); else if(res.recurring_id) msg=t('Recurring rule saved'); else msg=t('Reminder added'); if(res.undo_token){ window.undoToast(msg, res.undo_token); if(live) live.textContent=msg; } else toast(msg,'success'); } else { toast((res&&res.error)|| t('Save failed'),'error'); }
 	});
+	// Forget every loaded month, e.g. after a recurring rule changes dates across many of them
+	function dropMonthCache(){ Object.keys(monthCache).forEach(k=>delete monthCache[k]); }
 	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast(t('Network error'),'error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{},recurring_rules:[]}; }
 	function buildWeekdayHeader(){
 		const row=document.getElementById('reminderWeekdayRow'); if(!row) return;
@@ -685,7 +687,7 @@
 				const message = ended ? t('This recurring reminder has already ended. Deleting it also removes its past dates from the calendar.') : (started ? t('Dates from today onwards are removed. Earlier dates stay on the calendar.') : '');
 				if(!(await confirmDialog({ title: t('Delete this recurring reminder?'), message: message, confirmText: t('Delete'), danger: true }))) return;
 				const res = await window.remindersApi.deleteRule(rid, creator, ended ? 'all' : undefined);
-				if(res && res.ok){ const dateStr=getSelectedDate(); await fetchMonth(dateStr, true); const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); recalcMonth(key); updateCalendarBadges(); renderList(); window.undoToast(res.ended ? t('Recurring reminder ended. Earlier dates were kept.') : t('Recurring rule deleted'), res.undo_token); }
+				if(res && res.ok){ dropMonthCache(); const dateStr=getSelectedDate(); await fetchMonth(dateStr, true); buildAndEnsure(); const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); recalcMonth(key); updateCalendarBadges(); renderList(); window.undoToast(res.ended ? t('Recurring reminder ended. Earlier dates were kept.') : t('Recurring rule deleted'), res.undo_token); }
 				else { toast((res&&res.error)|| t('Delete failed'),'error'); }
 			});
 		});
@@ -776,12 +778,14 @@
 			if(!rules.length){ wrap.innerHTML=''; return; }
 		}
 		const counts = {};
+		// "All" counts every reminder in scope, including ones without a category
+		let totalCount = scopeList.length;
 		scopeList.forEach(r => { if (r.category) counts[r.category] = (counts[r.category] || 0) + 1; });
 		// include recurring rules in-scope
 		const dateStr=getSelectedDate(); const dObj=new Date(dateStr+'T00:00:00');
-		const within = (ds)=>{ if(currentScope==='day') return ds===dateStr; if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); const rd=new Date(ds); return rd>=mon && rd<=end; } return true; };
+		const within = (ds)=>{ if(currentScope==='day') return ds===dateStr; if(currentScope==='week'){ const base=dObj; const mon=new Date(base.getFullYear(), base.getMonth(), base.getDate()-((base.getDay()+6)%7)); const end=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6); const rd=new Date(ds+'T00:00:00'); return rd>=mon && rd<=end; } return true; };
 		const mkey=dObj.getFullYear()+'-'+String(dObj.getMonth()+1).padStart(2,'0'); const cache=monthCache[mkey]||{};
-		(cache.recurring_rules||[]).forEach(rr=>{ if(!rr.category) return; const inScope = (rr.dates||[]).filter(within).length; if(inScope){ counts[rr.category]=(counts[rr.category]||0)+inScope; } });
+		(cache.recurring_rules||[]).forEach(rr=>{ const inScope = (rr.dates||[]).filter(within).length; totalCount += inScope; if(rr.category && inScope){ counts[rr.category]=(counts[rr.category]||0)+inScope; } });
 		const ordered = Object.entries(counts).sort((a, b) => b[1] - a[1]);
 		// Clear previous content
 		wrap.innerHTML = '';
@@ -791,7 +795,6 @@
 		allBtn.setAttribute('data-cat', 'ALL');
 		allBtn.className = 'rem-cat-pill inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-white text-xs hover:bg-blue-50' +
 			(activeCategory === 'ALL' ? ' ring-1 ring-blue-500 bg-blue-50' : '');
-		const totalCount = Object.values(counts).reduce((a,b)=>a+b, 0);
 		allBtn.textContent = t('All: {count}', { count: totalCount });
 		wrap.appendChild(allBtn);
 		// Build key→label lookup from reminderCategoriesData
@@ -925,7 +928,7 @@
 			btn.addEventListener('click', async ()=>{
 				const id = parseInt(btn.getAttribute('data-restore'));
 				const res2 = await window.remindersApi.restore(id, creator);
-				if(res2 && res2.ok){ toast(t('Restored'),'success'); Object.keys(monthCache).forEach(k=>delete monthCache[k]); renderTrashPanel(); buildAndEnsure(); renderList(); }
+				if(res2 && res2.ok){ toast(t('Restored'),'success'); dropMonthCache(); renderTrashPanel(); buildAndEnsure(); renderList(); }
 				else toast((res2&&res2.error)|| t('Failed'),'error');
 			});
 		});
