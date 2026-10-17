@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, current_app, json
 from flask_babel import gettext as _
 from datetime import timedelta
 from ..models import db, ShoppingItem, GroceryHistory
-from ..blueprints import main_bp
+from ..blueprints import main_bp, json_error_response
 from ..clock import utcnow
 from ..admin import can_modify
 from ..security import sanitize_text
@@ -105,8 +105,8 @@ def update_shopping_tags(item_id):
         item.tags = json.dumps(cleaned)
         db.session.commit()
         return jsonify({"ok": True, "id": item.id, "tags": cleaned})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception:
+        return json_error_response('Could not update tags for shopping item %s', item_id)
 
 
 @main_bp.route('/api/shopping', methods=['GET'])
@@ -155,8 +155,8 @@ def api_update_shopping(item_id):
         item.tags = json.dumps(tags)
         db.session.commit()
         return jsonify({"ok": True, "item": {"id": item.id, "item": item.item, "tags": tags}})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception:
+        return json_error_response('Could not update shopping item %s', item_id)
 
 
 @main_bp.route('/api/shopping/history', methods=['DELETE'])
@@ -174,5 +174,5 @@ def api_delete_shopping_history_item():
             db.session.execute(db.text("DELETE FROM grocery_history WHERE id = :id"), {"id": row[0]})
             db.session.commit()
         return jsonify({"ok": True})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception:
+        return json_error_response('Could not delete shopping history item')

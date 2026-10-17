@@ -143,7 +143,10 @@ def create_app(test_config: dict | None = None):
         if ref.netloc and ref.netloc != request.host:
             return redirect('/')
         back = (ref.path or '/') + (f'?{ref.query}' if ref.query else '')
-        return redirect(back if back.startswith('/') and not back.startswith('//') else '/')
+        # Browsers read "/\evil.example" as "//evil.example", so a backslash in the path is never safe
+        if not back.startswith('/') or back.startswith('//') or '\\' in ref.path or any(ord(c) < 32 for c in back):
+            back = '/'
+        return redirect(back)
 
     @app.context_processor
     def inject_auth_state():

@@ -4,13 +4,13 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: HomeHub\n"
+"Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-10 21:29+0530\n"
+"POT-Creation-Date: 2026-10-17 16:40+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
-"Language-Team: tr <LL@li.org>\n"
 "Language: tr\n"
+"Language-Team: tr <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -21,6 +21,10 @@ msgstr ""
 #, python-format
 msgid "Upload is too large. The limit is %(limit)s MB."
 msgstr "Yükleme çok büyük. Sınır %(limit)s MB."
+
+#: app/blueprints/__init__.py app/blueprints/expenses.py
+msgid "Something went wrong. Please try again."
+msgstr ""
 
 #: app/blueprints/__init__.py
 msgid "Offline"
@@ -33,6 +37,10 @@ msgstr "Çevrimdışısınız"
 #: app/blueprints/__init__.py
 msgid "This page is not available offline."
 msgstr "Bu sayfa çevrimdışı kullanılamıyor."
+
+#: app/blueprints/auth.py
+msgid "This request came from another website and was blocked."
+msgstr ""
 
 #: app/blueprints/auth.py
 msgid "Logged in successfully."
@@ -495,6 +503,10 @@ msgid "Invalid or disallowed URL. Only external http(s) URLs are allowed."
 msgstr "Geçersiz ya da izin verilmeyen adres. Yalnızca dış http(s) adreslerine izin verilir."
 
 #: app/blueprints/media_pdfs.py
+msgid "This site is not supported. For a direct file link, open it in your browser and save it from there."
+msgstr ""
+
+#: app/blueprints/media_pdfs.py
 msgid "Download queued. You can switch tabs; refresh to check status."
 msgstr "İndirme kuyruğa alındı. Sekme değiştirebilirsiniz; durumu görmek için sayfayı yenileyin."
 
@@ -726,6 +738,22 @@ msgstr "Tutarların toplamı {total} içinden {sum}: {over} fazla."
 #, python-brace-format
 msgid "{name} split value"
 msgstr "{name} paylaşım değeri"
+
+#: static/js/month-picker.js templates/expenses.html templates/index.html
+msgid "Choose month and year"
+msgstr ""
+
+#: static/js/month-picker.js
+msgid "Previous year"
+msgstr ""
+
+#: static/js/month-picker.js
+msgid "Next year"
+msgstr ""
+
+#: static/js/month-picker.js
+msgid "This month"
+msgstr ""
 
 #: static/js/pages/chores.js
 msgid "Recurring chore ends in the past. Choose a future end date."
@@ -1343,6 +1371,14 @@ msgstr "Önizle"
 #: templates/qr.html templates/upload.html
 msgid "Download"
 msgstr "İndir"
+
+#: static/js/pages/media.js templates/media.html
+msgid "Site not supported"
+msgstr ""
+
+#: static/js/pages/media.js templates/media.html
+msgid "For a direct file link, open it in your browser and save it from there."
+msgstr ""
 
 #: static/js/pages/media.js
 msgid "Error"

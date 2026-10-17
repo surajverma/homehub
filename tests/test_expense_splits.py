@@ -461,6 +461,113 @@ def test_non_finite_edit_leaves_entry_unchanged(client):
         assert e.title == 'Trip' and e.amount == 90.0
 
 
+def flashed(client):
+    with client.session_transaction() as sess:
+        return [message for _category, message in sess.get('_flashes', [])]
+
+
+@pytest.mark.parametrize('field', ['amount', 'unit_price', 'quantity'])
+def test_non_numeric_expense_is_rejected(client, field):
+    data = {'form_type': 'single', 'title': 'Bad', 'amount': '10', 'unit_price': '5', 'quantity': '2', 'payer': 'Alice', 'date': '2026-06-01'}
+    data[field] = 'abc'
+    res = client.post('/expenses', data=data)
+    assert res.status_code == 302
+    assert flashed(client) == ['Invalid amount.']
+    with client.application.app_context():
+        assert ExpenseEntry.query.count() == 0
+
+
+@pytest.mark.parametrize('field', ['unit_price', 'default_quantity'])
+def test_non_numeric_recurring_rule_is_rejected(client, field):
+    data = {
+        'form_type': 'recurring', 'title': 'Milk', 'unit_price': '30', 'default_quantity': '1',
+        'frequency': 'daily', 'start_date': '2026-06-01', 'end_date': '2026-06-03', 'creator': 'Alice',
+    }
+    data[field] = 'abc'
+    res = client.post('/expenses', data=data)
+    assert res.status_code == 302
+    assert flashed(client) == ['Invalid amount.']
+    with client.application.app_context():
+        assert RecurringExpense.query.count() == 0
+
+
+@pytest.mark.parametrize('field', ['amount', 'unit_price', 'quantity'])
+def test_non_numeric_edit_leaves_entry_unchanged(client, field):
+    with client.application.app_context():
+        db.session.add(ExpenseEntry(date=date(2026, 6, 1), title='Trip', amount=90.0, unit_price=45.0, quantity=2.0, payer='Alice'))
+        db.session.commit()
+        eid = ExpenseEntry.query.one().id
+    res = client.post(f'/expenses/edit/{eid}', data={'user': 'Alice', 'title': 'Changed', field: 'abc'})
+    assert res.status_code == 302
+    assert flashed(client) == ['Invalid amount.']
+    with client.application.app_context():
+        e = db.session.get(ExpenseEntry, eid)
+        assert (e.title, e.amount, e.unit_price, e.quantity) == ('Trip', 90.0, 45.0, 2.0)
+
+
+@pytest.mark.parametrize('field', ['unit_price', 'default_quantity'])
+def test_non_numeric_rule_edit_is_rejected(client, field):
+    with client.application.app_context():
+        rid = add_newspaper_rule()
+    res = edit_rule(client, rid, **{field: 'abc'})
+    assert res.status_code == 302
+    assert flashed(client) == ['Invalid amount.']
+    with client.application.app_context():
+        rule = db.session.get(RecurringExpense, rid)
+        assert (rule.unit_price, rule.default_quantity) == (5.0, 1.0)
+
+
+@pytest.mark.parametrize('field', ['unit_price', 'default_quantity'])
+def test_non_numeric_rule_edit_preview_returns_json_error(client, field):
+    with client.application.app_context():
+        rid = add_newspaper_rule()
+    res = client.post(f'/expenses/recurring/edit/{rid}/preview', data={
+        'user': 'Alice', 'unit_price': '5', 'default_quantity': '1', field: 'abc',
+    })
+    assert res.status_code == 400
+    assert res.get_json() == {'ok': False, 'error': 'Invalid amount.'}
+
+
+def test_rule_edit_hides_unexpected_errors_but_keeps_form_messages(client, monkeypatch):
+    from app.blueprints import expenses as expenses_module
+    with client.application.app_context():
+        rid = add_newspaper_rule()
+
+    def broken(*_args):
+        raise ValueError('internal detail')
+    monkeypatch.setattr(expenses_module, '_parse_rule_edit', broken)
+    res = client.post(f'/expenses/recurring/edit/{rid}/preview', data={'user': 'Alice'})
+    assert res.status_code == 400
+    assert res.get_json()['error'] == 'Something went wrong. Please try again.'
+    edit_rule(client, rid)
+    assert flashed(client) == ['Something went wrong. Please try again.']
+    monkeypatch.undo()
+
+    # Messages written for the user (split rules, amount checks) are still shown as they are
+    res = client.post(f'/expenses/recurring/edit/{rid}/preview', data={
+        'user': 'Alice', 'unit_price': '5', 'default_quantity': '0',
+    })
+    assert res.get_json()['error'] == 'Quantity must be greater than zero.'
+    res = client.post(f'/expenses/recurring/edit/{rid}/preview', data={
+        'user': 'Alice', 'unit_price': '5', 'default_quantity': '1', 'split_present': '1',
+        'split_with': ['Alice', 'Bob'], 'split_mode': 'percent', 'split_weight__Alice': '10', 'split_weight__Bob': '10',
+    })
+    assert res.get_json()['error'] == 'Percentages add up to 20%, not 100%.'
+
+
+def test_blank_amounts_keep_their_defaults(client):
+    # A blank amount is worked out from unit price x quantity; a blank quantity means one
+    client.post('/expenses', data={'form_type': 'single', 'title': 'Milk', 'amount': '', 'unit_price': '30', 'quantity': '', 'payer': 'Alice', 'date': '2026-06-01'})
+    with client.application.app_context():
+        e = ExpenseEntry.query.one()
+        assert (e.amount, e.unit_price, e.quantity) == (30.0, 30.0, None)
+        eid = e.id
+    client.post(f'/expenses/edit/{eid}', data={'user': 'Alice', 'title': 'Milk', 'amount': '', 'unit_price': '', 'quantity': '2'})
+    with client.application.app_context():
+        e = db.session.get(ExpenseEntry, eid)
+        assert (e.amount, e.unit_price, e.quantity) == (30.0, 30.0, 2.0)
+
+
 def test_restore_rejects_dates_before_last_edit(client):
     with client.application.app_context():
         rid = add_newspaper_rule()

@@ -46,7 +46,7 @@
 		if(live) live.textContent=msg;
 	}
 	let catPalette={};
-	try{ const cats=JSON.parse(catDataEl?.textContent||'[]'); categorySelect.innerHTML='<option value="">'+th('(No category)')+'</option>'+(Array.isArray(cats)?cats.map(c=>`<option value="${c.key}">${c.label||c.key}</option>`).join(''):''); (Array.isArray(cats)?cats:[]).forEach(c=>{ if(c && c.key){ catPalette[c.key]=c.color||'#2563eb'; } }); }catch(e){}
+	try{ const cats=JSON.parse(catDataEl?.textContent||'[]'); categorySelect.innerHTML='<option value="">'+th('(No category)')+'</option>'+(Array.isArray(cats)?cats.map(c=>`<option value="${window.I18N.escape(c.key)}">${window.I18N.escape(c.label||c.key)}</option>`).join(''):''); (Array.isArray(cats)?cats:[]).forEach(c=>{ if(c && c.key){ catPalette[c.key]=c.color||'#2563eb'; } }); }catch(e){}
 	function categoryColor(k){ return catPalette[k]; }
 	function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
 	// Unified bulk bar updater (delegated-safe)
@@ -891,6 +891,15 @@
 	}
 	prevBtn.addEventListener('click', ()=> onMonthChange(-1));
 	nextBtn.addEventListener('click', ()=> onMonthChange(1));
+	// Month label opens a month/year picker; PageUp/PageDown and swipes change the month too
+	if(window.MonthPicker) window.MonthPicker.attach({
+		label: calLabel,
+		anchor: document.getElementById('reminderMonthNav'),
+		swipeArea: cal,
+		current: ()=> ({ year: display.getFullYear(), month: display.getMonth() }),
+		go: (y, m)=> onMonthChange((y*12+m) - (display.getFullYear()*12+display.getMonth())),
+		today: ()=> document.getElementById('backToToday').click(),
+	});
 	function buildAndEnsure(){ const mk=display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0'); const have = monthCache[mk]; if(!have || !have.recurring_rules){ fetchMonth(mk+'-01', true).then(()=>{ renderCalendar(); renderList(); }); } renderCalendar(); }
 	if(window.CALENDAR_ONLY && searchInput && !searchInput.dataset.bound){
 		searchInput.dataset.bound = '1';

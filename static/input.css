@@ -457,3 +457,38 @@ input[type="file"]::file-selector-button:hover { background-color: var(--hover-b
 .calendar-cell.is-selected .calendar-cell-amount { color: var(--primary-text); }
 .calendar-cell .calendar-cell-amount.is-tight { font-size: .6rem; letter-spacing: -0.02em; }
 [data-theme="dark"] .calendar-cell.is-selected { background-color: rgba(59,130,246,0.28); border-color: rgba(147,197,253,0.55); }
+
+/* ========================================
+   Month picker (static/js/month-picker.js)
+   ======================================== */
+.month-picker-label { border-radius: var(--control-radius); padding: 0.125rem 0.5rem; cursor: pointer; }
+.month-picker-label:hover { background-color: var(--hover-bg); }
+.month-picker-label:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+.month-picker {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    width: min(16rem, calc(100vw - 2rem));
+    margin-top: 0.25rem;
+    padding: 0.75rem;
+    background-color: var(--card-background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.2);
+}
+.month-picker[hidden] { display: none; }
+.month-picker-year { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.month-picker-year-text { font-weight: 600; font-variant-numeric: tabular-nums; }
+.month-picker-step { width: 2rem; height: 2rem; border-radius: var(--control-radius); color: var(--muted-text); }
+.month-picker-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.25rem; }
+.month-picker-month { padding: 0.5rem 0.25rem; border-radius: var(--control-radius); border: 1px solid transparent; font-size: 0.875rem; }
+.month-picker-step:hover, .month-picker-month:hover, .month-picker-today:hover { background-color: var(--hover-bg); }
+.month-picker-month.is-today { color: var(--primary-text); font-weight: 600; }
+.month-picker-month.is-selected { border-color: var(--primary-color); background-color: var(--primary-soft); }
+.month-picker-today { width: 100%; margin-top: 0.5rem; padding: 0.375rem; border-radius: var(--control-radius); border: 1px solid var(--border-color); font-size: 0.875rem; }
+.month-picker button:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+[data-theme="dark"] .month-picker { box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
+[data-theme="dark"] .month-picker-month.is-selected { background-color: rgba(59,130,246,0.28); border-color: rgba(147,197,253,0.55); }

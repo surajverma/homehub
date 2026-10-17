@@ -174,8 +174,26 @@ def _amount_problem(amount, quantity=None, unit_price=None, check_amount=True) -
     return None
 
 
-class SplitError(ValueError):
+class FormError(ValueError):
+    """A submitted value the user has to fix; the message is meant for them."""
+
+
+class SplitError(FormError):
     """A submitted split that breaks its mode's rules."""
+
+
+def _form_number(value, default=None):
+    """A number typed into a form, or `default` when the field is blank.
+
+    Text that is not a number ("abc") comes back as NaN, so the _all_finite() check
+    every caller makes turns it into "Invalid amount." instead of a server error.
+    """
+    if value is None or str(value).strip() == '':
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return math.nan
 
 
 def _split_from_form(form, total: float | None = None):
@@ -390,8 +408,8 @@ def expenses():
         form_type = request.form.get('form_type')
         if form_type == 'recurring':
             title = bleach.clean(request.form.get('title',''))
-            unit_price = float(request.form.get('unit_price') or 0)
-            default_quantity = float(request.form.get('default_quantity') or 1)
+            unit_price = _form_number(request.form.get('unit_price'), 0.0)
+            default_quantity = _form_number(request.form.get('default_quantity'), 1.0)
             frequency = bleach.clean(request.form.get('frequency','daily'))
             monthly_mode = bleach.clean(request.form.get('monthly_mode','day_of_month'))
             category = bleach.clean(request.form.get('category',''))
@@ -421,14 +439,14 @@ def expenses():
             return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
         else:
             title = bleach.clean(request.form.get('title',''))
-            amount = float(request.form.get('amount') or 0)
+            amount = _form_number(request.form.get('amount'), 0.0)
             category = bleach.clean(request.form.get('category') or '')
             payer = bleach.clean(request.form.get('payer') or '')
             date_s = request.form.get('date')
             d = datetime.strptime(date_s, '%Y-%m-%d').date() if date_s else date.today()
             unit_price = request.form.get('unit_price'); quantity = request.form.get('quantity')
-            up = float(unit_price) if unit_price else None
-            q = float(quantity) if quantity else None
+            up = _form_number(unit_price)
+            q = _form_number(quantity)
             if not amount and up is not None:
                 # A blank quantity means one unit, not zero
                 amount = up * (q if q is not None else 1)
@@ -469,7 +487,7 @@ _RULE_FIELDS = ('title', 'category', 'unit_price', 'default_quantity', 'frequenc
 
 
 def _parse_rule_edit(r: RecurringExpense, form, today: date) -> dict:
-    """Read a rule edit form into its strategy, effective date and new values. Raises SplitError/ValueError."""
+    """Read a rule edit form into its strategy, effective date and new values. Raises FormError (or SplitError)."""
     def _parse_date(value, fallback):
         if value in (None, ''):
             return fallback
@@ -490,8 +508,8 @@ def _parse_rule_edit(r: RecurringExpense, form, today: date) -> dict:
         new_category = cat_val or None
     up = form.get('unit_price')
     dq = form.get('default_quantity')
-    new_unit_price = float(up) if up not in (None, '') else r.unit_price
-    new_default_quantity = float(dq) if dq not in (None, '') else r.default_quantity
+    new_unit_price = _form_number(up, r.unit_price)
+    new_default_quantity = _form_number(dq, r.default_quantity)
     new_frequency = bleach.clean(form.get('frequency', r.frequency) or r.frequency)
     if new_frequency not in {'daily', 'weekly', 'monthly'}:
         new_frequency = r.frequency
@@ -502,10 +520,10 @@ def _parse_rule_edit(r: RecurringExpense, form, today: date) -> dict:
     new_end_date = _parse_date(form.get('end_date'), r.end_date)
 
     if not _all_finite(new_unit_price, new_default_quantity):
-        raise ValueError(_('Invalid amount.'))
+        raise FormError(_('Invalid amount.'))
     problem = _amount_problem(None, new_default_quantity, new_unit_price, check_amount=False)
     if problem:
-        raise ValueError(problem)
+        raise FormError(problem)
     if form.get('split_present'):
         qty = new_default_quantity if new_default_quantity is not None else 1.0
         new_split_with = _split_from_form(form, (new_unit_price or 0.0) * qty)
@@ -689,8 +707,12 @@ def _rule_edit_from_request(rid):
     r = db.get_or_404(RecurringExpense, rid)
     try:
         return r, _parse_rule_edit(r, request.form, date.today()), None
-    except (SplitError, ValueError) as exc:
+    except FormError as exc:
+        # Our own messages (SplitError too), written for the user
         return r, None, str(exc)
+    except ValueError:
+        current_app.logger.exception('Could not read the edit for recurring expense %s', rid)
+        return r, None, _('Something went wrong. Please try again.')
 
 
 @main_bp.route('/expenses/recurring/edit/<int:rid>/preview', methods=['POST'])
@@ -949,12 +971,9 @@ def edit_expense_entry(entry_id):
     if cat_raw is not None:
         entry.category = bleach.clean(cat_raw or '') or None
     entry.payer = bleach.clean(request.form.get('payer', entry.payer or ''))
-    up = request.form.get('unit_price')
-    q = request.form.get('quantity')
-    amt = request.form.get('amount')
-    entry.unit_price = float(up) if up not in (None, '') else entry.unit_price
-    entry.quantity = float(q) if q not in (None, '') else entry.quantity
-    entry.amount = float(amt) if amt not in (None, '') else entry.amount
+    entry.unit_price = _form_number(request.form.get('unit_price'), entry.unit_price)
+    entry.quantity = _form_number(request.form.get('quantity'), entry.quantity)
+    entry.amount = _form_number(request.form.get('amount'), entry.amount)
     if not entry.amount and entry.unit_price is not None:
         entry.amount = entry.unit_price * (entry.quantity if entry.quantity is not None else 1)
     if not _all_finite(entry.amount, entry.unit_price, entry.quantity):

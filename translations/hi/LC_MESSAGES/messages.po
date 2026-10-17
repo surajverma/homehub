@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-10 21:29+0530\n"
+"POT-Creation-Date: 2026-10-17 16:40+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -22,6 +22,10 @@ msgstr ""
 msgid "Upload is too large. The limit is %(limit)s MB."
 msgstr "अपलोड बहुत बड़ा है। सीमा %(limit)s MB है।"
 
+#: app/blueprints/__init__.py app/blueprints/expenses.py
+msgid "Something went wrong. Please try again."
+msgstr "कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।"
+
 #: app/blueprints/__init__.py
 msgid "Offline"
 msgstr "ऑफ़लाइन"
@@ -33,6 +37,10 @@ msgstr "आप ऑफ़लाइन हैं"
 #: app/blueprints/__init__.py
 msgid "This page is not available offline."
 msgstr "यह पेज ऑफ़लाइन उपलब्ध नहीं है।"
+
+#: app/blueprints/auth.py
+msgid "This request came from another website and was blocked."
+msgstr "यह अनुरोध किसी दूसरी वेबसाइट से आया था, इसलिए इसे रोक दिया गया।"
 
 #: app/blueprints/auth.py
 msgid "Logged in successfully."
@@ -508,6 +516,10 @@ msgid "Invalid or disallowed URL. Only external http(s) URLs are allowed."
 msgstr "यूआरएल सही नहीं है या इसकी अनुमति नहीं है। सिर्फ़ बाहरी http(s) यूआरएल चलेंगे।"
 
 #: app/blueprints/media_pdfs.py
+msgid "This site is not supported. For a direct file link, open it in your browser and save it from there."
+msgstr "यह साइट समर्थित नहीं है। सीधे फ़ाइल वाले लिंक को अपने ब्राउज़र में खोलें और वहीं से सेव करें।"
+
+#: app/blueprints/media_pdfs.py
 msgid "Download queued. You can switch tabs; refresh to check status."
 msgstr "डाउनलोड कतार में लग गया है। आप दूसरे टैब पर जा सकते हैं; स्थिति देखने के लिए पेज रीफ़्रेश करें।"
 
@@ -740,6 +752,22 @@ msgstr "{total} में से {sum} बांटे गए: {over} ज़्�
 #, python-brace-format
 msgid "{name} split value"
 msgstr "{name} के बंटवारे की वैल्यू"
+
+#: static/js/month-picker.js templates/expenses.html templates/index.html
+msgid "Choose month and year"
+msgstr "महीना और साल चुनें"
+
+#: static/js/month-picker.js
+msgid "Previous year"
+msgstr "पिछला साल"
+
+#: static/js/month-picker.js
+msgid "Next year"
+msgstr "अगला साल"
+
+#: static/js/month-picker.js
+msgid "This month"
+msgstr "यह महीना"
 
 #: static/js/pages/chores.js
 msgid "Recurring chore ends in the past. Choose a future end date."
@@ -1370,6 +1398,14 @@ msgstr "देखें"
 #: templates/qr.html templates/upload.html
 msgid "Download"
 msgstr "डाउनलोड"
+
+#: static/js/pages/media.js templates/media.html
+msgid "Site not supported"
+msgstr "साइट समर्थित नहीं है"
+
+#: static/js/pages/media.js templates/media.html
+msgid "For a direct file link, open it in your browser and save it from there."
+msgstr "सीधे फ़ाइल वाले लिंक को अपने ब्राउज़र में खोलें और वहीं से सेव करें।"
 
 #: static/js/pages/media.js
 msgid "Error"
