@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 20:17+0530\n"
+"POT-Creation-Date: 2026-10-21 21:27+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -558,6 +558,20 @@ msgid "Failed to save settings."
 msgstr "Ayarlar kaydedilemedi."
 
 #: app/blueprints/expenses.py
+#, python-format
+msgid "Invalid budget for %(name)s."
+msgstr ""
+
+#: app/blueprints/expenses.py static/js/pages/expense_charts.js
+#: templates/expenses_recurring.html templates/index.html
+msgid "Overall"
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Budgets saved."
+msgstr ""
+
+#: app/blueprints/expenses.py
 msgid "Not allowed to delete entry."
 msgstr "Kaydı silme izniniz yok."
 
@@ -944,10 +958,91 @@ msgstr "{item} önerisini gizle"
 msgid "Hide"
 msgstr "Gizle"
 
-#: static/js/pages/expenses.js
+#: static/js/pages/expense_charts.js
+msgid "Show as table"
+msgstr ""
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+msgid "No spending this month."
+msgstr "Bu ay harcama yok."
+
+#: static/js/pages/expense_charts.js
+msgid "Other"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by category"
+msgstr ""
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+#: templates/expenses_import.html
+msgid "Amount"
+msgstr "Tutar"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Category"
+msgstr "Kategori"
+
+#: static/js/pages/expense_charts.js
+msgid "Paid"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Share after splits"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
 #, python-brace-format
-msgid "My share after splits: {amount}"
-msgstr "Paylaşımdan sonra payım: {amount}"
+msgid "{name}: paid {paid}, share {share}"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Paid and share by person"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Person"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "today"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Daily budget: {amount}"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Highest day: {amount}"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by day"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html
+msgid "Date"
+msgstr "Tarih"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} over budget"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} left"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{spent} of {budget}"
+msgstr ""
 
 #: static/js/pages/expenses.js
 msgid "No entries this month."
@@ -1081,10 +1176,6 @@ msgid "paid {paid} · share {share}"
 msgstr "ödenen {paid} · pay {share}"
 
 #: static/js/pages/expenses.js
-msgid "No spending this month."
-msgstr "Bu ay harcama yok."
-
-#: static/js/pages/expenses.js
 msgid "Record payment"
 msgstr "Ödeme kaydet"
 
@@ -1092,10 +1183,6 @@ msgstr "Ödeme kaydet"
 #, python-brace-format
 msgid "Record a payment from {from} to {to}."
 msgstr "{from} tarafından {to} kişisine yapılan ödemeyi kaydet."
-
-#: static/js/pages/expenses.js templates/expenses_import.html
-msgid "Amount"
-msgstr "Tutar"
 
 #: static/js/pages/expenses.js
 msgid "Enter an amount greater than zero."
@@ -2269,20 +2356,40 @@ msgid "Spending by day, with shared balances."
 msgstr "Güne göre harcamalar ve paylaşılan bakiyeler."
 
 #: templates/expenses.html
+msgid "Recurring rules & config"
+msgstr "Yinelenme kuralları ve ayarlar"
+
+#: templates/expenses.html
 msgid "Total This Month"
 msgstr "Bu Ayın Toplamı"
 
 #: templates/expenses.html
-msgid "My Spending"
-msgstr "Benim Harcamam"
+msgid "You paid"
+msgstr ""
 
 #: templates/expenses.html
-msgid "Top Category"
-msgstr "Öne Çıkan Kategori"
+msgid "Your share after splits"
+msgstr ""
 
 #: templates/expenses.html
-msgid "Recurring rules & config"
-msgstr "Yinelenme kuralları ve ayarlar"
+msgid "Charts"
+msgstr ""
+
+#: templates/expenses.html
+msgid "People"
+msgstr ""
+
+#: templates/expenses.html templates/expenses_recurring.html
+msgid "Daily"
+msgstr "Günlük"
+
+#: templates/expenses.html
+msgid "Budgets"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Change budgets"
+msgstr ""
 
 #: templates/expenses.html templates/index.html
 msgid "Previous month"
@@ -2387,18 +2494,9 @@ msgid "This month: paid vs share"
 msgstr "Bu ay: ödenen / pay"
 
 #: templates/expenses.html templates/expenses_import.html
-msgid "Date"
-msgstr "Tarih"
-
-#: templates/expenses.html templates/expenses_import.html
 #: templates/expenses_recurring.html templates/index.html
 msgid "Title"
 msgstr "Başlık"
-
-#: templates/expenses.html templates/expenses_import.html
-#: templates/expenses_recurring.html templates/index.html
-msgid "Category"
-msgstr "Kategori"
 
 #: templates/expenses.html
 msgid "e.g., Groceries"
@@ -2644,10 +2742,6 @@ msgid "Frequency"
 msgstr "Sıklık"
 
 #: templates/expenses_recurring.html
-msgid "Daily"
-msgstr "Günlük"
-
-#: templates/expenses_recurring.html
 msgid "Weekly"
 msgstr "Haftalık"
 
@@ -2779,6 +2873,26 @@ msgstr "Market, Faturalar, Kira"
 msgid "Save Settings"
 msgstr "Ayarları Kaydet"
 
+#: templates/expenses_recurring.html
+msgid "Monthly budgets"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Spending limits for the household, the same every month. Leave a box empty for no budget. The expenses page shows how much of each is used, amber from 80% and red once it is passed."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "No budget"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Add categories above to set a budget for each one."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Save budgets"
+msgstr ""
+
 #: templates/expiry.html
 msgid "Food, medicines and documents, soonest first."
 msgstr "Gıda, ilaç ve belgeler; tarihi en yakın olan önce."
@@ -2829,6 +2943,17 @@ msgstr "Hava Durumu"
 #: templates/index.html
 msgid "Loading weather data..."
 msgstr "Hava durumu verisi yükleniyor..."
+
+#: templates/index.html
+#, python-format
+msgid "A budget is over this month"
+msgid_plural "%(num)s budgets are over this month"
+msgstr[0] ""
+
+#: templates/index.html
+#, python-format
+msgid "%(name)s: %(spent)s of %(budget)s"
+msgstr ""
 
 #: templates/index.html
 msgid "Family Notice Board"
@@ -3350,4 +3475,13 @@ msgstr "Henüz dosya yok."
 #: templates/upload.html
 msgid "Delete this file? It is removed from the server."
 msgstr "Bu dosya silinsin mi? Sunucudan kaldırılır."
+
+#~ msgid "My share after splits: {amount}"
+#~ msgstr "Paylaşımdan sonra payım: {amount}"
+
+#~ msgid "My Spending"
+#~ msgstr "Benim Harcamam"
+
+#~ msgid "Top Category"
+#~ msgstr "Öne Çıkan Kategori"
 

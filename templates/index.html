@@ -56,6 +56,17 @@ window.REMINDERS_CAL_START = (function(){
 		</div>
 		{% endif %}
 
+		{% if budget_alerts %}
+		{% set currency = budget_settings.currency or '₹' %}{% set precision = budget_settings.fraction_precision if budget_settings.fraction_precision is defined else 2 %}
+		<a href="/expenses" class="card p-4 flex items-start gap-3 hover:underline" id="budgetAlert" role="status">
+			<i class="fa-solid fa-circle-exclamation text-red-600 mt-0.5" aria-hidden="true"></i>
+			<div class="text-sm">
+				<div class="font-semibold">{{ ngettext('A budget is over this month', '%(num)s budgets are over this month', budget_alerts|length) }}</div>
+				<div class="text-gray-600">{% for b in budget_alerts %}{{ _('%(name)s: %(spent)s of %(budget)s', name=(b.category or _('Overall')), spent=currency ~ ('%.*f'|format(precision, b.spent)), budget=currency ~ ('%.*f'|format(precision, b.amount))) }}{{ ' · ' if not loop.last }}{% endfor %}</div>
+			</div>
+		</a>
+		{% endif %}
+
 			<div class="card p-6">
 				<h2 class="section-title mb-3"><i class="fa-solid fa-bullhorn section-icon" aria-hidden="true"></i>{{ _('Family Notice Board') }}</h2>
 			{% if notice and notice.content %}

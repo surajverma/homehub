@@ -5,7 +5,7 @@ import csv
 import io
 import json
 import math
-from ..models import db, RecurringExpense, ExpenseEntry, parse_split
+from ..models import db, RecurringExpense, ExpenseEntry, ExpenseBudget, parse_split
 from ..security import sanitize_text
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
@@ -337,6 +337,59 @@ def _load_expense_settings() -> dict:
     return settings
 
 
+# A budget turns amber from this share of it, and red once it is passed
+BUDGET_WARN_AT = 0.8
+
+
+def household_budgets() -> list:
+    """The household's budgets, overall first. Per-person budgets (member set) are not used yet."""
+    rows = ExpenseBudget.query.filter(ExpenseBudget.member.is_(None)).all()
+    return sorted(rows, key=lambda b: (b.category is not None, (b.category or '').casefold()))
+
+
+def budget_status(total: float, per_category: dict, precision: int = 2) -> list:
+    """Each household budget with what was spent against it this month and how close it is."""
+    status = []
+    for b in household_budgets():
+        spent = total if b.category is None else per_category.get(b.category, 0.0)
+        ratio = spent / b.amount if b.amount else 0.0
+        status.append({
+            'category': b.category,
+            'amount': round(b.amount, precision),
+            'spent': round(spent, precision),
+            'percent': round(ratio * 100),
+            'level': 'over' if ratio > 1 else ('near' if ratio >= BUDGET_WARN_AT else 'ok'),
+        })
+    return status
+
+
+def month_spending(month_start: date, month_end: date) -> tuple[float, dict]:
+    """(total, per category) spent in the month; skipped days and settlements do not count."""
+    rows = ExpenseEntry.query.filter(
+        ExpenseEntry.date >= month_start, ExpenseEntry.date <= month_end,
+        (ExpenseEntry.skipped.is_(None)) | (ExpenseEntry.skipped.is_(False)),
+        (ExpenseEntry.is_settlement.is_(None)) | (ExpenseEntry.is_settlement.is_(False)),
+    ).all()
+    total, per_category = 0.0, {}
+    for e in rows:
+        amount = float(e.amount or 0)
+        total += amount
+        if e.category:
+            per_category[e.category] = per_category.get(e.category, 0.0) + amount
+    return total, per_category
+
+
+def budgets_over(today: date) -> list:
+    """Budgets already passed this month, for the note on the Welcome page."""
+    if not ExpenseBudget.query.filter(ExpenseBudget.member.is_(None)).first():
+        return []
+    first = today.replace(day=1)
+    last = first.replace(day=_calendar.monthrange(first.year, first.month)[1])
+    total, per_category = month_spending(first, last)
+    precision = _load_expense_settings().get('fraction_precision', 2)
+    return [b for b in budget_status(total, per_category, precision) if b['level'] == 'over']
+
+
 def _build_month_payload(y: int, m: int) -> dict:
     month_start = date(y, m, 1)
     last_day = _calendar.monthrange(y, m)[1]
@@ -398,6 +451,7 @@ def _build_month_payload(y: int, m: int) -> dict:
         'by_date': by_date,
         'missing_recurring': _missing_recurring_days(month_start, month_end, date.today()),
         'balances': _compute_balances(precision),
+        'budgets': budget_status(total, per_category, precision),
         'summary': {
             'total_this_month': total,
             'per_payer': per_payer,
@@ -952,6 +1006,32 @@ def expenses_settings():
 
 
 
+@main_bp.route('/expenses/budgets', methods=['POST'])
+def expenses_budgets():
+    """Save the household's monthly budgets: an overall one and one per category, all optional."""
+    user = sanitize_text(request.form.get('user', ''))
+    back = redirect(url_for('main.recurring_expenses_page', tab='general-settings'))
+    if not is_admin(user):
+        flash(_('Only admin can update settings.'), 'error')
+        return back
+    budgets = {}
+    for raw_category, raw_amount in zip(request.form.getlist('budget_category'), request.form.getlist('budget_amount')):
+        category = sanitize_text(raw_category or '').strip()[:64] or None
+        amount = _form_number(raw_amount)
+        if amount is None or amount == 0:
+            continue
+        if not math.isfinite(amount) or amount < 0:
+            flash(_('Invalid budget for %(name)s.', name=category or _('Overall')), 'error')
+            return back
+        budgets[category] = amount
+    ExpenseBudget.query.filter(ExpenseBudget.member.is_(None)).delete(synchronize_session=False)
+    for category, amount in budgets.items():
+        db.session.add(ExpenseBudget(category=category, member=None, amount=amount, updated_by=user))
+    db.session.commit()
+    flash(_('Budgets saved.'), 'success')
+    return back
+
+
 @main_bp.route('/expenses/delete/<int:entry_id>', methods=['POST'])
 def delete_expense_entry(entry_id):
     entry = db.get_or_404(ExpenseEntry, entry_id)
@@ -1272,6 +1352,7 @@ def recurring_expenses_page():
         config=config,
         split_people=_split_people(config),
         expense_settings=expense_settings,
+        budgets={b.category or '': b.amount for b in household_budgets()},
         active_tab=active_tab,
         today=today,
     )

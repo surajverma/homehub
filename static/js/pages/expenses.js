@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function(){
   let summary = payload.summary || { total_this_month: 0, per_payer: {}, per_share: {}, per_category: {}, top_category: null };
   let missingRecurring = payload.missing_recurring || {};
   let balances = payload.balances || { net: {}, settlements: [] };
+  let budgets = payload.budgets || [];
   let selectedDate = null;
   // If server provided a selected date via query param embedding, try to pick it from location
   try {
@@ -75,8 +76,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const p = summary.per_payer || {}; const mine = p[me] || 0;
     document.getElementById('my-spending').textContent = fmt(mine);
     // What I actually bear once shared expenses are split
-    document.getElementById('my-share').textContent = t('My share after splits: {amount}', { amount: fmt((summary.per_share || {})[me] || 0) });
-    document.getElementById('top-category').textContent = summary.top_category || '-';
+    document.getElementById('my-share').textContent = fmt((summary.per_share || {})[me] || 0);
     monthlyTotalAmount.textContent = fmt(summary.total_this_month||0);
   }
 
@@ -303,6 +303,11 @@ document.addEventListener('DOMContentLoaded', function(){
     `;
   }
 
+  // Budgets and charts for the month on screen (see expense_charts.js)
+  function renderInsights(){
+    if (window.HomeHubExpenseCharts) window.HomeHubExpenseCharts.render({ summary, budgets, byDate, year, month, settings }, fmt);
+  }
+
   function renderBalances(){
     const net = balances.net || {};
     const names = Object.keys(net);
@@ -376,8 +381,8 @@ document.addEventListener('DOMContentLoaded', function(){
     const res = await fetch(`/api/expenses/month?year=${y}&month=${m}`);
     const data = await res.json();
     year = data.year; month = data.month; byDate = data.by_date || {}; summary = data.summary || summary; settings = data.settings || settings;
-    missingRecurring = data.missing_recurring || {}; balances = data.balances || balances;
-    updateSummaryCards(); renderCalendar(); renderMonthlySidebar(); renderSidePanel(); renderBalances();
+    missingRecurring = data.missing_recurring || {}; balances = data.balances || balances; budgets = data.budgets || [];
+    updateSummaryCards(); renderCalendar(); renderMonthlySidebar(); renderSidePanel(); renderBalances(); renderInsights();
   }
 
   // Event listeners
@@ -464,6 +469,7 @@ document.addEventListener('DOMContentLoaded', function(){
   renderMonthlySidebar();
   renderSidePanel();
   renderBalances();
+  renderInsights();
   applyUserVisibility();
 
   // Auto-total calculation when editing/adding

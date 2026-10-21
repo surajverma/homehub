@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 20:17+0530\n"
+"POT-Creation-Date: 2026-10-21 21:27+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -571,6 +571,20 @@ msgid "Failed to save settings."
 msgstr "सेटिंग सेव नहीं हो सकीं।"
 
 #: app/blueprints/expenses.py
+#, python-format
+msgid "Invalid budget for %(name)s."
+msgstr "%(name)s का बजट सही नहीं है।"
+
+#: app/blueprints/expenses.py static/js/pages/expense_charts.js
+#: templates/expenses_recurring.html templates/index.html
+msgid "Overall"
+msgstr "कुल"
+
+#: app/blueprints/expenses.py
+msgid "Budgets saved."
+msgstr "बजट सेव हो गए।"
+
+#: app/blueprints/expenses.py
 msgid "Not allowed to delete entry."
 msgstr "आपको यह एंट्री हटाने की अनुमति नहीं है।"
 
@@ -959,10 +973,91 @@ msgstr "सुझाव छिपाएं: {item}"
 msgid "Hide"
 msgstr "छिपाएं"
 
-#: static/js/pages/expenses.js
+#: static/js/pages/expense_charts.js
+msgid "Show as table"
+msgstr "टेबल के रूप में देखें"
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+msgid "No spending this month."
+msgstr "इस महीने कोई खर्च नहीं हुआ।"
+
+#: static/js/pages/expense_charts.js
+msgid "Other"
+msgstr "अन्य"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by category"
+msgstr "श्रेणी के हिसाब से खर्च"
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+#: templates/expenses_import.html
+msgid "Amount"
+msgstr "रकम"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Category"
+msgstr "श्रेणी"
+
+#: static/js/pages/expense_charts.js
+msgid "Paid"
+msgstr "दिया"
+
+#: static/js/pages/expense_charts.js
+msgid "Share after splits"
+msgstr "बंटवारे के बाद हिस्सा"
+
+#: static/js/pages/expense_charts.js
 #, python-brace-format
-msgid "My share after splits: {amount}"
-msgstr "बंटवारे के बाद मेरा हिस्सा: {amount}"
+msgid "{name}: paid {paid}, share {share}"
+msgstr "{name}: दिया {paid}, हिस्सा {share}"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Paid and share by person"
+msgstr "हर व्यक्ति ने कितना दिया और उसका हिस्सा"
+
+#: static/js/pages/expense_charts.js
+msgid "Person"
+msgstr "व्यक्ति"
+
+#: static/js/pages/expense_charts.js
+msgid "today"
+msgstr "आज"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Daily budget: {amount}"
+msgstr "रोज़ का बजट: {amount}"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Highest day: {amount}"
+msgstr "सबसे ज़्यादा खर्च वाला दिन: {amount}"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by day"
+msgstr "दिन के हिसाब से खर्च"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html
+msgid "Date"
+msgstr "तारीख"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} over budget"
+msgstr "बजट से {amount} ज़्यादा"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} left"
+msgstr "{amount} बाकी"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{spent} of {budget}"
+msgstr "{budget} में से {spent}"
 
 #: static/js/pages/expenses.js
 msgid "No entries this month."
@@ -1099,10 +1194,6 @@ msgid "paid {paid} · share {share}"
 msgstr "दिए {paid} · हिस्सा {share}"
 
 #: static/js/pages/expenses.js
-msgid "No spending this month."
-msgstr "इस महीने कोई खर्च नहीं हुआ।"
-
-#: static/js/pages/expenses.js
 msgid "Record payment"
 msgstr "भुगतान दर्ज करें"
 
@@ -1110,10 +1201,6 @@ msgstr "भुगतान दर्ज करें"
 #, python-brace-format
 msgid "Record a payment from {from} to {to}."
 msgstr "{from} से {to} को किया गया भुगतान दर्ज करें।"
-
-#: static/js/pages/expenses.js templates/expenses_import.html
-msgid "Amount"
-msgstr "रकम"
 
 #: static/js/pages/expenses.js
 msgid "Enter an amount greater than zero."
@@ -2301,20 +2388,40 @@ msgid "Spending by day, with shared balances."
 msgstr "रोज़ का खर्च और आपस का हिसाब।"
 
 #: templates/expenses.html
+msgid "Recurring rules & config"
+msgstr "दोहराने के नियम और सेटिंग"
+
+#: templates/expenses.html
 msgid "Total This Month"
 msgstr "इस महीने का कुल खर्च"
 
 #: templates/expenses.html
-msgid "My Spending"
-msgstr "मेरा खर्च"
+msgid "You paid"
+msgstr "आपने दिया"
 
 #: templates/expenses.html
-msgid "Top Category"
-msgstr "सबसे ज़्यादा खर्च वाली श्रेणी"
+msgid "Your share after splits"
+msgstr "बंटवारे के बाद आपका हिस्सा"
 
 #: templates/expenses.html
-msgid "Recurring rules & config"
-msgstr "दोहराने के नियम और सेटिंग"
+msgid "Charts"
+msgstr "चार्ट"
+
+#: templates/expenses.html
+msgid "People"
+msgstr "लोग"
+
+#: templates/expenses.html templates/expenses_recurring.html
+msgid "Daily"
+msgstr "रोज़"
+
+#: templates/expenses.html
+msgid "Budgets"
+msgstr "बजट"
+
+#: templates/expenses.html
+msgid "Change budgets"
+msgstr "बजट बदलें"
 
 #: templates/expenses.html templates/index.html
 msgid "Previous month"
@@ -2419,18 +2526,9 @@ msgid "This month: paid vs share"
 msgstr "इस महीने: दिया बनाम हिस्सा"
 
 #: templates/expenses.html templates/expenses_import.html
-msgid "Date"
-msgstr "तारीख"
-
-#: templates/expenses.html templates/expenses_import.html
 #: templates/expenses_recurring.html templates/index.html
 msgid "Title"
 msgstr "शीर्षक"
-
-#: templates/expenses.html templates/expenses_import.html
-#: templates/expenses_recurring.html templates/index.html
-msgid "Category"
-msgstr "श्रेणी"
 
 #: templates/expenses.html
 msgid "e.g., Groceries"
@@ -2680,10 +2778,6 @@ msgid "Frequency"
 msgstr "कितनी बार"
 
 #: templates/expenses_recurring.html
-msgid "Daily"
-msgstr "रोज़"
-
-#: templates/expenses_recurring.html
 msgid "Weekly"
 msgstr "हर सप्ताह"
 
@@ -2815,6 +2909,26 @@ msgstr "किराना, बिजली-पानी, मकान"
 msgid "Save Settings"
 msgstr "सेटिंग सेव करें"
 
+#: templates/expenses_recurring.html
+msgid "Monthly budgets"
+msgstr "मासिक बजट"
+
+#: templates/expenses_recurring.html
+msgid "Spending limits for the household, the same every month. Leave a box empty for no budget. The expenses page shows how much of each is used, amber from 80% and red once it is passed."
+msgstr "घर के खर्च की सीमा, जो हर महीने एक जैसी रहती है। किसी बॉक्स को खाली छोड़ने पर उसका कोई बजट नहीं होगा। खर्च वाले पेज पर दिखता है कि हर बजट का कितना हिस्सा इस्तेमाल हुआ: 80% से नारंगी और सीमा पार होने पर लाल।"
+
+#: templates/expenses_recurring.html
+msgid "No budget"
+msgstr "कोई बजट नहीं"
+
+#: templates/expenses_recurring.html
+msgid "Add categories above to set a budget for each one."
+msgstr "हर श्रेणी का बजट सेट करने के लिए ऊपर श्रेणियां जोड़ें।"
+
+#: templates/expenses_recurring.html
+msgid "Save budgets"
+msgstr "बजट सेव करें"
+
 #: templates/expiry.html
 msgid "Food, medicines and documents, soonest first."
 msgstr "खाने का सामान, दवाइयां और दस्तावेज़; जो सबसे पहले एक्सपायर होंगे वे सबसे ऊपर।"
@@ -2866,6 +2980,18 @@ msgstr "मौसम"
 #: templates/index.html
 msgid "Loading weather data..."
 msgstr "मौसम की जानकारी लोड हो रही है..."
+
+#: templates/index.html
+#, python-format
+msgid "A budget is over this month"
+msgid_plural "%(num)s budgets are over this month"
+msgstr[0] "इस महीने एक बजट पार हो गया"
+msgstr[1] "इस महीने %(num)s बजट पार हो गए"
+
+#: templates/index.html
+#, python-format
+msgid "%(name)s: %(spent)s of %(budget)s"
+msgstr "%(name)s: %(budget)s में से %(spent)s"
 
 #: templates/index.html
 msgid "Family Notice Board"
@@ -3399,4 +3525,13 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "Delete this recurring reminder and all its future dates?"
 #~ msgstr "क्या यह दोहराने वाला रिमाइंडर और इसकी आगे की सभी तारीखें हटा दें?"
+
+#~ msgid "My share after splits: {amount}"
+#~ msgstr "बंटवारे के बाद मेरा हिस्सा: {amount}"
+
+#~ msgid "My Spending"
+#~ msgstr "मेरा खर्च"
+
+#~ msgid "Top Category"
+#~ msgstr "सबसे ज़्यादा खर्च वाली श्रेणी"
 

@@ -38,9 +38,29 @@
     --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     --radius: 0.75rem;
     --control-radius: 0.5rem;
+    /* Chart series colours (expense charts). The order is what keeps neighbouring bars
+       apart for colour-blind readers; checked against the light and dark card backgrounds. */
+    --chart-1: #2a78d6;  /* blue */
+    --chart-2: #eb6834;  /* orange */
+    --chart-3: #1baf7a;  /* aqua */
+    --chart-4: #eda100;  /* yellow */
+    --chart-5: #e87ba4;  /* magenta */
+    --chart-6: #008300;  /* green */
+    --chart-7: #6250d6;  /* violet */
+    --chart-8: #e34948;  /* red */
+    --chart-other: #94a3b8;
 }
 
 [data-theme="dark"] {
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-6: #008300;
+    --chart-7: #9085e9;
+    --chart-8: #e66767;
+    --chart-other: #64748b;
     --secondary-color: #cbd5e1;
     --background-color: #0b1120;
     --card-background-color: #111827;

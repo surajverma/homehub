@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-10-21 20:17+0530\n"
+"POT-Creation-Date: 2026-10-21 21:27+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -569,6 +569,20 @@ msgid "Failed to save settings."
 msgstr ""
 
 #: app/blueprints/expenses.py
+#, python-format
+msgid "Invalid budget for %(name)s."
+msgstr ""
+
+#: app/blueprints/expenses.py static/js/pages/expense_charts.js
+#: templates/expenses_recurring.html templates/index.html
+msgid "Overall"
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Budgets saved."
+msgstr ""
+
+#: app/blueprints/expenses.py
 msgid "Not allowed to delete entry."
 msgstr ""
 
@@ -957,9 +971,90 @@ msgstr ""
 msgid "Hide"
 msgstr ""
 
-#: static/js/pages/expenses.js
+#: static/js/pages/expense_charts.js
+msgid "Show as table"
+msgstr ""
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+msgid "No spending this month."
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Other"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by category"
+msgstr ""
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+#: templates/expenses_import.html
+msgid "Amount"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Category"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Paid"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Share after splits"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
 #, python-brace-format
-msgid "My share after splits: {amount}"
+msgid "{name}: paid {paid}, share {share}"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Paid and share by person"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Person"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "today"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Daily budget: {amount}"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Highest day: {amount}"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by day"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html
+msgid "Date"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} over budget"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} left"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{spent} of {budget}"
 msgstr ""
 
 #: static/js/pages/expenses.js
@@ -1097,20 +1192,12 @@ msgid "paid {paid} · share {share}"
 msgstr ""
 
 #: static/js/pages/expenses.js
-msgid "No spending this month."
-msgstr ""
-
-#: static/js/pages/expenses.js
 msgid "Record payment"
 msgstr ""
 
 #: static/js/pages/expenses.js
 #, python-brace-format
 msgid "Record a payment from {from} to {to}."
-msgstr ""
-
-#: static/js/pages/expenses.js templates/expenses_import.html
-msgid "Amount"
 msgstr ""
 
 #: static/js/pages/expenses.js
@@ -2299,19 +2386,39 @@ msgid "Spending by day, with shared balances."
 msgstr ""
 
 #: templates/expenses.html
+msgid "Recurring rules & config"
+msgstr ""
+
+#: templates/expenses.html
 msgid "Total This Month"
 msgstr ""
 
 #: templates/expenses.html
-msgid "My Spending"
+msgid "You paid"
 msgstr ""
 
 #: templates/expenses.html
-msgid "Top Category"
+msgid "Your share after splits"
 msgstr ""
 
 #: templates/expenses.html
-msgid "Recurring rules & config"
+msgid "Charts"
+msgstr ""
+
+#: templates/expenses.html
+msgid "People"
+msgstr ""
+
+#: templates/expenses.html templates/expenses_recurring.html
+msgid "Daily"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Budgets"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Change budgets"
 msgstr ""
 
 #: templates/expenses.html templates/index.html
@@ -2417,17 +2524,8 @@ msgid "This month: paid vs share"
 msgstr ""
 
 #: templates/expenses.html templates/expenses_import.html
-msgid "Date"
-msgstr ""
-
-#: templates/expenses.html templates/expenses_import.html
 #: templates/expenses_recurring.html templates/index.html
 msgid "Title"
-msgstr ""
-
-#: templates/expenses.html templates/expenses_import.html
-#: templates/expenses_recurring.html templates/index.html
-msgid "Category"
 msgstr ""
 
 #: templates/expenses.html
@@ -2678,10 +2776,6 @@ msgid "Frequency"
 msgstr ""
 
 #: templates/expenses_recurring.html
-msgid "Daily"
-msgstr ""
-
-#: templates/expenses_recurring.html
 msgid "Weekly"
 msgstr ""
 
@@ -2813,6 +2907,26 @@ msgstr ""
 msgid "Save Settings"
 msgstr ""
 
+#: templates/expenses_recurring.html
+msgid "Monthly budgets"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Spending limits for the household, the same every month. Leave a box empty for no budget. The expenses page shows how much of each is used, amber from 80% and red once it is passed."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "No budget"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Add categories above to set a budget for each one."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Save budgets"
+msgstr ""
+
 #: templates/expiry.html
 msgid "Food, medicines and documents, soonest first."
 msgstr ""
@@ -2863,6 +2977,18 @@ msgstr ""
 
 #: templates/index.html
 msgid "Loading weather data..."
+msgstr ""
+
+#: templates/index.html
+#, python-format
+msgid "A budget is over this month"
+msgid_plural "%(num)s budgets are over this month"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/index.html
+#, python-format
+msgid "%(name)s: %(spent)s of %(budget)s"
 msgstr ""
 
 #: templates/index.html

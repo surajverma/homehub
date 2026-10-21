@@ -34,38 +34,61 @@
 <script id="expensesData" type="application/json">{{ expenses_json | safe }}</script>
 
 <div class="max-w-screen-2xl mx-auto space-y-6">
-  <div>
-    <h1 class="page-title">{{ _('Expense Tracker') }}</h1>
-    <p class="page-subtitle">{{ _('Spending by day, with shared balances.') }}</p>
+  <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+    <div class="min-w-0">
+      <h1 class="page-title">{{ _('Expense Tracker') }}</h1>
+      <p class="page-subtitle">{{ _('Spending by day, with shared balances.') }}</p>
+    </div>
+    {# Rules and settings are not needed every day, so a quiet link rather than a card #}
+    <a href="/expenses/recurring" class="btn btn-ghost btn-sm flex-shrink-0 sm:mt-1" style="color: var(--primary-text);"><i class="fas fa-gear" aria-hidden="true"></i>{{ _('Recurring rules & config') }}</a>
   </div>
 
-  <!-- Summary Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="summary-cards">
-    <div class="card p-4 flex items-center">
-      <div class="w-10 h-10 rounded-full inline-flex items-center justify-center" style="background: var(--primary-soft); color: var(--primary-text);"><i class="fas fa-wallet" aria-hidden="true"></i></div>
-      <div class="ml-4">
-        <p class="text-gray-500 text-sm">{{ _('Total This Month') }}</p>
-        <p class="text-2xl font-bold tabular-nums" id="total-this-month">₹0.00</p>
-      </div>
+  <!-- Month summary: the headline figures; the charts below break them down -->
+  <div class="card px-4 py-3 flex flex-wrap items-baseline gap-x-8 gap-y-2" id="summary-line">
+    <div class="flex items-baseline gap-2">
+      <span class="text-sm text-gray-500">{{ _('Total This Month') }}</span>
+      <span class="text-xl font-bold tabular-nums" id="total-this-month">₹0.00</span>
     </div>
-    <div class="card p-4 flex items-center">
-      <div class="w-10 h-10 rounded-full inline-flex items-center justify-center" style="background: var(--hover-bg); color: var(--muted-text);"><i class="fas fa-user-circle" aria-hidden="true"></i></div>
-      <div class="ml-4">
-        <p class="text-gray-500 text-sm">{{ _('My Spending') }}</p>
-        <p class="text-2xl font-bold tabular-nums" id="my-spending">₹0.00</p>
-        <p class="text-xs text-gray-500" id="my-share"></p>
-      </div>
+    <div class="flex items-baseline gap-2">
+      <span class="text-sm text-gray-500">{{ _('You paid') }}</span>
+      <span class="text-lg font-semibold tabular-nums" id="my-spending">₹0.00</span>
     </div>
-    <div class="card p-4 flex items-center">
-      <div class="w-10 h-10 rounded-full inline-flex items-center justify-center" style="background: var(--hover-bg); color: var(--muted-text);"><i class="fas fa-chart-pie" aria-hidden="true"></i></div>
-      <div class="ml-4">
-        <p class="text-gray-500 text-sm">{{ _('Top Category') }}</p>
-        <p class="text-2xl font-bold tabular-nums" id="top-category">-</p>
-      </div>
+    <div class="flex items-baseline gap-2">
+      <span class="text-sm text-gray-500">{{ _('Your share after splits') }}</span>
+      <span class="text-lg font-semibold tabular-nums" id="my-share">₹0.00</span>
     </div>
-    <div class="card p-4 flex items-center justify-center">
-      <a href="/expenses/recurring" class="w-full h-full btn btn-secondary"><i class="fas fa-gear" aria-hidden="true"></i>{{ _('Recurring rules & config') }}</a>
+  </div>
+
+  <!-- Charts for the month shown; drawn as inline SVG by expense_charts.js. Phones show one at a time. -->
+  <div class="card p-4" id="charts-card">
+    <div class="grid grid-cols-3 gap-2 mb-3 lg:hidden" role="tablist" aria-label="{{ _('Charts') }}" id="chart-tabs">
+      <button type="button" role="tab" class="btn btn-sm chart-tab w-full justify-center" data-chart="categories">{{ _('Category') }}</button>
+      <button type="button" role="tab" class="btn btn-sm chart-tab w-full justify-center" data-chart="people">{{ _('People') }}</button>
+      <button type="button" role="tab" class="btn btn-sm chart-tab w-full justify-center" data-chart="days">{{ _('Daily') }}</button>
     </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <figure class="chart-panel" data-chart="categories" role="tabpanel">
+        <figcaption class="text-sm font-semibold text-gray-600 mb-2">{{ _('Spending by category') }}</figcaption>
+        <div id="chart-categories"></div>
+      </figure>
+      <figure class="chart-panel" data-chart="people" role="tabpanel">
+        <figcaption class="text-sm font-semibold text-gray-600 mb-2">{{ _('Paid and share by person') }}</figcaption>
+        <div id="chart-people"></div>
+      </figure>
+      <figure class="chart-panel" data-chart="days" role="tabpanel">
+        <figcaption class="text-sm font-semibold text-gray-600 mb-2">{{ _('Spending by day') }}</figcaption>
+        <div id="chart-days"></div>
+      </figure>
+    </div>
+  </div>
+
+  <!-- Budgets for the month shown; filled in by expenses.js, hidden when none are set -->
+  <div class="card p-4 hidden" id="budgets-card">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-lg font-bold"><i class="fas fa-bullseye mr-2 text-gray-500" aria-hidden="true"></i>{{ _('Budgets') }}</h3>
+      <a href="/expenses/recurring?tab=general-settings" class="text-sm hover:underline" style="color: var(--primary-text);">{{ _('Change budgets') }}</a>
+    </div>
+    <div id="budgets-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </div>
 
   <!-- Main Content -->
@@ -219,5 +242,6 @@
 
 {{ split_script() }}
 <script src="{{ asset_url('js/month-picker.js') }}"></script>
+<script src="{{ asset_url('js/pages/expense_charts.js') }}"></script>
 <script src="{{ asset_url('js/pages/expenses.js') }}"></script>
 {% endblock %}
