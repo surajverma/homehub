@@ -101,12 +101,26 @@
       <div id="monthly-total-footer" class="flex-shrink-0 border-t pt-3 mt-3 flex justify-between items-center">
         <div class="flex items-center gap-3">
           <button id="bulk-delete-btn" class="btn btn-danger" style="display: none;">{{ _('Delete Selected') }}</button>
+          <a id="export-csv-link" href="/expenses/export.csv" class="btn btn-secondary btn-sm" title="{{ _("Download this month's entries as a CSV file") }}"><i class="fas fa-file-csv" aria-hidden="true"></i>{{ _('Export CSV') }}</a>
+          <a href="/expenses/import" class="btn btn-secondary btn-sm"><i class="fas fa-file-import" aria-hidden="true"></i>{{ _('Import CSV') }}</a>
         </div>
         <div class="flex items-center gap-2">
           <span class="font-semibold">{{ _('Month Total:') }}</span>
           <span id="monthly-total-amount" class="text-lg font-bold">₹0.00</span>
         </div>
       </div>
+      <details class="flex-shrink-0 mt-3 text-sm">
+        <summary class="cursor-pointer text-gray-500">{{ _('Export a date range') }}</summary>
+        <form method="GET" action="/expenses/export.csv" class="mt-2 flex flex-wrap items-end gap-2">
+          <label class="text-xs text-gray-600">{{ pgettext('date range', 'From') }}
+            <input type="date" name="start" class="mt-1 block border rounded p-1" required>
+          </label>
+          <label class="text-xs text-gray-600">{{ pgettext('date range', 'To') }}
+            <input type="date" name="end" class="mt-1 block border rounded p-1" required>
+          </label>
+          <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-file-csv" aria-hidden="true"></i>{{ _('Export') }}</button>
+        </form>
+      </details>
     </div>
   </div>
 

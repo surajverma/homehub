@@ -31,7 +31,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **✅ Chore Tracker**: A simple to-do list for household tasks.
 * **🗓️ Calendar & Reminders**: A shared calendar to keep track of important dates.
 * **👋 Who's Home?**: See at a glance who is currently home.
-* **💰 Expense Tracker**: A powerful tool to track family spending, with support for recurring bills like newspapers, milk, or subscriptions.
+* **💰 Expense Tracker**: A powerful tool to track family spending, with support for recurring bills like newspapers, milk, or subscriptions. Export a month or a date range as a CSV file for Excel or Google Sheets, and import expenses from a CSV file (HomeHub's own export or a bank or UPI statement) with a preview that flags likely duplicates. Anyone can record an expense paid by anyone, but only the person who added it (or the admin) can edit or delete it.
 * **🎬 Media Downloader**: Save videos or music from popular sites directly to your server.
 * ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, **Weather Updates** and **QR Code Generator**!
 
@@ -155,6 +155,7 @@ docker exec -it homehub flask set-admin-password
 
 - You are asked to type the password twice. Only a salted hash is stored, in `data/app.db`; nothing is written to `config.yml`.
 - Once set, switching to the admin user asks for the password. Family members keep switching freely.
+- The [Backups page](#backup-and-restore) is only available once an admin password is set.
 - Run the same command again to change it. A forgotten password is fixed the same way.
 - `docker exec -it homehub flask set-admin-password --clear` removes it and restores the default behaviour.
 - Not using Docker? Run `flask set-admin-password` from the project folder.
@@ -162,6 +163,32 @@ docker exec -it homehub flask set-admin-password
 The `password` in `config.yml` is separate: it protects the whole site and keeps working as before. You write it in `config.yml` as plain text; HomeHub only keeps a salted hash of it in memory, and after 5 wrong attempts the login form makes that device wait a minute, like the admin password prompt.
 
 Logins and admin unlocks survive a restart: if `SECRET_KEY` is not set, HomeHub generates one on first start and keeps it in `data/secret_key`.
+
+## Backup and restore
+
+Backups are zip files kept on the server in `data/backups/` (on the host through the `./data` volume). The Backups page and the `flask backup` command save to the same folder and see the same list. A backup only protects you once it is copied to another device, so download it or copy it off the machine.
+
+**From the browser:** set an [admin password](#admin-password-optional) first; backups hold everyone's data and may contain the site password, so the Backups page stays off without one. Then, as the unlocked admin, open **Manage backups** on the Welcome page.
+
+- **Create a backup:** tick what to include. Each part shows its size, with a running total. The database and settings are always included. Downloaded media is off by default because it can be very large, and the page warns above about 1 GB. The backup is built in the background, so you can leave the page.
+- **Download** any backup in the list; an interrupted download can resume. **Delete** the ones you no longer need, and **upload** a backup zip from another device (up to `max_upload_mb`; copy bigger ones into `data/backups/` by hand).
+- **Restore** asks for the admin password again. You see what the backup holds and can untick parts. Before anything is replaced, the current data is saved as a safety backup in the list. Restart HomeHub afterwards (`docker compose restart homehub`).
+- `config.yml` is never overwritten, because it is mounted read-only. After a restore, the page shows the backup's config (passwords hidden) and saves it as `data/config-from-backup.yml`; copy the settings you want into `config.yml` yourself.
+
+Backups that include `config.yml` may contain the site password in plain text. Keep them somewhere safe.
+
+**From the host** (works with or without an admin password):
+
+```bash
+docker exec -it homehub flask backup                      # database, uploads, PDFs and config.yml
+docker exec -it homehub flask backup --include-media      # media too
+docker exec -it homehub flask restore /app/data/backups/homehub-backup-YYYYMMDD-HHMMSS.zip
+docker compose restart homehub
+```
+
+- `--no-config` leaves `config.yml` out, and `--output PATH` writes the zip somewhere else inside the container.
+- `flask restore` checks the zip, asks you to confirm (`--yes` skips the question), saves a safety backup and prints its path, restores everything in the zip, and runs database upgrades. As in the browser, the backup's `config.yml` goes to `data/config-from-backup.yml`.
+- Not using Docker? Run `flask backup` and `flask restore PATH` from the project folder.
 
 ## Timezone (optional)
 

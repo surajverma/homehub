@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block content %}
+{% set field_labels = {
+  'date': _('Date'), 'title': _('Title'), 'amount': _('Amount'), 'category': _('Category'), 'payer': _('Paid by'),
+  'quantity': _('Quantity'), 'unit_price': _('Unit Price'), 'split': _('Split with'), 'settlement': _('Settlement'),
+} %}
+{% set date_format_labels = {
+  'auto': _('Automatic (day before month)'), 'ymd': _('Year-month-day (2026-10-21)'),
+  'dmy': _('Day/month/year (21/10/2026)'), 'mdy': _('Month/day/year (10/21/2026)'),
+} %}
+<div class="max-w-screen-xl mx-auto space-y-6">
+  <div>
+    <a href="/expenses" class="btn btn-ghost btn-sm" style="color: var(--primary-text);"><i class="fas fa-arrow-left" aria-hidden="true"></i>{{ _('Back to expenses') }}</a>
+    <h1 class="page-title mt-2">{{ _('Import expenses') }}</h1>
+    <p class="page-subtitle">{{ _('Add expenses from a CSV file: one exported from HomeHub, or a bank or UPI statement. You see every row before anything is saved.') }}</p>
+  </div>
+
+  {% if step == 'upload' %}
+  <form method="POST" action="/expenses/import" enctype="multipart/form-data" class="card p-4 space-y-3">
+    <label for="import-file" class="text-sm text-gray-600">{{ _('CSV file') }}</label>
+    <input type="file" id="import-file" name="file" accept=".csv,text/csv" required class="block">
+    <p class="text-xs text-gray-500">{{ _('The first row should name the columns. Rows need at least a date, a title and an amount; you can match the columns on the next step.') }}</p>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-upload" aria-hidden="true"></i>{{ _('Preview import') }}</button>
+  </form>
+  {% else %}
+
+  <!-- Column mapping and options; changing them re-reads the file -->
+  <form method="GET" action="/expenses/import" class="card p-4 space-y-4" id="import-options">
+    <input type="hidden" name="mapped" value="1">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="section-title">{{ _('Columns in %(name)s', name=file_name) }}</h2>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      {% for field in fields %}
+      <label class="text-sm text-gray-600">{{ field_labels[field] }}{% if field in required_fields %} *{% endif %}
+        <select name="map_{{ field }}" class="mt-1 block w-full border rounded p-1">
+          <option value="">{{ _('(not in file)') }}</option>
+          {% for column in header %}
+          <option value="{{ loop.index0 }}" {% if mapping.get(field) == loop.index0 %}selected{% endif %}>{{ column or _('Column %(num)s', num=loop.index) }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endfor %}
+      <label class="text-sm text-gray-600">{{ _('Date format') }}
+        <select name="date_format" class="mt-1 block w-full border rounded p-1">
+          {% for value in date_formats %}
+          <option value="{{ value }}" {% if value == date_format %}selected{% endif %}>{{ date_format_labels[value] }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="text-sm text-gray-600">{{ _('Paid by, when the file does not say') }}
+        <select name="payer" class="mt-1 block w-full border rounded p-1">
+          <option value="">{{ _('Choose…') }}</option>
+          {% for member in split_people %}
+          <option value="{{ member }}" {% if member == payer %}selected{% endif %}>{{ member }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    {% if missing %}
+    {% set missing_text %}{% for f in missing %}{{ field_labels[f] }}{{ ', ' if not loop.last }}{% endfor %}{% endset %}
+    <p class="text-sm text-red-600" role="alert">{{ _('Choose the column for: %(fields)s.', fields=missing_text) }}</p>
+    {% endif %}
+    <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-rotate" aria-hidden="true"></i>{{ _('Update preview') }}</button>
+  </form>
+
+  <!-- Rows -->
+  <form method="POST" action="/expenses/import/confirm" class="card p-4 space-y-3" id="import-confirm">
+    <input type="hidden" name="mapped" value="1">
+    {% for field in fields %}{% if mapping.get(field) is not none %}<input type="hidden" name="map_{{ field }}" value="{{ mapping[field] }}">{% endif %}{% endfor %}
+    <input type="hidden" name="date_format" value="{{ date_format }}">
+    <input type="hidden" name="payer" value="{{ payer }}">
+    <input type="hidden" name="user" value="">
+    <div class="flex flex-wrap items-center gap-3 text-sm">
+      <span class="px-2 py-0.5 rounded bg-green-100 text-green-700">{{ ngettext('%(num)s new', '%(num)s new', counts.new) }}</span>
+      <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700">{{ ngettext('%(num)s already saved', '%(num)s already saved', counts.duplicate) }}</span>
+      <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700">{{ ngettext('%(num)s repeated in the file', '%(num)s repeated in the file', counts.repeat) }}</span>
+      <span class="px-2 py-0.5 rounded bg-red-100 text-red-700">{{ ngettext('%(num)s cannot be imported', '%(num)s cannot be imported', counts.error) }}</span>
+    </div>
+    <p class="text-xs text-gray-500">{{ _('Rows that match a saved expense (same date, title, amount and payer), or an earlier row in this file, start unticked. Tick them if they really are separate expenses.') }}</p>
+    <div class="overflow-x-auto border rounded-lg">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-gray-500">
+            <th class="p-2"><span class="sr-only">{{ _('Import') }}</span></th>
+            <th class="p-2">#</th>
+            <th class="p-2">{{ _('Date') }}</th>
+            <th class="p-2">{{ _('Title') }}</th>
+            <th class="p-2">{{ _('Category') }}</th>
+            <th class="p-2 text-right">{{ _('Amount') }}</th>
+            <th class="p-2">{{ _('Paid by') }}</th>
+            <th class="p-2">{{ _('Split with') }}</th>
+            <th class="p-2">{{ _('Status') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr class="border-t" style="border-color: var(--border-color);">
+            <td class="p-2"><input type="checkbox" name="rows" value="{{ r.line }}" class="rounded" aria-label="{{ _('Import row %(num)s', num=r.line) }}"
+              {% if r.status == 'new' %}checked{% endif %} {% if r.status == 'error' %}disabled{% endif %}></td>
+            <td class="p-2 text-gray-500 tabular-nums">{{ r.line }}</td>
+            <td class="p-2 whitespace-nowrap tabular-nums">{{ r.date.strftime('%Y-%m-%d') if r.date else '' }}</td>
+            <td class="p-2">{{ r.title }}{% if r.is_settlement %} <span class="text-xs text-gray-500">({{ _('Settlement') }})</span>{% endif %}</td>
+            <td class="p-2">{{ r.category or '' }}</td>
+            <td class="p-2 text-right tabular-nums">{{ r.amount if r.amount is not none and r.status != 'error' else '' }}</td>
+            <td class="p-2">{{ r.payer or '' }}</td>
+            <td class="p-2">{{ r.split_names|join(', ') }}</td>
+            <td class="p-2">
+              {% if r.status == 'new' %}<span class="text-green-700">{{ _('New') }}</span>
+              {% elif r.status == 'duplicate' %}<span class="text-amber-700">{{ _('Already saved') }}</span>
+              {% elif r.status == 'repeat' %}<span class="text-amber-700">{{ _('Repeated in the file') }}</span>
+              {% else %}<span class="text-red-600">{{ r.error }}</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="flex flex-wrap justify-end gap-2">
+      <button type="submit" form="import-cancel" class="btn">{{ _('Start over') }}</button>
+      <button type="submit" class="btn btn-primary" {% if missing %}disabled{% endif %}><i class="fas fa-file-import" aria-hidden="true"></i>{{ _('Import ticked rows') }}</button>
+    </div>
+  </form>
+  <form method="POST" action="/expenses/import/cancel" id="import-cancel"></form>
+  {% endif %}
+</div>
+{% endblock %}

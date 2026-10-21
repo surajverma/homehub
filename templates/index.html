@@ -161,6 +161,24 @@ window.REMINDERS_CAL_START = (function(){
 			{% endif %}
 		</div>
 		{% endif %}
+
+		<!-- Backup download, shown to admin only (the server checks too) -->
+		<div class="card p-4 admin-only" id="backupCard" style="display:none">
+			<h3 class="section-title mb-2"><i class="fa-solid fa-box-archive section-icon" aria-hidden="true"></i> {{ _('Backup') }}</h3>
+			{% if admin_password_enabled %}
+			<p class="text-sm text-gray-500 mb-3">{{ _("Create, download and restore backups of HomeHub's data.") }}</p>
+			<form method="GET" action="/admin/backups" id="backupForm">
+				<input type="hidden" name="user" value="">
+				<button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-box-archive" aria-hidden="true"></i>{{ _('Manage backups') }}</button>
+			</form>
+			{% else %}
+			{# Backups hold everyone's data and may contain the site password, so the page needs a real admin password #}
+			<p class="text-sm mb-2">{{ _('Set an admin password to use backups. On the server, run:') }}</p>
+			<pre class="text-xs border rounded p-2 overflow-x-auto mb-2">docker exec -it homehub flask set-admin-password</pre>
+			{% set readme_link %}<a href="https://github.com/surajverma/homehub#backup-and-restore" target="_blank" rel="noopener noreferrer" class="hover:underline" style="color: var(--primary-text);">README</a>{% endset -%}
+			<p class="text-xs text-gray-500">{{ _('Until then, you can make and restore backups on the server with flask backup and flask restore. See the %(link)s for details.')|html_params(link=readme_link) }}</p>
+			{% endif %}
+		</div>
 	</div><!-- /left col -->
 	{% endif %}
 

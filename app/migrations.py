@@ -84,6 +84,7 @@ LATE_COLUMNS = [
     ('expense_entry', 'skipped', 'INTEGER DEFAULT 0', 0),
     ('expense_entry', 'split_with', 'TEXT', None),
     ('expense_entry', 'is_settlement', 'INTEGER DEFAULT 0', 0),
+    ('expense_entry', 'created_by', 'TEXT', None),
     ('qr_code', 'original_input', 'TEXT', None),
     ('reminder', 'recurring_id', 'INTEGER', None),
     ('recipe', 'tags', "TEXT DEFAULT '[]'", None),

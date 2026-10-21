@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+  <div>
+    <h1 class="page-title">{{ _('Backups') }}</h1>
+    <p class="page-subtitle">{{ _('Backups are saved on the server in data/backups/. The flask backup command saves to the same folder, so its backups show up here too.') }}</p>
+  </div>
+
+  {% if needs_restart %}
+  <div class="card p-4 border-l-4" style="border-left-color: var(--primary-color);" role="status">
+    <p class="font-semibold">{{ _('Data was restored. Restart HomeHub so everything uses it.') }}</p>
+    <p class="text-sm text-gray-500 mt-1">{{ _('On the server, run:') }} <code>docker compose restart homehub</code></p>
+  </div>
+  {% endif %}
+
+  {% if config_from_backup %}
+  <div class="card p-4 space-y-3" id="configFromBackup">
+    <h2 class="section-title"><i class="fa-solid fa-file-lines section-icon" aria-hidden="true"></i>{{ _('Config from the restored backup') }}</h2>
+    <p class="text-sm">{{ _('This is the config.yml from the backup. HomeHub did not change your current config.yml. To bring back your custom settings, copy what you need from it into config.yml on the server and restart HomeHub.') }}</p>
+    <p class="text-sm text-gray-500">{{ _('Passwords and keys are hidden below. The full file is saved as %(path)s.', path=config_from_backup_path) }}</p>
+    <pre class="text-xs border rounded p-3 overflow-x-auto" style="max-height: 24rem;">{{ config_from_backup }}</pre>
+    <form method="POST" action="/admin/backups/config-from-backup/dismiss" data-confirm="{{ _('Delete the saved config from the backup?') }}">
+      <input type="hidden" name="user" value="{{ user }}">
+      <button type="submit" class="btn btn-secondary btn-sm">{{ _('Done, delete this copy') }}</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Running job -->
+  <div class="card p-4 {{ '' if job else 'hidden' }}" id="backupJob" data-running="{{ '1' if job else '' }}" data-status-url="/admin/backups/status?user={{ user|urlencode }}">
+    <p class="font-semibold" id="backupJobTitle">
+      {% if job and job.kind == 'restore' %}{{ _('Restoring backup…') }}{% else %}{{ _('Creating backup…') }}{% endif %}
+    </p>
+    <div class="w-full h-2 rounded mt-3 overflow-hidden" style="background: var(--hover-bg);">
+      <div id="backupJobBar" class="h-2" style="width: 0%; background: var(--primary-color);"></div>
+    </div>
+    <p class="text-xs text-gray-500 mt-2">{{ _('You can leave this page; the work carries on in the background.') }} <span id="backupJobProgress"></span></p>
+  </div>
+
+  <!-- Create -->
+  <div class="card p-4 space-y-4">
+    <h2 class="section-title"><i class="fa-solid fa-box-archive section-icon" aria-hidden="true"></i>{{ _('Create a backup') }}</h2>
+    <form method="POST" action="/admin/backups/create" id="createBackupForm" class="space-y-3">
+      <input type="hidden" name="user" value="{{ user }}">
+      <fieldset class="space-y-2">
+        <legend class="text-sm text-gray-600 mb-1">{{ _('What to include') }}</legend>
+        {% for part in ['database', 'uploads', 'pdfs', 'media', 'config'] %}
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="parts" value="{{ part }}" class="rounded backup-part" data-bytes="{{ sizes[part] }}"
+            {% if part in default_parts %}checked{% endif %} {% if part == 'database' %}disabled{% endif %}>
+          <span>{{ part_labels[part] }}</span>
+          <span class="text-gray-500 tabular-nums">({{ sizes[part]|filesize }})</span>
+        </label>
+        {% endfor %}
+        {# A disabled box is not submitted; the database always goes in anyway #}
+        <input type="hidden" name="parts" value="database">
+      </fieldset>
+      <p class="text-xs text-gray-500">{{ _('Backups that include config.yml may contain the site password in plain text. Keep them somewhere safe.') }}</p>
+      <p class="text-sm">{{ _('Total before compression:') }} <span class="font-semibold tabular-nums" id="backupTotal"></span></p>
+      <p class="text-sm text-amber-700 hidden" id="backupLargeWarning" role="alert" data-large-bytes="{{ large_bytes }}">
+        {{ _('This backup is large. It can take a long time to create and download, and needs that much free disk space on the server. For very large backups, the flask backup command on the server is quicker.') }}
+      </p>
+      <button type="submit" class="btn btn-primary" {% if job %}disabled{% endif %}><i class="fa-solid fa-box-archive" aria-hidden="true"></i>{{ _('Create backup') }}</button>
+    </form>
+  </div>
+
+  <!-- List -->
+  <div class="card p-4 space-y-3">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="section-title"><i class="fa-solid fa-list section-icon" aria-hidden="true"></i>{{ _('Saved backups') }}</h2>
+      <span class="text-sm text-gray-500">{{ ngettext('%(num)s backup, %(size)s in total', '%(num)s backups, %(size)s in total', backups|length, size=total_size|filesize) }}</span>
+    </div>
+    <p class="text-xs text-gray-500">{{ _('A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it.') }}</p>
+    {% if backups %}
+    <ul class="border rounded-lg overflow-hidden">
+      {% for b in backups %}
+      <li class="list-row flex-wrap justify-between gap-3 text-sm">
+        <div class="min-w-0">
+          <div class="font-medium break-all">{{ b.name }}</div>
+          <div class="text-xs text-gray-500">
+            {{ (b.created_at or b.modified)|localtime }} · {{ b.size|filesize }}
+            {% if b.kind == 'safety' %} · <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">{{ _('Safety backup') }}</span>{% endif %}
+          </div>
+          {% if b.error %}
+          <div class="text-xs text-red-600">{{ error_message(b.error) }}</div>
+          {% else %}
+          <div class="text-xs text-gray-500">
+            {% for part, info in b.parts.items() %}{{ part_labels[part] }} ({{ info.bytes|filesize }}){{ ', ' if not loop.last }}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <a href="/admin/backups/download/{{ b.name }}?user={{ user|urlencode }}" class="btn btn-secondary btn-sm" download><i class="fa-solid fa-download" aria-hidden="true"></i>{{ _('Download') }}</a>
+          {% if not b.error %}
+          <a href="/admin/backups/restore/{{ b.name }}?user={{ user|urlencode }}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>{{ _('Restore') }}</a>
+          {% endif %}
+          <form method="POST" action="/admin/backups/delete/{{ b.name }}" data-confirm="{{ _('Delete backup %(name)s?', name=b.name) }}">
+            <input type="hidden" name="user" value="{{ user }}">
+            <button type="submit" class="btn btn-ghost btn-danger-text btn-sm">{{ _('Delete') }}</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-gray-500">{{ _('No backups yet.') }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Upload -->
+  <div class="card p-4 space-y-3">
+    <h2 class="section-title"><i class="fa-solid fa-upload section-icon" aria-hidden="true"></i>{{ _('Upload a backup') }}</h2>
+    <p class="text-sm text-gray-500">{{ _('Add a backup zip from another device to the list, for example to restore it here. Larger than the upload limit? Copy it into data/backups/ on the server instead.') }}</p>
+    <form method="POST" action="/admin/backups/upload" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="user" value="{{ user }}">
+      <input type="file" name="backup" accept=".zip,application/zip" required aria-label="{{ _('Backup zip') }}">
+      <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-upload" aria-hidden="true"></i>{{ _('Upload') }}</button>
+    </form>
+  </div>
+</div>
+<script src="{{ asset_url('js/pages/backups.js') }}"></script>
+{% endblock %}

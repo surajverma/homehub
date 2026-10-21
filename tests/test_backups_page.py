@@ -1,0 +1,312 @@
+import io
+import json
+import os
+import zipfile
+
+import pytest
+
+from app import admin, backup, create_app, db
+from test_export_backup import make_data, note_content
+
+
+def make_app():
+    test_config = {
+        'TESTING': True,
+        'SQLALCHEMY_DATABASE_URI': 'sqlite://',
+        'HOMEHUB_CONFIG': {
+            'admin_name': 'Administrator',
+            'family_members': ['Alice', 'Bob'],
+        },
+        'WTF_CSRF_ENABLED': False,
+        'SECRET_KEY': 'test',
+    }
+    app = create_app(test_config)
+    with app.app_context():
+        db.create_all()
+        db.session.execute(db.text("CREATE TABLE IF NOT EXISTS app_setting (key TEXT PRIMARY KEY, value TEXT)"))
+        db.session.commit()
+    return app
+
+
+@pytest.fixture()
+def home(tmp_path, monkeypatch):
+    """A HomeHub data folder in tmp_path that the backup code uses instead of the real one."""
+    base = make_data(tmp_path / 'home', note='current')
+    monkeypatch.setattr(backup, 'BASE_DIR', str(base))
+    monkeypatch.setattr(backup, 'jobs', backup.Jobs())
+    return base
+
+
+PASSWORD = '4321'
+ADMIN = {'user': 'Administrator'}
+
+
+def set_password(client, password=PASSWORD):
+    with client.application.app_context():
+        admin.set_admin_password(password)
+
+
+@pytest.fixture()
+def bare_client(home):
+    """No admin password set, as on a fresh install."""
+    return make_app().test_client()
+
+
+@pytest.fixture()
+def client(bare_client):
+    """An admin password is set and this browser has unlocked it."""
+    set_password(bare_client)
+    bare_client.post('/admin/unlock', json={'password': PASSWORD})
+    return bare_client
+
+
+def create(client, parts=('uploads',)):
+    resp = client.post('/admin/backups/create', data={**ADMIN, 'parts': list(parts)})
+    backup.jobs.wait(10)
+    return resp
+
+
+def zips(home):
+    return sorted(n for n in os.listdir(home / 'data' / 'backups') if n.endswith('.zip'))
+
+
+# --- Admin only, and only with an admin password ---
+
+ROUTES = [
+    ('get', '/admin/backups'),
+    ('get', '/admin/backups/status'),
+    ('post', '/admin/backups/create'),
+    ('get', '/admin/backups/download/x.zip'),
+    ('post', '/admin/backups/delete/x.zip'),
+    ('post', '/admin/backups/upload'),
+    ('get', '/admin/backups/restore/x.zip'),
+    ('post', '/admin/backups/restore/x.zip'),
+    ('post', '/admin/backups/config-from-backup/dismiss'),
+]
+
+
+@pytest.mark.parametrize('method,url', ROUTES)
+def test_every_route_refuses_without_admin_password(bare_client, home, method, url):
+    (home / 'data' / 'backups' / 'x.zip').write_bytes(b'zip')
+    resp = getattr(bare_client, method)(url + '?user=Administrator', data={**ADMIN, 'parts': ['uploads'], 'password': ''})
+    assert resp.status_code == 403
+    body = resp.get_data(as_text=True)
+    assert 'flask set-admin-password' in body and 'github.com/surajverma/homehub#backup-and-restore' in body
+    backup.jobs.wait(5)
+    assert zips(home) == ['x.zip']
+
+
+@pytest.mark.parametrize('method,url', ROUTES)
+def test_every_route_is_admin_only(client, method, url):
+    resp = getattr(client, method)(url + '?user=Alice', data={'user': 'Alice'})
+    assert resp.status_code in (302, 403)
+    assert resp.mimetype != 'application/zip'
+
+
+def test_locked_admin_is_refused(client):
+    client.post('/admin/lock')
+    assert client.get('/admin/backups?user=Administrator').status_code == 302
+    client.post('/admin/unlock', json={'password': PASSWORD})
+    assert client.get('/admin/backups?user=Administrator').status_code == 200
+
+
+def test_welcome_card_explains_admin_password(bare_client):
+    html = bare_client.get('/').get_data(as_text=True)
+    assert 'Set an admin password to use backups' in html
+    assert 'href="https://github.com/surajverma/homehub#backup-and-restore"' in html
+    assert 'action="/admin/backups"' not in html
+    set_password(bare_client)
+    html = bare_client.get('/').get_data(as_text=True)
+    assert 'action="/admin/backups"' in html
+    assert 'Set an admin password to use backups' not in html
+
+
+def test_cross_site_create_is_blocked(client, home):
+    resp = client.post('/admin/backups/create', data={**ADMIN, 'parts': ['uploads']}, headers={'Sec-Fetch-Site': 'cross-site'})
+    assert resp.status_code == 403
+    assert zips(home) == []
+
+
+# --- Page, create, download, delete ---
+
+def test_page_shows_sizes_and_password_note(client):
+    html = client.get('/admin/backups?user=Administrator').get_data(as_text=True)
+    assert 'data-bytes=' in html
+    assert 'may contain the site password in plain text' in html
+    assert '/admin/backups/restore/' not in html  # nothing to restore yet
+
+
+def test_create_backup_in_background_then_list_and_download(client, home):
+    resp = create(client, parts=['uploads', 'config'])
+    assert resp.status_code == 302
+    names = zips(home)
+    assert len(names) == 1
+    with zipfile.ZipFile(home / 'data' / 'backups' / names[0]) as zf:
+        assert json.loads(zf.read('manifest.json'))['parts'] == ['database', 'uploads', 'config']
+
+    page = client.get('/admin/backups?user=Administrator').get_data(as_text=True)
+    ready = f'Backup {names[0]} is ready.'
+    assert ready in page
+    # The outcome is only reported once
+    assert ready not in client.get('/admin/backups?user=Administrator').get_data(as_text=True)
+
+    resp = client.get(f'/admin/backups/download/{names[0]}?user=Administrator')
+    assert resp.status_code == 200
+    assert resp.mimetype == 'application/zip'
+    assert resp.headers.get('Accept-Ranges') == 'bytes'
+    full = resp.get_data()
+    resp.close()
+    # A cut-off download can carry on where it stopped
+    resp = client.get(f'/admin/backups/download/{names[0]}?user=Administrator', headers={'Range': 'bytes=10-'})
+    assert resp.status_code == 206
+    assert resp.get_data() == full[10:]
+    resp.close()
+
+
+def test_status_while_running(client, home):
+    import threading
+    release = threading.Event()
+
+    def slow(progress):
+        progress(5, 10)
+        release.wait(5)
+        return {'name': 'x.zip'}
+
+    backup.jobs.start('backup', slow)
+    try:
+        data = client.get('/admin/backups/status?user=Administrator').get_json()
+        assert data['running'] and data['kind'] == 'backup' and data['done'] == 5 and data['total'] == 10
+        # Only one job at a time
+        resp = client.post('/admin/backups/create', data={**ADMIN, 'parts': ['uploads']}, follow_redirects=True)
+        assert 'already running' in resp.get_data(as_text=True)
+    finally:
+        release.set()
+        backup.jobs.wait(5)
+    assert client.get('/admin/backups/status?user=Administrator').get_json()['running'] is False
+
+
+def test_failed_backup_is_reported(client, home, monkeypatch):
+    monkeypatch.setattr(backup.shutil, 'disk_usage', lambda _p: type('U', (), {'free': 1})())
+    create(client)
+    page = client.get('/admin/backups?user=Administrator').get_data(as_text=True)
+    assert 'Not enough free disk space' in page
+    assert zips(home) == []
+
+
+def test_download_and_delete_only_reach_data_backups(client, home):
+    (home / 'data' / 'secret.zip').write_bytes(b'outside')
+    for name in ('..%2Fsecret.zip', '..%5Csecret.zip', 'notes.txt', 'missing.zip'):
+        assert client.get(f'/admin/backups/download/{name}?user=Administrator').status_code == 404
+        client.post(f'/admin/backups/delete/{name}', data=ADMIN)
+    assert (home / 'data' / 'secret.zip').exists()
+    assert (home / 'data' / 'backups' / 'notes.txt').exists()
+
+
+def test_delete_backup(client, home):
+    create(client)
+    name = zips(home)[0]
+    client.post(f'/admin/backups/delete/{name}', data=ADMIN)
+    assert zips(home) == []
+
+
+def test_stale_part_cleaned_when_page_opens(client, home):
+    stale = home / 'data' / 'backups' / '.homehub-backup-dead.part'
+    stale.write_bytes(b'x')
+    os.utime(stale, (0, 0))
+    client.get('/admin/backups?user=Administrator')
+    assert not stale.exists()
+
+
+# --- Upload ---
+
+def backup_bytes(tmp_path, note='uploaded'):
+    src = make_data(tmp_path / f'src-{note}', note=note)
+    path = backup.create_backup(str(tmp_path / f'{note}.zip'), parts=backup.PARTS, base_dir=str(src))
+    with open(path, 'rb') as f:
+        return f.read()
+
+
+def test_upload_valid_backup(client, home, tmp_path):
+    data = {**ADMIN, 'backup': (io.BytesIO(backup_bytes(tmp_path)), '../../My Backup!.zip')}
+    client.post('/admin/backups/upload', data=data, content_type='multipart/form-data')
+    assert zips(home) == ['My-Backup.zip']
+    assert not [n for n in os.listdir(home / 'data' / 'backups') if n.endswith('.part')]
+
+
+def test_upload_rejects_bad_zip(client, home):
+    data = {**ADMIN, 'backup': (io.BytesIO(b'not a zip'), 'bad.zip')}
+    resp = client.post('/admin/backups/upload', data=data, content_type='multipart/form-data', follow_redirects=True)
+    assert 'not a zip file' in resp.get_data(as_text=True)
+    assert zips(home) == []
+    assert os.listdir(home / 'data' / 'backups') == ['notes.txt']
+
+
+# --- Restore ---
+
+def upload(client, tmp_path, note='uploaded'):
+    data = {**ADMIN, 'backup': (io.BytesIO(backup_bytes(tmp_path, note)), f'{note}.zip')}
+    client.post('/admin/backups/upload', data=data, content_type='multipart/form-data')
+    return f'{note}.zip'
+
+
+def test_restore_asks_password_again_and_counts_attempts(client, home, tmp_path):
+    name = upload(client, tmp_path)
+    preview = client.get(f'/admin/backups/restore/{name}?user=Administrator')
+    assert preview.status_code == 200
+    html = preview.get_data(as_text=True)
+    assert 'Database &amp; settings' in html and 'config.yml' in html
+
+    for _ in range(admin.MAX_FAILED_ATTEMPTS):
+        resp = client.post(f'/admin/backups/restore/{name}', data={**ADMIN, 'password': 'wrong', 'parts': ['database']},
+                           follow_redirects=True)
+    assert note_content(home) == 'current'
+    # Locked out now, even with the right password
+    resp = client.post(f'/admin/backups/restore/{name}', data={**ADMIN, 'password': '4321', 'parts': ['database']},
+                       follow_redirects=True)
+    assert 'Too many attempts' in resp.get_data(as_text=True)
+    backup.jobs.wait(5)
+    assert note_content(home) == 'current'
+
+
+def test_restore_from_page_round_trip(client, home, tmp_path, example_config_path):
+    with open(example_config_path, encoding='utf-8') as f:
+        config_before = f.read()
+    name = upload(client, tmp_path, note='from-backup')
+    resp = client.post(f'/admin/backups/restore/{name}',
+                       data={**ADMIN, 'password': '4321', 'parts': ['database', 'uploads', 'config']})
+    assert resp.status_code == 302
+    backup.jobs.wait(10)
+
+    assert note_content(home) == 'from-backup'
+    assert (home / 'uploads' / 'photo.jpg').read_bytes() == b'jpg-from-backup'
+    # Not ticked, so left alone
+    assert (home / 'pdfs' / 'bill.pdf').read_bytes() == b'%PDF-current'
+    # A safety backup of what was replaced appeared in the list
+    assert any(n.startswith('homehub-safety-backup-') for n in zips(home))
+
+    page = client.get('/admin/backups?user=Administrator').get_data(as_text=True)
+    assert 'Restore complete' in page
+    assert 'docker compose restart homehub' in page
+    # The backup's config is shown with the password hidden, and saved beside the data
+    assert 'Config from the restored backup' in page
+    assert 'from-backup' in page and 'site-pw-from-backup' not in page and '********' in page
+    assert 'site-pw-from-backup' in (home / 'data' / 'config-from-backup.yml').read_text(encoding='utf-8')
+
+    # The config.yml the app reads is never touched
+    with open(example_config_path, encoding='utf-8') as f:
+        assert f.read() == config_before
+
+    client.post('/admin/backups/config-from-backup/dismiss', data=ADMIN)
+    assert not (home / 'data' / 'config-from-backup.yml').exists()
+
+
+def test_restore_with_nothing_ticked(client, home, tmp_path):
+    name = upload(client, tmp_path)
+    resp = client.post(f'/admin/backups/restore/{name}', data={**ADMIN, 'password': '4321'}, follow_redirects=True)
+    assert 'Choose at least one part' in resp.get_data(as_text=True)
+    assert note_content(home) == 'current'
+
+
+def test_home_page_links_to_backups(client):
+    html = client.get('/').get_data(as_text=True)
+    assert 'action="/admin/backups"' in html

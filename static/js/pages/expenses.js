@@ -115,6 +115,8 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function renderMonthlySidebar(){
+    // Export the month on screen
+    document.getElementById('export-csv-link').href = `/expenses/export.csv?month=${year}-${String(month).padStart(2, '0')}`;
     // Collect all entries from every date, sorted by date ascending
     const allEntries = [];
     Object.keys(byDate).sort().forEach(ds=>{
@@ -241,7 +243,9 @@ document.addEventListener('DOMContentLoaded', function(){
   const ds = isoLocalFromDate(selectedDate);
     const dayData = byDate[ds] || { entries: [], total: 0 };
     const entriesHtml = (dayData.entries||[]).map(e=>{
-      const allowed = (currentUser()===e.payer) || isAdmin();
+      // Whoever entered it (or the payer, on older entries) can change it, and the admin
+      const allowed = (currentUser()===(e.owner || e.payer)) || isAdmin();
+      const addedBy = e.created_by && e.created_by !== e.payer ? ` • ${th('Added by {name}', { name: e.created_by })}` : '';
       const badges = [
         e.skipped ? '<span class="text-xs px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">'+th('skipped')+'</span>' : '',
         e.is_settlement ? '<span class="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700">'+th('settlement')+'</span>' : '',
@@ -257,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function(){
       <div class="flex items-start justify-between p-2 border rounded mb-2 ${e.skipped ? 'bg-gray-50' : ''}">
         <div>
           <div class="font-medium ${e.skipped ? 'line-through text-gray-400' : ''}">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
-          <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• ${th('by {name}', { name: e.payer })}`:''} ${badges}</div>
+          <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• ${th('by {name}', { name: e.payer })}`:''}${addedBy} ${badges}</div>
           ${splitLine}
         </div>
         <div class="text-right">
@@ -265,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function(){
           <div class="text-xs mt-1 space-x-2 ${allowed? '' : 'hidden'}">
             ${e.skipped || e.is_settlement ? '' : `<button class="text-blue-600 hover:underline edit-expense" data-id="${e.id}" data-date="${ds}">${th('Edit')}</button>`}
             ${skipForm}
-            <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${escapeHtml(e.payer||'')}" data-confirm="${th('Delete this expense?')}">
+            <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${escapeHtml(e.owner||e.payer||'')}" data-confirm="${th('Delete this expense?')}">
               <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
               <button type="submit" class="text-red-600 hover:underline">${th('Delete')}</button>
             </form>

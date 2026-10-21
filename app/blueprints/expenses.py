@@ -1,6 +1,8 @@
-from flask import render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import render_template, request, redirect, url_for, flash, jsonify, current_app, Response
 from datetime import datetime, date, timedelta
 import calendar as _calendar
+import csv
+import io
 import json
 import math
 from ..models import db, RecurringExpense, ExpenseEntry, parse_split
@@ -98,6 +100,7 @@ def _entry_from_rule(r: RecurringExpense, d: date) -> ExpenseEntry:
         quantity=qty,
         amount=(r.unit_price or 0.0) * qty,
         payer=r.creator,
+        created_by=r.creator,
         recurring_id=r.id,
         split_with=getattr(r, 'split_with', None),
     )
@@ -121,6 +124,11 @@ def _reapply_skips(rule_id: int, dates: set) -> None:
         ExpenseEntry.date.in_(list(dates)),
     ).update({ExpenseEntry.skipped: True}, synchronize_session=False)
     db.session.commit()
+
+
+def entry_owner(e: ExpenseEntry) -> str:
+    """Who may change an entry besides the admin: whoever entered it, or the payer on rows from before that was kept."""
+    return e.created_by or e.payer or ''
 
 
 def _parse_split(raw) -> list:
@@ -378,6 +386,8 @@ def _build_month_payload(y: int, m: int) -> dict:
             'split_weights': split_weights,
             'shares': {name: round(part, precision) for name, part in shares.items()},
             'is_settlement': bool(e.is_settlement),
+            'created_by': e.created_by or '',
+            'owner': entry_owner(e),
         })
 
     top_category = None
@@ -469,7 +479,8 @@ def expenses():
             except SplitError as exc:
                 flash(exc.user_message, 'error')
                 return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
-            db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer, split_with=split_with))
+            created_by = sanitize_text(request.form.get('user', '')).strip() or None
+            db.session.add(ExpenseEntry(date=d, title=title, category=category, unit_price=up, quantity=q, amount=amount, payer=payer, split_with=split_with, created_by=created_by))
             db.session.commit()
             flash(_('Expense added.'), 'success')
             return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
@@ -945,7 +956,7 @@ def expenses_settings():
 def delete_expense_entry(entry_id):
     entry = db.get_or_404(ExpenseEntry, entry_id)
     user = sanitize_text(request.form.get('user', ''))
-    if not can_modify(user, entry.payer or ''):
+    if not can_modify(user, entry_owner(entry)):
         flash(_('Not allowed to delete entry.'), 'error')
         return redirect(url_for('main.expenses'))
     db.session.delete(entry)
@@ -963,7 +974,7 @@ def delete_expense_entry(entry_id):
 def edit_expense_entry(entry_id):
     entry = db.get_or_404(ExpenseEntry, entry_id)
     user = sanitize_text(request.form.get('user', ''))
-    if not can_modify(user, entry.payer or ''):
+    if not can_modify(user, entry_owner(entry)):
         flash(_('Not allowed to edit entry.'), 'error')
         return redirect(url_for('main.expenses'))
     # Update fields
@@ -1020,7 +1031,7 @@ def toggle_skip_expense_entry(entry_id):
     """Skip a day (e.g. no newspaper) without deleting it, or restore a skipped day."""
     entry = db.get_or_404(ExpenseEntry, entry_id)
     user = sanitize_text(request.form.get('user', ''))
-    if not can_modify(user, entry.payer or ''):
+    if not can_modify(user, entry_owner(entry)):
         flash(_('Not allowed to change entry.'), 'error')
         return _redirect_to_view(entry.date)
     # Only recurring days can be skipped; a skipped day can always be restored
@@ -1084,6 +1095,7 @@ def settle_up():
         payer=from_member,
         split_with=json.dumps([to_member]),
         is_settlement=True,
+        created_by=user or None,
     ))
     db.session.commit()
     flash(_('Settlement recorded.'), 'success')
@@ -1101,7 +1113,7 @@ def bulk_delete_expenses():
     for entry_id in ids:
         try:
             entry = db.session.get(ExpenseEntry, int(entry_id))
-            if entry and can_modify(user, entry.payer or ''):
+            if entry and can_modify(user, entry_owner(entry)):
                 db.session.delete(entry)
                 deleted += 1
         except Exception:
@@ -1142,6 +1154,101 @@ def api_expenses_month():
         }), 400
     payload = _build_month_payload(y, m)
     return jsonify(payload)
+
+
+_CSV_COLUMNS = ('date', 'title', 'category', 'unit_price', 'quantity', 'amount', 'payer', 'split', 'recurring', 'settlement', 'added_by')
+# A spreadsheet treats text starting with one of these as a formula
+_CSV_FORMULA_PREFIXES = ('=', '+', '-', '@', '\t', '\r')
+
+
+def _csv_text(value) -> str:
+    text = '' if value is None else str(value)
+    return "'" + text if text.startswith(_CSV_FORMULA_PREFIXES) else text
+
+
+def _csv_number(value, precision: int | None = None) -> str:
+    if value is None:
+        return ''
+    value = float(value)
+    return f'{value:.{precision}f}' if precision is not None else f'{value:g}'
+
+
+def _csv_split(e: ExpenseEntry) -> str:
+    """Who shares the expense, e.g. "Alice;Bob" for an even split or "Alice (60%);Bob (40%)"."""
+    mode, weights = parse_split(e.split_with)
+    if mode == 'equal' or e.is_settlement:
+        return ';'.join(weights)
+    suffix = '%' if mode == 'percent' else ''
+    return ';'.join(f'{name} ({w:g}{suffix})' for name, w in weights.items())
+
+
+def _export_range(args, today: date):
+    """(start, end, filename part) from ?month=YYYY-MM or ?start=&end=; raises FormError on bad input."""
+    month_s = (args.get('month') or '').strip()
+    start_s = (args.get('start') or '').strip()
+    end_s = (args.get('end') or '').strip()
+    if month_s and (start_s or end_s):
+        raise FormError(_('Choose either a month or a start and end date, not both.'))
+    if start_s or end_s:
+        try:
+            start = datetime.strptime(start_s, '%Y-%m-%d').date()
+            end = datetime.strptime(end_s, '%Y-%m-%d').date()
+        except ValueError:
+            raise FormError(_('Invalid date range. Use start and end dates like 2026-10-01.'))
+        if end < start:
+            raise FormError(_('The end date is before the start date.'))
+        return start, end, f'{start:%Y-%m-%d}-to-{end:%Y-%m-%d}'
+    if month_s:
+        try:
+            first = datetime.strptime(month_s, '%Y-%m').date()
+        except ValueError:
+            raise FormError(_('Invalid month. Use a month like 2026-10.'))
+    else:
+        first = today.replace(day=1)
+    last = first.replace(day=_calendar.monthrange(first.year, first.month)[1])
+    return first, last, f'{first:%Y-%m}'
+
+
+@main_bp.route('/expenses/export.csv', methods=['GET'])
+def export_expenses_csv():
+    """Entries for a month (?month=YYYY-MM) or a date range (?start=&end=) as a CSV file. Skipped days are left out."""
+    today = date.today()
+    try:
+        start, end, label = _export_range(request.args, today)
+    except FormError as exc:
+        return Response(exc.user_message, status=400, mimetype='text/plain')
+    _generate_recurring_entries_until(today)
+    precision = _load_expense_settings().get('fraction_precision', 2)
+    entries = (
+        ExpenseEntry.query
+        .filter(ExpenseEntry.date >= start, ExpenseEntry.date <= end)
+        .filter((ExpenseEntry.skipped.is_(None)) | (ExpenseEntry.skipped.is_(False)))
+        .order_by(ExpenseEntry.date.asc(), ExpenseEntry.timestamp.asc())
+        .all()
+    )
+    out = io.StringIO()
+    # The BOM lets Excel see the file is UTF-8, so names in Hindi and other scripts show correctly
+    out.write('﻿')
+    writer = csv.writer(out)
+    writer.writerow(_CSV_COLUMNS)
+    for e in entries:
+        writer.writerow([
+            e.date.strftime('%Y-%m-%d'),
+            _csv_text(e.title),
+            _csv_text(e.category),
+            _csv_number(e.unit_price, precision),
+            _csv_number(e.quantity),
+            _csv_number(e.amount, precision),
+            _csv_text(e.payer),
+            _csv_text(_csv_split(e)),
+            'yes' if e.recurring_id else 'no',
+            'yes' if e.is_settlement else 'no',
+            _csv_text(e.created_by),
+        ])
+    response = Response(out.getvalue().encode('utf-8'), mimetype='text/csv')
+    response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    response.headers['Content-Disposition'] = f'attachment; filename="homehub-expenses-{label}.csv"'
+    return response
 
 
 @main_bp.route('/expenses/recurring', methods=['GET'])

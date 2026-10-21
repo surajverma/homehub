@@ -247,6 +247,8 @@ class ExpenseEntry(db.Model):
     split_with = db.Column(db.Text)
     # Settlement: payer paid split_with[0] back; excluded from spending totals
     is_settlement = db.Column(db.Boolean, default=False)
+    # Who entered it; only they (or the admin) may change it. Empty on rows from before this was kept
+    created_by = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=utcnow)
 
 
