@@ -59,26 +59,35 @@
     </div>
   </div>
 
-  <!-- Charts for the month shown; drawn as inline SVG by expense_charts.js. Phones show one at a time. -->
+  <!-- Charts for the month shown; drawn by expense_charts.js. Phones show one at a time.
+       The header folds them away (remembered per browser); the summary and budgets stay. -->
   <div class="card p-4" id="charts-card">
-    <div class="grid grid-cols-3 gap-2 mb-3 lg:hidden" role="tablist" aria-label="{{ _('Charts') }}" id="chart-tabs">
-      <button type="button" role="tab" class="btn btn-sm chart-tab w-full justify-center" data-chart="categories">{{ _('Category') }}</button>
-      <button type="button" role="tab" class="btn btn-sm chart-tab w-full justify-center" data-chart="people">{{ _('People') }}</button>
-      <button type="button" role="tab" class="btn btn-sm chart-tab w-full justify-center" data-chart="days">{{ _('Daily') }}</button>
-    </div>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <figure class="chart-panel" data-chart="categories" role="tabpanel">
-        <figcaption class="text-sm font-semibold text-gray-600 mb-2">{{ _('Spending by category') }}</figcaption>
-        <div id="chart-categories"></div>
-      </figure>
-      <figure class="chart-panel" data-chart="people" role="tabpanel">
-        <figcaption class="text-sm font-semibold text-gray-600 mb-2">{{ _('Paid and share by person') }}</figcaption>
-        <div id="chart-people"></div>
-      </figure>
-      <figure class="chart-panel" data-chart="days" role="tabpanel">
-        <figcaption class="text-sm font-semibold text-gray-600 mb-2">{{ _('Spending by day') }}</figcaption>
-        <div id="chart-days"></div>
-      </figure>
+    <h3 class="text-lg font-bold">
+      <button type="button" class="charts-toggle w-full flex items-center justify-between gap-2 text-left" id="charts-toggle" aria-expanded="true" aria-controls="charts-body">
+        <span><i class="fas fa-chart-column mr-2 text-gray-500" aria-hidden="true"></i>{{ _('Charts') }}</span>
+        <i class="fas fa-chevron-down charts-toggle-icon text-sm text-gray-500" aria-hidden="true"></i>
+      </button>
+    </h3>
+    <div id="charts-body" class="mt-3">
+      <div class="grid grid-cols-3 gap-2 mb-3 lg:hidden" role="tablist" aria-label="{{ _('Charts') }}" id="chart-tabs">
+        <button type="button" role="tab" class="btn btn-sm chart-tab w-full justify-center" data-chart="categories">{{ _('Category') }}</button>
+        <button type="button" role="tab" class="btn btn-sm chart-tab w-full justify-center" data-chart="people">{{ _('People') }}</button>
+        <button type="button" role="tab" class="btn btn-sm chart-tab w-full justify-center" data-chart="days">{{ _('Daily') }}</button>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <figure class="chart-panel" data-chart="categories" role="tabpanel">
+          <figcaption class="text-sm font-semibold text-gray-600 mb-2">{{ _('Spending by category') }}</figcaption>
+          <div id="chart-categories"></div>
+        </figure>
+        <figure class="chart-panel" data-chart="people" role="tabpanel">
+          <figcaption class="text-sm font-semibold text-gray-600 mb-2">{{ _('Paid and share by person') }}</figcaption>
+          <div id="chart-people"></div>
+        </figure>
+        <figure class="chart-panel" data-chart="days" role="tabpanel">
+          <figcaption class="text-sm font-semibold text-gray-600 mb-2">{{ _('Spending by day') }}</figcaption>
+          <div id="chart-days"></div>
+        </figure>
+      </div>
     </div>
   </div>
 

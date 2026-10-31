@@ -1,11 +1,10 @@
-// Budgets and charts for the expenses page, drawn as inline SVG (no chart library, works offline).
+// Budgets and charts for the expenses page, drawn as HTML bars and inline SVG (no chart library, works offline).
 // expenses.js calls HomeHubExpenseCharts.render() whenever the month on screen changes.
 (function(){
   const NS = 'http://www.w3.org/2000/svg';
   const WIDTH = 300;
   // Rows past this fold into "Other", so a long category list stays readable
   const MAX_ROWS = 8;
-  let patternSeq = 0;
 
   function esc(str){ return String(str ?? '').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
 
@@ -63,58 +62,57 @@
     if (adminName && names.indexOf(adminName) === -1) names.push(adminName);
     return names;
   }
+  // Colours picked in config.yml (base.html sets one CSS variable per person, with its dark-mode shade)
+  function memberColors(){
+    try { return JSON.parse((document.getElementById('memberColors') || {}).textContent || '{}') || {}; } catch (e) { return {}; }
+  }
+  // Palette colours by position, then the picked ones on top, so nobody else's colour moves
+  function personColors(names){
+    const colors = colorsFor(names, people());
+    const picked = memberColors();
+    names.forEach(name => { if (picked[name] && picked[name].var) colors[name] = `var(${picked[name].var})`; });
+    return colors;
+  }
 
-  // Horizontal bars, one row per category: name and amount on a line, the bar under it
+  function bar(value, max, fill){
+    const pct = value > 0 ? Math.max(1, (value / max) * 100) : 0;
+    return `<div class="chart-track"><div class="chart-bar" style="width:${pct.toFixed(2)}%;background:${fill}"></div></div>`;
+  }
+  // Their share: the person's colour hatched over a pale tint of it
+  function hatch(color){
+    return `repeating-linear-gradient(135deg, ${color} 0 2px, transparent 2px 5px), color-mix(in srgb, ${color} 18%, transparent)`;
+  }
+
+  // One row per category: name, bar, amount
   function categoryChart(el, perCategory, categories, fmt){
     const rows = foldRows(Object.entries(perCategory || {}).map(([label, value]) => ({ label, value: Number(value) || 0 })));
     if (!rows.length){ empty(el); return; }
     // Colours come from every category of the month, so folding into "Other" does not shift them
     const colors = colorsFor(Object.keys(perCategory || {}), categories);
     const max = Math.max(...rows.map(r => r.value));
-    const rowH = 30;
-    const body = rows.map((r, i) => {
-      const y = i * rowH;
-      const w = Math.max(2, (r.value / max) * WIDTH);
-      return `<g><title>${esc(r.label)}: ${esc(fmt(r.value))}</title>
-        <rect x="0" y="${y}" width="${WIDTH}" height="${rowH - 2}" fill="transparent"></rect>
-        <text x="0" y="${y + 11}" font-size="11" style="fill:var(--text-color)">${esc(r.label)}</text>
-        <text x="${WIDTH}" y="${y + 11}" font-size="11" text-anchor="end" style="fill:var(--muted-text)">${esc(fmt(r.value))}</text>
-        <rect x="0" y="${y + 16}" width="${w}" height="8" rx="4" style="fill:${r.other ? 'var(--chart-other)' : colors[r.label]}"></rect></g>`;
-    }).join('');
-    el.innerHTML = svg(rows.length * rowH, body, t('Spending by category')) +
+    const list = rows.map(r => `<li class="chart-row" title="${esc(r.label)}: ${esc(fmt(r.value))}">
+        <span class="chart-name">${esc(r.label)}</span>${bar(r.value, max, r.other ? 'var(--chart-other)' : colors[r.label])}<span class="chart-amount">${esc(fmt(r.value))}</span></li>`).join('');
+    el.innerHTML = `<ul class="chart-rows" aria-label="${esc(t('Spending by category'))}">${list}</ul>` +
       table(rows.map(r => [r.label, fmt(r.value)]), [t('Category'), t('Amount')]);
   }
 
-  // Two bars per person: what they paid (solid) and their share after splits (hatched)
+  // One row per person with two thin bars: what they paid (solid) and their share after splits (hatched).
+  // People with nothing paid and no share this month are left out.
   function peopleChart(el, perPayer, perShare, fmt){
     const names = Array.from(new Set(Object.keys(perPayer || {}).concat(Object.keys(perShare || {})))).filter(Boolean);
     const rows = names.map(name => ({ label: name, paid: Number((perPayer || {})[name]) || 0, share: Number((perShare || {})[name]) || 0 }))
       .filter(r => r.paid > 0 || r.share > 0).sort((a, b) => Math.max(b.paid, b.share) - Math.max(a.paid, a.share));
     if (!rows.length){ empty(el); return; }
     const max = Math.max(...rows.map(r => Math.max(r.paid, r.share)));
-    const id = 'share-hatch-' + (++patternSeq);
-    const rowH = 38;
-    const legendH = 18;
-    const colors = colorsFor(rows.map(r => r.label), people());
-    // Paid is the person's colour, solid; their share is the same colour, hatched over a pale tint
-    const hatch = (pid, color) => `<pattern id="${pid}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <rect width="5" height="5" style="fill:${color}" fill-opacity="0.18"></rect><line x1="0" y1="0" x2="0" y2="5" stroke-width="2" style="stroke:${color}"></line></pattern>`;
-    const defs = `<defs>${hatch(id + '-legend', 'var(--muted-text)')}${rows.map((r, i) => hatch(`${id}-${i}`, colors[r.label])).join('')}</defs>`;
-    const legend = `<g font-size="11" style="fill:var(--muted-text)">
-      <rect x="0" y="2" width="10" height="10" rx="2" style="fill:var(--muted-text)"></rect><text x="14" y="11">${esc(t('Paid'))}</text>
-      <rect x="70" y="2" width="10" height="10" rx="2" fill="url(#${id}-legend)"></rect><text x="84" y="11">${esc(t('Share after splits'))}</text></g>`;
-    const body = rows.map((r, i) => {
-      const y = legendH + i * rowH;
-      const wp = Math.max(r.paid ? 2 : 0, (r.paid / max) * WIDTH);
-      const ws = Math.max(r.share ? 2 : 0, (r.share / max) * WIDTH);
-      return `<g><title>${esc(t('{name}: paid {paid}, share {share}', { name: r.label, paid: fmt(r.paid), share: fmt(r.share) }))}</title>
-        <rect x="0" y="${y}" width="${WIDTH}" height="${rowH - 2}" fill="transparent"></rect>
-        <text x="0" y="${y + 11}" font-size="11" style="fill:var(--text-color)">${esc(r.label)}</text>
-        <text x="${WIDTH}" y="${y + 11}" font-size="11" text-anchor="end" style="fill:var(--muted-text)">${esc(fmt(r.paid))} / ${esc(fmt(r.share))}</text>
-        <rect x="0" y="${y + 16}" width="${wp}" height="7" rx="3.5" style="fill:${colors[r.label]}"></rect>
-        <rect x="0" y="${y + 25}" width="${ws}" height="7" rx="3.5" fill="url(#${id}-${i})"></rect></g>`;
-    }).join('');
-    el.innerHTML = svg(legendH + rows.length * rowH, defs + legend + body, t('Paid and share by person')) +
+    const colors = personColors(rows.map(r => r.label));
+    const legend = `<div class="chart-legend" aria-hidden="true">
+        <span><i class="chart-swatch" style="background:var(--muted-text)"></i>${th('Paid')}</span>
+        <span><i class="chart-swatch" style="background:${hatch('var(--muted-text)')}"></i>${th('Share after splits')}</span></div>`;
+    const list = rows.map(r => `<li class="chart-row chart-row-pair" title="${esc(t('{name}: paid {paid}, share {share}', { name: r.label, paid: fmt(r.paid), share: fmt(r.share) }))}">
+        <span class="chart-name">${esc(r.label)}</span>
+        ${bar(r.paid, max, colors[r.label])}<span class="chart-amount">${esc(fmt(r.paid))}</span>
+        ${bar(r.share, max, hatch(colors[r.label]))}<span class="chart-amount chart-amount-muted">${esc(fmt(r.share))}</span></li>`).join('');
+    el.innerHTML = legend + `<ul class="chart-rows" aria-label="${esc(t('Paid and share by person'))}">${list}</ul>` +
       table(rows.map(r => [r.label, fmt(r.paid), fmt(r.share)]), [t('Person'), t('Paid'), t('Share after splits')]);
   }
 
@@ -213,8 +211,27 @@
     tabs.forEach(tab => tab.addEventListener('click', () => show(tab.dataset.chart)));
     show(tabs.some(tab => tab.dataset.chart === saved) ? saved : tabs[0].dataset.chart);
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupTabs);
-  else setupTabs();
+  // The charts card folds away from its header; open unless this browser folded it last time
+  const COLLAPSED_KEY = 'expenses:chartsCollapsed';
+  function setupCollapse(){
+    const toggle = document.getElementById('charts-toggle');
+    const body = document.getElementById('charts-body');
+    if (!toggle || !body) return;
+    function set(open, remember){
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      body.classList.toggle('hidden', !open);
+      if (remember) {
+        try { if (open) localStorage.removeItem(COLLAPSED_KEY); else localStorage.setItem(COLLAPSED_KEY, '1'); } catch (e) { /* private mode: just not remembered */ }
+      }
+    }
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(COLLAPSED_KEY) === '1'; } catch (e) { collapsed = false; }
+    set(!collapsed, false);
+    toggle.addEventListener('click', () => set(toggle.getAttribute('aria-expanded') !== 'true', true));
+  }
+  function setup(){ setupTabs(); setupCollapse(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
+  else setup();
 
   window.HomeHubExpenseCharts = {
     render(state, fmt){
