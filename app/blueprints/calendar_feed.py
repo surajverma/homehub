@@ -364,6 +364,11 @@ def build_calendar(today: date, cfg) -> str:
     return ''.join(fold(line) + '\r\n' for line in lines)
 
 
+def feed_today() -> date:
+    """The day the feed window is counted from (one place, so tests can freeze it)."""
+    return date.today()
+
+
 @main_bp.route('/calendar.ics', methods=['GET'])
 def calendar_feed():
     cfg = current_app.config.get('HOMEHUB_CONFIG', {})
@@ -371,7 +376,7 @@ def calendar_feed():
     given = request.args.get('token', '')
     if not expected or not given or not _token_matches(given, expected):
         abort(404)
-    body = build_calendar(date.today(), cfg)
+    body = build_calendar(feed_today(), cfg)
     resp = Response(body, content_type='text/calendar; charset=utf-8')
     resp.headers['Cache-Control'] = 'no-store'
     resp.headers['Content-Disposition'] = 'inline; filename="homehub.ics"'

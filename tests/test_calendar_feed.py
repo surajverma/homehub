@@ -14,6 +14,10 @@ from app.blueprints import calendar_feed
 from app.models import Reminder, RecurringReminder
 
 TOKEN = 'test-token-0123456789abcdefghij'
+# The feed window is counted from "today". Tests freeze it, so fixed dates such as
+# 2026-11-20 stay inside the window whatever the real date is.
+TODAY = date(2026, 11, 15)
+REAL_FEED_TODAY = calendar_feed.feed_today
 
 
 def write_config(path, token=None, password=None):
@@ -56,6 +60,15 @@ def client(app):
 @pytest.fixture(autouse=True)
 def floating_by_default(monkeypatch):
     monkeypatch.delenv('TZ', raising=False)
+
+
+@pytest.fixture(autouse=True)
+def frozen_today(monkeypatch):
+    monkeypatch.setattr(calendar_feed, 'feed_today', lambda: TODAY)
+
+
+def test_feed_today_is_the_real_date():
+    assert REAL_FEED_TODAY() == date.today()
 
 
 def feed(client, token=TOKEN):
@@ -190,7 +203,7 @@ def test_site_password_still_gates_every_other_route(app, client, configure):
 
 def test_feed_works_without_login_when_site_password_set(client, configure):
     configure(token=TOKEN, password='secret-site-password')
-    add_reminder_direct(client.application, title='Dentist', d=date.today())
+    add_reminder_direct(client.application, title='Dentist', d=TODAY)
     resp = client.get(f'/calendar.ics?token={TOKEN}')
     assert resp.status_code == 200
     assert 'SUMMARY:Dentist\r\n' in resp.get_data(as_text=True)
@@ -255,7 +268,7 @@ def add_reminder_direct(app, title, d, **fields):
 def test_trashed_excluded_completed_included(app, client, configure):
     configure(token=TOKEN)
     from app.clock import utcnow
-    today = date.today()
+    today = TODAY
     add_reminder_direct(app, 'Kept', today)
     add_reminder_direct(app, 'Done', today, completed_at=utcnow())
     add_reminder_direct(app, 'Trashed', today, deleted_at=utcnow())
@@ -267,7 +280,7 @@ def test_trashed_excluded_completed_included(app, client, configure):
 
 def test_window_is_60_days_back_to_365_ahead(app, client, configure):
     configure(token=TOKEN)
-    today = date.today()
+    today = TODAY
     for title, offset in (('Back60', -60), ('Back61', -61), ('Ahead365', 365), ('Ahead366', 366)):
         add_reminder_direct(app, title, today + timedelta(days=offset))
     body = feed(client)
@@ -389,13 +402,13 @@ def test_fold_helper_never_splits_characters():
 def test_stable_uids(app, client, configure):
     configure(token=TOKEN)
     rid = add_reminder(client, title='Stable', start_date='2026-11-20')['reminder']['id']
-    rule_id = add_reminder(client, title='Weekly', start_date=date.today().strftime('%Y-%m-%d'),
+    rule_id = add_reminder(client, title='Weekly', start_date=TODAY.strftime('%Y-%m-%d'),
                            recurring={'interval': 1, 'unit': 'week'})['recurring_id']
     first = feed(client)
     (ev,) = by_summary(first, 'Stable')
     assert ev['UID'] == f'reminder-{rid}@homehub'
     weekly = by_summary(first, 'Weekly')
-    assert weekly[0]['UID'] == f'rule-{rule_id}-{date.today().strftime("%Y%m%d")}@homehub'
+    assert weekly[0]['UID'] == f'rule-{rule_id}-{TODAY.strftime("%Y%m%d")}@homehub'
     assert len({e['UID'] for e in weekly}) == len(weekly)
     # Editing keeps the UID, and a second fetch gives the same UIDs
     client.patch(f'/api/reminders/{rid}', json={'title': 'Stable renamed', 'creator': 'Mom'})
@@ -415,7 +428,7 @@ def _months_in(start, end):
 
 def test_recurring_dates_match_homehub_calendar(app, client, configure):
     configure(token=TOKEN)
-    today = date.today()
+    today = TODAY
     # A 31st inside the window: monthly rules on it clamp to the month end
     d31 = next(today - timedelta(days=i) for i in range(62) if (today - timedelta(days=i)).day == 31)
     add_reminder(client, title='Rent', start_date=d31.strftime('%Y-%m-%d'), recurring={'interval': 1, 'unit': 'month'})
@@ -487,7 +500,7 @@ def test_monthly_rule_on_31st_matches_api_for_fixed_months(app, configure):
 def test_trashed_stored_occurrence_falls_back_to_rule_like_api(app, client, configure):
     configure(token=TOKEN)
     from app.clock import utcnow
-    today = date.today()
+    today = TODAY
     rule_id = add_reminder(client, title='Daily', start_date=today.strftime('%Y-%m-%d'),
                            recurring={'interval': 1, 'unit': 'day'})['recurring_id']
     add_reminder_direct(app, 'Daily', today, recurring_id=rule_id, deleted_at=utcnow())
@@ -542,7 +555,7 @@ def test_tzid_without_dst(client, configure, monkeypatch):
 def test_tzid_with_dst_transitions(client, configure, monkeypatch):
     monkeypatch.setenv('TZ', 'Europe/Berlin')
     configure(token=TOKEN)
-    today = date.today()
+    today = TODAY
     add_reminder(client, title='Call', start_date=today.strftime('%Y-%m-%d'), start_time='18:00',
                  recurring={'interval': 1, 'unit': 'week'})
     add_reminder(client, title='Holiday', start_date=today.strftime('%Y-%m-%d'))
@@ -565,7 +578,7 @@ def test_parses_with_icalendar(client, configure, monkeypatch, tz):
             pytest.skip('no time zone data')
         monkeypatch.setenv('TZ', tz)
     configure(token=TOKEN)
-    today = date.today()
+    today = TODAY
     add_reminder(client, title='Tom & Jerry; a, b', start_date='2026-11-20', start_time='09:00',
                  end_date='2026-11-20', end_time='10:00', description='a\nb', category='health')
     add_reminder(client, title='Trip', start_date='2026-11-20', end_date='2026-11-23')
