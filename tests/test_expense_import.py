@@ -239,12 +239,16 @@ def test_expenses_page_links_to_import(client):
     ('-.5', -0.5),
     ('1.5e3', 1500),
     ('1e+06', 1000000),
+    ('1,234,567', 1234567),
+    ('1,23,45,678', 12345678),
+    ('12,345.50', 12345.5),
 ])
 def test_parse_number_reads_whole_numbers(cell, expected):
     assert parse_number(cell) == expected
 
 
-@pytest.mark.parametrize('cell', ['1.234,56', '12 34', '1,234.5.6', '5 apples 3', 'abc', '1.2.3'])
+@pytest.mark.parametrize('cell', ['1.234,56', '12 34', '1,234.5.6', '5 apples 3', 'abc', '1.2.3',
+                                  '12,34', '1,2,3', '1234,567', '1,23,4567'])
 def test_parse_number_refuses_anything_that_is_not_one_number(cell):
     value = parse_number(cell)
     assert value != value  # NaN
@@ -343,3 +347,30 @@ def test_split_weights_must_be_finite(client, cell):
     assert entries(client) == []
     # The expenses page still works
     assert client.get('/api/expenses/month?year=2026&month=10').status_code == 200
+
+
+def test_comma_that_is_not_a_thousands_separator_cannot_be_imported(client):
+    upload(client, 'date,title,amount,payer\n2026-10-01,Milk,"12,34",Alice\n2026-10-02,Rent,"1,23,456",Alice\n')
+    page = client.get('/expenses/import').get_data(as_text=True)
+    assert 'Not a number' in page and '1 cannot be imported' in page
+    client.post('/expenses/import/confirm', data={'user': 'Alice', 'rows': ['1', '2']})
+    assert [(t, a) for _d, t, a, *_ in entries(client)] == [('Rent', 123456.0)]
+
+
+def test_huge_split_weight_is_refused_on_import(client):
+    upload(client, 'date,title,amount,payer,split\n2026-10-01,Milk,50,Alice,Alice (1' + '0' * 308 + ');Bob (1)\n')
+    assert 'The split weight is not a number' in client.get('/expenses/import').get_data(as_text=True)
+
+
+def test_month_view_survives_huge_weights_already_stored(client):
+    # Rows saved before the limit existed, or edited by hand in the database
+    huge = json.dumps({'mode': 'shares', 'weights': {'Alice': 1e308, 'Bob': 1e308, 'Carol': 1}})
+    odd = json.dumps({'mode': 'shares', 'weights': {'Alice': float('inf'), 'Bob': 2}})
+    add(client, date=date(2026, 10, 1), title='Huge', amount=1000, payer='Alice', split_with=huge)
+    add(client, date=date(2026, 10, 2), title='Odd', amount=30, payer='Bob', split_with=odd)
+    resp = client.get('/api/expenses/month?year=2026&month=10')
+    assert resp.status_code == 200
+    shares = {e['title']: e['shares'] for d in resp.get_json()['by_date'].values() for e in d['entries']}
+    assert shares['Huge'] == {'Alice': 500.0, 'Bob': 500.0, 'Carol': 0.0}
+    assert shares['Odd'] == {'Bob': 30.0}
+    assert client.get('/expenses').status_code == 200

@@ -169,14 +169,18 @@ def test_create_backup_in_background_then_list_and_download(client, home):
 def test_status_while_running(client, home):
     import threading
     release = threading.Event()
+    reported = threading.Event()
 
     def slow(progress):
         progress(5, 10)
+        reported.set()
         release.wait(5)
         return {'name': 'x.zip'}
 
     backup.jobs.start('backup', slow)
     try:
+        # The job runs in its own thread; ask for its status only once it has reported progress
+        assert reported.wait(5)
         data = client.get('/admin/backups/status?user=Administrator').get_json()
         assert data['running'] and data['kind'] == 'backup' and data['done'] == 5 and data['total'] == 10
         # Only one job at a time

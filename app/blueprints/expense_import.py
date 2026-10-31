@@ -25,7 +25,7 @@ from ..blueprints import main_bp
 from ..models import db, ExpenseEntry, parse_split
 from ..security import sanitize_text
 from ..undo import offer_undo, restorer, row_to_dict, same_record
-from .expenses import _CSV_FORMULA_PREFIXES, _amount_problem, _load_expense_settings, _split_people
+from .expenses import MAX_SPLIT_WEIGHT, _CSV_FORMULA_PREFIXES, _amount_problem, _load_expense_settings, _split_people
 
 MAX_ROWS = 5000
 # Checked before the file is read, separately from the site-wide upload limit
@@ -62,8 +62,11 @@ DATE_FORMATS = {
     'mdy': ('%m/%d/%Y', '%m-%d-%Y', '%m/%d/%y'),
 }
 _TIME_SUFFIX_RE = re.compile(r'[ T]\d{1,2}:\d{2}(:\d{2})?(\s*[AaPp][Mm])?$')
-# The whole cell, once currency text is taken off: 1234.5, 1,234.50, 1,23,456.50, 1.5e3 (not 1.234,56)
-_NUMBER_RE = re.compile(r'[-+]?(?:\d+(?:,\d+)*(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?')
+# The whole cell, once currency text is taken off: 1234.5, 1,234.50, 1,23,456.50, 1.5e3.
+# Commas only as thousands separators, western (1,234,567) or Indian (1,23,45,678), so "12,34",
+# "1,2,3" and "1.234,56" are refused rather than guessed.
+_NUMBER_RE = re.compile(
+    r'[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})+,\d{3}|\d+)(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?')
 # Text before the number ("Rs. ", "INR ", "₹"), stopping where a sign, a decimal point or a digit starts it
 _NUMBER_PREFIX_RE = re.compile(r'^\D*?(?=[-+]?\.?\d)')
 # Text after the last digit (" INR", " Dr")
@@ -185,8 +188,8 @@ def parse_split_cell(value: str):
         if match:
             name, weight = match.group(1).strip(), float(match.group(2))
             percent = percent or bool(match.group(3))
-            # A weight with hundreds of digits reads as infinity, which would break every balance later
-            if not math.isfinite(weight):
+            # A weight with hundreds of digits reads as infinity; refuse that and anything absurdly large
+            if not math.isfinite(weight) or weight > MAX_SPLIT_WEIGHT:
                 raise SplitWeightError(part)
             if name and weight > 0:
                 weights[name] = weights.get(name, 0) + weight

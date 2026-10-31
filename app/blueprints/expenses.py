@@ -143,11 +143,16 @@ def _split_shares(amount: float, weights: dict, precision: int = 2, payer: str =
     so settling the displayed figures never leaves a stray 0.01 behind. The payer
     absorbs the rounding difference when they share the expense.
     """
-    total = sum(weights.values())
-    if total <= 0:
+    # Each weight as a fraction of the largest first, so even huge weights (or older rows holding
+    # them) never overflow; unusable weights count as nothing
+    weights = {m: w for m, w in weights.items() if isinstance(w, (int, float)) and math.isfinite(w) and w > 0}
+    if not weights:
         return {}
+    largest = max(weights.values())
+    weights = {m: w / largest for m, w in weights.items()}
+    total = sum(weights.values())
     factor = 10 ** precision
-    units = {m: round(amount * factor * w / total) for m, w in weights.items()}
+    units = {m: round(amount * factor * (w / total)) for m, w in weights.items()}
     diff = round(amount * factor) - sum(units.values())
     if diff and payer in units:
         units[payer] += diff
@@ -156,6 +161,10 @@ def _split_shares(amount: float, weights: dict, precision: int = 2, payer: str =
         for m in list(units)[:abs(diff)]:
             units[m] += step
     return {m: u / factor for m, u in units.items()}
+
+
+# The largest split value accepted (shares, percent or amount); far above any real split
+MAX_SPLIT_WEIGHT = 1e12
 
 
 def _split_people(config) -> list:
@@ -231,7 +240,7 @@ def _split_from_form(form, total: float | None = None):
             w = float(form.get(f'split_weight__{raw}') or 0)
         except (TypeError, ValueError):
             raise SplitError(_('Invalid split value for %(name)s.', name=name))
-        if not math.isfinite(w) or w < 0:
+        if not math.isfinite(w) or w < 0 or w > MAX_SPLIT_WEIGHT:
             raise SplitError(_('Invalid split value for %(name)s.', name=name))
         if w > 0:
             weights[name] = w
