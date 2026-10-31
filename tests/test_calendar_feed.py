@@ -20,11 +20,16 @@ TODAY = date(2026, 11, 15)
 REAL_FEED_TODAY = calendar_feed.feed_today
 
 
-def write_config(path, token=None, password=None):
+_UNSET = object()
+
+
+def write_config(path, token=None, password=None, alerts=_UNSET):
     with open(config_module.EXAMPLE_CONFIG_PATH, encoding='utf-8') as fh:
         cfg = yaml.safe_load(fh)
     if token is not None:
         cfg['calendar_feed'] = {'token': token}
+        if alerts is not _UNSET:
+            cfg['calendar_feed']['alerts'] = alerts
     if password:
         cfg['password'] = password
     with open(path, 'w', encoding='utf-8') as fh:
@@ -38,8 +43,8 @@ def write_config(path, token=None, password=None):
 def configure(tmp_path, monkeypatch):
     path = str(tmp_path / 'config.yml')
 
-    def _configure(token=None, password=None):
-        write_config(path, token=token, password=password)
+    def _configure(token=None, password=None, alerts=_UNSET):
+        write_config(path, token=token, password=password, alerts=alerts)
         monkeypatch.setattr(config_module, 'CONFIG_PATH', path)
     return _configure
 
@@ -82,10 +87,14 @@ def unfold(body):
 
 
 def events(body):
-    """Each VEVENT as a dict of property line name (with params) -> value."""
+    """Each VEVENT as a dict of property line name (with params) -> value, alarms under 'ALARMS'."""
     out = []
     for block in re.findall(r'BEGIN:VEVENT\r\n(.*?)END:VEVENT', unfold(body), re.S):
-        props = {}
+        alarms = []
+        for alarm in re.findall(r'BEGIN:VALARM\r\n(.*?)END:VALARM\r\n', block, re.S):
+            alarms.append(dict(line.partition(':')[::2] for line in alarm.split('\r\n') if line))
+        block = re.sub(r'BEGIN:VALARM\r\n.*?END:VALARM\r\n', '', block, flags=re.S)
+        props = {'ALARMS': alarms}
         for line in block.split('\r\n'):
             if line:
                 name, _, value = line.partition(':')
@@ -509,6 +518,70 @@ def test_trashed_stored_occurrence_falls_back_to_rule_like_api(app, client, conf
     assert len(todays) == len(api) == 1
 
 
+# --- Alerts (VALARM) -------------------------------------------------------------------
+
+def test_alerts_on_by_default(client, configure):
+    configure(token=TOKEN)  # no alerts key, like a feed set up before alerts existed
+    add_reminder(client, title='Meeting', start_date='2026-11-20', start_time='09:15')
+    add_reminder(client, title='Holiday', start_date='2026-11-21')
+    body = feed(client)
+    (timed,) = by_summary(body, 'Meeting')
+    (alarm,) = timed['ALARMS']
+    assert alarm['ACTION'] == 'DISPLAY'
+    assert alarm['DESCRIPTION'] == 'Meeting'
+    assert alarm['TRIGGER'] == 'PT0M'
+    assert alarm['UID'] == timed['UID'].replace('@homehub', '-alarm@homehub')
+    (all_day,) = by_summary(body, 'Holiday')
+    (alarm,) = all_day['ALARMS']
+    assert alarm['TRIGGER'] == 'PT9H'
+    assert alarm['UID'] == all_day['UID'].replace('@homehub', '-alarm@homehub')
+
+
+@pytest.mark.parametrize('value', [True, 'yes', 'on'])
+def test_alerts_explicitly_on(client, configure, value):
+    configure(token=TOKEN, alerts=value)
+    add_reminder(client, title='Meeting', start_date='2026-11-20', start_time='09:15')
+    assert len(by_summary(feed(client), 'Meeting')[0]['ALARMS']) == 1
+
+
+@pytest.mark.parametrize('value', [False, 'false', 'off', 'no', 0])
+def test_alerts_off(client, configure, value):
+    configure(token=TOKEN, alerts=value)
+    add_reminder(client, title='Meeting', start_date='2026-11-20', start_time='09:15')
+    add_reminder(client, title='Holiday', start_date='2026-11-21')
+    body = feed(client)
+    assert 'VALARM' not in body
+    assert by_summary(body, 'Meeting') and by_summary(body, 'Holiday')
+
+
+def test_done_reminders_have_no_alert(app, client, configure):
+    configure(token=TOKEN)
+    from app.clock import utcnow
+    add_reminder_direct(app, 'Done', TODAY + timedelta(days=2), completed_at=utcnow())
+    add_reminder_direct(app, 'Open', TODAY + timedelta(days=2))
+    body = feed(client)
+    assert by_summary(body, 'Done')[0]['ALARMS'] == []
+    assert len(by_summary(body, 'Open')[0]['ALARMS']) == 1
+
+
+def test_recurring_alarm_uids_are_stable_and_distinct(client, configure):
+    configure(token=TOKEN)
+    add_reminder(client, title='Pills', start_date=TODAY.isoformat(), start_time='08:00',
+                 recurring={'interval': 1, 'unit': 'day'})
+    first = [e['ALARMS'][0]['UID'] for e in by_summary(feed(client), 'Pills')]
+    second = [e['ALARMS'][0]['UID'] for e in by_summary(feed(client), 'Pills')]
+    assert first == second
+    assert len(set(first)) == len(first) > 300
+    assert first[0] == f'rule-1-{TODAY.strftime("%Y%m%d")}-alarm@homehub'
+
+
+def test_alarm_description_is_escaped(client, configure):
+    configure(token=TOKEN)
+    add_reminder(client, title='Pay rent, water; gas', start_date='2026-11-20', start_time='09:00')
+    (ev,) = [e for e in events(feed(client)) if e['SUMMARY'].startswith('Pay rent')]
+    assert ev['ALARMS'][0]['DESCRIPTION'] == 'Pay rent\\, water\\; gas'
+
+
 # --- Time zones ------------------------------------------------------------------------
 
 def test_floating_times_without_tz(client, configure):
@@ -570,14 +643,15 @@ def test_tzid_with_dst_transitions(client, configure, monkeypatch):
 
 # --- Real parser -----------------------------------------------------------------------
 
+@pytest.mark.parametrize('alerts', [True, False])
 @pytest.mark.parametrize('tz', [None, 'Europe/Berlin', 'America/New_York', 'Asia/Kolkata'])
-def test_parses_with_icalendar(client, configure, monkeypatch, tz):
+def test_parses_with_icalendar(client, configure, monkeypatch, tz, alerts):
     icalendar = pytest.importorskip('icalendar')
     if tz:
         if not _zone_available(tz):
             pytest.skip('no time zone data')
         monkeypatch.setenv('TZ', tz)
-    configure(token=TOKEN)
+    configure(token=TOKEN, alerts=alerts)
     today = TODAY
     add_reminder(client, title='Tom & Jerry; a, b', start_date='2026-11-20', start_time='09:00',
                  end_date='2026-11-20', end_time='10:00', description='a\nb', category='health')
@@ -599,4 +673,14 @@ def test_parses_with_icalendar(client, configure, monkeypatch, tz):
         assert start.tzinfo is None
     trip = next(e for e in evs if str(e['SUMMARY']) == 'Trip')
     assert trip.decoded('DTEND') - trip.decoded('DTSTART') == timedelta(days=4)
+    if alerts:
+        assert all(len(e.walk('VALARM')) == 1 for e in evs)
+        (tom_alarm,) = tom.walk('VALARM')
+        assert tom_alarm.decoded('TRIGGER') == timedelta(0)
+        assert str(tom_alarm['ACTION']) == 'DISPLAY' and str(tom_alarm['DESCRIPTION']) == 'Tom & Jerry; a, b'
+        (trip_alarm,) = trip.walk('VALARM')
+        assert trip_alarm.decoded('TRIGGER') == timedelta(hours=9)
+    else:
+        assert not any(e.walk('VALARM') for e in evs)
     assert not cal.errors
+    assert all(not e.errors for e in cal.walk())

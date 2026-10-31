@@ -152,16 +152,14 @@ reminders:
       label: Family
       color: "#2563eb"
 
-# Calendar subscription feed: lets calendar apps on your devices (Apple Calendar, Thunderbird,
-# ICSx5 on Android) show HomeHub reminders. Read-only; nothing is sent to any calendar.
-# Google Calendar and Outlook fetch from their own servers, so they can't reach a home network.
-# Off while the token is empty. Set a long random string (at least 16 characters), e.g. from
+# Calendar subscription feed: HomeHub reminders, with alerts, in the calendar app on your
+# phone or computer. Read-only. Off while the token is empty. Make a token (16+ characters):
 #   python -c "import secrets; print(secrets.token_urlsafe(32))"
-# then subscribe to http://<your-homehub>/calendar.ics?token=<token>
-# Anyone with the link can read your reminders. Change the token to revoke old links;
-# it takes effect without a restart. Times use the container's TZ setting.
+# and subscribe to http://<your-homehub>/calendar.ics?token=<token>. Anyone with the link
+# can read your reminders; change the token to revoke it (no restart needed).
 calendar_feed:
   token: ""
+  alerts: true # false = events without phone alerts
 
 # Weather widget on the Welcome page (Open-Meteo, no account needed). Off unless enabled.
 weather:

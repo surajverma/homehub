@@ -12,6 +12,10 @@ Times in HomeHub are local wall-clock ``HH:MM`` strings. When the ``TZ`` environ
 variable names a known zone they are sent with that TZID and a matching VTIMEZONE;
 otherwise they are sent as floating local times, which calendar apps show in the
 viewer's own zone.
+
+Unless ``calendar_feed.alerts`` is false, each event carries one alarm: at the start time
+for timed reminders, at 09:00 on the first day for all-day ones. Reminders already marked
+done get none.
 """
 import hmac
 import html
@@ -54,6 +58,20 @@ def configured_token(cfg) -> str | None:
             'calendar_feed.token is shorter than %d characters, so the calendar feed stays off', MIN_TOKEN_LENGTH)
         return None
     return token
+
+
+_OFF_WORDS = {'false', 'no', 'off', '0', ''}
+
+
+def alerts_enabled(cfg) -> bool:
+    """``calendar_feed.alerts``: phone alerts on events, on unless set to false."""
+    section = (cfg or {}).get('calendar_feed')
+    value = section.get('alerts', True) if isinstance(section, dict) else True
+    if value is None:
+        return True
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() not in _OFF_WORDS
 
 
 def _token_matches(given: str, expected: str) -> bool:
@@ -271,7 +289,30 @@ def _event_times(start_d, start_t, end_d, end_t):
     return False, start, end
 
 
-def _event_lines(uid, summary, description, category, stamp, timing, tzid):
+# All-day reminders alert at this time on their first day
+ALL_DAY_ALERT = 'PT9H'
+
+
+def alarm_uid(event_uid: str) -> str:
+    """A stable alarm UID derived from the event UID, so refreshes don't add duplicate alarms."""
+    local, _, domain = event_uid.partition('@')
+    return f'{local}-alarm@{domain}' if domain else f'{event_uid}-alarm'
+
+
+def _alarm_lines(uid, summary, all_day):
+    auid = alarm_uid(uid)
+    return [
+        'BEGIN:VALARM',
+        f'UID:{auid}',
+        f'X-WR-ALARMUID:{auid}',  # the name older Apple Calendar versions use
+        'ACTION:DISPLAY',
+        f'DESCRIPTION:{escape_text(summary)}',
+        f'TRIGGER:{ALL_DAY_ALERT if all_day else "PT0M"}',
+        'END:VALARM',
+    ]
+
+
+def _event_lines(uid, summary, description, category, stamp, timing, tzid, alarm=False):
     all_day, start, end = timing
     lines = ['BEGIN:VEVENT', f'UID:{uid}', f'DTSTAMP:{stamp}']
     if all_day:
@@ -286,7 +327,10 @@ def _event_lines(uid, summary, description, category, stamp, timing, tzid):
         lines.append(f'DESCRIPTION:{escape_text(description)}')
     if category:
         lines.append(f'CATEGORIES:{escape_text(category)}')
-    lines += ['TRANSP:TRANSPARENT', 'END:VEVENT']
+    lines.append('TRANSP:TRANSPARENT')
+    if alarm:
+        lines += _alarm_lines(uid, summary, all_day)
+    lines.append('END:VEVENT')
     return lines
 
 
@@ -315,6 +359,8 @@ def collect_events(today: date, cfg) -> list[dict]:
             'category': labels.get(r.category, r.category) if r.category else None,
             'stamp': _utc_stamp(r.updated_at or r.timestamp),
             'timing': _event_times(start_d, start_t, r.end_date, _parse_hhmm(r.end_time)),
+            # A reminder already marked done doesn't need to ring
+            'done': r.completed_at is not None,
         })
 
     now_stamp = _utc_stamp(None)
@@ -332,6 +378,7 @@ def collect_events(today: date, cfg) -> list[dict]:
                 'category': labels.get(rr.category, rr.category) if rr.category else None,
                 'stamp': now_stamp,
                 'timing': _event_times(d, _parse_hhmm(rr.time), None, None),
+                'done': False,
             })
     events.sort(key=lambda e: e['sort'])
     return events
@@ -358,8 +405,10 @@ def build_calendar(today: date, cfg) -> str:
         first = min([t[1].date() for t in timed], default=today)
         last = max([t[2].date() for t in timed], default=today)
         lines += vtimezone_lines(tzid, zone, first, last)
+    alerts = alerts_enabled(cfg)
     for e in events:
-        lines += _event_lines(e['uid'], e['title'], e['description'], e['category'], e['stamp'], e['timing'], tzid)
+        lines += _event_lines(e['uid'], e['title'], e['description'], e['category'], e['stamp'], e['timing'], tzid,
+                              alarm=alerts and not e['done'])
     lines.append('END:VCALENDAR')
     return ''.join(fold(line) + '\r\n' for line in lines)
 
