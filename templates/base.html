@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.instance_name }} - HomeHub</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='output.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('output.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,6 +108,14 @@
     <div class="flex flex-1">
         <!-- Global JSON data for client scripts -->
         <script id="familyData" type="application/json">{{ config.family_members | tojson }}</script>
+        {%- if config.member_colors %}
+        {# Colours picked in config.yml: one variable per person, with a lighter shade for dark mode #}
+        <style id="member-colour-vars">
+        :root:not([data-theme="dark"]), [data-theme="light"] { {% for c in config.member_colors.values() %}{{ c.var }}: {{ c.light }}; {% endfor %}}
+        [data-theme="dark"] { {% for c in config.member_colors.values() %}{{ c.var }}: {{ c.dark }}; {% endfor %}}
+        </style>
+        <script id="memberColors" type="application/json">{{ config.member_colors | tojson }}</script>
+        {%- endif %}
         <!-- Sidebar -->
         <aside id="sidebar" class="sidebar w-64 flex flex-col fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 z-40">
             <div class="sidebar-brand h-16 px-5 flex items-center justify-between gap-2">
@@ -212,6 +220,6 @@
     </div>
     
 </body>
-<script src="/static/js/reminders_api.js"></script>
+<script src="{{ asset_url('js/reminders_api.js') }}"></script>
 <script src="{{ asset_url('js/base/sw_register.js') }}"></script>
 </html>

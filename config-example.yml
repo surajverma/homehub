@@ -1,24 +1,26 @@
-instance_name: "My Home Hub"
-password: "" #leave blank for password less access
-admin_name: "Administrator" # protect it with: docker exec -it homehub flask set-admin-password
-max_upload_mb: 1024 # largest upload (Shared Cloud, PDFs) in MB; 0 removes the limit
-language: en # UI language for the whole household, a code from "Supported languages" in the README. Anything else falls back to English
-feature_toggles:
-  shopping_list: true
-  media_downloader: true
-  pdf_compressor: true
-  qr_generator: true
-  notes: true
-  shared_cloud: true
-  who_is_home: true
-  personal_status: true
-  chores: true
-  recipes: true
-  expiry_tracker: true
-  url_shortener: false
-  expense_tracker: true
-  calendar: true
+# HomeHub settings
+#
+# Copy this file to config.yml and edit it. Changes are usually picked up on the next
+# page load; if one is not, restart HomeHub (docker compose restart homehub).
+# Quotes are optional, also around hex colours such as #2563eb.
+# Everything below "OPTIONAL" can be deleted: HomeHub uses the default shown for it.
 
+# ---------------------------------------------------------------------------
+# BASICS
+# ---------------------------------------------------------------------------
+
+instance_name: "My Home Hub" # shown in the sidebar and the browser tab
+
+# UI language for the whole household: a code from "Supported languages" in the README.
+# Anything else falls back to English.
+language: en
+
+# The admin manages settings, budgets and backups. To protect it with a password, run:
+#   docker exec -it homehub flask set-admin-password
+admin_name: "Administrator"
+
+# Everyone in the household, as they appear in the user picker, splits and chores.
+# To give someone their own chart colour, see "Colours" under OPTIONAL.
 family_members:
   - Mom
   - Dad
@@ -26,16 +28,57 @@ family_members:
   - Vivek
   - India
 
+# ---------------------------------------------------------------------------
+# FEATURES
+# ---------------------------------------------------------------------------
+
+# true shows a feature, false hides it. Keep every line: for most features a missing
+# line counts as false (calendar, expense_tracker, who_is_home and personal_status are
+# the exceptions and stay on).
+feature_toggles:
+  notes: true
+  shared_cloud: true # shared file uploads
+  shopping_list: true
+  calendar: true
+  chores: true # to-do list and chores
+  recipes: true
+  expiry_tracker: true
+  url_shortener: false
+  media_downloader: true
+  pdf_compressor: true
+  qr_generator: true
+  expense_tracker: true
+  who_is_home: true # Welcome page: who is home right now
+  personal_status: true # Welcome page: a short status per person
+
+# ---------------------------------------------------------------------------
+# OPTIONAL: delete any block you do not need
+# ---------------------------------------------------------------------------
+
+# Site password, asked once per browser. Without it (or left empty) anyone on your
+# network can open HomeHub.
+password: ""
+
+# Largest upload (Shared Cloud, PDFs) in MB. 0 removes the limit. Default: 1024.
+max_upload_mb: 1024
+
+# Colours for people in the expense charts: a colour name (teal, red) or hex.
+# Without one, each person gets a colour from the default palette by their place in
+# family_members, and the admin comes after the family. To pick one, write that person
+# in family_members as a name with a colour:
+#   family_members:
+#     - Mom
+#     - name: Dad
+#       color: "#7c3aed"
+# admin_color: "#0d9488"
+
+# Reminders and calendar. Without this block: 12-hour times, weeks starting on Sunday,
+# and reminders without categories.
 reminders:
-  # time_format controls how reminder times are displayed in the UI.
-  # Allowed values: "12h" (default) or "24h". Remove or leave blank to fall back to 12h.
-  time_format: 12h
-
-  # calendar_start_day controls which day the reminders calendar starts on.
-  # Accepts full weekday names (sunday..saturday) or numeric 0-6 where 0=Sunday.  
-  calendar_start_day: sunday #default is Sunday
-
-  # Example reminder categories (keys lowercase no spaces recommended)
+  time_format: 12h # 12h or 24h
+  calendar_start_day: sunday # a weekday name (sunday to saturday) or 0-6, where 0 is Sunday
+  # Categories to pick from when adding a reminder. key: short id (lowercase, no spaces),
+  # label: the name shown, color: a colour name or hex.
   categories:
     - key: health
       label: Health
@@ -50,15 +93,17 @@ reminders:
       label: Family
       color: "#2563eb"
 
+# Weather widget on the Welcome page (Open-Meteo, no account needed). Off unless enabled.
 weather:
   enabled: false
-  label: "" # optional location label (appears on right of header). Leave blank to hide.
-  latitude: "" # optional, leave empty to use browser geolocation
-  longitude: "" # optional, leave empty to use browser geolocation
-  timezone: "" # optional, e.g., "Europe/Kyiv" or "America/New_York"; if unset, API uses timezone=auto
-  units: metric # metric or imperial (default: metric)
-  view: compact # compact or detailed (detailed also shows today's forecast: sunrise, sunset, UV, rain %, highs/lows)
+  label: "" # place name shown on the widget; empty hides it
+  latitude: "" # empty: use the browser's location
+  longitude: "" # empty: use the browser's location
+  timezone: "" # e.g. "Asia/Kolkata" or "America/New_York"; empty: detected automatically
+  units: metric # metric or imperial
+  view: compact # compact, or detailed (adds today's sunrise, sunset, UV, rain chance, high and low)
 
-#Optional: accent colour. See the README "Theming" section for every key.
+# Colours of the app. Without this block HomeHub uses its default blue look.
+# The README "Theming" section lists every key.
 theme:
   primary_color: "#1d4ed8"

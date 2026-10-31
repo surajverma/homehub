@@ -138,6 +138,18 @@ def _render_dashboard(calendar_only=False):
             )
         except Exception:
             home_chores = []
+    budget_alerts, budget_settings = [], {}
+    if not calendar_only and config.get('feature_toggles', {}).get('expense_tracker', True):
+        from .expenses import _generate_recurring_entries_until, _load_expense_settings, budgets_over
+        try:
+            # Recurring days are added first, so the figures match the expenses page
+            _generate_recurring_entries_until(date.today())
+            budget_alerts = budgets_over(date.today())
+            budget_settings = _load_expense_settings()
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception('Could not check budgets for the Welcome page')
+            budget_alerts = []
     return render_template(
         'index.html',
         config=config,
@@ -148,6 +160,8 @@ def _render_dashboard(calendar_only=False):
         reminder_categories=reminder_categories,
         home_chores=home_chores,
         show_chores_on_homepage=show_chores_on_homepage,
+        budget_alerts=budget_alerts,
+        budget_settings=budget_settings,
     )
 
 

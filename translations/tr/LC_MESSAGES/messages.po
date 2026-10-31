@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-17 16:40+0530\n"
+"POT-Creation-Date: 2026-10-31 10:18+0000\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -50,19 +50,116 @@ msgstr "Giriş yapıldı."
 msgid "Invalid password"
 msgstr "Hatalı şifre"
 
-#: app/blueprints/auth.py
+#: app/blueprints/auth.py app/blueprints/backups.py
+#: templates/backup_restore.html
 #, python-format
 msgid "Too many attempts. Try again in %(num)s second."
 msgid_plural "Too many attempts. Try again in %(num)s seconds."
 msgstr[0] "Çok fazla deneme. %(num)s saniye sonra tekrar deneyin."
 
-#: app/blueprints/auth.py
+#: app/blueprints/auth.py app/blueprints/backups.py
 msgid "Incorrect admin password"
 msgstr "Yönetici şifresi hatalı"
 
 #: app/blueprints/auth.py
 msgid "Logged out."
 msgstr "Çıkış yapıldı."
+
+#: app/blueprints/backups.py
+msgid "There is no database to back up yet."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "Not enough free disk space for this backup."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "A backup or restore is already running. Wait for it to finish."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "That file is not a zip file."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "This backup contains unsafe file paths and was rejected."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "Choose at least one part to restore."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "This is not a valid HomeHub backup, or it is damaged."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "Database & settings"
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "Shared Cloud uploads"
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "PDFs"
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "Downloaded media"
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "config.yml"
+msgstr ""
+
+#: app/blueprints/backups.py
+#, python-format
+msgid "Backups need an admin password. Set one on the server with %(command)s. Until then, use flask backup and flask restore on the server. See the README for details: %(url)s"
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "Only admin can manage backups."
+msgstr ""
+
+#: app/blueprints/backups.py
+#, python-format
+msgid "Backup %(name)s is ready."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "Restore complete. Restart HomeHub now so it uses the restored data."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "The config.yml from the backup could not be read."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "That backup was not found."
+msgstr ""
+
+#: app/blueprints/backups.py
+#, python-format
+msgid "Backup %(name)s deleted."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "Could not delete that backup."
+msgstr ""
+
+#: app/blueprints/backups.py app/blueprints/expense_import.py
+#: app/blueprints/uploads.py
+msgid "No file selected."
+msgstr "Hiç dosya seçilmedi."
+
+#: app/blueprints/backups.py
+msgid "Could not save the uploaded backup."
+msgstr ""
+
+#: app/blueprints/backups.py
+msgid "Restore cancelled. The uploaded file was removed from the server."
+msgstr ""
 
 #: app/blueprints/chores.py
 msgid "Recurring chore end date cannot be before the start date."
@@ -257,6 +354,77 @@ msgstr "Durum kaldırma için geçersiz kullanıcı."
 msgid "Status removed."
 msgstr "Durum kaldırıldı."
 
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "Date not recognised: \"%(value)s\"."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "Not a number: \"%(value)s\"."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "The split weight is not a number: \"%(value)s\"."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+msgid "The title is empty."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+msgid "No amount (for example a credit or a balance line)."
+msgstr ""
+
+#: app/blueprints/expense_import.py app/blueprints/expenses.py
+msgid "Invalid amount."
+msgstr "Geçersiz tutar."
+
+#: app/blueprints/expense_import.py
+msgid "Choose who paid, below."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+msgid "A settlement needs exactly one person in the split column."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+msgid "That file could not be read. Check that it is a CSV file and try again."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "That file is larger than %(size)s MB. Split it into smaller files."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+msgid "That file has no rows to import."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "That file has more than %(max)s rows. Split it into smaller files."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+msgid "The import has expired. Upload the file again."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+msgid "Choose who you are in the user menu before importing."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+msgid "No rows selected to import."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "%(num)s expense imported."
+msgid_plural "%(num)s expenses imported."
+msgstr[0] ""
+
 #: app/blueprints/expenses.py static/js/pages/expenses_recurring.js
 msgid "Unit price must be greater than zero."
 msgstr "Birim fiyat sıfırdan büyük olmalı."
@@ -287,10 +455,6 @@ msgstr "Yüzdelerin toplamı %(entered)s%%, 100%% değil."
 #: app/blueprints/expenses.py
 msgid "Split amounts must add up to the expense amount."
 msgstr "Paylaşım tutarlarının toplamı harcama tutarına eşit olmalı."
-
-#: app/blueprints/expenses.py
-msgid "Invalid amount."
-msgstr "Geçersiz tutar."
 
 #: app/blueprints/expenses.py
 msgid "Recurring expense added."
@@ -412,6 +576,20 @@ msgid "Failed to save settings."
 msgstr "Ayarlar kaydedilemedi."
 
 #: app/blueprints/expenses.py
+#, python-format
+msgid "Invalid budget for %(name)s."
+msgstr ""
+
+#: app/blueprints/expenses.py static/js/pages/expense_charts.js
+#: templates/expenses_recurring.html templates/index.html
+msgid "Overall"
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Budgets saved."
+msgstr ""
+
+#: app/blueprints/expenses.py
 msgid "Not allowed to delete entry."
 msgstr "Kaydı silme izniniz yok."
 
@@ -485,6 +663,22 @@ msgstr[0] "%(num)s harcama silindi."
 #: app/blueprints/expenses.py
 msgid "Invalid month parameter. Must be an integer between 1 and 12."
 msgstr "Geçersiz ay parametresi. 1 ile 12 arasında bir tam sayı olmalı."
+
+#: app/blueprints/expenses.py
+msgid "Choose either a month or a start and end date, not both."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Invalid date range. Use start and end dates like 2026-10-01."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "The end date is before the start date."
+msgstr ""
+
+#: app/blueprints/expenses.py
+msgid "Invalid month. Use a month like 2026-10."
+msgstr ""
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
 msgid "Item added."
@@ -621,10 +815,6 @@ msgid_plural "%(num)s files uploaded."
 msgstr[0] "%(num)s dosya yüklendi."
 
 #: app/blueprints/uploads.py
-msgid "No file selected."
-msgstr "Hiç dosya seçilmedi."
-
-#: app/blueprints/uploads.py
 msgid "File deleted."
 msgstr "Dosya silindi."
 
@@ -669,10 +859,10 @@ msgstr "Kenar çubuğunu daralt"
 msgid "Welcome, {name}! — {date}"
 msgstr "Hoş geldin {name}! — {date}"
 
-#: static/js/base/ui.js static/js/pages/shopping.js templates/base.html
-#: templates/chores.html templates/expenses.html
-#: templates/expenses_recurring.html templates/index.html templates/notes.html
-#: templates/recipes.html
+#: static/js/base/ui.js static/js/pages/shopping.js
+#: templates/backup_restore.html templates/base.html templates/chores.html
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html templates/notes.html templates/recipes.html
 msgid "Cancel"
 msgstr "İptal"
 
@@ -755,6 +945,11 @@ msgstr ""
 msgid "This month"
 msgstr ""
 
+#: static/js/pages/backups.js
+#, python-brace-format
+msgid "{done} of {total}"
+msgstr ""
+
 #: static/js/pages/chores.js
 msgid "Recurring chore ends in the past. Choose a future end date."
 msgstr "Yinelenen görev geçmişte bitiyor. İleri bir bitiş tarihi seçin."
@@ -781,10 +976,95 @@ msgstr "{item} önerisini gizle"
 msgid "Hide"
 msgstr "Gizle"
 
-#: static/js/pages/expenses.js
+#: static/js/pages/expense_charts.js
+msgid "Show as table"
+msgstr ""
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+msgid "No spending this month."
+msgstr "Bu ay harcama yok."
+
+#: static/js/pages/expense_charts.js
+msgid "Other"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Uncategorised"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by category"
+msgstr ""
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+#: templates/expenses_import.html
+msgid "Amount"
+msgstr "Tutar"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Category"
+msgstr "Kategori"
+
+#: static/js/pages/expense_charts.js
+msgid "Paid"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Share after splits"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
 #, python-brace-format
-msgid "My share after splits: {amount}"
-msgstr "Paylaşımdan sonra payım: {amount}"
+msgid "{name}: paid {paid}, share {share}"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Paid and share by person"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Person"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "today"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Daily budget: {amount}"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Highest day: {amount}"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by day"
+msgstr ""
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html
+msgid "Date"
+msgstr "Tarih"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} over budget"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} left"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{spent} of {budget}"
+msgstr ""
 
 #: static/js/pages/expenses.js
 msgid "No entries this month."
@@ -830,6 +1110,11 @@ msgid "Pick a day on the calendar to view or add expenses."
 msgstr "Harcamaları görmek ya da eklemek için takvimden bir gün seçin."
 
 #: static/js/pages/expenses.js
+#, python-brace-format
+msgid "Added by {name}"
+msgstr ""
+
+#: static/js/pages/expenses.js
 msgid "skipped"
 msgstr "atlandı"
 
@@ -846,6 +1131,7 @@ msgid "Skip day"
 msgstr "Günü atla"
 
 #: static/js/pages/expenses.js static/js/pages/home/reminders.js
+#: templates/backup_restore.html templates/backups.html
 msgid "Restore"
 msgstr "Geri getir"
 
@@ -912,10 +1198,6 @@ msgid "paid {paid} · share {share}"
 msgstr "ödenen {paid} · pay {share}"
 
 #: static/js/pages/expenses.js
-msgid "No spending this month."
-msgstr "Bu ay harcama yok."
-
-#: static/js/pages/expenses.js
 msgid "Record payment"
 msgstr "Ödeme kaydet"
 
@@ -923,10 +1205,6 @@ msgstr "Ödeme kaydet"
 #, python-brace-format
 msgid "Record a payment from {from} to {to}."
 msgstr "{from} tarafından {to} kişisine yapılan ödemeyi kaydet."
-
-#: static/js/pages/expenses.js
-msgid "Amount"
-msgstr "Tutar"
 
 #: static/js/pages/expenses.js
 msgid "Enter an amount greater than zero."
@@ -1367,8 +1645,8 @@ msgstr "{name} dosyasını yeni sekmede önizle"
 msgid "Preview"
 msgstr "Önizle"
 
-#: static/js/pages/media.js templates/media.html templates/pdfs.html
-#: templates/qr.html templates/upload.html
+#: static/js/pages/media.js templates/backups.html templates/media.html
+#: templates/pdfs.html templates/qr.html templates/upload.html
 msgid "Download"
 msgstr "İndir"
 
@@ -1431,10 +1709,11 @@ msgid "Add"
 msgstr "Ekle"
 
 #: static/js/base/app.js static/js/pages/expenses.js
-#: static/js/pages/home/reminders.js static/js/tags.js templates/chores.html
-#: templates/expiry.html templates/media.html templates/notes.html
-#: templates/pdfs.html templates/qr.html templates/recipes.html
-#: templates/shopping.html templates/shorten.html templates/upload.html
+#: static/js/pages/home/reminders.js static/js/tags.js templates/backups.html
+#: templates/chores.html templates/expiry.html templates/media.html
+#: templates/notes.html templates/pdfs.html templates/qr.html
+#: templates/recipes.html templates/shopping.html templates/shorten.html
+#: templates/upload.html
 msgid "Delete"
 msgstr "Sil"
 
@@ -1634,7 +1913,7 @@ msgstr "Konumunuz alınamadı. Lütfen config.yml içinde koordinatları ayarlay
 msgid "Geolocation is not available in this context. This may be because the site is not served over HTTPS, or your browser does not support it. Please configure coordinates in config.yml"
 msgstr "Konum servisi bu bağlamda kullanılamıyor. Bunun nedeni sitenin HTTPS üzerinden sunulmaması ya da tarayıcınızın bunu desteklememesi olabilir. Lütfen config.yml içinde koordinatları ayarlayın"
 
-#: templates/_expense_split.html
+#: templates/_expense_split.html templates/expenses_import.html
 msgid "Split with"
 msgstr "Şunlarla paylaş"
 
@@ -1662,6 +1941,186 @@ msgstr "Tutara göre"
 #, python-format
 msgid "%(name)s split value"
 msgstr "%(name)s paylaşım değeri"
+
+#: templates/backup_restore.html
+msgid "Back to backups"
+msgstr ""
+
+#: templates/backup_restore.html
+msgid "Restore a backup"
+msgstr ""
+
+#: templates/backup_restore.html
+msgid "Created:"
+msgstr ""
+
+#: templates/backup_restore.html
+#, python-format
+msgid "HomeHub %(version)s"
+msgstr ""
+
+#: templates/backup_restore.html
+msgid "Size:"
+msgstr ""
+
+#: templates/backup_restore.html
+msgid "What to restore"
+msgstr ""
+
+#: templates/backup_restore.html
+#, python-format
+msgid "%(num)s file"
+msgid_plural "%(num)s files"
+msgstr[0] ""
+
+#: templates/backup_restore.html
+msgid "Everything in the database is replaced together: notes, lists, expenses, reminders, settings and the admin password."
+msgstr ""
+
+#: templates/backup_restore.html
+msgid "Your current config.yml is not changed. The backup's copy is shown afterwards so you can bring back custom settings yourself."
+msgstr ""
+
+#: templates/backup_restore.html
+msgid "Restoring the database without its files, or files without the database, can leave entries that point at missing files and files that nothing points to."
+msgstr ""
+
+#: templates/backup_restore.html
+msgid "Before anything is replaced, the current data is saved as a safety backup in the list."
+msgstr ""
+
+#: templates/backup_restore.html templates/base.html
+msgid "Admin password"
+msgstr "Yönetici şifresi"
+
+#: templates/backup_restore.html
+msgid "Remove this file"
+msgstr ""
+
+#: templates/backups.html
+msgid "Backups"
+msgstr ""
+
+#: templates/backups.html
+msgid "Backups are saved on the server in data/backups/. The flask backup command saves to the same folder, so its backups show up here too."
+msgstr ""
+
+#: templates/backups.html
+msgid "Data was restored. Restart HomeHub so everything uses it."
+msgstr ""
+
+#: templates/backups.html
+msgid "On the server, run:"
+msgstr ""
+
+#: templates/backups.html
+msgid "Config from the restored backup"
+msgstr ""
+
+#: templates/backups.html
+msgid "This is the config.yml from the backup. HomeHub did not change your current config.yml. To bring back your custom settings, copy what you need from it into config.yml on the server and restart HomeHub."
+msgstr ""
+
+#: templates/backups.html
+#, python-format
+msgid "Passwords and keys are hidden below. The full file is saved as %(path)s."
+msgstr ""
+
+#: templates/backups.html
+msgid "Delete the saved config from the backup?"
+msgstr ""
+
+#: templates/backups.html
+msgid "Done, delete this copy"
+msgstr ""
+
+#: templates/backups.html
+msgid "Restoring backup…"
+msgstr ""
+
+#: templates/backups.html
+msgid "Creating backup…"
+msgstr ""
+
+#: templates/backups.html
+msgid "You can leave this page; the work carries on in the background."
+msgstr ""
+
+#: templates/backups.html
+msgid "Create a backup"
+msgstr ""
+
+#: templates/backups.html
+msgid "What to include"
+msgstr ""
+
+#: templates/backups.html
+msgid "Backups that include config.yml may contain the site password in plain text. Keep them somewhere safe."
+msgstr ""
+
+#: templates/backups.html
+msgid "Total before compression:"
+msgstr ""
+
+#: templates/backups.html
+msgid "This backup is large. It can take a long time to create and download, and needs that much free disk space on the server. For very large backups, the flask backup command on the server is quicker."
+msgstr ""
+
+#: templates/backups.html
+msgid "Create backup"
+msgstr ""
+
+#: templates/backups.html
+msgid "Saved backups"
+msgstr ""
+
+#: templates/backups.html
+#, python-format
+msgid "%(num)s backup, %(size)s in total"
+msgid_plural "%(num)s backups, %(size)s in total"
+msgstr[0] ""
+
+#: templates/backups.html
+msgid "A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it; you can then delete it here to free up space on the server."
+msgstr ""
+
+#: templates/backups.html
+msgid "Safety backup"
+msgstr ""
+
+#: templates/backups.html
+#, python-format
+msgid "Made automatically before the restore at %(time)s. Restore it to undo that restore."
+msgstr ""
+
+#: templates/backups.html
+#, python-format
+msgid "Delete backup %(name)s?"
+msgstr ""
+
+#: templates/backups.html
+msgid "No backups yet."
+msgstr ""
+
+#: templates/backups.html
+msgid "Restore from a backup file"
+msgstr ""
+
+#: templates/backups.html
+msgid "Choose a HomeHub backup zip. Next you pick what to restore. The file is only kept on the server until the restore is done or cancelled."
+msgstr ""
+
+#: templates/backups.html
+msgid "Backup zip"
+msgstr ""
+
+#: templates/backups.html templates/base.html templates/login.html
+msgid "Continue"
+msgstr "Devam"
+
+#: templates/backups.html
+msgid "Larger than the upload limit? Raise max_upload_mb in config.yml (and the limit of any reverse proxy in front of HomeHub), or restore it on the server with flask restore."
+msgstr ""
 
 #: templates/base.html
 msgid "Close menu"
@@ -1749,10 +2208,6 @@ msgid "If you found this useful, consider %(link)s"
 msgstr "Bunu faydalı bulduysanız %(link)s düşünebilirsiniz"
 
 #: templates/base.html
-msgid "Admin password"
-msgstr "Yönetici şifresi"
-
-#: templates/base.html
 #, python-format
 msgid "Enter the admin password to continue as %(name)s."
 msgstr "%(name)s olarak devam etmek için yönetici şifresini girin."
@@ -1776,10 +2231,6 @@ msgstr "HomeHub deneyiminizi kişiselleştirmek için adınızı seçin."
 #: templates/base.html
 msgid "User"
 msgstr "Kullanıcı"
-
-#: templates/base.html templates/login.html
-msgid "Continue"
-msgstr "Devam"
 
 #: templates/chores.html
 msgid "To-Do / Chores"
@@ -1932,20 +2383,40 @@ msgid "Spending by day, with shared balances."
 msgstr "Güne göre harcamalar ve paylaşılan bakiyeler."
 
 #: templates/expenses.html
+msgid "Recurring rules & config"
+msgstr "Yinelenme kuralları ve ayarlar"
+
+#: templates/expenses.html
 msgid "Total This Month"
 msgstr "Bu Ayın Toplamı"
 
 #: templates/expenses.html
-msgid "My Spending"
-msgstr "Benim Harcamam"
+msgid "You paid"
+msgstr ""
 
 #: templates/expenses.html
-msgid "Top Category"
-msgstr "Öne Çıkan Kategori"
+msgid "Your share after splits"
+msgstr ""
 
 #: templates/expenses.html
-msgid "Recurring rules & config"
-msgstr "Yinelenme kuralları ve ayarlar"
+msgid "Charts"
+msgstr ""
+
+#: templates/expenses.html
+msgid "People"
+msgstr ""
+
+#: templates/expenses.html templates/expenses_recurring.html
+msgid "Daily"
+msgstr "Günlük"
+
+#: templates/expenses.html
+msgid "Budgets"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Change budgets"
+msgstr ""
 
 #: templates/expenses.html templates/index.html
 msgid "Previous month"
@@ -1996,8 +2467,38 @@ msgid "Delete Selected"
 msgstr "Seçilenleri Sil"
 
 #: templates/expenses.html
+msgid "Download this month's entries as a CSV file"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Export CSV"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Import CSV"
+msgstr ""
+
+#: templates/expenses.html
 msgid "Month Total:"
 msgstr "Ay Toplamı:"
+
+#: templates/expenses.html
+msgid "Export a date range"
+msgstr ""
+
+#: templates/expenses.html
+msgctxt "date range"
+msgid "From"
+msgstr ""
+
+#: templates/expenses.html
+msgctxt "date range"
+msgid "To"
+msgstr ""
+
+#: templates/expenses.html
+msgid "Export"
+msgstr ""
 
 #: templates/expenses.html
 msgid "Balances"
@@ -2019,25 +2520,16 @@ msgstr "Hesaplaşmak için"
 msgid "This month: paid vs share"
 msgstr "Bu ay: ödenen / pay"
 
-#: templates/expenses.html
-msgid "Date"
-msgstr "Tarih"
-
-#: templates/expenses.html templates/expenses_recurring.html
-#: templates/index.html
+#: templates/expenses.html templates/expenses_import.html
+#: templates/expenses_recurring.html templates/index.html
 msgid "Title"
 msgstr "Başlık"
-
-#: templates/expenses.html templates/expenses_recurring.html
-#: templates/index.html
-msgid "Category"
-msgstr "Kategori"
 
 #: templates/expenses.html
 msgid "e.g., Groceries"
 msgstr "örn. Market"
 
-#: templates/expenses.html
+#: templates/expenses.html templates/expenses_import.html
 msgid "Quantity"
 msgstr "Adet"
 
@@ -2045,7 +2537,8 @@ msgstr "Adet"
 msgid "optional"
 msgstr "isteğe bağlı"
 
-#: templates/expenses.html templates/expenses_recurring.html
+#: templates/expenses.html templates/expenses_import.html
+#: templates/expenses_recurring.html
 msgid "Unit Price"
 msgstr "Birim Fiyat"
 
@@ -2053,13 +2546,153 @@ msgstr "Birim Fiyat"
 msgid "Total Amount"
 msgstr "Toplam Tutar"
 
-#: templates/expenses.html
+#: templates/expenses.html templates/expenses_import.html
 msgid "Paid by"
 msgstr "Ödeyen"
 
 #: templates/expenses.html
 msgid "Save Expense"
 msgstr "Harcamayı Kaydet"
+
+#: templates/expenses_import.html
+msgid "Settlement"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Automatic (day before month)"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Year-month-day (2026-10-21)"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Day/month/year (21/10/2026)"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Month/day/year (10/21/2026)"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Back to expenses"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Import expenses"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Add expenses from a CSV file: one exported from HomeHub, or a bank or UPI statement. You see every row before anything is saved."
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "CSV file"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "The first row should name the columns. Rows need at least a date, a title and an amount; you can match the columns on the next step."
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Preview import"
+msgstr ""
+
+#: templates/expenses_import.html
+#, python-format
+msgid "Columns in %(name)s"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "(not in file)"
+msgstr ""
+
+#: templates/expenses_import.html
+#, python-format
+msgid "Column %(num)s"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Date format"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Paid by, when the file does not say"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Choose…"
+msgstr ""
+
+#: templates/expenses_import.html
+#, python-format
+msgid "Choose the column for: %(fields)s."
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Update preview"
+msgstr ""
+
+#: templates/expenses_import.html
+#, python-format
+msgid "%(num)s new"
+msgid_plural "%(num)s new"
+msgstr[0] ""
+
+#: templates/expenses_import.html
+#, python-format
+msgid "%(num)s already saved"
+msgid_plural "%(num)s already saved"
+msgstr[0] ""
+
+#: templates/expenses_import.html
+#, python-format
+msgid "%(num)s repeated in the file"
+msgid_plural "%(num)s repeated in the file"
+msgstr[0] ""
+
+#: templates/expenses_import.html
+#, python-format
+msgid "%(num)s cannot be imported"
+msgid_plural "%(num)s cannot be imported"
+msgstr[0] ""
+
+#: templates/expenses_import.html
+msgid "Rows that match a saved expense (same date, title, amount and payer), or an earlier row in this file, start unticked. Tick them if they really are separate expenses."
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Import"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Status"
+msgstr ""
+
+#: templates/expenses_import.html
+#, python-format
+msgid "Import row %(num)s"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "New"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Already saved"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Repeated in the file"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Start over"
+msgstr ""
+
+#: templates/expenses_import.html
+msgid "Import ticked rows"
+msgstr ""
 
 #: templates/expenses_recurring.html
 msgid "Back to Calendar"
@@ -2134,10 +2767,6 @@ msgstr "Varsayılan Adet"
 #: templates/expenses_recurring.html
 msgid "Frequency"
 msgstr "Sıklık"
-
-#: templates/expenses_recurring.html
-msgid "Daily"
-msgstr "Günlük"
 
 #: templates/expenses_recurring.html
 msgid "Weekly"
@@ -2271,6 +2900,26 @@ msgstr "Market, Faturalar, Kira"
 msgid "Save Settings"
 msgstr "Ayarları Kaydet"
 
+#: templates/expenses_recurring.html
+msgid "Monthly budgets"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Spending limits for the household, the same every month. Leave a box empty for no budget. The expenses page shows how much of each is used, amber from 80% and red once it is passed."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "No budget"
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Add categories above to set a budget for each one."
+msgstr ""
+
+#: templates/expenses_recurring.html
+msgid "Save budgets"
+msgstr ""
+
 #: templates/expiry.html
 msgid "Food, medicines and documents, soonest first."
 msgstr "Gıda, ilaç ve belgeler; tarihi en yakın olan önce."
@@ -2321,6 +2970,17 @@ msgstr "Hava Durumu"
 #: templates/index.html
 msgid "Loading weather data..."
 msgstr "Hava durumu verisi yükleniyor..."
+
+#: templates/index.html
+#, python-format
+msgid "A budget is over this month"
+msgid_plural "%(num)s budgets are over this month"
+msgstr[0] ""
+
+#: templates/index.html
+#, python-format
+msgid "%(name)s: %(spent)s of %(budget)s"
+msgstr ""
 
 #: templates/index.html
 msgid "Family Notice Board"
@@ -2378,6 +3038,27 @@ msgstr "Tüm listeyi aç"
 #: templates/index.html
 msgid "No open chores right now."
 msgstr "Şu anda açık ev işi yok."
+
+#: templates/index.html
+msgid "Backup"
+msgstr ""
+
+#: templates/index.html
+msgid "Create, download and restore backups of HomeHub's data."
+msgstr ""
+
+#: templates/index.html
+msgid "Manage backups"
+msgstr ""
+
+#: templates/index.html
+msgid "Set an admin password to use backups. On the server, run:"
+msgstr ""
+
+#: templates/index.html
+#, python-format
+msgid "Until then, you can make and restore backups on the server with flask backup and flask restore. See the %(link)s for details."
+msgstr ""
 
 #: templates/index.html
 msgid "Calendar & Reminders"
@@ -2825,4 +3506,28 @@ msgstr "Henüz dosya yok."
 #: templates/upload.html
 msgid "Delete this file? It is removed from the server."
 msgstr "Bu dosya silinsin mi? Sunucudan kaldırılır."
+
+#~ msgid "My share after splits: {amount}"
+#~ msgstr "Paylaşımdan sonra payım: {amount}"
+
+#~ msgid "My Spending"
+#~ msgstr "Benim Harcamam"
+
+#~ msgid "Top Category"
+#~ msgstr "Öne Çıkan Kategori"
+
+#~ msgid "Backup %(name)s uploaded."
+#~ msgstr ""
+
+#~ msgid "Replace the current data with this backup?"
+#~ msgstr ""
+
+#~ msgid "A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it."
+#~ msgstr ""
+
+#~ msgid "Upload a backup"
+#~ msgstr ""
+
+#~ msgid "Add a backup zip from another device to the list, for example to restore it here. Larger than the upload limit? Copy it into data/backups/ on the server instead."
+#~ msgstr ""
 

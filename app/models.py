@@ -247,7 +247,24 @@ class ExpenseEntry(db.Model):
     split_with = db.Column(db.Text)
     # Settlement: payer paid split_with[0] back; excluded from spending totals
     is_settlement = db.Column(db.Boolean, default=False)
+    # Who entered it; only they (or the admin) may change it. Empty on rows from before this was kept
+    created_by = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=utcnow)
+
+
+class ExpenseBudget(db.Model):
+    """A standing monthly spending limit (the same every month, nothing carries over).
+
+    category NULL is the overall budget, otherwise the budget for that category.
+    member NULL is the household's budget. Per-person budgets (say a parent setting one
+    for a child) will fill member in; until then everything reads and writes member IS NULL only.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(64))
+    member = db.Column(db.String(64))
+    amount = db.Column(db.Float, nullable=False)
+    updated_by = db.Column(db.String(64))
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
 
 class UndoStash(db.Model):

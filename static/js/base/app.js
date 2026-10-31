@@ -242,6 +242,10 @@
                 const creator = el.getAttribute('data-creator');
                 el.style.display = allowed(creator) ? '' : 'none';
             });
+            // Admin-only blocks (the server checks again on submit)
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.style.display = (current === adminName || current === 'Administrator' || current === 'admin') ? '' : 'none';
+            });
             // Notice editor visibility if present
             const nf = document.getElementById('noticeForm');
             if (nf){

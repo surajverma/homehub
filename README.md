@@ -31,7 +31,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **✅ Chore Tracker**: A simple to-do list for household tasks.
 * **🗓️ Calendar & Reminders**: A shared calendar to keep track of important dates.
 * **👋 Who's Home?**: See at a glance who is currently home.
-* **💰 Expense Tracker**: A powerful tool to track family spending, with support for recurring bills like newspapers, milk, or subscriptions.
+* **💰 Expense Tracker**: A powerful tool to track family spending, with support for recurring bills like newspapers, milk, or subscriptions. Set monthly budgets (overall and per category) and see charts of spending by category, by person and by day. Export a month or a date range as a CSV file for Excel or Google Sheets, and import expenses from a CSV file (HomeHub's own export or a bank or UPI statement) with a preview that flags likely duplicates. Anyone can record an expense paid by anyone, but only the person who added it (or the admin) can edit or delete it.
 * **🎬 Media Downloader**: Save videos or music from popular sites directly to your server.
 * ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, **Weather Updates** and **QR Code Generator**!
 
@@ -50,34 +50,36 @@ HomeHub is packed with useful tools to make family life a little more organized:
 
 The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
 
-1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub and add family members. You can also set an optional password to protect the whole site. The shared calendar can be enabled with `feature_toggles.calendar`, and the weekly grid can start on the day configured under `reminders.calendar_start_day`.
+1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub, add family members and choose which features to show. The settings at the bottom (site password, upload limit, colours, reminders, weather, theme) are optional: delete any you don't need and HomeHub uses its defaults.
 <details>
   <summary>Click to see an example config.yml</summary>
 
 
 
 ```yaml
-instance_name: "My Home Hub"
-password: "" #leave blank for password less access
-admin_name: "Administrator"
-max_upload_mb: 1024 # largest upload in MB (Shared Cloud, PDFs); 0 removes the limit
-language: en # UI language code, see "Supported languages" below
-feature_toggles:
-  shopping_list: true
-  media_downloader: true
-  pdf_compressor: true
-  qr_generator: true
-  notes: true
-  shared_cloud: true
-  who_is_home: true
-  personal_status: true
-  chores: true
-  recipes: true
-  expiry_tracker: true
-  url_shortener: false
-  expense_tracker: true
-  calendar: true
+# HomeHub settings
+#
+# Copy this file to config.yml and edit it. Changes are usually picked up on the next
+# page load; if one is not, restart HomeHub (docker compose restart homehub).
+# Quotes are optional, also around hex colours such as #2563eb.
+# Everything below "OPTIONAL" can be deleted: HomeHub uses the default shown for it.
 
+# ---------------------------------------------------------------------------
+# BASICS
+# ---------------------------------------------------------------------------
+
+instance_name: "My Home Hub" # shown in the sidebar and the browser tab
+
+# UI language for the whole household: a code from "Supported languages" in the README.
+# Anything else falls back to English.
+language: en
+
+# The admin manages settings, budgets and backups. To protect it with a password, run:
+#   docker exec -it homehub flask set-admin-password
+admin_name: "Administrator"
+
+# Everyone in the household, as they appear in the user picker, splits and chores.
+# To give someone their own chart colour, see "Colours" under OPTIONAL.
 family_members:
   - Mom
   - Dad
@@ -85,16 +87,57 @@ family_members:
   - Vivek
   - India
 
+# ---------------------------------------------------------------------------
+# FEATURES
+# ---------------------------------------------------------------------------
+
+# true shows a feature, false hides it. Keep every line: for most features a missing
+# line counts as false (calendar, expense_tracker, who_is_home and personal_status are
+# the exceptions and stay on).
+feature_toggles:
+  notes: true
+  shared_cloud: true # shared file uploads
+  shopping_list: true
+  calendar: true
+  chores: true # to-do list and chores
+  recipes: true
+  expiry_tracker: true
+  url_shortener: false
+  media_downloader: true
+  pdf_compressor: true
+  qr_generator: true
+  expense_tracker: true
+  who_is_home: true # Welcome page: who is home right now
+  personal_status: true # Welcome page: a short status per person
+
+# ---------------------------------------------------------------------------
+# OPTIONAL: delete any block you do not need
+# ---------------------------------------------------------------------------
+
+# Site password, asked once per browser. Without it (or left empty) anyone on your
+# network can open HomeHub.
+password: ""
+
+# Largest upload (Shared Cloud, PDFs) in MB. 0 removes the limit. Default: 1024.
+max_upload_mb: 1024
+
+# Colours for people in the expense charts: a colour name (teal, red) or hex.
+# Without one, each person gets a colour from the default palette by their place in
+# family_members, and the admin comes after the family. To pick one, write that person
+# in family_members as a name with a colour:
+#   family_members:
+#     - Mom
+#     - name: Dad
+#       color: "#7c3aed"
+# admin_color: "#0d9488"
+
+# Reminders and calendar. Without this block: 12-hour times, weeks starting on Sunday,
+# and reminders without categories.
 reminders:
-  # time_format controls how reminder times are displayed in the UI.
-  # Allowed values: "12h" (default) or "24h". Remove or leave blank to fall back to 12h.
-  time_format: 12h
-
-  # calendar_start_day controls which day the reminders calendar starts on.
-  # Accepts full weekday names (sunday, saturday).  
-  calendar_start_day: monday #default is Sunday, comment this line to switch to default
-
-  # Example reminder categories (keys lowercase no spaces recommended)
+  time_format: 12h # 12h or 24h
+  calendar_start_day: sunday # a weekday name (sunday to saturday) or 0-6, where 0 is Sunday
+  # Categories to pick from when adding a reminder. key: short id (lowercase, no spaces),
+  # label: the name shown, color: a colour name or hex.
   categories:
     - key: health
       label: Health
@@ -109,7 +152,18 @@ reminders:
       label: Family
       color: "#2563eb"
 
-#Optional settings
+# Weather widget on the Welcome page (Open-Meteo, no account needed). Off unless enabled.
+weather:
+  enabled: false
+  label: "" # place name shown on the widget; empty hides it
+  latitude: "" # empty: use the browser's location
+  longitude: "" # empty: use the browser's location
+  timezone: "" # e.g. "Asia/Kolkata" or "America/New_York"; empty: detected automatically
+  units: metric # metric or imperial
+  view: compact # compact, or detailed (adds today's sunrise, sunset, UV, rain chance, high and low)
+
+# Colours of the app. Without this block HomeHub uses its default blue look.
+# The README "Theming" section lists every key.
 theme:
   primary_color: "#1d4ed8"
 ```
@@ -155,6 +209,7 @@ docker exec -it homehub flask set-admin-password
 
 - You are asked to type the password twice. Only a salted hash is stored, in `data/app.db`; nothing is written to `config.yml`.
 - Once set, switching to the admin user asks for the password. Family members keep switching freely.
+- The [Backups page](#backup-and-restore) is only available once an admin password is set.
 - Run the same command again to change it. A forgotten password is fixed the same way.
 - `docker exec -it homehub flask set-admin-password --clear` removes it and restores the default behaviour.
 - Not using Docker? Run `flask set-admin-password` from the project folder.
@@ -162,6 +217,34 @@ docker exec -it homehub flask set-admin-password
 The `password` in `config.yml` is separate: it protects the whole site and keeps working as before. You write it in `config.yml` as plain text; HomeHub only keeps a salted hash of it in memory, and after 5 wrong attempts the login form makes that device wait a minute, like the admin password prompt.
 
 Logins and admin unlocks survive a restart: if `SECRET_KEY` is not set, HomeHub generates one on first start and keeps it in `data/secret_key`.
+
+## Backup and restore
+
+Backups are zip files kept on the server in `data/backups/` (on the host through the `./data` volume). The Backups page and the `flask backup` command save to the same folder and see the same list. A backup only protects you once it is copied to another device, so download it or copy it off the machine.
+
+**From the browser:** set an [admin password](#admin-password-optional) first; backups hold everyone's data and may contain the site password, so the Backups page stays off without one. Then, as the unlocked admin, open **Manage backups** on the Welcome page.
+
+- **Create a backup:** tick what to include. Each part shows its size, with a running total. The database and settings are always included. Downloaded media is off by default because it can be very large, and the page warns above about 1 GB. The backup is built in the background, so you can leave the page.
+- **Download** any backup in the list (an interrupted download can resume), then **delete** it to free up space on the server.
+- **Restore from a backup file:** choose a backup zip and you go straight to the restore page. It asks for the admin password again; you see what the backup holds and can untick parts. The uploaded zip is deleted from the server once the restore is done or cancelled. Uploads are limited by `max_upload_mb` (and by any reverse proxy in front of HomeHub); raise that for a bigger backup, or use `flask restore` below.
+- **Safety backups:** before a restore replaces anything, the current data is saved as a safety backup in the list. It is the undo for that restore, so it is the one kind of backup with a **Restore** button there. The newest 3 are kept; older ones are deleted automatically.
+- Restart HomeHub after a restore (`docker compose restart homehub`).
+- `config.yml` is never overwritten, because it is mounted read-only. After a restore, the page shows the backup's config (passwords hidden) and saves it as `data/config-from-backup.yml`; copy the settings you want into `config.yml` yourself.
+
+Backups that include `config.yml` may contain the site password in plain text. Keep them somewhere safe.
+
+**From the host** (works with or without an admin password):
+
+```bash
+docker exec -it homehub flask backup                      # database, uploads, PDFs and config.yml
+docker exec -it homehub flask backup --include-media      # media too
+docker exec -it homehub flask restore /app/data/backups/homehub-backup-YYYYMMDD-HHMMSS.zip
+docker compose restart homehub
+```
+
+- `--no-config` leaves `config.yml` out, and `--output PATH` writes the zip somewhere else inside the container.
+- `flask restore` checks the zip, asks you to confirm (`--yes` skips the question), saves a safety backup and prints its path, restores everything in the zip, and runs database upgrades. As in the browser, the backup's `config.yml` goes to `data/config-from-backup.yml`.
+- Not using Docker? Run `flask backup` and `flask restore PATH` from the project folder.
 
 ## Timezone (optional)
 
@@ -255,9 +338,32 @@ theme:
 ```
 
 Tips:
+- Hex colours work with or without quotes (`primary_color: #1d4ed8` is fine).
 - The old default blue sidebar (`#2563eb`) is treated as "not set", so configs copied from an older `config-example.yml` get the new light sidebar. Pick any other colour to keep a coloured sidebar.
 - Prefer lighter/darker accents? Tweak `primary_color` and `secondary_color`.
 - Dark mode palette adapts automatically; the variables above apply to light mode, while dark mode uses tuned counterparts for good contrast.
+
+### Colours for people in the expense charts
+
+Each person gets a chart colour from a fixed palette, by their position in `family_members` (the admin comes after the family). To pick a colour yourself, write that person as a `name` with a `color`; plain names keep working, and the admin's colour goes in `admin_color`:
+
+```yaml
+admin_name: "Administrator"
+admin_color: "#0d9488"
+
+family_members:
+  - Mom
+  - name: Dad
+    color: "#7c3aed"
+  - name: Dipanshu
+    color: red
+```
+
+- Use a colour name (`red`, `teal`, `RoyalBlue`: any CSS colour name) or a hex colour (`#7c3aed` or `#73d`), with or without quotes. Anything else is ignored with a warning in the log, and that person keeps the default.
+- People without a colour keep the one they had, so picking a colour for one person never changes anyone else's.
+- HomeHub adjusts a colour only when it would be hard to see: a very pale one is darkened a little on the light cards, a very dark one is lightened a little on the dark cards. Everything else is used as written.
+- Nothing stops two people from looking alike: if you pick a colour close to someone else's default (blue for Dad while Mom is blue by position), give Mom a colour too.
+- Restart HomeHub (or save `config.yml`; it is re-read when it changes) and reload the page.
 
 ## Weather Widget
 

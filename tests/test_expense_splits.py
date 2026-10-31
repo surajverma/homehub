@@ -311,6 +311,18 @@ def test_uneven_split_by_percent_and_amount(client):
     assert stored == {'mode': 'amount', 'weights': {'Alice': 30.0, 'Bob': 60.0}}
 
 
+def test_form_refuses_absurd_split_weights(client):
+    resp = client.post('/expenses', data={
+        'form_type': 'single', 'title': 'Rent', 'amount': '100', 'payer': 'Alice', 'date': '2026-06-01',
+        'split_with': ['Alice', 'Bob'], 'split_mode': 'shares',
+        'split_weight__Alice': '1' + '0' * 308, 'split_weight__Bob': '1' + '0' * 308,
+    }, follow_redirects=True)
+    assert 'Invalid split value' in resp.get_data(as_text=True)
+    with client.application.app_context():
+        assert ExpenseEntry.query.count() == 0
+        _build_month_payload(2026, 6)
+
+
 def test_admin_can_share_an_expense(client):
     # The admin is not a family member but can still pay and take a share
     cfg = client.application.config['HOMEHUB_CONFIG']

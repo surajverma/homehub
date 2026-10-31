@@ -123,9 +123,11 @@ def create_app(test_config: dict | None = None):
     from .blueprints import expiry  # noqa: F401
     from .blueprints import media_pdfs  # noqa: F401
     from .blueprints import expenses  # noqa: F401
+    from .blueprints import expense_import  # noqa: F401
     from .blueprints import chores  # noqa: F401
     from .blueprints import qr  # noqa: F401
     from .blueprints import weather  # noqa: F401
+    from .blueprints import backups  # noqa: F401
     app.register_blueprint(main_bp)
 
     @app.errorhandler(413)
@@ -175,6 +177,51 @@ def create_app(test_config: dict | None = None):
             raise click.ClickException(f'Password must be at least {_admin.ADMIN_PASSWORD_MIN_LENGTH} characters.')
         _admin.set_admin_password(password)
         click.echo('Admin password saved. Switching to the admin user now asks for it.')
+
+    @app.cli.command('backup')
+    @click.option('--output', type=click.Path(dir_okay=False), help='Where to write the zip (default: data/backups/).')
+    @click.option('--include-media', is_flag=True, help='Also back up media/ (downloaded videos and audio; can be large).')
+    @click.option('--no-config', is_flag=True, help='Leave config.yml out (it may contain the site password in plain text).')
+    def backup_command(output, include_media, no_config):
+        """Write a backup zip of the database, secret key, uploads, PDFs and config.yml."""
+        from . import backup as _backup
+        parts = ['database', 'uploads', 'pdfs'] + (['media'] if include_media else []) + ([] if no_config else ['config'])
+        try:
+            path = _backup.create_backup(output, parts=parts)
+        except _backup.BackupError as exc:
+            raise click.ClickException(str(exc))
+        click.echo(f'Backup written to {path}')
+        if not no_config:
+            click.echo('Backups that include config.yml may contain the site password in plain text. Keep them somewhere safe.')
+
+    @app.cli.command('restore')
+    @click.argument('path', type=click.Path(exists=True, dir_okay=False))
+    @click.option('--yes', is_flag=True, help='Do not ask for confirmation.')
+    def restore_command(path, yes):
+        """Replace the current data with a backup zip made by `flask backup`."""
+        from . import backup as _backup
+        from . import migrations
+        try:
+            manifest = _backup.validate_backup(path)
+        except _backup.BackupError as exc:
+            raise click.ClickException(str(exc))
+        click.echo(f"Backup from {manifest.get('created_at') or 'an unknown date'} contains: {', '.join(manifest['parts'])}")
+        if not yes:
+            click.confirm('This replaces the current data with the backup. A safety backup is made first. Continue?', abort=True)
+        try:
+            result = _backup.restore_backup(path)
+        except _backup.BackupError as exc:
+            raise click.ClickException(str(exc))
+        if result['safety_backup']:
+            click.echo(f"Safety backup of the previous data: {result['safety_backup']}")
+        if result['config_from_backup']:
+            click.echo(f"config.yml was not changed. The backup's copy is in {result['config_from_backup']}; "
+                       'copy over the settings you want into config.yml.')
+        paths = _backup.paths()
+        if not migrations.run(paths['db'], pdf_dir=paths['pdfs']):
+            click.echo('Some database upgrade steps failed; they are retried when the app starts.')
+        click.echo('Restore complete. Restart HomeHub now so it picks up the restored data, '
+                   'for example: docker compose restart homehub')
     
     # Static URLs carry the file's mtime so the service worker and browsers fetch fresh copies after an update
     @app.template_global('asset_url')
