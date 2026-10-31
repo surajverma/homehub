@@ -70,17 +70,20 @@
       <h2 class="section-title"><i class="fa-solid fa-list section-icon" aria-hidden="true"></i>{{ _('Saved backups') }}</h2>
       <span class="text-sm text-gray-500">{{ ngettext('%(num)s backup, %(size)s in total', '%(num)s backups, %(size)s in total', backups|length, size=total_size|filesize) }}</span>
     </div>
-    <p class="text-xs text-gray-500">{{ _('A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it.') }}</p>
+    <p class="text-xs text-gray-500">{{ _('A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it; you can then delete it here to free up space on the server.') }}</p>
     {% if backups %}
     <ul class="border rounded-lg overflow-hidden">
       {% for b in backups %}
       <li class="list-row flex-wrap justify-between gap-3 text-sm">
         <div class="min-w-0">
-          <div class="font-medium break-all">{{ b.name }}</div>
-          <div class="text-xs text-gray-500">
-            {{ (b.created_at or b.modified)|localtime }} · {{ b.size|filesize }}
-            {% if b.kind == 'safety' %} · <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">{{ _('Safety backup') }}</span>{% endif %}
+          <div class="font-medium break-all">
+            {{ b.name }}
+            {% if b.kind == 'safety' %}<span class="ml-1 px-1.5 py-0.5 rounded text-xs font-normal bg-amber-100 text-amber-700 whitespace-nowrap">{{ _('Safety backup') }}</span>{% endif %}
           </div>
+          <div class="text-xs text-gray-500">{{ (b.created_at or b.modified)|localtime }} · {{ b.size|filesize }}</div>
+          {% if b.kind == 'safety' %}
+          <div class="text-xs text-gray-500">{{ _('Made automatically before the restore at %(time)s. Restore it to undo that restore.', time=(b.created_at or b.modified)|localtime) }}</div>
+          {% endif %}
           {% if b.error %}
           <div class="text-xs text-red-600">{{ error_message(b.error) }}</div>
           {% else %}
@@ -91,7 +94,8 @@
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <a href="/admin/backups/download/{{ b.name }}?user={{ user|urlencode }}" class="btn btn-secondary btn-sm" download><i class="fa-solid fa-download" aria-hidden="true"></i>{{ _('Download') }}</a>
-          {% if not b.error %}
+          {# Only a safety backup restores from here (it undoes a restore); other backups are restored by uploading them #}
+          {% if b.kind == 'safety' and not b.error %}
           <a href="/admin/backups/restore/{{ b.name }}?user={{ user|urlencode }}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>{{ _('Restore') }}</a>
           {% endif %}
           <form method="POST" action="/admin/backups/delete/{{ b.name }}" data-confirm="{{ _('Delete backup %(name)s?', name=b.name) }}">
@@ -107,15 +111,16 @@
     {% endif %}
   </div>
 
-  <!-- Upload -->
+  <!-- Restore from a file: the upload goes straight to the restore page and is deleted afterwards -->
   <div class="card p-4 space-y-3">
-    <h2 class="section-title"><i class="fa-solid fa-upload section-icon" aria-hidden="true"></i>{{ _('Upload a backup') }}</h2>
-    <p class="text-sm text-gray-500">{{ _('Add a backup zip from another device to the list, for example to restore it here. Larger than the upload limit? Copy it into data/backups/ on the server instead.') }}</p>
+    <h2 class="section-title"><i class="fa-solid fa-rotate-left section-icon" aria-hidden="true"></i>{{ _('Restore from a backup file') }}</h2>
+    <p class="text-sm text-gray-500">{{ _('Choose a HomeHub backup zip. Next you pick what to restore. The file is only kept on the server until the restore is done or cancelled.') }}</p>
     <form method="POST" action="/admin/backups/upload" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
       <input type="hidden" name="user" value="{{ user }}">
       <input type="file" name="backup" accept=".zip,application/zip" required aria-label="{{ _('Backup zip') }}">
-      <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-upload" aria-hidden="true"></i>{{ _('Upload') }}</button>
+      <button type="submit" class="btn btn-secondary btn-sm" {% if job %}disabled{% endif %}><i class="fa-solid fa-upload" aria-hidden="true"></i>{{ _('Continue') }}</button>
     </form>
+    <p class="text-xs text-gray-500">{{ _('Larger than the upload limit? Raise max_upload_mb in config.yml (and the limit of any reverse proxy in front of HomeHub), or restore it on the server with flask restore.') }}</p>
   </div>
 </div>
 <script src="{{ asset_url('js/pages/backups.js') }}"></script>

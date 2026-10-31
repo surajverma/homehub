@@ -1,7 +1,8 @@
-"""Backups page for the admin: make, list, download, upload, delete and restore backups.
+"""Backups page for the admin: make, list, download and delete backups, and restore one.
 
 Backups are built on the server into data/backups/ by the same code as ``flask backup``,
 in a background thread, and then downloaded as ordinary files (so a download can resume).
+A restore uses a zip uploaded for it (deleted afterwards) or a safety backup from the list.
 The whole page needs an admin password, and restore asks for it again.
 """
 import os
@@ -196,6 +197,10 @@ def delete_backup(name):
 
 @main_bp.route('/admin/backups/upload', methods=['POST'])
 def upload_backup():
+    """Take a backup zip for a restore and go straight to its restore page.
+
+    It waits in data/restore-uploads/, not in the list, and is deleted once restored or cancelled.
+    """
     denied = _require_admin()
     if denied:
         return denied
@@ -217,16 +222,33 @@ def upload_backup():
         backup.remove_quietly(part)
         flash(_('Could not save the uploaded backup.'), 'error')
         return _back()
-    flash(_('Backup %(name)s uploaded.', name=os.path.basename(target)), 'success')
-    return _back()
+    return redirect(url_for('main.restore_upload_preview', name=os.path.basename(target), user=_user()))
 
 
-@main_bp.route('/admin/backups/restore/<name>', methods=['GET'])
-def restore_preview(name):
+def _restorable(source: str, name: str) -> str | None:
+    """The zip a restore page may use: an uploaded one, or a safety backup from the list (the undo for a restore)."""
+    if source == 'upload':
+        return backup.uploaded_file(name)
+    path = backup.backup_file(name)
+    if path and backup.describe_backup(path)['kind'] == 'safety':
+        return path
+    return None
+
+
+def _restore_urls(source: str, name: str) -> dict:
+    if source == 'upload':
+        return {'action': url_for('main.restore_upload', name=name),
+                'cancel': url_for('main.cancel_upload', name=name),
+                'preview': url_for('main.restore_upload_preview', name=name, user=_user())}
+    return {'action': url_for('main.restore_backup', name=name), 'cancel': None,
+            'preview': url_for('main.restore_preview', name=name, user=_user())}
+
+
+def _preview(source: str, name: str):
     denied = _require_admin()
     if denied:
         return denied
-    path = backup.backup_file(name)
+    path = _restorable(source, name)
     if not path:
         abort(404)
     info = backup.describe_backup(path)
@@ -237,25 +259,25 @@ def restore_preview(name):
         except backup.BackupError as exc:
             info['error'] = exc.code
     return render_template('backup_restore.html', config=current_app.config['HOMEHUB_CONFIG'], user=_user(), info=info, part_labels=part_labels(),
-                           error_message=_error_message,
+                           error_message=_error_message, source=source, urls=_restore_urls(source, name),
                            lockout_seconds=admin.unlock_wait_seconds(request.remote_addr or 'unknown'))
 
 
-@main_bp.route('/admin/backups/restore/<name>', methods=['POST'])
-def restore_backup(name):
+def _restore(source: str, name: str):
     denied = _require_admin()
     if denied:
         return denied
-    path = backup.backup_file(name)
+    path = _restorable(source, name)
     if not path:
         abort(404)
     client = request.remote_addr or 'unknown'
-    back_to_preview = redirect(url_for('main.restore_preview', name=name, user=_user()))
+    back_to_preview = redirect(_restore_urls(source, name)['preview'])
     wait = admin.unlock_wait_seconds(client)
     if wait:
         flash(ngettext('Too many attempts. Try again in %(num)s second.', 'Too many attempts. Try again in %(num)s seconds.', wait), 'error')
         return back_to_preview
-    # Asked again even when this browser is already unlocked; wrong tries count toward the lockout
+    # Asked again even when this browser is already unlocked; wrong tries count toward the lockout.
+    # The password is the confirmation, so the page does not ask a second time.
     if not admin.try_unlock(request.form.get('password', ''), client):
         flash(_('Incorrect admin password'), 'error')
         return back_to_preview
@@ -266,7 +288,12 @@ def restore_backup(name):
 
     def run(progress):
         from .. import migrations
-        result = backup.restore_backup(path, parts=parts, progress=progress)
+        try:
+            result = backup.restore_backup(path, parts=parts, progress=progress)
+        finally:
+            # An uploaded zip has done its job (or failed); it is not kept on the server
+            if source == 'upload':
+                backup.remove_quietly(path)
         p = backup.paths()
         if 'database' in parts:
             migrations.run(p['db'], pdf_dir=p['pdfs'])
@@ -280,6 +307,39 @@ def restore_backup(name):
         backup.jobs.start('restore', run)
     except backup.BackupError as exc:
         flash(_error_message(exc.code), 'error')
+        return back_to_preview
+    return _back()
+
+
+@main_bp.route('/admin/backups/restore/<name>', methods=['GET'])
+def restore_preview(name):
+    return _preview('saved', name)
+
+
+@main_bp.route('/admin/backups/restore/<name>', methods=['POST'])
+def restore_backup(name):
+    return _restore('saved', name)
+
+
+@main_bp.route('/admin/backups/restore-upload/<name>', methods=['GET'])
+def restore_upload_preview(name):
+    return _preview('upload', name)
+
+
+@main_bp.route('/admin/backups/restore-upload/<name>', methods=['POST'])
+def restore_upload(name):
+    return _restore('upload', name)
+
+
+@main_bp.route('/admin/backups/restore-upload/<name>/cancel', methods=['POST'])
+def cancel_upload(name):
+    denied = _require_admin()
+    if denied:
+        return denied
+    path = backup.uploaded_file(name)
+    if path:
+        backup.remove_quietly(path)
+    flash(_('Restore cancelled. The uploaded file was removed from the server.'), 'success')
     return _back()
 
 

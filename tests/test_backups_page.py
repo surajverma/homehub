@@ -81,6 +81,9 @@ ROUTES = [
     ('post', '/admin/backups/upload'),
     ('get', '/admin/backups/restore/x.zip'),
     ('post', '/admin/backups/restore/x.zip'),
+    ('get', '/admin/backups/restore-upload/x.zip'),
+    ('post', '/admin/backups/restore-upload/x.zip'),
+    ('post', '/admin/backups/restore-upload/x.zip/cancel'),
     ('post', '/admin/backups/config-from-backup/dismiss'),
 ]
 
@@ -226,11 +229,25 @@ def backup_bytes(tmp_path, note='uploaded'):
         return f.read()
 
 
-def test_upload_valid_backup(client, home, tmp_path):
+def uploads_dir(home):
+    folder = home / 'data' / 'restore-uploads'
+    return sorted(os.listdir(folder)) if folder.exists() else []
+
+
+def test_upload_goes_straight_to_its_restore_page(client, home, tmp_path):
     data = {**ADMIN, 'backup': (io.BytesIO(backup_bytes(tmp_path)), '../../My Backup!.zip')}
-    client.post('/admin/backups/upload', data=data, content_type='multipart/form-data')
-    assert zips(home) == ['My-Backup.zip']
-    assert not [n for n in os.listdir(home / 'data' / 'backups') if n.endswith('.part')]
+    resp = client.post('/admin/backups/upload', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 302
+    assert '/admin/backups/restore-upload/My-Backup-' in resp.headers['Location']
+    # Not in the list of saved backups; it waits in its own folder
+    assert zips(home) == []
+    [name] = uploads_dir(home)
+    assert name.startswith('My-Backup-') and name.endswith('.zip')
+    html = client.get(resp.headers['Location']).get_data(as_text=True)
+    assert 'Database &amp; settings' in html and 'Admin password' in html
+    # The password is the confirmation: no extra dialog on this form
+    start = html.index('<form method="POST" action="/admin/backups/restore-upload/')
+    assert 'data-confirm' not in html[start:html.index('>', start)]
 
 
 def test_upload_rejects_bad_zip(client, home):
@@ -238,41 +255,70 @@ def test_upload_rejects_bad_zip(client, home):
     resp = client.post('/admin/backups/upload', data=data, content_type='multipart/form-data', follow_redirects=True)
     assert 'not a zip file' in resp.get_data(as_text=True)
     assert zips(home) == []
+    assert uploads_dir(home) == []
     assert os.listdir(home / 'data' / 'backups') == ['notes.txt']
+
+
+def test_cancel_removes_the_upload(client, home, tmp_path):
+    name = upload(client, tmp_path)
+    resp = client.post(f'/admin/backups/restore-upload/{name}/cancel', data=ADMIN, follow_redirects=True)
+    assert 'Restore cancelled' in resp.get_data(as_text=True)
+    assert uploads_dir(home) == []
+    assert note_content(home) == 'current'
+
+
+def test_upload_routes_only_reach_their_folder(client, home):
+    create(client)
+    saved = zips(home)[0]
+    # A saved backup is not an upload, and paths cannot climb out
+    for name in (saved, '..%2Fbackups%2F' + saved, 'missing.zip'):
+        assert client.get(f'/admin/backups/restore-upload/{name}?user=Administrator').status_code == 404
+        client.post(f'/admin/backups/restore-upload/{name}/cancel', data=ADMIN)
+    assert zips(home) == [saved]
+
+
+def test_stale_upload_cleaned_when_page_opens(client, home, tmp_path):
+    name = upload(client, tmp_path)
+    path = home / 'data' / 'restore-uploads' / name
+    os.utime(path, (0, 0))
+    client.get('/admin/backups?user=Administrator')
+    assert not path.exists()
 
 
 # --- Restore ---
 
 def upload(client, tmp_path, note='uploaded'):
     data = {**ADMIN, 'backup': (io.BytesIO(backup_bytes(tmp_path, note)), f'{note}.zip')}
-    client.post('/admin/backups/upload', data=data, content_type='multipart/form-data')
-    return f'{note}.zip'
+    resp = client.post('/admin/backups/upload', data=data, content_type='multipart/form-data')
+    return resp.headers['Location'].split('/restore-upload/')[1].split('?')[0]
 
 
 def test_restore_asks_password_again_and_counts_attempts(client, home, tmp_path):
     name = upload(client, tmp_path)
-    preview = client.get(f'/admin/backups/restore/{name}?user=Administrator')
+    preview = client.get(f'/admin/backups/restore-upload/{name}?user=Administrator')
     assert preview.status_code == 200
     html = preview.get_data(as_text=True)
     assert 'Database &amp; settings' in html and 'config.yml' in html
 
     for _ in range(admin.MAX_FAILED_ATTEMPTS):
-        resp = client.post(f'/admin/backups/restore/{name}', data={**ADMIN, 'password': 'wrong', 'parts': ['database']},
+        resp = client.post(f'/admin/backups/restore-upload/{name}', data={**ADMIN, 'password': 'wrong', 'parts': ['database']},
                            follow_redirects=True)
     assert note_content(home) == 'current'
     # Locked out now, even with the right password
-    resp = client.post(f'/admin/backups/restore/{name}', data={**ADMIN, 'password': '4321', 'parts': ['database']},
+    resp = client.post(f'/admin/backups/restore-upload/{name}', data={**ADMIN, 'password': '4321', 'parts': ['database']},
                        follow_redirects=True)
     assert 'Too many attempts' in resp.get_data(as_text=True)
     backup.jobs.wait(5)
     assert note_content(home) == 'current'
+    # Still there to try again later
+    assert uploads_dir(home) == [name]
 
 
 def test_restore_from_page_round_trip(client, home, tmp_path, example_config_path):
     with open(example_config_path, encoding='utf-8') as f:
         config_before = f.read()
     name = upload(client, tmp_path, note='from-backup')
-    resp = client.post(f'/admin/backups/restore/{name}',
+    resp = client.post(f'/admin/backups/restore-upload/{name}',
                        data={**ADMIN, 'password': '4321', 'parts': ['database', 'uploads', 'config']})
     assert resp.status_code == 302
     backup.jobs.wait(10)
@@ -281,8 +327,9 @@ def test_restore_from_page_round_trip(client, home, tmp_path, example_config_pat
     assert (home / 'uploads' / 'photo.jpg').read_bytes() == b'jpg-from-backup'
     # Not ticked, so left alone
     assert (home / 'pdfs' / 'bill.pdf').read_bytes() == b'%PDF-current'
-    # A safety backup of what was replaced appeared in the list
-    assert any(n.startswith('homehub-safety-backup-') for n in zips(home))
+    # The uploaded zip is gone; a safety backup of what was replaced is in the list
+    assert uploads_dir(home) == []
+    assert [n for n in zips(home) if n.startswith('homehub-safety-backup-')]
 
     page = client.get('/admin/backups?user=Administrator').get_data(as_text=True)
     assert 'Restore complete' in page
@@ -302,9 +349,60 @@ def test_restore_from_page_round_trip(client, home, tmp_path, example_config_pat
 
 def test_restore_with_nothing_ticked(client, home, tmp_path):
     name = upload(client, tmp_path)
-    resp = client.post(f'/admin/backups/restore/{name}', data={**ADMIN, 'password': '4321'}, follow_redirects=True)
+    resp = client.post(f'/admin/backups/restore-upload/{name}', data={**ADMIN, 'password': '4321'}, follow_redirects=True)
     assert 'Choose at least one part' in resp.get_data(as_text=True)
     assert note_content(home) == 'current'
+
+
+def restore_upload(client, tmp_path, note):
+    name = upload(client, tmp_path, note=note)
+    client.post(f'/admin/backups/restore-upload/{name}', data={**ADMIN, 'password': '4321', 'parts': ['database']})
+    backup.jobs.wait(10)
+
+
+def test_only_safety_backups_restore_from_the_list(client, home, tmp_path):
+    create(client)
+    own = zips(home)[0]
+    restore_upload(client, tmp_path, 'restored')
+    [safety] = [n for n in zips(home) if n.startswith('homehub-safety-backup-')]
+
+    page = client.get('/admin/backups?user=Administrator').get_data(as_text=True)
+    assert f'/admin/backups/restore/{safety}' in page
+    assert f'/admin/backups/restore/{own}' not in page
+    assert 'Restore it to undo that restore.' in page
+    # The route agrees with the page
+    assert client.get(f'/admin/backups/restore/{own}?user=Administrator').status_code == 404
+    client.post(f'/admin/backups/restore/{own}', data={**ADMIN, 'password': '4321', 'parts': ['database']})
+    backup.jobs.wait(5)
+    assert note_content(home) == 'restored'
+
+    # Restoring the safety backup undoes the restore, and keeps the safety backup in the list
+    client.post(f'/admin/backups/restore/{safety}', data={**ADMIN, 'password': '4321', 'parts': ['database']})
+    backup.jobs.wait(10)
+    assert note_content(home) == 'current'
+    assert safety in zips(home)
+
+
+def test_only_the_newest_safety_backups_are_kept(client, home, tmp_path):
+    create(client)
+    own = zips(home)[0]
+    for i in range(backup.KEEP_SAFETY_BACKUPS + 2):
+        restore_upload(client, tmp_path, f'round{i}')
+    safety = [n for n in zips(home) if n.startswith('homehub-safety-backup-')]
+    assert len(safety) == backup.KEEP_SAFETY_BACKUPS
+    # Your own backups are never removed
+    assert own in zips(home)
+
+
+def test_pruning_spares_the_backup_being_restored(home):
+    base = str(home)
+    made = [backup.create_backup(base_dir=base, kind='safety') for _ in range(backup.KEEP_SAFETY_BACKUPS)]
+    oldest = made[0]
+    # Restoring the oldest safety backup makes a new one; the oldest stays, being the source
+    backup.restore_backup(oldest, base_dir=base, parts=['database'])
+    names = [b['name'] for b in backup.list_backups(base) if b['kind'] == 'safety']
+    assert os.path.basename(oldest) in names
+    assert len(names) == backup.KEEP_SAFETY_BACKUPS + 1
 
 
 def test_home_page_links_to_backups(client):

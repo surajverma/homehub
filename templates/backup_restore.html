@@ -16,8 +16,8 @@
   </div>
 
   {% if not info.error %}
-  <form method="POST" action="/admin/backups/restore/{{ info.name }}" class="card p-4 space-y-4" autocomplete="off"
-        data-confirm="{{ _('Replace the current data with this backup?') }}" data-confirm-action="{{ _('Restore') }}">
+  {# The admin password below is the confirmation; there is no extra dialog #}
+  <form method="POST" action="{{ urls.action }}" class="card p-4 space-y-4" autocomplete="off" id="restoreForm">
     <input type="hidden" name="user" value="{{ user }}">
     <fieldset class="space-y-2">
       <legend class="text-sm text-gray-600 mb-1">{{ _('What to restore') }}</legend>
@@ -42,7 +42,21 @@
       <p class="text-sm text-red-600 mt-1" role="alert">{{ ngettext('Too many attempts. Try again in %(num)s second.', 'Too many attempts. Try again in %(num)s seconds.', lockout_seconds) }}</p>
       {% endif %}
     </div>
-    <button type="submit" class="btn btn-danger" {% if lockout_seconds %}disabled{% endif %}><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>{{ _('Restore') }}</button>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="btn btn-danger" {% if lockout_seconds %}disabled{% endif %}><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>{{ _('Restore') }}</button>
+      {% if urls.cancel %}
+      <button type="submit" form="cancelRestoreForm" class="btn btn-secondary">{{ _('Cancel') }}</button>
+      {% else %}
+      <a href="/admin/backups?user={{ user|urlencode }}" class="btn btn-secondary">{{ _('Cancel') }}</a>
+      {% endif %}
+    </div>
+  </form>
+  {% endif %}
+  {% if urls.cancel %}
+  {# Cancelling an uploaded backup deletes it from the server #}
+  <form method="POST" action="{{ urls.cancel }}" id="cancelRestoreForm" class="{{ '' if info.error else 'hidden' }}">
+    <input type="hidden" name="user" value="{{ user }}">
+    {% if info.error %}<button type="submit" class="btn btn-secondary">{{ _('Remove this file') }}</button>{% endif %}
   </form>
   {% endif %}
 </div>

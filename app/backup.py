@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import re
+import secrets
 import shutil
 import sqlite3
 import tempfile
@@ -45,6 +46,10 @@ _BACKUP_NAME_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]*\.zip$')
 _PART_PREFIX = '.homehub-'
 # A .part file nobody has written to for this long was left by a backup that died
 STALE_PART_SECONDS = 600
+# An uploaded backup that was never restored or cancelled (say the tab was closed) is removed after this
+STALE_UPLOAD_SECONDS = 6 * 3600
+# Safety backups kept in data/backups/; older ones are removed when a new one is made
+KEEP_SAFETY_BACKUPS = 3
 _CHUNK = 1024 * 1024
 
 
@@ -68,6 +73,8 @@ def paths(base_dir: str | None = None) -> dict:
         'db': os.path.join(data, 'app.db'),
         'secret_key': os.path.join(data, 'secret_key'),
         'backups': os.path.join(data, 'backups'),
+        # Backups uploaded for a restore wait here, outside the list, until restored or cancelled
+        'restore_uploads': os.path.join(data, 'restore-uploads'),
         'config_from_backup': os.path.join(data, CONFIG_FROM_BACKUP),
         'uploads': os.path.join(base, 'uploads'),
         'pdfs': os.path.join(base, 'pdfs'),
@@ -414,6 +421,8 @@ def restore_backup(zip_path: str, base_dir: str | None = None, parts=None, safet
         safety_path = None
         if safety_backup and os.path.isfile(p['db']):
             safety_path = create_backup(parts=['database'] + replaced, base_dir=base_dir, kind='safety')
+            # The backup being restored is kept even when it is an old safety backup itself
+            prune_safety_backups(base_dir, spare=zip_path)
 
         restored = []
         config_path = None
@@ -436,15 +445,40 @@ def restore_backup(zip_path: str, base_dir: str | None = None, parts=None, safet
 
 # --- Backups kept in data/backups/ (the web page lists these) ---
 
-def backup_file(name: str, base_dir: str | None = None) -> str | None:
-    """Full path of the backup called ``name`` in data/backups/, or None. Never reaches outside that folder."""
+def _zip_in(folder: str, name: str) -> str | None:
     if not name or not _BACKUP_NAME_RE.match(name):
         return None
-    folder = os.path.realpath(paths(base_dir)['backups'])
+    folder = os.path.realpath(folder)
     path = os.path.realpath(os.path.join(folder, name))
     if os.path.dirname(path) != folder or not os.path.isfile(path):
         return None
     return path
+
+
+def backup_file(name: str, base_dir: str | None = None) -> str | None:
+    """Full path of the backup called ``name`` in data/backups/, or None. Never reaches outside that folder."""
+    return _zip_in(paths(base_dir)['backups'], name)
+
+
+def uploaded_file(name: str, base_dir: str | None = None) -> str | None:
+    """Full path of a backup uploaded for a restore, or None. Never reaches outside data/restore-uploads/."""
+    return _zip_in(paths(base_dir)['restore_uploads'], name)
+
+
+def prune_safety_backups(base_dir: str | None = None, keep: int = KEEP_SAFETY_BACKUPS, spare: str | None = None) -> list:
+    """Delete all but the newest ``keep`` safety backups (and ``spare``); returns the names removed.
+
+    Other backups are never touched.
+    """
+    safety = [b for b in list_backups(base_dir) if b['kind'] == 'safety']
+    spare = os.path.realpath(spare) if spare else None
+    removed = []
+    for b in safety[keep:]:
+        path = backup_file(b['name'], base_dir)
+        if path and path != spare:
+            remove_quietly(path)
+            removed.append(b['name'])
+    return removed
 
 
 def list_backups(base_dir: str | None = None) -> list:
@@ -470,12 +504,26 @@ def _latest_mtime(folder: str) -> float:
     return latest
 
 
-def remove_stale_parts(base_dir: str | None = None, max_age: int = STALE_PART_SECONDS) -> int:
-    """Delete half-written files left by a backup, upload or restore that was cut off (say by a restart)."""
+def remove_stale_parts(base_dir: str | None = None, max_age: int = STALE_PART_SECONDS,
+                       upload_max_age: int = STALE_UPLOAD_SECONDS) -> int:
+    """Delete half-written files left by a backup, upload or restore that was cut off (say by a restart),
+    and uploaded backups that were never restored or cancelled."""
     p = paths(base_dir)
     folder = p['backups']
     removed = 0
     now = time.time()
+    try:
+        for name in os.listdir(p['restore_uploads']):
+            path = os.path.join(p['restore_uploads'], name)
+            limit = max_age if name.endswith('.part') else upload_max_age
+            try:
+                if os.path.isfile(path) and now - os.path.getmtime(path) > limit:
+                    os.remove(path)
+                    removed += 1
+            except OSError:
+                pass
+    except OSError:
+        pass
     try:
         for name in os.listdir(p['data']):
             path = os.path.join(p['data'], name)
@@ -501,20 +549,21 @@ def remove_stale_parts(base_dir: str | None = None, max_age: int = STALE_PART_SE
 
 
 def unique_upload_path(filename: str, base_dir: str | None = None) -> str:
-    """Where an uploaded backup goes: data/backups/<safe name>.zip, never over an existing file."""
+    """Where an uploaded backup waits for its restore: data/restore-uploads/<safe name>-<random>.zip.
+
+    The random part keeps the name from being guessed and two uploads of the same file apart.
+    """
     stem = re.sub(r'[^A-Za-z0-9._-]+', '-', os.path.splitext(os.path.basename(filename or ''))[0]).strip('.-_')
     stem = stem or 'uploaded-backup'
-    folder = paths(base_dir)['backups']
-    path = os.path.join(folder, f'{stem}.zip')
-    n = 2
-    while os.path.exists(path):
-        path = os.path.join(folder, f'{stem}-{n}.zip')
-        n += 1
-    return path
+    folder = paths(base_dir)['restore_uploads']
+    while True:
+        path = os.path.join(folder, f'{stem}-{secrets.token_hex(4)}.zip')
+        if not os.path.exists(path):
+            return path
 
 
 def upload_part_path(base_dir: str | None = None) -> str:
-    folder = paths(base_dir)['backups']
+    folder = paths(base_dir)['restore_uploads']
     os.makedirs(folder, exist_ok=True)
     fd, path = tempfile.mkstemp(prefix=_PART_PREFIX + 'upload-', suffix='.part', dir=folder)
     os.close(fd)

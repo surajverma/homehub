@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 21:27+0530\n"
+"POT-Creation-Date: 2026-10-31 09:20+0000\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -158,8 +158,7 @@ msgid "Could not save the uploaded backup."
 msgstr ""
 
 #: app/blueprints/backups.py
-#, python-format
-msgid "Backup %(name)s uploaded."
+msgid "Restore cancelled. The uploaded file was removed from the server."
 msgstr ""
 
 #: app/blueprints/chores.py
@@ -841,10 +840,10 @@ msgstr "Kenar çubuğunu daralt"
 msgid "Welcome, {name}! — {date}"
 msgstr "Hoş geldin {name}! — {date}"
 
-#: static/js/base/ui.js static/js/pages/shopping.js templates/base.html
-#: templates/chores.html templates/expenses.html
-#: templates/expenses_recurring.html templates/index.html templates/notes.html
-#: templates/recipes.html
+#: static/js/base/ui.js static/js/pages/shopping.js
+#: templates/backup_restore.html templates/base.html templates/chores.html
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html templates/notes.html templates/recipes.html
 msgid "Cancel"
 msgstr "İptal"
 
@@ -1942,10 +1941,6 @@ msgid "Size:"
 msgstr ""
 
 #: templates/backup_restore.html
-msgid "Replace the current data with this backup?"
-msgstr ""
-
-#: templates/backup_restore.html
 msgid "What to restore"
 msgstr ""
 
@@ -1974,6 +1969,10 @@ msgstr ""
 #: templates/backup_restore.html templates/base.html
 msgid "Admin password"
 msgstr "Yönetici şifresi"
+
+#: templates/backup_restore.html
+msgid "Remove this file"
+msgstr ""
 
 #: templates/backups.html
 msgid "Backups"
@@ -2059,11 +2058,16 @@ msgid_plural "%(num)s backups, %(size)s in total"
 msgstr[0] ""
 
 #: templates/backups.html
-msgid "A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it."
+msgid "A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it; you can then delete it here to free up space on the server."
 msgstr ""
 
 #: templates/backups.html
 msgid "Safety backup"
+msgstr ""
+
+#: templates/backups.html
+#, python-format
+msgid "Made automatically before the restore at %(time)s. Restore it to undo that restore."
 msgstr ""
 
 #: templates/backups.html
@@ -2076,20 +2080,24 @@ msgid "No backups yet."
 msgstr ""
 
 #: templates/backups.html
-msgid "Upload a backup"
+msgid "Restore from a backup file"
 msgstr ""
 
 #: templates/backups.html
-msgid "Add a backup zip from another device to the list, for example to restore it here. Larger than the upload limit? Copy it into data/backups/ on the server instead."
+msgid "Choose a HomeHub backup zip. Next you pick what to restore. The file is only kept on the server until the restore is done or cancelled."
 msgstr ""
 
 #: templates/backups.html
 msgid "Backup zip"
 msgstr ""
 
-#: templates/backups.html templates/upload.html
-msgid "Upload"
-msgstr "Yükle"
+#: templates/backups.html templates/base.html templates/login.html
+msgid "Continue"
+msgstr "Devam"
+
+#: templates/backups.html
+msgid "Larger than the upload limit? Raise max_upload_mb in config.yml (and the limit of any reverse proxy in front of HomeHub), or restore it on the server with flask restore."
+msgstr ""
 
 #: templates/base.html
 msgid "Close menu"
@@ -2200,10 +2208,6 @@ msgstr "HomeHub deneyiminizi kişiselleştirmek için adınızı seçin."
 #: templates/base.html
 msgid "User"
 msgstr "Kullanıcı"
-
-#: templates/base.html templates/login.html
-msgid "Continue"
-msgstr "Devam"
 
 #: templates/chores.html
 msgid "To-Do / Chores"
@@ -3469,6 +3473,10 @@ msgid "Files to upload"
 msgstr "Yüklenecek dosyalar"
 
 #: templates/upload.html
+msgid "Upload"
+msgstr "Yükle"
+
+#: templates/upload.html
 msgid "No files yet."
 msgstr "Henüz dosya yok."
 
@@ -3484,4 +3492,19 @@ msgstr "Bu dosya silinsin mi? Sunucudan kaldırılır."
 
 #~ msgid "Top Category"
 #~ msgstr "Öne Çıkan Kategori"
+
+#~ msgid "Backup %(name)s uploaded."
+#~ msgstr ""
+
+#~ msgid "Replace the current data with this backup?"
+#~ msgstr ""
+
+#~ msgid "A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it."
+#~ msgstr ""
+
+#~ msgid "Upload a backup"
+#~ msgstr ""
+
+#~ msgid "Add a backup zip from another device to the list, for example to restore it here. Larger than the upload limit? Copy it into data/backups/ on the server instead."
+#~ msgstr ""
 

@@ -225,8 +225,10 @@ Backups are zip files kept on the server in `data/backups/` (on the host through
 **From the browser:** set an [admin password](#admin-password-optional) first; backups hold everyone's data and may contain the site password, so the Backups page stays off without one. Then, as the unlocked admin, open **Manage backups** on the Welcome page.
 
 - **Create a backup:** tick what to include. Each part shows its size, with a running total. The database and settings are always included. Downloaded media is off by default because it can be very large, and the page warns above about 1 GB. The backup is built in the background, so you can leave the page.
-- **Download** any backup in the list; an interrupted download can resume. **Delete** the ones you no longer need, and **upload** a backup zip from another device (up to `max_upload_mb`; copy bigger ones into `data/backups/` by hand).
-- **Restore** asks for the admin password again. You see what the backup holds and can untick parts. Before anything is replaced, the current data is saved as a safety backup in the list. Restart HomeHub afterwards (`docker compose restart homehub`).
+- **Download** any backup in the list (an interrupted download can resume), then **delete** it to free up space on the server.
+- **Restore from a backup file:** choose a backup zip and you go straight to the restore page. It asks for the admin password again; you see what the backup holds and can untick parts. The uploaded zip is deleted from the server once the restore is done or cancelled. Uploads are limited by `max_upload_mb` (and by any reverse proxy in front of HomeHub); raise that for a bigger backup, or use `flask restore` below.
+- **Safety backups:** before a restore replaces anything, the current data is saved as a safety backup in the list. It is the undo for that restore, so it is the one kind of backup with a **Restore** button there. The newest 3 are kept; older ones are deleted automatically.
+- Restart HomeHub after a restore (`docker compose restart homehub`).
 - `config.yml` is never overwritten, because it is mounted read-only. After a restore, the page shows the backup's config (passwords hidden) and saves it as `data/config-from-backup.yml`; copy the settings you want into `config.yml` yourself.
 
 Backups that include `config.yml` may contain the site password in plain text. Keep them somewhere safe.
