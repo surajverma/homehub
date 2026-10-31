@@ -50,7 +50,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 
 The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
 
-1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub, add family members and choose which features to show. The settings at the bottom (site password, upload limit, colours, reminders, weather, theme) are optional: delete any you don't need and HomeHub uses its defaults.
+1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub, add family members and choose which features to show. The settings at the bottom (site password, upload limit, colours, reminders, calendar feed, weather, theme) are optional: delete any you don't need and HomeHub uses its defaults.
 <details>
   <summary>Click to see an example config.yml</summary>
 
@@ -151,6 +151,16 @@ reminders:
     - key: family
       label: Family
       color: "#2563eb"
+
+# Calendar subscription feed: lets calendar apps (Apple Calendar, Outlook, Thunderbird,
+# ICSx5 on Android) show HomeHub reminders. Read-only; nothing is sent to any calendar.
+# Off while the token is empty. Set a long random string (at least 16 characters), e.g. from
+#   python -c "import secrets; print(secrets.token_urlsafe(32))"
+# then subscribe to http://<your-homehub>/calendar.ics?token=<token>
+# Anyone with the link can read your reminders. Change the token to revoke old links;
+# it takes effect without a restart. Times use the container's TZ setting.
+calendar_feed:
+  token: ""
 
 # Weather widget on the Welcome page (Open-Meteo, no account needed). Off unless enabled.
 weather:
@@ -256,6 +266,45 @@ HomeHub decides what "today" is (due dates, overdue chores, recurring expenses a
 ```
 
 Use a name from the [tz database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), then run `docker compose up -d`. Leaving it out keeps the old UTC behaviour.
+
+## Calendar subscription (optional)
+
+HomeHub can publish your reminders as a read-only calendar feed (`.ics`), so they show up in Apple Calendar, Outlook, Thunderbird or your phone next to your other events. It only goes one way: HomeHub never reads from or writes to any other calendar. The feed holds reminders (one-time and recurring) from 60 days ago to a year ahead. Chores and expenses aren't included.
+
+**Turn it on.** Make a long random token:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+and put it in `config.yml`:
+
+```yaml
+calendar_feed:
+  token: "paste-the-token-here"   # at least 16 characters; empty turns the feed off
+```
+
+No restart is needed. Your link is:
+
+```
+http://<your-homehub-address>:<port>/calendar.ics?token=<token>
+```
+
+It works with or without a site password, because calendar apps can't log in. The token is what protects it. A wrong or missing token gets a plain "not found".
+
+**Subscribe** (use "subscribe" or "from URL", not "import", so changes keep coming in):
+
+- **Apple Calendar** (Mac): File → New Calendar Subscription, paste the link. On iPhone or iPad: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar.
+- **Outlook** (desktop): Add calendar → From internet (in classic Outlook: Home → Add Calendar → From Internet), paste the link.
+- **Thunderbird**: Calendar → New Calendar → On the Network, paste the link as the location (format iCalendar/ICS).
+- **Android**: install [ICSx⁵](https://icsx5.bitfire.at/), add a subscription with the link. The events then show in the Google Calendar app (and any other calendar app) on that phone. The phone fetches the feed itself, so this works at home or over a VPN such as Tailscale, with no internet exposure needed.
+- **Google Calendar** (web: Other calendars → From URL): Google fetches the feed from Google's servers, not from your device, so **it only works if HomeHub is reachable from the internet** (for example through a Cloudflare Tunnel or a reverse proxy). Google also refreshes slowly, often only every 12-24 hours. If HomeHub stays on your home network, use ICSx⁵ on Android instead.
+
+Apps are asked to refresh about every hour, but each app decides for itself how often it does.
+
+**Times.** Reminders with a time use the container's `TZ` (see [Timezone](#timezone-optional) above). Without `TZ`, timed reminders are sent as "floating" times, which calendar apps show at the same clock time in whatever zone the device is in. Reminders without a time show as all-day events, and a timed reminder without an end lasts 30 minutes.
+
+**Keep the link secret.** Anyone who has it can read your reminders, including their descriptions and who added them. The link also appears in HomeHub's access log (`docker logs`) and in the logs of any proxy in front of it. If it leaks, change the token in `config.yml`: old links stop working straight away, and every device needs the new link.
 
 ## Language
 
