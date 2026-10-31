@@ -4,7 +4,7 @@
   <div>
     <a href="/admin/backups?user={{ user|urlencode }}" class="btn btn-ghost btn-sm" style="color: var(--primary-text);"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>{{ _('Back to backups') }}</a>
     <h1 class="page-title mt-2">{{ _('Restore a backup') }}</h1>
-    <p class="page-subtitle break-all">{{ info.name }}</p>
+    <p class="page-subtitle break-all">{{ shown_name }}</p>
   </div>
 
   <div class="card p-4 space-y-2 text-sm">

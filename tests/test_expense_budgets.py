@@ -109,6 +109,19 @@ def test_month_payload_counts_spending_but_not_skips_or_settlements(client):
     assert status['Food']['spent'] == 60 and status['Food']['level'] == 'over'
 
 
+def test_spending_without_a_category_is_its_own_bucket(client):
+    save_budgets(client, overall=1000, Food=50)
+    add(client, date=date(2026, 10, 2), title='Milk', category='Food', amount=40, payer='Alice')
+    add(client, date=date(2026, 10, 3), title='Odd job', amount=300, payer='Alice')
+    add(client, date=date(2026, 10, 4), title='Settle', amount=500, payer='Bob', is_settlement=True, split_with='["Alice"]')
+    data = client.get('/api/expenses/month?year=2026&month=10').get_json()
+    assert data['summary']['uncategorised'] == 300
+    assert data['summary']['per_category'] == {'Food': 40}
+    status = {b['category']: b for b in data['budgets']}
+    # Counted in the overall budget, never in a category's
+    assert status[None]['spent'] == 340 and status['Food']['spent'] == 40
+
+
 def test_welcome_note_only_when_over(client):
     today = date.today()
     save_budgets(client, overall=100)

@@ -238,13 +238,15 @@ def test_upload_goes_straight_to_its_restore_page(client, home, tmp_path):
     data = {**ADMIN, 'backup': (io.BytesIO(backup_bytes(tmp_path)), '../../My Backup!.zip')}
     resp = client.post('/admin/backups/upload', data=data, content_type='multipart/form-data')
     assert resp.status_code == 302
-    assert '/admin/backups/restore-upload/My-Backup-' in resp.headers['Location']
-    # Not in the list of saved backups; it waits in its own folder
+    assert '/admin/backups/restore-upload/uploaded-backup-' in resp.headers['Location']
+    # Not in the list of saved backups; it waits in its own folder, under a name of its own
     assert zips(home) == []
     [name] = uploads_dir(home)
-    assert name.startswith('My-Backup-') and name.endswith('.zip')
+    assert name.startswith('uploaded-backup-') and name.endswith('.zip') and 'My' not in name
     html = client.get(resp.headers['Location']).get_data(as_text=True)
     assert 'Database &amp; settings' in html and 'Admin password' in html
+    # The file's own name is shown, without the path it came with
+    assert 'My Backup!.zip' in html and '../' not in html.split('page-subtitle')[1][:80]
     # The password is the confirmation: no extra dialog on this form
     start = html.index('<form method="POST" action="/admin/backups/restore-upload/')
     assert 'data-confirm' not in html[start:html.index('>', start)]
@@ -397,6 +399,9 @@ def test_only_the_newest_safety_backups_are_kept(client, home, tmp_path):
 def test_pruning_spares_the_backup_being_restored(home):
     base = str(home)
     made = [backup.create_backup(base_dir=base, kind='safety') for _ in range(backup.KEEP_SAFETY_BACKUPS)]
+    # Made within the same second; file times say which is oldest
+    for age, path in enumerate(reversed(made), start=1):
+        os.utime(path, (1_700_000_000 - age * 60, 1_700_000_000 - age * 60))
     oldest = made[0]
     # Restoring the oldest safety backup makes a new one; the oldest stays, being the source
     backup.restore_backup(oldest, base_dir=base, parts=['database'])

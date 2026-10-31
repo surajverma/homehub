@@ -1,5 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, current_app, Response
 from datetime import datetime, date, timedelta
+from decimal import Decimal
 import calendar as _calendar
 import csv
 import io
@@ -405,6 +406,8 @@ def _build_month_payload(y: int, m: int) -> dict:
     total = 0.0
     per_payer: dict[str, float] = {}
     per_category: dict[str, float] = {}
+    # Spending without a category; shown in the chart, never counted toward a category budget
+    uncategorised = 0.0
     # What each person actually bears after splits (unshared expenses stay with the payer)
     per_share: dict[str, float] = {}
     settings = _load_expense_settings()
@@ -424,6 +427,8 @@ def _build_month_payload(y: int, m: int) -> dict:
                 per_share[name] = per_share.get(name, 0.0) + part
             if e.category:
                 per_category[e.category] = per_category.get(e.category, 0.0) + amt
+            else:
+                uncategorised += amt
         by_date[ds]['entries'].append({
             'id': e.id,
             'title': e.title,
@@ -457,6 +462,7 @@ def _build_month_payload(y: int, m: int) -> dict:
             'per_payer': per_payer,
             'per_share': per_share,
             'per_category': per_category,
+            'uncategorised': uncategorised,
             'top_category': top_category,
         },
         'year': y,
@@ -1247,10 +1253,15 @@ def _csv_text(value) -> str:
 
 
 def _csv_number(value, precision: int | None = None) -> str:
+    """A plain decimal for the CSV, never 1e+06: spreadsheets and our own import read it back as written."""
     if value is None:
         return ''
     value = float(value)
-    return f'{value:.{precision}f}' if precision is not None else f'{value:g}'
+    if precision is not None:
+        return f'{value:.{precision}f}'
+    # Shortest exact form of the number, written out without an exponent
+    text = format(Decimal(repr(value)), 'f')
+    return text.rstrip('0').rstrip('.') if '.' in text else text
 
 
 def _csv_split(e: ExpenseEntry) -> str:

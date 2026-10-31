@@ -28,6 +28,8 @@ from ..undo import offer_undo, restorer, row_to_dict, same_record
 from .expenses import _CSV_FORMULA_PREFIXES, _amount_problem, _load_expense_settings, _split_people
 
 MAX_ROWS = 5000
+# Checked before the file is read, separately from the site-wide upload limit
+MAX_IMPORT_BYTES = 10 * 1024 * 1024
 _SESSION_KEY = 'expense_import'
 _TEMP_PREFIX = 'homehub-import-'
 # An import left half-way is forgotten after a day
@@ -60,8 +62,23 @@ DATE_FORMATS = {
     'mdy': ('%m/%d/%Y', '%m-%d-%Y', '%m/%d/%y'),
 }
 _TIME_SUFFIX_RE = re.compile(r'[ T]\d{1,2}:\d{2}(:\d{2})?(\s*[AaPp][Mm])?$')
-_NUMBER_RE = re.compile(r'-?\d[\d,]*(?:\.\d+)?|-?\.\d+')
-_SPLIT_PART_RE =re.compile(r'^(.*?)\s*\(\s*([0-9.]+)\s*(%?)\s*\)$')
+# The whole cell, once currency text is taken off: 1234.5, 1,234.50, 1,23,456.50, 1.5e3 (not 1.234,56)
+_NUMBER_RE = re.compile(r'[-+]?(?:\d+(?:,\d+)*(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?')
+# Text before the number ("Rs. ", "INR ", "₹"), stopping where a sign, a decimal point or a digit starts it
+_NUMBER_PREFIX_RE = re.compile(r'^\D*?(?=[-+]?\.?\d)')
+# Text after the last digit (" INR", " Dr")
+_NUMBER_SUFFIX_RE = re.compile(r'(?<=\d)\D*$')
+_SPLIT_PART_RE = re.compile(r'^(.*?)\s*\(\s*(\d+(?:\.\d+)?|\.\d+)\s*(%?)\s*\)$')
+# "Name (something with a digit)" that is not a valid weight, e.g. "Mom (1.2.3)"
+_SPLIT_BAD_WEIGHT_RE = re.compile(r'\(([^()]*\d[^()]*)\)$')
+
+
+class SplitWeightError(ValueError):
+    """A split cell with a weight in brackets that is not a number."""
+
+    def __init__(self, part: str):
+        super().__init__(part)
+        self.part = part
 
 
 def _normal_header(text: str) -> str:
@@ -85,15 +102,25 @@ def _decode(raw: bytes) -> str:
     return raw.decode('latin-1')
 
 
-def read_csv(text: str) -> tuple[list, list]:
+def read_csv(text: str, max_rows: int = MAX_ROWS) -> tuple[list, list]:
     """(header, rows) of a CSV file. The header is the first row naming a date column,
-    so statements with a few lines of account details above the table still work."""
+    so statements with a few lines of account details above the table still work.
+
+    Reading stops one row past ``max_rows``, so a huge file is not parsed in full just to be refused.
+    """
     sample = text[:4096]
     try:
         dialect = csv.Sniffer().sniff(sample, delimiters=',;\t|')
     except csv.Error:
         dialect = csv.excel
-    rows = [row for row in csv.reader(io.StringIO(text), dialect) if any((c or '').strip() for c in row)]
+    # Up to 30 lines of account details, the header, then one row more than allowed
+    limit = 30 + 1 + max_rows + 1
+    rows = []
+    for row in csv.reader(io.StringIO(text), dialect):
+        if any((c or '').strip() for c in row):
+            rows.append(row)
+            if len(rows) >= limit:
+                break
     if not rows:
         return [], []
     start = 0
@@ -102,7 +129,7 @@ def read_csv(text: str) -> tuple[list, list]:
         if any(_normal_header(c) in date_names for c in row):
             start = i
             break
-    return [(c or '').strip() for c in rows[start]], rows[start + 1:]
+    return [(c or '').strip() for c in rows[start]], rows[start + 1:start + 2 + max_rows]
 
 
 def guess_mapping(header: list) -> dict:
@@ -129,16 +156,21 @@ def parse_date(value: str, fmt: str = 'auto') -> date | None:
 
 
 def parse_number(value: str) -> float | None:
-    """A number from a statement cell: "₹1,23,456.50", "Rs. 99", "(250.00)" (negative). None when blank."""
+    """A number from a statement cell: "₹1,23,456.50", "Rs. 99", "(250.00)" (negative). None when blank.
+
+    Currency text around the number is ignored, but what is left must be one whole number:
+    "1.234,56" or "12 34" give NaN rather than a wrong amount.
+    """
     text = (value or '').strip()
     if not text:
         return None
     negative = text.startswith('(') and text.endswith(')')
-    # The first number in the cell, so "Rs. 99" is 99 and not .99
-    match = _NUMBER_RE.search(text)
-    if not match:
+    if negative:
+        text = text[1:-1].strip()
+    text = _NUMBER_SUFFIX_RE.sub('', _NUMBER_PREFIX_RE.sub('', text, count=1)).strip()
+    if not _NUMBER_RE.fullmatch(text):
         return float('nan')
-    number = float(match.group(0).replace(',', ''))
+    number = float(text.replace(',', ''))
     return -abs(number) if negative else number
 
 
@@ -155,6 +187,8 @@ def parse_split_cell(value: str):
             percent = percent or bool(match.group(3))
             if name and weight > 0:
                 weights[name] = weights.get(name, 0) + weight
+        elif _SPLIT_BAD_WEIGHT_RE.search(part):
+            raise SplitWeightError(part)
         elif part not in names:
             names.append(part)
     if weights:
@@ -187,15 +221,25 @@ def build_rows(header: list, rows: list, mapping: dict, date_format: str, defaul
         if amount is None and unit_price is not None:
             amount = unit_price * (quantity if quantity is not None else 1)
         settlement = get(row, 'settlement').lower() in ('yes', 'y', 'true', '1')
-        split_with = parse_split_cell(get(row, 'split'))
+        split_problem = None
+        try:
+            split_with = parse_split_cell(get(row, 'split'))
+        except SplitWeightError as exc:
+            split_with, split_problem = None, exc.part
         item.update(
             date=d, title=title, category=bleach.clean(get(row, 'category'))[:64] or None,
             payer=bleach.clean(get(row, 'payer'))[:64] or default_payer, quantity=quantity,
             unit_price=unit_price, amount=round(amount, precision) if amount is not None and math.isfinite(amount) else amount,
             split_with=split_with, split_names=list(parse_split(split_with)[1]), is_settlement=settlement,
         )
+        bad_number = next((get(row, f) for f, v in (('amount', amount), ('quantity', quantity), ('unit_price', unit_price))
+                           if v is not None and not math.isfinite(v)), None)
         if d is None:
             item['error'] = _('Date not recognised: "%(value)s".', value=get(row, 'date'))
+        elif bad_number is not None:
+            item['error'] = _('Not a number: "%(value)s".', value=bad_number)
+        elif split_problem is not None:
+            item['error'] = _('The split weight is not a number: "%(value)s".', value=split_problem)
         elif not title:
             item['error'] = _('The title is empty.')
         elif amount is None:
@@ -290,9 +334,15 @@ def expense_import_page():
     if not current:
         return render_template('expenses_import.html', step='upload', config=config)
     _token, name, text = current
-    header, rows = read_csv(text)
-    mapping, date_format, payer = _options(request.args, header)
-    preview = build_rows(header, rows, mapping, date_format, payer)
+    try:
+        header, rows = read_csv(text)
+        mapping, date_format, payer = _options(request.args, header)
+        preview = build_rows(header, rows, mapping, date_format, payer)
+    except Exception:
+        current_app.logger.exception('Could not preview the expense import')
+        _end_import()
+        flash(_('That file could not be read. Check that it is a CSV file and try again.'), 'error')
+        return render_template('expenses_import.html', step='upload', config=config)
     counts = {status: sum(1 for r in preview if r['status'] == status) for status in ('new', 'duplicate', 'repeat', 'error')}
     return render_template(
         'expenses_import.html', step='preview', config=config, file_name=name, header=header,
@@ -308,7 +358,15 @@ def expense_import_upload():
     if not file or not file.filename:
         flash(_('No file selected.'), 'error')
         return redirect(url_for('main.expense_import_page'))
-    raw = file.read()
+    # Its own limit, checked before reading the whole file into memory
+    too_big = _('That file is larger than %(size)s MB. Split it into smaller files.', size=MAX_IMPORT_BYTES // (1024 * 1024))
+    if request.content_length and request.content_length > MAX_IMPORT_BYTES + 64 * 1024:
+        flash(too_big, 'error')
+        return redirect(url_for('main.expense_import_page'))
+    raw = file.read(MAX_IMPORT_BYTES + 1)
+    if len(raw) > MAX_IMPORT_BYTES:
+        flash(too_big, 'error')
+        return redirect(url_for('main.expense_import_page'))
     header, rows = read_csv(_decode(raw))
     if not header or not rows:
         flash(_('That file has no rows to import.'), 'error')

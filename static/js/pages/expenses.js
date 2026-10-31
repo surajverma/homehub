@@ -116,7 +116,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
   function renderMonthlySidebar(){
     // Export the month on screen
-    document.getElementById('export-csv-link').href = `/expenses/export.csv?month=${year}-${String(month).padStart(2, '0')}`;
+    const exportMonth = `${Number(year) || new Date().getFullYear()}-${String(Number(month) || 1).padStart(2, '0')}`;
+    document.getElementById('export-csv-link').href = '/expenses/export.csv?month=' + encodeURIComponent(exportMonth);
     // Collect all entries from every date, sorted by date ascending
     const allEntries = [];
     Object.keys(byDate).sort().forEach(ds=>{

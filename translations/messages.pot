@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-10-31 09:20+0000\n"
+"POT-Creation-Date: 2026-10-31 10:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -360,6 +360,16 @@ msgid "Date not recognised: \"%(value)s\"."
 msgstr ""
 
 #: app/blueprints/expense_import.py
+#, python-format
+msgid "Not a number: \"%(value)s\"."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "The split weight is not a number: \"%(value)s\"."
+msgstr ""
+
+#: app/blueprints/expense_import.py
 msgid "The title is empty."
 msgstr ""
 
@@ -377,6 +387,15 @@ msgstr ""
 
 #: app/blueprints/expense_import.py
 msgid "A settlement needs exactly one person in the split column."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+msgid "That file could not be read. Check that it is a CSV file and try again."
+msgstr ""
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "That file is larger than %(size)s MB. Split it into smaller files."
 msgstr ""
 
 #: app/blueprints/expense_import.py
@@ -980,6 +999,10 @@ msgstr ""
 
 #: static/js/pages/expense_charts.js
 msgid "Other"
+msgstr ""
+
+#: static/js/pages/expense_charts.js
+msgid "Uncategorised"
 msgstr ""
 
 #: static/js/pages/expense_charts.js templates/expenses.html

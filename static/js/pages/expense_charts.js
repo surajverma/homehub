@@ -83,9 +83,11 @@
     return `repeating-linear-gradient(135deg, ${color} 0 2px, transparent 2px 5px), color-mix(in srgb, ${color} 18%, transparent)`;
   }
 
-  // One row per category: name, bar, amount
-  function categoryChart(el, perCategory, categories, fmt){
-    const rows = foldRows(Object.entries(perCategory || {}).map(([label, value]) => ({ label, value: Number(value) || 0 })));
+  // One row per category: name, bar, amount. Spending without a category gets a grey row of its own.
+  function categoryChart(el, perCategory, uncategorised, categories, fmt){
+    const entries = Object.entries(perCategory || {}).map(([label, value]) => ({ label, value: Number(value) || 0 }));
+    if (Number(uncategorised) > 0) entries.push({ label: t('Uncategorised'), value: Number(uncategorised), other: true });
+    const rows = foldRows(entries);
     if (!rows.length){ empty(el); return; }
     // Colours come from every category of the month, so folding into "Other" does not shift them
     const colors = colorsFor(Object.keys(perCategory || {}), categories);
@@ -171,17 +173,19 @@
     const colors = { ok: 'var(--primary-color)', near: '#d97706', over: '#dc2626' };
     list.innerHTML = items.map(b => {
       const name = b.category == null ? t('Overall') : b.category;
-      const pct = Math.min(100, b.percent);
+      // Numbers only from here on, so nothing from the data reaches the markup unescaped
+      const percent = Math.round(Number(b.percent) || 0);
+      const pct = Math.max(0, Math.min(100, percent));
       let note;
       if (b.level === 'over') note = `<span class="text-red-600"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> ${th('{amount} over budget', { amount: fmt(b.spent - b.amount) })}</span>`;
       else if (b.level === 'near') note = `<span class="text-amber-700"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> ${th('{amount} left', { amount: fmt(b.amount - b.spent) })}</span>`;
       else note = `<span class="text-gray-500">${th('{amount} left', { amount: fmt(b.amount - b.spent) })}</span>`;
       return `<div>
         <div class="flex justify-between text-sm"><span class="font-semibold">${esc(name)}</span><span class="tabular-nums text-gray-600">${th('{spent} of {budget}', { spent: fmt(b.spent), budget: fmt(b.amount) })}</span></div>
-        <div class="w-full h-2 rounded mt-1 overflow-hidden" style="background: var(--hover-bg);" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${b.percent}" aria-label="${esc(name)}">
-          <div class="h-2 rounded" style="width:${pct}%; background:${colors[b.level] || colors.ok};"></div>
+        <div class="w-full h-2 rounded mt-1 overflow-hidden" style="background: var(--hover-bg);" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}" aria-label="${esc(name)}">
+          <div class="h-2 rounded" style="width:${pct}%; background:${Object.prototype.hasOwnProperty.call(colors, b.level) ? colors[b.level] : colors.ok};"></div>
         </div>
-        <div class="text-xs mt-1 flex justify-between"><span>${note}</span><span class="tabular-nums text-gray-500">${b.percent}%</span></div>
+        <div class="text-xs mt-1 flex justify-between"><span>${note}</span><span class="tabular-nums text-gray-500">${percent}%</span></div>
       </div>`;
     }).join('');
   }
@@ -239,7 +243,7 @@
       const card = document.getElementById('budgets-card');
       if (card) budgets(card, document.getElementById('budgets-list'), state.budgets, fmt);
       const cats = document.getElementById('chart-categories');
-      if (cats) categoryChart(cats, summary.per_category, (state.settings || {}).categories, fmt);
+      if (cats) categoryChart(cats, summary.per_category, summary.uncategorised, (state.settings || {}).categories, fmt);
       const people = document.getElementById('chart-people');
       if (people) peopleChart(people, summary.per_payer, summary.per_share, fmt);
       const days = document.getElementById('chart-days');

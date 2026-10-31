@@ -153,7 +153,7 @@ def test_statement_preview_flags_errors_and_repeats(client):
     assert 'No amount' in page
     assert 'Amount must be greater than zero.' in page
     assert 'The title is empty.' in page
-    assert 'Invalid amount.' in page
+    assert 'Not a number: ' in page
 
 
 def test_statement_needs_a_payer(client):
@@ -225,3 +225,93 @@ def test_start_over_and_expired_import(client):
 
 def test_expenses_page_links_to_import(client):
     assert 'href="/expenses/import"' in client.get('/expenses').get_data(as_text=True)
+
+
+# --- Numbers, limits and splits (PR review) ---
+
+@pytest.mark.parametrize('cell,expected', [
+    ('1234.5', 1234.5),
+    ('1,234.50', 1234.5),
+    ('₹1,23,456.50', 123456.5),
+    ('Rs. 99', 99),
+    ('INR 1,000 Dr', 1000),
+    ('(250.00)', -250),
+    ('-.5', -0.5),
+    ('1.5e3', 1500),
+    ('1e+06', 1000000),
+])
+def test_parse_number_reads_whole_numbers(cell, expected):
+    assert parse_number(cell) == expected
+
+
+@pytest.mark.parametrize('cell', ['1.234,56', '12 34', '1,234.5.6', '5 apples 3', 'abc', '1.2.3'])
+def test_parse_number_refuses_anything_that_is_not_one_number(cell):
+    value = parse_number(cell)
+    assert value != value  # NaN
+
+
+def test_unreadable_amount_cannot_be_imported(client):
+    upload(client, 'date;title;amount;payer\n2026-10-01;Milk;1.234,56;Alice\n2026-10-02;Bread;40;Alice\n')
+    page = client.get('/expenses/import').get_data(as_text=True)
+    assert 'Not a number: &#34;1.234,56&#34;.' in page or 'Not a number: &quot;1.234,56&quot;.' in page
+    assert '1 cannot be imported' in page
+    client.post('/expenses/import/confirm', data={'user': 'Alice', 'rows': ['1', '2']})
+    assert [t for _d, t, *_ in entries(client)] == ['Bread']
+
+
+def test_export_writes_plain_decimals(client):
+    add(client, date=date(2026, 10, 1), title='Big', amount=1000000, quantity=1000000, unit_price=1, payer='Alice')
+    add(client, date=date(2026, 10, 2), title='Tiny', amount=1, quantity=0.0000001, unit_price=1, payer='Alice')
+    text = client.get('/expenses/export.csv?month=2026-10').get_data(as_text=True)
+    assert 'e+' not in text and 'e-' not in text
+    assert ',1000000,' in text and ',0.0000001,' in text
+
+
+def test_import_file_size_is_capped_before_reading(client, monkeypatch):
+    from app.blueprints import expense_import
+    monkeypatch.setattr(expense_import, 'MAX_IMPORT_BYTES', 100)
+    resp = upload(client, 'date,title,amount,payer\n' + '2026-10-01,Milk,50,Alice\n' * 20)
+    assert resp.status_code == 302
+    page = client.get('/expenses/import').get_data(as_text=True)
+    assert 'That file is larger than' in page
+    assert 'name="file"' in page
+
+
+def test_read_csv_stops_one_row_past_the_limit():
+    text = 'date,title,amount\n' + '2026-10-01,Milk,50\n' * 50
+    header, rows = read_csv(text, max_rows=10)
+    assert header == ['date', 'title', 'amount']
+    assert len(rows) == 11
+
+
+def test_too_many_rows_are_refused(client, monkeypatch):
+    from app.blueprints import expense_import
+    monkeypatch.setattr(expense_import, 'MAX_ROWS', 3)
+    monkeypatch.setattr(expense_import.read_csv, '__defaults__', (3,))
+    upload(client, 'date,title,amount,payer\n' + '2026-10-01,Milk,50,Alice\n' * 10)
+    assert 'more than 3 rows' in client.get('/expenses/import').get_data(as_text=True)
+
+
+def test_split_weight_must_be_a_number(client):
+    assert parse_split_cell('Alice (1.5);Bob (.5)') == json.dumps({'mode': 'shares', 'weights': {'Alice': 1.5, 'Bob': 0.5}})
+    upload(client, 'date,title,amount,payer,split\n2026-10-01,Milk,50,Alice,Alice (1.2.3);Bob (1)\n')
+    page = client.get('/expenses/import').get_data(as_text=True)
+    assert 'The split weight is not a number' in page
+    assert '1 cannot be imported' in page
+
+
+def test_preview_that_fails_drops_the_file_instead_of_an_error_page(client, monkeypatch):
+    from app.blueprints import expense_import
+    upload(client, 'date,title,amount,payer\n2026-10-01,Milk,50,Alice\n')
+
+    def broken(*_args, **_kwargs):
+        raise RuntimeError('boom')
+
+    monkeypatch.setattr(expense_import, 'build_rows', broken)
+    resp = client.get('/expenses/import')
+    assert resp.status_code == 200
+    page = resp.get_data(as_text=True)
+    assert 'could not be read' in page and 'name="file"' in page
+    # The stored file is gone, so the next visit starts over
+    monkeypatch.undo()
+    assert 'name="file"' in client.get('/expenses/import').get_data(as_text=True)

@@ -212,7 +212,7 @@ def upload_backup():
     try:
         file.save(part)
         backup.validate_backup(part)
-        target = backup.unique_upload_path(file.filename)
+        target = backup.unique_upload_path()
         os.replace(part, target)
     except backup.BackupError as exc:
         backup.remove_quietly(part)
@@ -222,7 +222,9 @@ def upload_backup():
         backup.remove_quietly(part)
         flash(_('Could not save the uploaded backup.'), 'error')
         return _back()
-    return redirect(url_for('main.restore_upload_preview', name=os.path.basename(target), user=_user()))
+    # The file's own name is only shown on the restore page, never used on disk
+    return redirect(url_for('main.restore_upload_preview', name=os.path.basename(target), user=_user(),
+                            file=os.path.basename(file.filename.replace(chr(92), '/'))[:120]))
 
 
 def _restorable(source: str, name: str) -> str | None:
@@ -258,8 +260,10 @@ def _preview(source: str, name: str):
             backup.validate_backup(path)
         except backup.BackupError as exc:
             info['error'] = exc.code
+    shown_name = sanitize_text(request.args.get('file', ''))[:120] if source == 'upload' else ''
     return render_template('backup_restore.html', config=current_app.config['HOMEHUB_CONFIG'], user=_user(), info=info, part_labels=part_labels(),
                            error_message=_error_message, source=source, urls=_restore_urls(source, name),
+                           shown_name=shown_name or info['name'],
                            lockout_seconds=admin.unlock_wait_seconds(request.remote_addr or 'unknown'))
 
 

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-31 09:20+0000\n"
+"POT-Creation-Date: 2026-10-31 10:18+0000\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -362,6 +362,16 @@ msgid "Date not recognised: \"%(value)s\"."
 msgstr "तारीख समझ नहीं आई: \"%(value)s\"।"
 
 #: app/blueprints/expense_import.py
+#, python-format
+msgid "Not a number: \"%(value)s\"."
+msgstr "संख्या नहीं है: \"%(value)s\"।"
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "The split weight is not a number: \"%(value)s\"."
+msgstr "बंटवारे का हिस्सा संख्या नहीं है: \"%(value)s\"।"
+
+#: app/blueprints/expense_import.py
 msgid "The title is empty."
 msgstr "शीर्षक खाली है।"
 
@@ -380,6 +390,15 @@ msgstr "नीचे चुनें कि किसने दिया।"
 #: app/blueprints/expense_import.py
 msgid "A settlement needs exactly one person in the split column."
 msgstr "हिसाब चुकाने वाली एंट्री के बंटवारे वाले कॉलम में ठीक एक व्यक्ति होना चाहिए।"
+
+#: app/blueprints/expense_import.py
+msgid "That file could not be read. Check that it is a CSV file and try again."
+msgstr "यह फ़ाइल पढ़ी नहीं जा सकी। देख लें कि यह CSV फ़ाइल है और फिर से कोशिश करें।"
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "That file is larger than %(size)s MB. Split it into smaller files."
+msgstr "यह फ़ाइल %(size)s MB से बड़ी है। इसे छोटी फ़ाइलों में बांट लें।"
 
 #: app/blueprints/expense_import.py
 msgid "That file has no rows to import."
@@ -983,6 +1002,10 @@ msgstr "इस महीने कोई खर्च नहीं हुआ।"
 #: static/js/pages/expense_charts.js
 msgid "Other"
 msgstr "अन्य"
+
+#: static/js/pages/expense_charts.js
+msgid "Uncategorised"
+msgstr "बिना श्रेणी"
 
 #: static/js/pages/expense_charts.js templates/expenses.html
 msgid "Spending by category"

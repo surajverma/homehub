@@ -446,13 +446,26 @@ def restore_backup(zip_path: str, base_dir: str | None = None, parts=None, safet
 # --- Backups kept in data/backups/ (the web page lists these) ---
 
 def _zip_in(folder: str, name: str) -> str | None:
+    """The zip called ``name`` directly inside ``folder``, or None.
+
+    The path is built from the folder's own listing, never from ``name`` itself, so a name
+    from a URL can only ever pick one of the files that are really there.
+    """
     if not name or not _BACKUP_NAME_RE.match(name):
         return None
     folder = os.path.realpath(folder)
-    path = os.path.realpath(os.path.join(folder, name))
-    if os.path.dirname(path) != folder or not os.path.isfile(path):
+    try:
+        entries = os.listdir(folder)
+    except OSError:
         return None
-    return path
+    for entry in entries:
+        if entry != name:
+            continue
+        path = os.path.realpath(os.path.join(folder, entry))
+        # A symlink pointing elsewhere does not count
+        if path.startswith(folder + os.sep) and os.path.dirname(path) == folder and os.path.isfile(path):
+            return path
+    return None
 
 
 def backup_file(name: str, base_dir: str | None = None) -> str | None:
@@ -489,7 +502,8 @@ def list_backups(base_dir: str | None = None) -> list:
     except OSError:
         return []
     found = [describe_backup(os.path.join(folder, n)) for n in names if backup_file(n, base_dir)]
-    return sorted(found, key=lambda b: b['created_at'] or b['modified'], reverse=True)
+    # Backups made in the same second (the manifest time has no more detail) go by file time
+    return sorted(found, key=lambda b: (b['created_at'] or b['modified'], b['modified']), reverse=True)
 
 
 def _latest_mtime(folder: str) -> float:
@@ -548,16 +562,15 @@ def remove_stale_parts(base_dir: str | None = None, max_age: int = STALE_PART_SE
     return removed
 
 
-def unique_upload_path(filename: str, base_dir: str | None = None) -> str:
-    """Where an uploaded backup waits for its restore: data/restore-uploads/<safe name>-<random>.zip.
+def unique_upload_path(base_dir: str | None = None) -> str:
+    """Where an uploaded backup waits for its restore: data/restore-uploads/uploaded-backup-<random>.zip.
 
-    The random part keeps the name from being guessed and two uploads of the same file apart.
+    The uploaded file's own name never becomes part of a path on the server; the restore page
+    shows it separately. The random part keeps the name from being guessed.
     """
-    stem = re.sub(r'[^A-Za-z0-9._-]+', '-', os.path.splitext(os.path.basename(filename or ''))[0]).strip('.-_')
-    stem = stem or 'uploaded-backup'
     folder = paths(base_dir)['restore_uploads']
     while True:
-        path = os.path.join(folder, f'{stem}-{secrets.token_hex(4)}.zip')
+        path = os.path.join(folder, f'uploaded-backup-{secrets.token_hex(8)}.zip')
         if not os.path.exists(path):
             return path
 
