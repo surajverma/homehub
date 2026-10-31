@@ -152,9 +152,9 @@ reminders:
       label: Family
       color: "#2563eb"
 
-# Calendar subscription feed: lets calendar apps (Apple Calendar, Thunderbird, ICSx5 on
-# Android; Outlook and Google only if HomeHub is reachable from the internet) show HomeHub
-# reminders. Read-only; nothing is sent to any calendar.
+# Calendar subscription feed: lets calendar apps on your devices (Apple Calendar, Thunderbird,
+# ICSx5 on Android) show HomeHub reminders. Read-only; nothing is sent to any calendar.
+# Google Calendar and Outlook fetch from their own servers, so they can't reach a home network.
 # Off while the token is empty. Set a long random string (at least 16 characters), e.g. from
 #   python -c "import secrets; print(secrets.token_urlsafe(32))"
 # then subscribe to http://<your-homehub>/calendar.ics?token=<token>
@@ -270,7 +270,7 @@ Use a name from the [tz database](https://en.wikipedia.org/wiki/List_of_tz_datab
 
 ## Calendar subscription (optional)
 
-HomeHub can publish your reminders as a read-only calendar feed (`.ics`), so they show up in Apple Calendar, Thunderbird, your phone, or (when HomeHub is reachable from the internet) Outlook and Google Calendar, next to your other events. It only goes one way: HomeHub never reads from or writes to any other calendar. The feed holds reminders (one-time and recurring) from 60 days ago to a year ahead. Chores and expenses aren't included.
+HomeHub can publish your reminders as a read-only calendar feed (`.ics`), so they show up in Apple Calendar, Thunderbird or your phone next to your other events. It only goes one way: HomeHub never reads from or writes to any other calendar, and changes made in a calendar app don't come back. The feed holds reminders (one-time and recurring) from 60 days ago to a year ahead. Chores and expenses aren't included.
 
 **Turn it on.** Make a long random token:
 
@@ -293,13 +293,15 @@ http://<your-homehub-address>:<port>/calendar.ics?token=<token>
 
 It works with or without a site password, because calendar apps can't log in. The token is what protects it. A wrong or missing token gets a plain "not found".
 
-**Subscribe** (use "subscribe" or "from URL", not "import", so changes keep coming in):
+**Subscribe** (use "subscribe" or "from URL", not "import": an import copies the events once into your own calendar, and they don't update or come out again together).
 
-- **Apple Calendar** (Mac): File → New Calendar Subscription, paste the link. On iPhone or iPad: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar.
-- **Outlook** (new Outlook, Outlook on the web, and classic Outlook with an Outlook.com or Microsoft 365 account): Add calendar → Subscribe from web (classic Outlook: Home → Add Calendar → From Internet), paste the link. Like Google, Microsoft fetches the feed from its own servers, so **it only works if HomeHub is reachable from the internet**, and a `localhost` or home-network address will not work.
+These apps fetch the feed from your own device, so they work on your home network (and away from home over a VPN such as Tailscale):
+
+- **Apple Calendar** (Mac): File → New Calendar Subscription, paste the link, and set Location to **On My Mac**. With iCloud as the location, Apple's servers fetch the feed instead, and a home-network address won't work. On iPhone or iPad: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar (on newer iOS, Calendar is under Settings → Apps).
 - **Thunderbird**: Calendar → New Calendar → On the Network, paste the link as the location (format iCalendar/ICS).
-- **Android**: install [ICSx⁵](https://icsx5.bitfire.at/), add a subscription with the link. The events then show in the Google Calendar app (and any other calendar app) on that phone. The phone fetches the feed itself, so this works at home or over a VPN such as Tailscale, with no internet exposure needed.
-- **Google Calendar** (web: Other calendars → From URL): Google fetches the feed from Google's servers, not from your device, so **it only works if HomeHub is reachable from the internet** (for example through a Cloudflare Tunnel or a reverse proxy). Google also refreshes slowly, often only every 12-24 hours. If HomeHub stays on your home network, use Thunderbird, Apple Calendar or ICSx⁵ on Android instead: they fetch the feed from your own device.
+- **Android**: install [ICSx⁵](https://icsx5.bitfire.at/) and add a subscription with the link. The events then show in the Google Calendar app (and any other calendar app) on that phone. They stay on that phone and aren't added to your Google account.
+
+**Google Calendar** (calendar.google.com) and **Outlook** (new Outlook, Outlook on the web, and classic Outlook with an Outlook.com or Microsoft 365 account) are different: Google's or Microsoft's servers fetch the feed, not your device. They can't reach a HomeHub that is only on your home network, whether you use `localhost`, an IP address or a local domain name. HomeHub is built for a home network and isn't meant to be exposed to the internet, so these two aren't supported for now. Google also refreshes subscribed calendars slowly (often every 12-24 hours).
 
 Apps are asked to refresh about every hour, but each app decides for itself how often it does.
 
