@@ -248,11 +248,15 @@ def _description(description, creator) -> str:
 
 
 def _event_times(start_d, start_t, end_d, end_t):
-    """(all_day, start, end) with ``end`` exclusive: dates for all-day, datetimes otherwise."""
-    if start_t is None:
+    """(all_day, start, end) with ``end`` exclusive: dates for all-day, datetimes otherwise.
+
+    All-day only when neither a start nor an end time is set. A blank start time with an
+    end time starts at midnight, as the reminder API's range check reads it.
+    """
+    if start_t is None and end_t is None:
         last = end_d if end_d and end_d >= start_d else start_d
         return True, start_d, last + timedelta(days=1)
-    start = datetime.combine(start_d, start_t)
+    start = datetime.combine(start_d, start_t or time())
     if end_d and end_t:
         end = datetime.combine(end_d, end_t)
     elif end_d:

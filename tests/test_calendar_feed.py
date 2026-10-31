@@ -316,6 +316,28 @@ def test_timed_reminder_with_end_date_only_runs_to_end_of_that_day(client, confi
     assert ev['DTEND'] == '20261122T000000'
 
 
+@pytest.mark.parametrize('times, expected', [
+    # no times: all-day
+    ({}, {'DTSTART;VALUE=DATE': '20261120', 'DTEND;VALUE=DATE': '20261121'}),
+    # start time only: 30 minutes
+    ({'start_time': '08:00'}, {'DTSTART': '20261120T080000', 'DTEND': '20261120T083000'}),
+    # end time only: starts at midnight on the start date, as the reminder API reads it
+    ({'end_date': '2026-11-20', 'end_time': '17:30'}, {'DTSTART': '20261120T000000', 'DTEND': '20261120T173000'}),
+    ({'end_date': '2026-11-22', 'end_time': '09:00'}, {'DTSTART': '20261120T000000', 'DTEND': '20261122T090000'}),
+    # both
+    ({'start_time': '08:00', 'end_date': '2026-11-20', 'end_time': '17:30'},
+     {'DTSTART': '20261120T080000', 'DTEND': '20261120T173000'}),
+])
+def test_start_and_end_time_combinations(client, configure, times, expected):
+    configure(token=TOKEN)
+    created = add_reminder(client, title='Combo', start_date='2026-11-20', **times)['reminder']
+    (ev,) = by_summary(feed(client), 'Combo')
+    for name, value in expected.items():
+        assert ev[name] == value, (name, ev)
+    # Same reading as HomeHub's own calendar: all-day only when neither time is set
+    assert ('DTSTART;VALUE=DATE' in ev) == created['all_day']
+
+
 def test_summary_description_categories(client, configure):
     configure(token=TOKEN)
     add_reminder(client, title='Checkup', start_date='2026-11-20', category='health',
