@@ -93,6 +93,15 @@ reminders:
       label: Family
       color: "#2563eb"
 
+# Calendar subscription feed: HomeHub reminders, with alerts, in the calendar app on your
+# phone or computer. Read-only. Off while the token is empty. Make a token (16+ characters):
+#   python -c "import secrets; print(secrets.token_urlsafe(32))"
+# and subscribe to http://<your-homehub>/calendar.ics?token=<token>. Anyone with the link
+# can read your reminders; change the token to revoke it (no restart needed).
+calendar_feed:
+  token: ""
+  alerts: true # false = events without phone alerts
+
 # Weather widget on the Welcome page (Open-Meteo, no account needed). Off unless enabled.
 weather:
   enabled: false

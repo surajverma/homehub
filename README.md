@@ -50,7 +50,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 
 The best way to run HomeHub is with Docker. It's quick and keeps everything tidy
 
-1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub, add family members and choose which features to show. The settings at the bottom (site password, upload limit, colours, reminders, weather, theme) are optional: delete any you don't need and HomeHub uses its defaults.
+1. First, copy the `config-example.yml` to `config.yml`. This is where you'll name your hub, add family members and choose which features to show. The settings at the bottom (site password, upload limit, colours, reminders, calendar feed, weather, theme) are optional: delete any you don't need and HomeHub uses its defaults.
 <details>
   <summary>Click to see an example config.yml</summary>
 
@@ -151,6 +151,15 @@ reminders:
     - key: family
       label: Family
       color: "#2563eb"
+
+# Calendar subscription feed: HomeHub reminders, with alerts, in the calendar app on your
+# phone or computer. Read-only. Off while the token is empty. Make a token (16+ characters):
+#   python -c "import secrets; print(secrets.token_urlsafe(32))"
+# and subscribe to http://<your-homehub>/calendar.ics?token=<token>. Anyone with the link
+# can read your reminders; change the token to revoke it (no restart needed).
+calendar_feed:
+  token: ""
+  alerts: true # false = events without phone alerts
 
 # Weather widget on the Welcome page (Open-Meteo, no account needed). Off unless enabled.
 weather:
@@ -256,6 +265,35 @@ HomeHub decides what "today" is (due dates, overdue chores, recurring expenses a
 ```
 
 Use a name from the [tz database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), then run `docker compose up -d`. Leaving it out keeps the old UTC behaviour.
+
+## Reminders in your phone's calendar (optional)
+
+HomeHub reminders can show up in the calendar app on your phone or computer, with alerts, and stay up to date. It's one-way: you add and change reminders in HomeHub.
+
+**Turn it on.** Make a token with `python -c "import secrets; print(secrets.token_urlsafe(32))"` and add it to `config.yml` (no restart needed):
+
+```yaml
+calendar_feed:
+  token: "paste-the-token-here"   # 16+ characters; empty turns the feed off
+  alerts: true                    # false = events without phone alerts
+```
+
+Then subscribe (not import) to `http://<your-homehub-address>:<port>/calendar.ics?token=<token>`.
+
+| App | On your home network | Needs HomeHub reachable from the internet |
+|---|:---:|:---:|
+| iPhone / iPad (subscribed on the device) | ✓ | |
+| Android with ICSx⁵ (shows in the Google Calendar app too) | ✓ | |
+| Apple Calendar on Mac ("On My Mac") | ✓ | |
+| Thunderbird | ✓ | |
+| Google Calendar website, Outlook | | ✓ |
+
+Google Calendar and Outlook fetch the feed from Google's or Microsoft's servers, so they only work if your HomeHub is reachable from the internet over HTTPS (for example via a reverse proxy or a tunnel), which isn't recommended for a home app. The feed itself works; they just can't reach it. Google also refreshes slowly (often every 12-24 h).
+
+Step-by-step setup for each app, turning on alerts on iPhone, and how times work: [docs/calendar-feed.md](docs/calendar-feed.md).
+
+**Keep the link secret:** anyone who has it can read your reminders.
+If it leaks, change the token in `config.yml`; old links stop working straight away.
 
 ## Language
 

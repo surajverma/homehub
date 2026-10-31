@@ -7,8 +7,9 @@ from werkzeug.security import check_password_hash
 from flask_babel import gettext as _, ngettext
 from urllib.parse import urlsplit
 
-# Endpoints that answer without the site password
-_OPEN_ENDPOINTS = ('main.login', 'main.healthz')
+# Endpoints that answer without the site password. The calendar feed checks its own
+# token (calendar apps can't log in) and answers 404 to anything else.
+_OPEN_ENDPOINTS = ('main.login', 'main.healthz', 'main.calendar_feed')
 
 
 _WRITE_METHODS = ('POST', 'PUT', 'PATCH', 'DELETE')
