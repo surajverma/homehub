@@ -3,6 +3,7 @@ data/app.db
 data/app.db-wal
 data/app.db-shm
 data/secret_key
+data/backups/
 database.db
 
 # User-uploaded files

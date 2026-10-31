@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function(){
   let summary = payload.summary || { total_this_month: 0, per_payer: {}, per_share: {}, per_category: {}, top_category: null };
   let missingRecurring = payload.missing_recurring || {};
   let balances = payload.balances || { net: {}, settlements: [] };
+  let budgets = payload.budgets || [];
   let selectedDate = null;
   // If server provided a selected date via query param embedding, try to pick it from location
   try {
@@ -75,8 +76,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const p = summary.per_payer || {}; const mine = p[me] || 0;
     document.getElementById('my-spending').textContent = fmt(mine);
     // What I actually bear once shared expenses are split
-    document.getElementById('my-share').textContent = t('My share after splits: {amount}', { amount: fmt((summary.per_share || {})[me] || 0) });
-    document.getElementById('top-category').textContent = summary.top_category || '-';
+    document.getElementById('my-share').textContent = fmt((summary.per_share || {})[me] || 0);
     monthlyTotalAmount.textContent = fmt(summary.total_this_month||0);
   }
 
@@ -115,6 +115,9 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function renderMonthlySidebar(){
+    // Export the month on screen
+    const exportMonth = `${Number(year) || new Date().getFullYear()}-${String(Number(month) || 1).padStart(2, '0')}`;
+    document.getElementById('export-csv-link').href = '/expenses/export.csv?month=' + encodeURIComponent(exportMonth);
     // Collect all entries from every date, sorted by date ascending
     const allEntries = [];
     Object.keys(byDate).sort().forEach(ds=>{
@@ -241,7 +244,9 @@ document.addEventListener('DOMContentLoaded', function(){
   const ds = isoLocalFromDate(selectedDate);
     const dayData = byDate[ds] || { entries: [], total: 0 };
     const entriesHtml = (dayData.entries||[]).map(e=>{
-      const allowed = (currentUser()===e.payer) || isAdmin();
+      // Whoever entered it (or the payer, on older entries) can change it, and the admin
+      const allowed = (currentUser()===(e.owner || e.payer)) || isAdmin();
+      const addedBy = e.created_by && e.created_by !== e.payer ? ` • ${th('Added by {name}', { name: e.created_by })}` : '';
       const badges = [
         e.skipped ? '<span class="text-xs px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">'+th('skipped')+'</span>' : '',
         e.is_settlement ? '<span class="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700">'+th('settlement')+'</span>' : '',
@@ -257,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function(){
       <div class="flex items-start justify-between p-2 border rounded mb-2 ${e.skipped ? 'bg-gray-50' : ''}">
         <div>
           <div class="font-medium ${e.skipped ? 'line-through text-gray-400' : ''}">${escapeHtml(e.title)}${e.quantity? ` (${e.quantity})` : ''}</div>
-          <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• ${th('by {name}', { name: e.payer })}`:''} ${badges}</div>
+          <div class="text-xs text-gray-500">${escapeHtml(e.category || '')} ${e.payer? `• ${th('by {name}', { name: e.payer })}`:''}${addedBy} ${badges}</div>
           ${splitLine}
         </div>
         <div class="text-right">
@@ -265,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function(){
           <div class="text-xs mt-1 space-x-2 ${allowed? '' : 'hidden'}">
             ${e.skipped || e.is_settlement ? '' : `<button class="text-blue-600 hover:underline edit-expense" data-id="${e.id}" data-date="${ds}">${th('Edit')}</button>`}
             ${skipForm}
-            <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${escapeHtml(e.payer||'')}" data-confirm="${th('Delete this expense?')}">
+            <form method="POST" action="/expenses/delete/${e.id}" class="inline delete-form" data-creator="${escapeHtml(e.owner||e.payer||'')}" data-confirm="${th('Delete this expense?')}">
               <input type="hidden" name="user" value="${escapeHtml(currentUser())}">
               <button type="submit" class="text-red-600 hover:underline">${th('Delete')}</button>
             </form>
@@ -297,6 +302,11 @@ document.addEventListener('DOMContentLoaded', function(){
       <div>${entriesHtml || (missingHtml ? '' : '<div class=\'text-gray-500\'>'+th('No expenses yet.')+'</div>')}${missingHtml}</div>
       <button id="add-expense-btn" class="mt-3 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"><i class="fa-solid fa-plus mr-1"></i> ${th('Add Expense')}</button>
     `;
+  }
+
+  // Budgets and charts for the month on screen (see expense_charts.js)
+  function renderInsights(){
+    if (window.HomeHubExpenseCharts) window.HomeHubExpenseCharts.render({ summary, budgets, byDate, year, month, settings }, fmt);
   }
 
   function renderBalances(){
@@ -372,8 +382,8 @@ document.addEventListener('DOMContentLoaded', function(){
     const res = await fetch(`/api/expenses/month?year=${y}&month=${m}`);
     const data = await res.json();
     year = data.year; month = data.month; byDate = data.by_date || {}; summary = data.summary || summary; settings = data.settings || settings;
-    missingRecurring = data.missing_recurring || {}; balances = data.balances || balances;
-    updateSummaryCards(); renderCalendar(); renderMonthlySidebar(); renderSidePanel(); renderBalances();
+    missingRecurring = data.missing_recurring || {}; balances = data.balances || balances; budgets = data.budgets || [];
+    updateSummaryCards(); renderCalendar(); renderMonthlySidebar(); renderSidePanel(); renderBalances(); renderInsights();
   }
 
   // Event listeners
@@ -460,6 +470,7 @@ document.addEventListener('DOMContentLoaded', function(){
   renderMonthlySidebar();
   renderSidePanel();
   renderBalances();
+  renderInsights();
   applyUserVisibility();
 
   // Auto-total calculation when editing/adding

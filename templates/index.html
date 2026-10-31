@@ -56,6 +56,17 @@ window.REMINDERS_CAL_START = (function(){
 		</div>
 		{% endif %}
 
+		{% if budget_alerts %}
+		{% set currency = budget_settings.currency or '₹' %}{% set precision = budget_settings.fraction_precision if budget_settings.fraction_precision is defined else 2 %}
+		<a href="/expenses" class="card p-4 flex items-start gap-3 hover:underline" id="budgetAlert" role="status">
+			<i class="fa-solid fa-circle-exclamation text-red-600 mt-0.5" aria-hidden="true"></i>
+			<div class="text-sm">
+				<div class="font-semibold">{{ ngettext('A budget is over this month', '%(num)s budgets are over this month', budget_alerts|length) }}</div>
+				<div class="text-gray-600">{% for b in budget_alerts %}{{ _('%(name)s: %(spent)s of %(budget)s', name=(b.category or _('Overall')), spent=currency ~ ('%.*f'|format(precision, b.spent)), budget=currency ~ ('%.*f'|format(precision, b.amount))) }}{{ ' · ' if not loop.last }}{% endfor %}</div>
+			</div>
+		</a>
+		{% endif %}
+
 			<div class="card p-6">
 				<h2 class="section-title mb-3"><i class="fa-solid fa-bullhorn section-icon" aria-hidden="true"></i>{{ _('Family Notice Board') }}</h2>
 			{% if notice and notice.content %}
@@ -161,6 +172,24 @@ window.REMINDERS_CAL_START = (function(){
 			{% endif %}
 		</div>
 		{% endif %}
+
+		<!-- Backup download, shown to admin only (the server checks too) -->
+		<div class="card p-4 admin-only" id="backupCard" style="display:none">
+			<h3 class="section-title mb-2"><i class="fa-solid fa-box-archive section-icon" aria-hidden="true"></i> {{ _('Backup') }}</h3>
+			{% if admin_password_enabled %}
+			<p class="text-sm text-gray-500 mb-3">{{ _("Create, download and restore backups of HomeHub's data.") }}</p>
+			<form method="GET" action="/admin/backups" id="backupForm">
+				<input type="hidden" name="user" value="">
+				<button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-box-archive" aria-hidden="true"></i>{{ _('Manage backups') }}</button>
+			</form>
+			{% else %}
+			{# Backups hold everyone's data and may contain the site password, so the page needs a real admin password #}
+			<p class="text-sm mb-2">{{ _('Set an admin password to use backups. On the server, run:') }}</p>
+			<pre class="text-xs border rounded p-2 overflow-x-auto mb-2">docker exec -it homehub flask set-admin-password</pre>
+			{% set readme_link %}<a href="https://github.com/surajverma/homehub#backup-and-restore" target="_blank" rel="noopener noreferrer" class="hover:underline" style="color: var(--primary-text);">README</a>{% endset -%}
+			<p class="text-xs text-gray-500">{{ _('Until then, you can make and restore backups on the server with flask backup and flask restore. See the %(link)s for details.')|html_params(link=readme_link) }}</p>
+			{% endif %}
+		</div>
 	</div><!-- /left col -->
 	{% endif %}
 

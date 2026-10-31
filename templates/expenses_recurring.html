@@ -290,6 +290,29 @@
             <button type="submit" class="btn btn-primary">{{ _('Save Settings') }}</button>
           </div>
         </form>
+
+        <h2 class="text-xl font-semibold pt-4">{{ _('Monthly budgets') }}</h2>
+        <p class="text-sm text-gray-500 max-w-md">{{ _('Spending limits for the household, the same every month. Leave a box empty for no budget. The expenses page shows how much of each is used, amber from 80% and red once it is passed.') }}</p>
+        {% set budget_categories = (expense_settings.categories or []) + (budgets.keys()|reject('equalto', '')|reject('in', expense_settings.categories or [])|list) %}
+        <form method="POST" action="/expenses/budgets" class="space-y-3 max-w-md" id="budgets-form">
+          <input type="hidden" name="user" value="">
+          <div class="grid grid-cols-2 gap-3 items-center">
+            <label for="budget-overall" class="text-sm font-semibold text-gray-600">{{ _('Overall') }}</label>
+            <input type="hidden" name="budget_category" value="">
+            <input type="number" min="0" step="any" name="budget_amount" id="budget-overall" class="border rounded p-2" value="{{ budgets.get('', '') }}" placeholder="{{ _('No budget') }}">
+            {% for category in budget_categories %}
+            <label for="budget-cat-{{ loop.index }}" class="text-sm text-gray-600">{{ category }}</label>
+            <input type="hidden" name="budget_category" value="{{ category }}">
+            <input type="number" min="0" step="any" name="budget_amount" id="budget-cat-{{ loop.index }}" class="border rounded p-2" value="{{ budgets.get(category, '') }}" placeholder="{{ _('No budget') }}">
+            {% endfor %}
+          </div>
+          {% if not budget_categories %}
+          <p class="text-xs text-gray-500">{{ _('Add categories above to set a budget for each one.') }}</p>
+          {% endif %}
+          <div class="flex justify-end pt-2">
+            <button type="submit" class="btn btn-primary">{{ _('Save budgets') }}</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

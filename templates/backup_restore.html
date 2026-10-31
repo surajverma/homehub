@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+  <div>
+    <a href="/admin/backups?user={{ user|urlencode }}" class="btn btn-ghost btn-sm" style="color: var(--primary-text);"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>{{ _('Back to backups') }}</a>
+    <h1 class="page-title mt-2">{{ _('Restore a backup') }}</h1>
+    <p class="page-subtitle break-all">{{ shown_name }}</p>
+  </div>
+
+  <div class="card p-4 space-y-2 text-sm">
+    <p>{{ _('Created:') }} <span class="font-medium">{{ (info.created_at or info.modified)|localtime }}</span>{% if info.version %} · {{ _('HomeHub %(version)s', version=info.version) }}{% endif %}</p>
+    <p>{{ _('Size:') }} <span class="font-medium">{{ info.size|filesize }}</span></p>
+    {% if info.error %}
+    <p class="text-red-600" role="alert">{{ error_message(info.error) }}</p>
+    {% endif %}
+  </div>
+
+  {% if not info.error %}
+  {# The admin password below is the confirmation; there is no extra dialog #}
+  <form method="POST" action="{{ urls.action }}" class="card p-4 space-y-4" autocomplete="off" id="restoreForm">
+    <input type="hidden" name="user" value="{{ user }}">
+    <fieldset class="space-y-2">
+      <legend class="text-sm text-gray-600 mb-1">{{ _('What to restore') }}</legend>
+      {% for part, p in info.parts.items() %}
+      <label class="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="parts" value="{{ part }}" class="rounded mt-1" checked>
+        <span>
+          {{ part_labels[part] }}
+          <span class="text-gray-500 tabular-nums">({{ ngettext('%(num)s file', '%(num)s files', p.files) }}, {{ p.bytes|filesize }})</span>
+          {% if part == 'database' %}<br><span class="text-xs text-gray-500">{{ _('Everything in the database is replaced together: notes, lists, expenses, reminders, settings and the admin password.') }}</span>{% endif %}
+          {% if part == 'config' %}<br><span class="text-xs text-gray-500">{{ _("Your current config.yml is not changed. The backup's copy is shown afterwards so you can bring back custom settings yourself.") }}</span>{% endif %}
+        </span>
+      </label>
+      {% endfor %}
+    </fieldset>
+    <p class="text-xs text-gray-500">{{ _('Restoring the database without its files, or files without the database, can leave entries that point at missing files and files that nothing points to.') }}</p>
+    <p class="text-sm">{{ _('Before anything is replaced, the current data is saved as a safety backup in the list.') }}</p>
+    <div>
+      <label for="restorePassword" class="text-sm text-gray-600">{{ _('Admin password') }}</label>
+      <input id="restorePassword" type="password" name="password" class="mt-1 block w-full max-w-xs border rounded p-2" required autocomplete="off" {% if lockout_seconds %}disabled{% endif %}>
+      {% if lockout_seconds %}
+      <p class="text-sm text-red-600 mt-1" role="alert">{{ ngettext('Too many attempts. Try again in %(num)s second.', 'Too many attempts. Try again in %(num)s seconds.', lockout_seconds) }}</p>
+      {% endif %}
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="btn btn-danger" {% if lockout_seconds %}disabled{% endif %}><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>{{ _('Restore') }}</button>
+      {% if urls.cancel %}
+      <button type="submit" form="cancelRestoreForm" class="btn btn-secondary">{{ _('Cancel') }}</button>
+      {% else %}
+      <a href="/admin/backups?user={{ user|urlencode }}" class="btn btn-secondary">{{ _('Cancel') }}</a>
+      {% endif %}
+    </div>
+  </form>
+  {% endif %}
+  {% if urls.cancel %}
+  {# Cancelling an uploaded backup deletes it from the server #}
+  <form method="POST" action="{{ urls.cancel }}" id="cancelRestoreForm" class="{{ '' if info.error else 'hidden' }}">
+    <input type="hidden" name="user" value="{{ user }}">
+    {% if info.error %}<button type="submit" class="btn btn-secondary">{{ _('Remove this file') }}</button>{% endif %}
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -38,9 +38,29 @@
     --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     --radius: 0.75rem;
     --control-radius: 0.5rem;
+    /* Chart series colours (expense charts). The order is what keeps neighbouring bars
+       apart for colour-blind readers; checked against the light and dark card backgrounds. */
+    --chart-1: #2a78d6;  /* blue */
+    --chart-2: #eb6834;  /* orange */
+    --chart-3: #1baf7a;  /* aqua */
+    --chart-4: #eda100;  /* yellow */
+    --chart-5: #e87ba4;  /* magenta */
+    --chart-6: #008300;  /* green */
+    --chart-7: #6250d6;  /* violet */
+    --chart-8: #e34948;  /* red */
+    --chart-other: #94a3b8;
 }
 
 [data-theme="dark"] {
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-6: #008300;
+    --chart-7: #9085e9;
+    --chart-8: #e66767;
+    --chart-other: #64748b;
     --secondary-color: #cbd5e1;
     --background-color: #0b1120;
     --card-background-color: #111827;
@@ -492,3 +512,25 @@ input[type="file"]::file-selector-button:hover { background-color: var(--hover-b
 .month-picker button:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 1px; }
 [data-theme="dark"] .month-picker { box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
 [data-theme="dark"] .month-picker-month.is-selected { background-color: rgba(59,130,246,0.28); border-color: rgba(147,197,253,0.55); }
+
+/* Expense charts: compact rows of name, bar and amount (expense_charts.js) */
+.chart-rows { display: flex; flex-direction: column; gap: 0.375rem; }
+.chart-row {
+    display: grid;
+    grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr) auto;
+    column-gap: 0.5rem;
+    row-gap: 0.125rem;
+    align-items: center;
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+.chart-row-pair .chart-name { grid-row: span 2; }
+.chart-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-color); }
+.chart-amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--muted-text); }
+.chart-track { height: 0.5rem; border-radius: 9999px; background-color: var(--hover-bg); overflow: hidden; }
+.chart-row-pair .chart-track { height: 0.375rem; }
+.chart-bar { height: 100%; border-radius: inherit; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--muted-text); }
+.chart-swatch { display: inline-block; width: 0.625rem; height: 0.625rem; margin-right: 0.25rem; border-radius: 2px; vertical-align: -1px; }
+.charts-toggle-icon { transition: transform 0.15s ease; }
+.charts-toggle[aria-expanded="false"] .charts-toggle-icon { transform: rotate(-90deg); }

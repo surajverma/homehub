@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-17 16:40+0530\n"
+"POT-Creation-Date: 2026-10-31 10:18+0000\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -50,20 +50,117 @@ msgstr "लॉग इन हो गया।"
 msgid "Invalid password"
 msgstr "गलत पासवर्ड"
 
-#: app/blueprints/auth.py
+#: app/blueprints/auth.py app/blueprints/backups.py
+#: templates/backup_restore.html
 #, python-format
 msgid "Too many attempts. Try again in %(num)s second."
 msgid_plural "Too many attempts. Try again in %(num)s seconds."
 msgstr[0] "बहुत ज़्यादा कोशिशें हो गईं। %(num)s सेकंड बाद फिर कोशिश करें।"
 msgstr[1] "बहुत ज़्यादा कोशिशें हो गईं। %(num)s सेकंड बाद फिर कोशिश करें।"
 
-#: app/blueprints/auth.py
+#: app/blueprints/auth.py app/blueprints/backups.py
 msgid "Incorrect admin password"
 msgstr "एडमिन पासवर्ड गलत है"
 
 #: app/blueprints/auth.py
 msgid "Logged out."
 msgstr "लॉग आउट हो गया।"
+
+#: app/blueprints/backups.py
+msgid "There is no database to back up yet."
+msgstr "अभी बैकअप लेने के लिए कोई डेटाबेस नहीं है।"
+
+#: app/blueprints/backups.py
+msgid "Not enough free disk space for this backup."
+msgstr "इस बैकअप के लिए डिस्क में पर्याप्त खाली जगह नहीं है।"
+
+#: app/blueprints/backups.py
+msgid "A backup or restore is already running. Wait for it to finish."
+msgstr "एक बैकअप या रीस्टोर पहले से चल रहा है। उसके पूरा होने तक रुकें।"
+
+#: app/blueprints/backups.py
+msgid "That file is not a zip file."
+msgstr "यह फ़ाइल ज़िप फ़ाइल नहीं है।"
+
+#: app/blueprints/backups.py
+msgid "This backup contains unsafe file paths and was rejected."
+msgstr "इस बैकअप में असुरक्षित फ़ाइल पाथ हैं, इसलिए इसे अस्वीकार कर दिया गया।"
+
+#: app/blueprints/backups.py
+msgid "Choose at least one part to restore."
+msgstr "वापस लाने के लिए कम से कम एक हिस्सा चुनें।"
+
+#: app/blueprints/backups.py
+msgid "This is not a valid HomeHub backup, or it is damaged."
+msgstr "यह HomeHub का सही बैकअप नहीं है, या यह खराब हो गया है।"
+
+#: app/blueprints/backups.py
+msgid "Database & settings"
+msgstr "डेटाबेस और सेटिंग"
+
+#: app/blueprints/backups.py
+msgid "Shared Cloud uploads"
+msgstr "साझा क्लाउड की फ़ाइलें"
+
+#: app/blueprints/backups.py
+msgid "PDFs"
+msgstr "पीडीएफ"
+
+#: app/blueprints/backups.py
+msgid "Downloaded media"
+msgstr "डाउनलोड किया गया मीडिया"
+
+#: app/blueprints/backups.py
+msgid "config.yml"
+msgstr "config.yml"
+
+#: app/blueprints/backups.py
+#, python-format
+msgid "Backups need an admin password. Set one on the server with %(command)s. Until then, use flask backup and flask restore on the server. See the README for details: %(url)s"
+msgstr "बैकअप के लिए एडमिन पासवर्ड ज़रूरी है। सर्वर पर %(command)s से पासवर्ड सेट करें। तब तक सर्वर पर flask backup और flask restore इस्तेमाल करें। ज़्यादा जानकारी के लिए README देखें: %(url)s"
+
+#: app/blueprints/backups.py
+msgid "Only admin can manage backups."
+msgstr "बैकअप सिर्फ़ एडमिन संभाल सकता है।"
+
+#: app/blueprints/backups.py
+#, python-format
+msgid "Backup %(name)s is ready."
+msgstr "बैकअप %(name)s तैयार है।"
+
+#: app/blueprints/backups.py
+msgid "Restore complete. Restart HomeHub now so it uses the restored data."
+msgstr "डेटा वापस आ गया। अब HomeHub को रीस्टार्ट करें ताकि वह वापस लाया गया डेटा इस्तेमाल करे।"
+
+#: app/blueprints/backups.py
+msgid "The config.yml from the backup could not be read."
+msgstr "बैकअप की config.yml पढ़ी नहीं जा सकी।"
+
+#: app/blueprints/backups.py
+msgid "That backup was not found."
+msgstr "वह बैकअप नहीं मिला।"
+
+#: app/blueprints/backups.py
+#, python-format
+msgid "Backup %(name)s deleted."
+msgstr "बैकअप %(name)s हटा दिया गया।"
+
+#: app/blueprints/backups.py
+msgid "Could not delete that backup."
+msgstr "वह बैकअप हटाया नहीं जा सका।"
+
+#: app/blueprints/backups.py app/blueprints/expense_import.py
+#: app/blueprints/uploads.py
+msgid "No file selected."
+msgstr "कोई फ़ाइल नहीं चुनी गई।"
+
+#: app/blueprints/backups.py
+msgid "Could not save the uploaded backup."
+msgstr "अपलोड किया गया बैकअप सेव नहीं हो सका।"
+
+#: app/blueprints/backups.py
+msgid "Restore cancelled. The uploaded file was removed from the server."
+msgstr "डेटा वापस लाना रद्द कर दिया गया। अपलोड की गई फ़ाइल सर्वर से हटा दी गई।"
 
 #: app/blueprints/chores.py
 msgid "Recurring chore end date cannot be before the start date."
@@ -259,6 +356,78 @@ msgstr "स्टेटस हटाने के लिए यूज़र स�
 msgid "Status removed."
 msgstr "स्टेटस हटा दिया गया।"
 
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "Date not recognised: \"%(value)s\"."
+msgstr "तारीख समझ नहीं आई: \"%(value)s\"।"
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "Not a number: \"%(value)s\"."
+msgstr "संख्या नहीं है: \"%(value)s\"।"
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "The split weight is not a number: \"%(value)s\"."
+msgstr "बंटवारे का हिस्सा संख्या नहीं है: \"%(value)s\"।"
+
+#: app/blueprints/expense_import.py
+msgid "The title is empty."
+msgstr "शीर्षक खाली है।"
+
+#: app/blueprints/expense_import.py
+msgid "No amount (for example a credit or a balance line)."
+msgstr "रकम नहीं है (जैसे जमा हुई रकम या बैलेंस वाली पंक्ति)।"
+
+#: app/blueprints/expense_import.py app/blueprints/expenses.py
+msgid "Invalid amount."
+msgstr "रकम सही नहीं है।"
+
+#: app/blueprints/expense_import.py
+msgid "Choose who paid, below."
+msgstr "नीचे चुनें कि किसने दिया।"
+
+#: app/blueprints/expense_import.py
+msgid "A settlement needs exactly one person in the split column."
+msgstr "हिसाब चुकाने वाली एंट्री के बंटवारे वाले कॉलम में ठीक एक व्यक्ति होना चाहिए।"
+
+#: app/blueprints/expense_import.py
+msgid "That file could not be read. Check that it is a CSV file and try again."
+msgstr "यह फ़ाइल पढ़ी नहीं जा सकी। देख लें कि यह CSV फ़ाइल है और फिर से कोशिश करें।"
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "That file is larger than %(size)s MB. Split it into smaller files."
+msgstr "यह फ़ाइल %(size)s MB से बड़ी है। इसे छोटी फ़ाइलों में बांट लें।"
+
+#: app/blueprints/expense_import.py
+msgid "That file has no rows to import."
+msgstr "इस फ़ाइल में इंपोर्ट करने के लिए कोई पंक्ति नहीं है।"
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "That file has more than %(max)s rows. Split it into smaller files."
+msgstr "इस फ़ाइल में %(max)s से ज़्यादा पंक्तियां हैं। इसे छोटी फ़ाइलों में बांट लें।"
+
+#: app/blueprints/expense_import.py
+msgid "The import has expired. Upload the file again."
+msgstr "इंपोर्ट की समय-सीमा खत्म हो गई। फ़ाइल फिर से अपलोड करें।"
+
+#: app/blueprints/expense_import.py
+msgid "Choose who you are in the user menu before importing."
+msgstr "इंपोर्ट करने से पहले यूज़र मेन्यू में चुनें कि आप कौन हैं।"
+
+#: app/blueprints/expense_import.py
+msgid "No rows selected to import."
+msgstr "इंपोर्ट के लिए कोई पंक्ति नहीं चुनी गई।"
+
+#: app/blueprints/expense_import.py
+#, python-format
+msgid "%(num)s expense imported."
+msgid_plural "%(num)s expenses imported."
+msgstr[0] "%(num)s खर्च इंपोर्ट हुआ।"
+msgstr[1] "%(num)s खर्च इंपोर्ट हुए।"
+
 #: app/blueprints/expenses.py static/js/pages/expenses_recurring.js
 msgid "Unit price must be greater than zero."
 msgstr "प्रति यूनिट कीमत शून्य से ज़्यादा होनी चाहिए।"
@@ -289,10 +458,6 @@ msgstr "प्रतिशत का जोड़ %(entered)s%% है, 100%% �
 #: app/blueprints/expenses.py
 msgid "Split amounts must add up to the expense amount."
 msgstr "बंटवारे की रकमों का जोड़ खर्च की रकम के बराबर होना चाहिए।"
-
-#: app/blueprints/expenses.py
-msgid "Invalid amount."
-msgstr "रकम सही नहीं है।"
 
 #: app/blueprints/expenses.py
 msgid "Recurring expense added."
@@ -424,6 +589,20 @@ msgid "Failed to save settings."
 msgstr "सेटिंग सेव नहीं हो सकीं।"
 
 #: app/blueprints/expenses.py
+#, python-format
+msgid "Invalid budget for %(name)s."
+msgstr "%(name)s का बजट सही नहीं है।"
+
+#: app/blueprints/expenses.py static/js/pages/expense_charts.js
+#: templates/expenses_recurring.html templates/index.html
+msgid "Overall"
+msgstr "कुल"
+
+#: app/blueprints/expenses.py
+msgid "Budgets saved."
+msgstr "बजट सेव हो गए।"
+
+#: app/blueprints/expenses.py
 msgid "Not allowed to delete entry."
 msgstr "आपको यह एंट्री हटाने की अनुमति नहीं है।"
 
@@ -498,6 +677,22 @@ msgstr[1] "%(num)s खर्च हटा दिए गए।"
 #: app/blueprints/expenses.py
 msgid "Invalid month parameter. Must be an integer between 1 and 12."
 msgstr "महीना सही नहीं है। यह 1 से 12 के बीच की संख्या होनी चाहिए।"
+
+#: app/blueprints/expenses.py
+msgid "Choose either a month or a start and end date, not both."
+msgstr "या तो महीना चुनें या शुरू और समाप्ति की तारीख, दोनों एक साथ नहीं।"
+
+#: app/blueprints/expenses.py
+msgid "Invalid date range. Use start and end dates like 2026-10-01."
+msgstr "तारीखें सही नहीं हैं। शुरू और समाप्ति की तारीख 2026-10-01 जैसी लिखें।"
+
+#: app/blueprints/expenses.py
+msgid "The end date is before the start date."
+msgstr "समाप्ति की तारीख, शुरू की तारीख से पहले है।"
+
+#: app/blueprints/expenses.py
+msgid "Invalid month. Use a month like 2026-10."
+msgstr "महीना सही नहीं है। महीना 2026-10 जैसा लिखें।"
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
 msgid "Item added."
@@ -635,10 +830,6 @@ msgstr[0] "%(num)s फ़ाइल अपलोड हो गई।"
 msgstr[1] "%(num)s फ़ाइलें अपलोड हो गईं।"
 
 #: app/blueprints/uploads.py
-msgid "No file selected."
-msgstr "कोई फ़ाइल नहीं चुनी गई।"
-
-#: app/blueprints/uploads.py
 msgid "File deleted."
 msgstr "फ़ाइल हटा दी गई।"
 
@@ -683,10 +874,10 @@ msgstr "साइडबार छोटा करें"
 msgid "Welcome, {name}! — {date}"
 msgstr "आपका स्वागत है, {name}! — {date}"
 
-#: static/js/base/ui.js static/js/pages/shopping.js templates/base.html
-#: templates/chores.html templates/expenses.html
-#: templates/expenses_recurring.html templates/index.html templates/notes.html
-#: templates/recipes.html
+#: static/js/base/ui.js static/js/pages/shopping.js
+#: templates/backup_restore.html templates/base.html templates/chores.html
+#: templates/expenses.html templates/expenses_recurring.html
+#: templates/index.html templates/notes.html templates/recipes.html
 msgid "Cancel"
 msgstr "रद्द करें"
 
@@ -769,6 +960,11 @@ msgstr "अगला साल"
 msgid "This month"
 msgstr "यह महीना"
 
+#: static/js/pages/backups.js
+#, python-brace-format
+msgid "{done} of {total}"
+msgstr "{total} में से {done}"
+
 #: static/js/pages/chores.js
 msgid "Recurring chore ends in the past. Choose a future end date."
 msgstr "दोहराने वाले काम की समाप्ति की तारीख बीत चुकी है। आगे की कोई तारीख चुनें।"
@@ -795,10 +991,95 @@ msgstr "सुझाव छिपाएं: {item}"
 msgid "Hide"
 msgstr "छिपाएं"
 
-#: static/js/pages/expenses.js
+#: static/js/pages/expense_charts.js
+msgid "Show as table"
+msgstr "टेबल के रूप में देखें"
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+msgid "No spending this month."
+msgstr "इस महीने कोई खर्च नहीं हुआ।"
+
+#: static/js/pages/expense_charts.js
+msgid "Other"
+msgstr "अन्य"
+
+#: static/js/pages/expense_charts.js
+msgid "Uncategorised"
+msgstr "बिना श्रेणी"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by category"
+msgstr "श्रेणी के हिसाब से खर्च"
+
+#: static/js/pages/expense_charts.js static/js/pages/expenses.js
+#: templates/expenses_import.html
+msgid "Amount"
+msgstr "रकम"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html templates/expenses_recurring.html
+#: templates/index.html
+msgid "Category"
+msgstr "श्रेणी"
+
+#: static/js/pages/expense_charts.js
+msgid "Paid"
+msgstr "दिया"
+
+#: static/js/pages/expense_charts.js
+msgid "Share after splits"
+msgstr "बंटवारे के बाद हिस्सा"
+
+#: static/js/pages/expense_charts.js
 #, python-brace-format
-msgid "My share after splits: {amount}"
-msgstr "बंटवारे के बाद मेरा हिस्सा: {amount}"
+msgid "{name}: paid {paid}, share {share}"
+msgstr "{name}: दिया {paid}, हिस्सा {share}"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Paid and share by person"
+msgstr "हर व्यक्ति ने कितना दिया और उसका हिस्सा"
+
+#: static/js/pages/expense_charts.js
+msgid "Person"
+msgstr "व्यक्ति"
+
+#: static/js/pages/expense_charts.js
+msgid "today"
+msgstr "आज"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Daily budget: {amount}"
+msgstr "रोज़ का बजट: {amount}"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "Highest day: {amount}"
+msgstr "सबसे ज़्यादा खर्च वाला दिन: {amount}"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+msgid "Spending by day"
+msgstr "दिन के हिसाब से खर्च"
+
+#: static/js/pages/expense_charts.js templates/expenses.html
+#: templates/expenses_import.html
+msgid "Date"
+msgstr "तारीख"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} over budget"
+msgstr "बजट से {amount} ज़्यादा"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{amount} left"
+msgstr "{amount} बाकी"
+
+#: static/js/pages/expense_charts.js
+#, python-brace-format
+msgid "{spent} of {budget}"
+msgstr "{budget} में से {spent}"
 
 #: static/js/pages/expenses.js
 msgid "No entries this month."
@@ -847,6 +1128,11 @@ msgid "Pick a day on the calendar to view or add expenses."
 msgstr "खर्च देखने या जोड़ने के लिए कैलेंडर में कोई दिन चुनें।"
 
 #: static/js/pages/expenses.js
+#, python-brace-format
+msgid "Added by {name}"
+msgstr "{name} ने जोड़ा"
+
+#: static/js/pages/expenses.js
 msgid "skipped"
 msgstr "छोड़ा गया"
 
@@ -863,6 +1149,7 @@ msgid "Skip day"
 msgstr "यह दिन छोड़ें"
 
 #: static/js/pages/expenses.js static/js/pages/home/reminders.js
+#: templates/backup_restore.html templates/backups.html
 msgid "Restore"
 msgstr "वापस लाएं"
 
@@ -929,10 +1216,6 @@ msgid "paid {paid} · share {share}"
 msgstr "दिए {paid} · हिस्सा {share}"
 
 #: static/js/pages/expenses.js
-msgid "No spending this month."
-msgstr "इस महीने कोई खर्च नहीं हुआ।"
-
-#: static/js/pages/expenses.js
 msgid "Record payment"
 msgstr "भुगतान दर्ज करें"
 
@@ -940,10 +1223,6 @@ msgstr "भुगतान दर्ज करें"
 #, python-brace-format
 msgid "Record a payment from {from} to {to}."
 msgstr "{from} से {to} को किया गया भुगतान दर्ज करें।"
-
-#: static/js/pages/expenses.js
-msgid "Amount"
-msgstr "रकम"
 
 #: static/js/pages/expenses.js
 msgid "Enter an amount greater than zero."
@@ -1394,8 +1673,8 @@ msgstr "{name} को नए टैब में देखें"
 msgid "Preview"
 msgstr "देखें"
 
-#: static/js/pages/media.js templates/media.html templates/pdfs.html
-#: templates/qr.html templates/upload.html
+#: static/js/pages/media.js templates/backups.html templates/media.html
+#: templates/pdfs.html templates/qr.html templates/upload.html
 msgid "Download"
 msgstr "डाउनलोड"
 
@@ -1458,10 +1737,11 @@ msgid "Add"
 msgstr "जोड़ें"
 
 #: static/js/base/app.js static/js/pages/expenses.js
-#: static/js/pages/home/reminders.js static/js/tags.js templates/chores.html
-#: templates/expiry.html templates/media.html templates/notes.html
-#: templates/pdfs.html templates/qr.html templates/recipes.html
-#: templates/shopping.html templates/shorten.html templates/upload.html
+#: static/js/pages/home/reminders.js static/js/tags.js templates/backups.html
+#: templates/chores.html templates/expiry.html templates/media.html
+#: templates/notes.html templates/pdfs.html templates/qr.html
+#: templates/recipes.html templates/shopping.html templates/shorten.html
+#: templates/upload.html
 msgid "Delete"
 msgstr "हटाएं"
 
@@ -1663,7 +1943,7 @@ msgstr "आपकी लोकेशन नहीं मिल सकी। क�
 msgid "Geolocation is not available in this context. This may be because the site is not served over HTTPS, or your browser does not support it. Please configure coordinates in config.yml"
 msgstr "यहां लोकेशन की सुविधा उपलब्ध नहीं है। हो सकता है कि साइट HTTPS पर न चल रही हो या आपका ब्राउज़र इसे सपोर्ट न करता हो। कृपया config.yml में निर्देशांक सेट करें"
 
-#: templates/_expense_split.html
+#: templates/_expense_split.html templates/expenses_import.html
 msgid "Split with"
 msgstr "किनके बीच बांटें"
 
@@ -1691,6 +1971,188 @@ msgstr "रकम के हिसाब से"
 #, python-format
 msgid "%(name)s split value"
 msgstr "%(name)s के बंटवारे की वैल्यू"
+
+#: templates/backup_restore.html
+msgid "Back to backups"
+msgstr "बैकअप पर वापस जाएं"
+
+#: templates/backup_restore.html
+msgid "Restore a backup"
+msgstr "बैकअप से डेटा वापस लाएं"
+
+#: templates/backup_restore.html
+msgid "Created:"
+msgstr "बनाया गया:"
+
+#: templates/backup_restore.html
+#, python-format
+msgid "HomeHub %(version)s"
+msgstr "HomeHub %(version)s"
+
+#: templates/backup_restore.html
+msgid "Size:"
+msgstr "साइज़:"
+
+#: templates/backup_restore.html
+msgid "What to restore"
+msgstr "क्या वापस लाना है"
+
+#: templates/backup_restore.html
+#, python-format
+msgid "%(num)s file"
+msgid_plural "%(num)s files"
+msgstr[0] "%(num)s फ़ाइल"
+msgstr[1] "%(num)s फ़ाइलें"
+
+#: templates/backup_restore.html
+msgid "Everything in the database is replaced together: notes, lists, expenses, reminders, settings and the admin password."
+msgstr "डेटाबेस का सब कुछ एक साथ बदला जाता है: नोट्स, लिस्ट, खर्च, रिमाइंडर, सेटिंग और एडमिन पासवर्ड।"
+
+#: templates/backup_restore.html
+msgid "Your current config.yml is not changed. The backup's copy is shown afterwards so you can bring back custom settings yourself."
+msgstr "आपकी मौजूदा config.yml नहीं बदली जाती। बैकअप वाली कॉपी बाद में दिखाई जाती है, ताकि आप अपनी खास सेटिंग खुद वापस ला सकें।"
+
+#: templates/backup_restore.html
+msgid "Restoring the database without its files, or files without the database, can leave entries that point at missing files and files that nothing points to."
+msgstr "फ़ाइलों के बिना डेटाबेस, या डेटाबेस के बिना फ़ाइलें वापस लाने पर कुछ एंट्री ऐसी फ़ाइलों की ओर इशारा कर सकती हैं जो मौजूद नहीं हैं, और कुछ फ़ाइलें किसी एंट्री से नहीं जुड़ी रहेंगी।"
+
+#: templates/backup_restore.html
+msgid "Before anything is replaced, the current data is saved as a safety backup in the list."
+msgstr "कुछ भी बदलने से पहले, मौजूदा डेटा सूची में एक सुरक्षा बैकअप के रूप में सेव किया जाता है।"
+
+#: templates/backup_restore.html templates/base.html
+msgid "Admin password"
+msgstr "एडमिन पासवर्ड"
+
+#: templates/backup_restore.html
+msgid "Remove this file"
+msgstr "यह फ़ाइल हटाएं"
+
+#: templates/backups.html
+msgid "Backups"
+msgstr "बैकअप"
+
+#: templates/backups.html
+msgid "Backups are saved on the server in data/backups/. The flask backup command saves to the same folder, so its backups show up here too."
+msgstr "बैकअप सर्वर पर data/backups/ में सेव होते हैं। flask backup कमांड भी इसी फ़ोल्डर में सेव करता है, इसलिए उसके बैकअप भी यहां दिखते हैं।"
+
+#: templates/backups.html
+msgid "Data was restored. Restart HomeHub so everything uses it."
+msgstr "डेटा वापस लाया गया। HomeHub को रीस्टार्ट करें ताकि हर जगह यही डेटा इस्तेमाल हो।"
+
+#: templates/backups.html
+msgid "On the server, run:"
+msgstr "सर्वर पर यह चलाएं:"
+
+#: templates/backups.html
+msgid "Config from the restored backup"
+msgstr "वापस लाए गए बैकअप की कॉन्फ़िग"
+
+#: templates/backups.html
+msgid "This is the config.yml from the backup. HomeHub did not change your current config.yml. To bring back your custom settings, copy what you need from it into config.yml on the server and restart HomeHub."
+msgstr "यह बैकअप की config.yml है। HomeHub ने आपकी मौजूदा config.yml नहीं बदली। अपनी खास सेटिंग वापस लाने के लिए, इसमें से जो चाहिए वह सर्वर पर config.yml में कॉपी करें और HomeHub को रीस्टार्ट करें।"
+
+#: templates/backups.html
+#, python-format
+msgid "Passwords and keys are hidden below. The full file is saved as %(path)s."
+msgstr "नीचे पासवर्ड और की छिपाई गई हैं। पूरी फ़ाइल %(path)s में सेव है।"
+
+#: templates/backups.html
+msgid "Delete the saved config from the backup?"
+msgstr "क्या बैकअप से सेव की गई कॉन्फ़िग हटा दें?"
+
+#: templates/backups.html
+msgid "Done, delete this copy"
+msgstr "हो गया, यह कॉपी हटाएं"
+
+#: templates/backups.html
+msgid "Restoring backup…"
+msgstr "बैकअप से डेटा वापस लाया जा रहा है…"
+
+#: templates/backups.html
+msgid "Creating backup…"
+msgstr "बैकअप बन रहा है…"
+
+#: templates/backups.html
+msgid "You can leave this page; the work carries on in the background."
+msgstr "आप यह पेज छोड़ सकते हैं; काम पीछे चलता रहेगा।"
+
+#: templates/backups.html
+msgid "Create a backup"
+msgstr "बैकअप बनाएं"
+
+#: templates/backups.html
+msgid "What to include"
+msgstr "क्या शामिल करना है"
+
+#: templates/backups.html
+msgid "Backups that include config.yml may contain the site password in plain text. Keep them somewhere safe."
+msgstr "जिन बैकअप में config.yml शामिल है, उनमें साइट का पासवर्ड सादे टेक्स्ट में हो सकता है। उन्हें सुरक्षित जगह रखें।"
+
+#: templates/backups.html
+msgid "Total before compression:"
+msgstr "कंप्रेस करने से पहले कुल:"
+
+#: templates/backups.html
+msgid "This backup is large. It can take a long time to create and download, and needs that much free disk space on the server. For very large backups, the flask backup command on the server is quicker."
+msgstr "यह बैकअप बड़ा है। इसे बनाने और डाउनलोड करने में काफ़ी समय लग सकता है, और सर्वर पर उतनी ही खाली जगह चाहिए। बहुत बड़े बैकअप के लिए सर्वर पर flask backup कमांड ज़्यादा तेज़ है।"
+
+#: templates/backups.html
+msgid "Create backup"
+msgstr "बैकअप बनाएं"
+
+#: templates/backups.html
+msgid "Saved backups"
+msgstr "सेव किए गए बैकअप"
+
+#: templates/backups.html
+#, python-format
+msgid "%(num)s backup, %(size)s in total"
+msgid_plural "%(num)s backups, %(size)s in total"
+msgstr[0] "%(num)s बैकअप, कुल %(size)s"
+msgstr[1] "%(num)s बैकअप, कुल %(size)s"
+
+#: templates/backups.html
+msgid "A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it; you can then delete it here to free up space on the server."
+msgstr "बैकअप तभी काम आता है जब उसकी कॉपी किसी दूसरे डिवाइस पर हो, जैसे लैपटॉप, यूएसबी ड्राइव या क्लाउड स्टोरेज। बैकअप बनाने के बाद उसे डाउनलोड कर लें; फिर सर्वर पर जगह खाली करने के लिए उसे यहां से हटा सकते हैं।"
+
+#: templates/backups.html
+msgid "Safety backup"
+msgstr "सुरक्षा बैकअप"
+
+#: templates/backups.html
+#, python-format
+msgid "Made automatically before the restore at %(time)s. Restore it to undo that restore."
+msgstr "%(time)s पर डेटा वापस लाने से पहले अपने-आप बना। उस बदलाव को पलटने के लिए इसे वापस लाएं।"
+
+#: templates/backups.html
+#, python-format
+msgid "Delete backup %(name)s?"
+msgstr "क्या बैकअप %(name)s हटा दें?"
+
+#: templates/backups.html
+msgid "No backups yet."
+msgstr "अभी कोई बैकअप नहीं है।"
+
+#: templates/backups.html
+msgid "Restore from a backup file"
+msgstr "बैकअप फ़ाइल से डेटा वापस लाएं"
+
+#: templates/backups.html
+msgid "Choose a HomeHub backup zip. Next you pick what to restore. The file is only kept on the server until the restore is done or cancelled."
+msgstr "HomeHub के बैकअप की ज़िप फ़ाइल चुनें। इसके बाद आप चुनेंगे कि क्या वापस लाना है। फ़ाइल सर्वर पर तभी तक रहती है जब तक डेटा वापस नहीं आ जाता या आप रद्द नहीं कर देते।"
+
+#: templates/backups.html
+msgid "Backup zip"
+msgstr "बैकअप की ज़िप फ़ाइल"
+
+#: templates/backups.html templates/base.html templates/login.html
+msgid "Continue"
+msgstr "जारी रखें"
+
+#: templates/backups.html
+msgid "Larger than the upload limit? Raise max_upload_mb in config.yml (and the limit of any reverse proxy in front of HomeHub), or restore it on the server with flask restore."
+msgstr "फ़ाइल अपलोड की सीमा से बड़ी है? config.yml में max_upload_mb बढ़ाएं (और HomeHub के आगे लगे किसी रिवर्स प्रॉक्सी की सीमा भी), या सर्वर पर flask restore से डेटा वापस लाएं।"
 
 #: templates/base.html
 msgid "Close menu"
@@ -1778,10 +2240,6 @@ msgid "If you found this useful, consider %(link)s"
 msgstr "अगर यह आपके काम आया हो, तो %(link)s"
 
 #: templates/base.html
-msgid "Admin password"
-msgstr "एडमिन पासवर्ड"
-
-#: templates/base.html
 #, python-format
 msgid "Enter the admin password to continue as %(name)s."
 msgstr "%(name)s के रूप में जारी रखने के लिए एडमिन पासवर्ड डालें।"
@@ -1805,10 +2263,6 @@ msgstr "HomeHub को अपने हिसाब से इस्तेमा
 #: templates/base.html
 msgid "User"
 msgstr "यूज़र"
-
-#: templates/base.html templates/login.html
-msgid "Continue"
-msgstr "जारी रखें"
 
 #: templates/chores.html
 msgid "To-Do / Chores"
@@ -1961,20 +2415,40 @@ msgid "Spending by day, with shared balances."
 msgstr "रोज़ का खर्च और आपस का हिसाब।"
 
 #: templates/expenses.html
+msgid "Recurring rules & config"
+msgstr "दोहराने के नियम और सेटिंग"
+
+#: templates/expenses.html
 msgid "Total This Month"
 msgstr "इस महीने का कुल खर्च"
 
 #: templates/expenses.html
-msgid "My Spending"
-msgstr "मेरा खर्च"
+msgid "You paid"
+msgstr "आपने दिया"
 
 #: templates/expenses.html
-msgid "Top Category"
-msgstr "सबसे ज़्यादा खर्च वाली श्रेणी"
+msgid "Your share after splits"
+msgstr "बंटवारे के बाद आपका हिस्सा"
 
 #: templates/expenses.html
-msgid "Recurring rules & config"
-msgstr "दोहराने के नियम और सेटिंग"
+msgid "Charts"
+msgstr "चार्ट"
+
+#: templates/expenses.html
+msgid "People"
+msgstr "लोग"
+
+#: templates/expenses.html templates/expenses_recurring.html
+msgid "Daily"
+msgstr "रोज़"
+
+#: templates/expenses.html
+msgid "Budgets"
+msgstr "बजट"
+
+#: templates/expenses.html
+msgid "Change budgets"
+msgstr "बजट बदलें"
 
 #: templates/expenses.html templates/index.html
 msgid "Previous month"
@@ -2025,8 +2499,38 @@ msgid "Delete Selected"
 msgstr "चुने हुए हटाएं"
 
 #: templates/expenses.html
+msgid "Download this month's entries as a CSV file"
+msgstr "इस महीने की एंट्री सीएसवी फ़ाइल में डाउनलोड करें"
+
+#: templates/expenses.html
+msgid "Export CSV"
+msgstr "सीएसवी एक्सपोर्ट करें"
+
+#: templates/expenses.html
+msgid "Import CSV"
+msgstr "सीएसवी इंपोर्ट करें"
+
+#: templates/expenses.html
 msgid "Month Total:"
 msgstr "महीने का कुल:"
+
+#: templates/expenses.html
+msgid "Export a date range"
+msgstr "चुनी हुई तारीखों की एंट्री एक्सपोर्ट करें"
+
+#: templates/expenses.html
+msgctxt "date range"
+msgid "From"
+msgstr "कब से"
+
+#: templates/expenses.html
+msgctxt "date range"
+msgid "To"
+msgstr "कब तक"
+
+#: templates/expenses.html
+msgid "Export"
+msgstr "एक्सपोर्ट करें"
 
 #: templates/expenses.html
 msgid "Balances"
@@ -2048,25 +2552,16 @@ msgstr "हिसाब चुकाने के लिए"
 msgid "This month: paid vs share"
 msgstr "इस महीने: दिया बनाम हिस्सा"
 
-#: templates/expenses.html
-msgid "Date"
-msgstr "तारीख"
-
-#: templates/expenses.html templates/expenses_recurring.html
-#: templates/index.html
+#: templates/expenses.html templates/expenses_import.html
+#: templates/expenses_recurring.html templates/index.html
 msgid "Title"
 msgstr "शीर्षक"
-
-#: templates/expenses.html templates/expenses_recurring.html
-#: templates/index.html
-msgid "Category"
-msgstr "श्रेणी"
 
 #: templates/expenses.html
 msgid "e.g., Groceries"
 msgstr "जैसे, किराना"
 
-#: templates/expenses.html
+#: templates/expenses.html templates/expenses_import.html
 msgid "Quantity"
 msgstr "मात्रा"
 
@@ -2074,7 +2569,8 @@ msgstr "मात्रा"
 msgid "optional"
 msgstr "वैकल्पिक"
 
-#: templates/expenses.html templates/expenses_recurring.html
+#: templates/expenses.html templates/expenses_import.html
+#: templates/expenses_recurring.html
 msgid "Unit Price"
 msgstr "प्रति यूनिट कीमत"
 
@@ -2082,13 +2578,157 @@ msgstr "प्रति यूनिट कीमत"
 msgid "Total Amount"
 msgstr "कुल रकम"
 
-#: templates/expenses.html
+#: templates/expenses.html templates/expenses_import.html
 msgid "Paid by"
 msgstr "किसने दिया"
 
 #: templates/expenses.html
 msgid "Save Expense"
 msgstr "खर्च सेव करें"
+
+#: templates/expenses_import.html
+msgid "Settlement"
+msgstr "हिसाब चुकाना"
+
+#: templates/expenses_import.html
+msgid "Automatic (day before month)"
+msgstr "अपने-आप (पहले दिन, फिर महीना)"
+
+#: templates/expenses_import.html
+msgid "Year-month-day (2026-10-21)"
+msgstr "साल-महीना-दिन (2026-10-21)"
+
+#: templates/expenses_import.html
+msgid "Day/month/year (21/10/2026)"
+msgstr "दिन/महीना/साल (21/10/2026)"
+
+#: templates/expenses_import.html
+msgid "Month/day/year (10/21/2026)"
+msgstr "महीना/दिन/साल (10/21/2026)"
+
+#: templates/expenses_import.html
+msgid "Back to expenses"
+msgstr "खर्चों पर वापस जाएं"
+
+#: templates/expenses_import.html
+msgid "Import expenses"
+msgstr "खर्च इंपोर्ट करें"
+
+#: templates/expenses_import.html
+msgid "Add expenses from a CSV file: one exported from HomeHub, or a bank or UPI statement. You see every row before anything is saved."
+msgstr "सीएसवी फ़ाइल से खर्च जोड़ें: HomeHub से एक्सपोर्ट की गई फ़ाइल, या बैंक या यूपीआई स्टेटमेंट। कुछ भी सेव होने से पहले आप हर पंक्ति देख सकते हैं।"
+
+#: templates/expenses_import.html
+msgid "CSV file"
+msgstr "सीएसवी फ़ाइल"
+
+#: templates/expenses_import.html
+msgid "The first row should name the columns. Rows need at least a date, a title and an amount; you can match the columns on the next step."
+msgstr "पहली पंक्ति में कॉलम के नाम होने चाहिए। हर पंक्ति में कम से कम तारीख, शीर्षक और रकम चाहिए; कॉलम अगले चरण में मिला सकते हैं।"
+
+#: templates/expenses_import.html
+msgid "Preview import"
+msgstr "इंपोर्ट से पहले देखें"
+
+#: templates/expenses_import.html
+#, python-format
+msgid "Columns in %(name)s"
+msgstr "%(name)s के कॉलम"
+
+#: templates/expenses_import.html
+msgid "(not in file)"
+msgstr "(फ़ाइल में नहीं)"
+
+#: templates/expenses_import.html
+#, python-format
+msgid "Column %(num)s"
+msgstr "कॉलम %(num)s"
+
+#: templates/expenses_import.html
+msgid "Date format"
+msgstr "तारीख का फ़ॉर्मैट"
+
+#: templates/expenses_import.html
+msgid "Paid by, when the file does not say"
+msgstr "किसने दिया, अगर फ़ाइल में नहीं लिखा"
+
+#: templates/expenses_import.html
+msgid "Choose…"
+msgstr "चुनें…"
+
+#: templates/expenses_import.html
+#, python-format
+msgid "Choose the column for: %(fields)s."
+msgstr "इनके लिए कॉलम चुनें: %(fields)s।"
+
+#: templates/expenses_import.html
+msgid "Update preview"
+msgstr "झलक अपडेट करें"
+
+#: templates/expenses_import.html
+#, python-format
+msgid "%(num)s new"
+msgid_plural "%(num)s new"
+msgstr[0] "%(num)s नई"
+msgstr[1] "%(num)s नई"
+
+#: templates/expenses_import.html
+#, python-format
+msgid "%(num)s already saved"
+msgid_plural "%(num)s already saved"
+msgstr[0] "%(num)s पहले से सेव"
+msgstr[1] "%(num)s पहले से सेव"
+
+#: templates/expenses_import.html
+#, python-format
+msgid "%(num)s repeated in the file"
+msgid_plural "%(num)s repeated in the file"
+msgstr[0] "%(num)s फ़ाइल में दोहराई गई"
+msgstr[1] "%(num)s फ़ाइल में दोहराई गईं"
+
+#: templates/expenses_import.html
+#, python-format
+msgid "%(num)s cannot be imported"
+msgid_plural "%(num)s cannot be imported"
+msgstr[0] "%(num)s इंपोर्ट नहीं हो सकती"
+msgstr[1] "%(num)s इंपोर्ट नहीं हो सकतीं"
+
+#: templates/expenses_import.html
+msgid "Rows that match a saved expense (same date, title, amount and payer), or an earlier row in this file, start unticked. Tick them if they really are separate expenses."
+msgstr "जो पंक्तियां किसी सेव किए गए खर्च से (वही तारीख, शीर्षक, रकम और देने वाला) या इस फ़ाइल की किसी पिछली पंक्ति से मिलती हैं, उन पर पहले से टिक नहीं होता। अगर वे सच में अलग खर्च हैं तो उन पर टिक करें।"
+
+#: templates/expenses_import.html
+msgid "Import"
+msgstr "इंपोर्ट करें"
+
+#: templates/expenses_import.html
+msgid "Status"
+msgstr "स्थिति"
+
+#: templates/expenses_import.html
+#, python-format
+msgid "Import row %(num)s"
+msgstr "पंक्ति %(num)s इंपोर्ट करें"
+
+#: templates/expenses_import.html
+msgid "New"
+msgstr "नई"
+
+#: templates/expenses_import.html
+msgid "Already saved"
+msgstr "पहले से सेव"
+
+#: templates/expenses_import.html
+msgid "Repeated in the file"
+msgstr "फ़ाइल में दोहराई गई"
+
+#: templates/expenses_import.html
+msgid "Start over"
+msgstr "फिर से शुरू करें"
+
+#: templates/expenses_import.html
+msgid "Import ticked rows"
+msgstr "टिक की गई पंक्तियां इंपोर्ट करें"
 
 #: templates/expenses_recurring.html
 msgid "Back to Calendar"
@@ -2163,10 +2803,6 @@ msgstr "डिफ़ॉल्ट मात्रा"
 #: templates/expenses_recurring.html
 msgid "Frequency"
 msgstr "कितनी बार"
-
-#: templates/expenses_recurring.html
-msgid "Daily"
-msgstr "रोज़"
 
 #: templates/expenses_recurring.html
 msgid "Weekly"
@@ -2300,6 +2936,26 @@ msgstr "किराना, बिजली-पानी, मकान"
 msgid "Save Settings"
 msgstr "सेटिंग सेव करें"
 
+#: templates/expenses_recurring.html
+msgid "Monthly budgets"
+msgstr "मासिक बजट"
+
+#: templates/expenses_recurring.html
+msgid "Spending limits for the household, the same every month. Leave a box empty for no budget. The expenses page shows how much of each is used, amber from 80% and red once it is passed."
+msgstr "घर के खर्च की सीमा, जो हर महीने एक जैसी रहती है। किसी बॉक्स को खाली छोड़ने पर उसका कोई बजट नहीं होगा। खर्च वाले पेज पर दिखता है कि हर बजट का कितना हिस्सा इस्तेमाल हुआ: 80% से नारंगी और सीमा पार होने पर लाल।"
+
+#: templates/expenses_recurring.html
+msgid "No budget"
+msgstr "कोई बजट नहीं"
+
+#: templates/expenses_recurring.html
+msgid "Add categories above to set a budget for each one."
+msgstr "हर श्रेणी का बजट सेट करने के लिए ऊपर श्रेणियां जोड़ें।"
+
+#: templates/expenses_recurring.html
+msgid "Save budgets"
+msgstr "बजट सेव करें"
+
 #: templates/expiry.html
 msgid "Food, medicines and documents, soonest first."
 msgstr "खाने का सामान, दवाइयां और दस्तावेज़; जो सबसे पहले एक्सपायर होंगे वे सबसे ऊपर।"
@@ -2351,6 +3007,18 @@ msgstr "मौसम"
 #: templates/index.html
 msgid "Loading weather data..."
 msgstr "मौसम की जानकारी लोड हो रही है..."
+
+#: templates/index.html
+#, python-format
+msgid "A budget is over this month"
+msgid_plural "%(num)s budgets are over this month"
+msgstr[0] "इस महीने एक बजट पार हो गया"
+msgstr[1] "इस महीने %(num)s बजट पार हो गए"
+
+#: templates/index.html
+#, python-format
+msgid "%(name)s: %(spent)s of %(budget)s"
+msgstr "%(name)s: %(budget)s में से %(spent)s"
 
 #: templates/index.html
 msgid "Family Notice Board"
@@ -2408,6 +3076,27 @@ msgstr "पूरी लिस्ट खोलें"
 #: templates/index.html
 msgid "No open chores right now."
 msgstr "अभी कोई काम बाकी नहीं है।"
+
+#: templates/index.html
+msgid "Backup"
+msgstr "बैकअप"
+
+#: templates/index.html
+msgid "Create, download and restore backups of HomeHub's data."
+msgstr "HomeHub के डेटा का बैकअप बनाएं, डाउनलोड करें और उससे डेटा वापस लाएं।"
+
+#: templates/index.html
+msgid "Manage backups"
+msgstr "बैकअप संभालें"
+
+#: templates/index.html
+msgid "Set an admin password to use backups. On the server, run:"
+msgstr "बैकअप इस्तेमाल करने के लिए एडमिन पासवर्ड सेट करें। सर्वर पर यह चलाएं:"
+
+#: templates/index.html
+#, python-format
+msgid "Until then, you can make and restore backups on the server with flask backup and flask restore. See the %(link)s for details."
+msgstr "तब तक आप सर्वर पर flask backup और flask restore से बैकअप बना सकते हैं और उससे डेटा वापस ला सकते हैं। ज़्यादा जानकारी के लिए %(link)s देखें।"
 
 #: templates/index.html
 msgid "Calendar & Reminders"
@@ -2867,4 +3556,28 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "Delete this recurring reminder and all its future dates?"
 #~ msgstr "क्या यह दोहराने वाला रिमाइंडर और इसकी आगे की सभी तारीखें हटा दें?"
+
+#~ msgid "My share after splits: {amount}"
+#~ msgstr "बंटवारे के बाद मेरा हिस्सा: {amount}"
+
+#~ msgid "My Spending"
+#~ msgstr "मेरा खर्च"
+
+#~ msgid "Top Category"
+#~ msgstr "सबसे ज़्यादा खर्च वाली श्रेणी"
+
+#~ msgid "Backup %(name)s uploaded."
+#~ msgstr "बैकअप %(name)s अपलोड हो गया।"
+
+#~ msgid "Replace the current data with this backup?"
+#~ msgstr "क्या मौजूदा डेटा को इस बैकअप से बदल दें?"
+
+#~ msgid "A backup only protects you once it is copied to another device, such as a laptop, a USB drive or cloud storage. Download it after creating it."
+#~ msgstr "बैकअप तभी काम आता है जब उसकी कॉपी किसी दूसरे डिवाइस पर हो, जैसे लैपटॉप, यूएसबी ड्राइव या क्लाउड स्टोरेज। बैकअप बनाने के बाद उसे डाउनलोड कर लें।"
+
+#~ msgid "Upload a backup"
+#~ msgstr "बैकअप अपलोड करें"
+
+#~ msgid "Add a backup zip from another device to the list, for example to restore it here. Larger than the upload limit? Copy it into data/backups/ on the server instead."
+#~ msgstr "किसी दूसरे डिवाइस से बैकअप की ज़िप फ़ाइल सूची में जोड़ें, जैसे उसका डेटा यहां वापस लाने के लिए। फ़ाइल अपलोड की सीमा से बड़ी है? तो उसे सर्वर पर data/backups/ में कॉपी करें।"
 
