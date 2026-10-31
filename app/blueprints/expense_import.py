@@ -185,13 +185,20 @@ def parse_split_cell(value: str):
         if match:
             name, weight = match.group(1).strip(), float(match.group(2))
             percent = percent or bool(match.group(3))
+            # A weight with hundreds of digits reads as infinity, which would break every balance later
+            if not math.isfinite(weight):
+                raise SplitWeightError(part)
             if name and weight > 0:
                 weights[name] = weights.get(name, 0) + weight
+                if not math.isfinite(weights[name]):
+                    raise SplitWeightError(part)
         elif _SPLIT_BAD_WEIGHT_RE.search(part):
             raise SplitWeightError(part)
         elif part not in names:
             names.append(part)
     if weights:
+        if not math.isfinite(sum(weights.values())):
+            raise SplitWeightError(value)
         for name in names:
             weights.setdefault(name, 1.0)
         return json.dumps({'mode': 'percent' if percent else 'shares', 'weights': weights})

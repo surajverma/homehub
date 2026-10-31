@@ -1270,7 +1270,8 @@ def _csv_split(e: ExpenseEntry) -> str:
     if mode == 'equal' or e.is_settlement:
         return ';'.join(weights)
     suffix = '%' if mode == 'percent' else ''
-    return ';'.join(f'{name} ({w:g}{suffix})' for name, w in weights.items())
+    # Weights written out in full (123456.78, not 123457 or 1e+06), so importing them back changes nothing
+    return ';'.join(f'{name} ({_csv_number(w)}{suffix})' for name, w in weights.items())
 
 
 def _export_range(args, today: date):

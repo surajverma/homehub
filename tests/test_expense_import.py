@@ -315,3 +315,31 @@ def test_preview_that_fails_drops_the_file_instead_of_an_error_page(client, monk
     # The stored file is gone, so the next visit starts over
     monkeypatch.undo()
     assert 'name="file"' in client.get('/expenses/import').get_data(as_text=True)
+
+
+def test_export_keeps_split_weights_exact(client):
+    split = json.dumps({'mode': 'shares', 'weights': {'Alice': 123456.78, 'Bob': 876543.22}})
+    add(client, date=date(2026, 10, 1), title='Flat', amount=1000000, payer='Alice', split_with=split)
+    add(client, date=date(2026, 10, 2), title='Tiny', amount=10, payer='Alice',
+        split_with=json.dumps({'mode': 'shares', 'weights': {'Alice': 0.0000001, 'Bob': 1}}))
+    text = client.get('/expenses/export.csv?month=2026-10').get_data(as_text=True)
+    assert 'Alice (123456.78);Bob (876543.22)' in text
+    assert 'Alice (0.0000001);Bob (1)' in text
+    assert 'e+' not in text and 'e-' not in text
+    # Reading the cell back gives the same weights
+    assert json.loads(parse_split_cell('Alice (123456.78);Bob (876543.22)'))['weights'] == {'Alice': 123456.78, 'Bob': 876543.22}
+
+
+@pytest.mark.parametrize('cell', [
+    'Alice (' + '9' * 400 + ');Bob (1)',
+    'Alice (1' + '0' * 308 + ');Bob (1' + '0' * 308 + ')',
+])
+def test_split_weights_must_be_finite(client, cell):
+    upload(client, f'date,title,amount,payer,split\n2026-10-01,Milk,50,Alice,{cell}\n')
+    page = client.get('/expenses/import').get_data(as_text=True)
+    assert 'The split weight is not a number' in page
+    assert '1 cannot be imported' in page
+    client.post('/expenses/import/confirm', data={'user': 'Alice', 'rows': ['1']})
+    assert entries(client) == []
+    # The expenses page still works
+    assert client.get('/api/expenses/month?year=2026&month=10').status_code == 200
