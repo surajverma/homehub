@@ -178,7 +178,8 @@ def validate(op: Operation, args: dict, *, from_query=()) -> dict:
             continue
         cleaned[name] = _check(name, prop, value, name in from_query)
     for name in op.required:
-        if name not in cleaned:
+        # A missing "by" is reported by the handler (ctx.require_member), with a message that says what it is for
+        if name not in cleaned and name != 'by':
             raise ArgumentError(name, 'is required')
     return cleaned
 

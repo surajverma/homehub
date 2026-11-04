@@ -242,7 +242,7 @@ def test_auth_required(home):
 def test_auth_required_behind_site_password(tmp_path, monkeypatch):
     home = Home(tmp_path, monkeypatch, password='site')
     secret = home.token('Hermes', notice='read')
-    assert rpc(home, None, 'tools/list').status_code == 302
+    assert rpc(home, None, 'tools/list').status_code == 401
     assert rpc(home, secret, 'tools/list').status_code == 200
 
 
@@ -263,3 +263,45 @@ def test_get_and_delete_are_405(home):
     for method in ('GET', 'DELETE'):
         resp = home.call(method, '/mcp', secret)
         assert resp.status_code == 405 and resp.headers['Allow'] == 'POST'
+
+
+# --- Batches ---
+
+def batch_of(n, item='Milk'):
+    return [{'jsonrpc': '2.0', 'id': i, 'method': 'tools/call',
+             'params': {'name': 'shopping_add', 'arguments': {'item': f'{item} {i}'}}} for i in range(n)]
+
+
+@pytest.mark.parametrize('version', ['2025-06-18', '2025-11-25'])
+def test_batches_rejected_on_newer_versions(home, version):
+    secret = home.token('Hermes', shopping='write')
+    resp = home.post('/mcp', secret, json=batch_of(2), headers={'MCP-Protocol-Version': version})
+    assert resp.status_code == 400 and resp.get_json()['error']['code'] == -32600
+    with home.ctx():
+        assert ShoppingItem.query.count() == 0
+
+
+def test_batch_with_modern_meta_is_rejected(home):
+    secret = home.token('Hermes', shopping='write')
+    body = batch_of(1)
+    body[0]['params']['_meta'] = {mcp.META_VERSION: MODERN}
+    assert home.post('/mcp', secret, json=body, headers={'MCP-Protocol-Version': MODERN}).status_code == 400
+
+
+def test_batch_of_ten_on_old_version(home):
+    secret = home.token('Hermes', shopping='write')
+    resp = home.post('/mcp', secret, json=batch_of(10), headers={'MCP-Protocol-Version': '2025-03-26'})
+    assert resp.status_code == 200 and len(resp.get_json()) == 10
+    with home.ctx():
+        assert ShoppingItem.query.count() == 10
+    # No header means 2025-03-26 too
+    assert home.post('/mcp', secret, json=batch_of(3, 'Eggs')).status_code == 200
+
+
+def test_batch_of_eleven_is_rejected_and_nothing_runs(home):
+    secret = home.token('Hermes', shopping='write')
+    resp = home.post('/mcp', secret, json=batch_of(11), headers={'MCP-Protocol-Version': '2025-03-26'})
+    assert resp.status_code == 400 and resp.get_json()['error']['code'] == -32600
+    with home.ctx():
+        assert ShoppingItem.query.count() == 0
+        assert ApiActivity.query.count() == 0

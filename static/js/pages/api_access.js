@@ -25,6 +25,33 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   });
 
+  // Rename asks for the new name in the app's dialog; the server checks the same rules as for a new token
+  document.querySelectorAll('.rename-form').forEach(function(renameForm){
+    renameForm.addEventListener('submit', async function(ev){
+      if (renameForm.dataset.confirmed){ delete renameForm.dataset.confirmed; return; }
+      ev.preventDefault();
+      const current = renameForm.dataset.current || '';
+      const max = Number(renameForm.dataset.max) || 40;
+      const name = await promptDialog({
+        title: t('Rename token'),
+        message: t('Give {name} a new name. The token itself and its access stay the same.', { name: current }),
+        label: t('New name'),
+        value: current,
+        confirmText: t('Rename'),
+        validate: function(value){
+          const v = (value || '').trim();
+          if (!v) return t('Give the token a name.');
+          if (v.length > max) return t('The name can be at most {num} characters.', { num: max });
+          return '';
+        }
+      });
+      if (name === null) return;
+      renameForm.querySelector('input[name="name"]').value = name.trim();
+      renameForm.dataset.confirmed = '1';
+      renameForm.submit();
+    });
+  });
+
   const form = document.getElementById('createTokenForm');
   if (!form) return;
   const actAs = document.getElementById('actAs');
@@ -59,8 +86,6 @@ document.addEventListener('DOMContentLoaded', function(){
     presetWrap.querySelectorAll('.preset-chip').forEach(function(btn){
       const on = btn.dataset.preset === key;
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      btn.classList.toggle('btn-primary', on);
-      btn.classList.toggle('btn-secondary', !on);
     });
   }
 

@@ -17,10 +17,6 @@ def locked(tmp_path, monkeypatch):
 
 
 def assert_401(resp):
-    if resp.status_code == 302:
-        # Behind a site password, anything without a valid token goes to the login page as before
-        assert resp.headers['Location'].endswith('/login')
-        return
     assert resp.status_code == 401
     assert resp.get_json() == {'error': 'unauthorized', 'message': resp.get_json()['message']}
     assert resp.headers['Cache-Control'] == 'no-store'
@@ -43,11 +39,35 @@ def test_same_401_with_or_without_tokens(request, fixture):
     assert (before.status_code, before.get_data()) == (after.status_code, after.get_data())
 
 
-def test_site_password_without_token_redirects_to_login(locked):
-    locked.token('Hermes', notice='read')
-    for secret in (None, 'hh_wrong'):
-        resp = locked.get('/', secret)
-        assert resp.status_code == 302 and resp.headers['Location'].endswith('/login')
+@pytest.mark.parametrize('path', ['/', '/presence', '/openapi.json', '/nothing-here'])
+def test_site_password_without_valid_token_is_401_json(locked, path):
+    from app.api import tokens
+    secret = locked.token('Hermes', presence='read')
+    revoked = locked.token('Old', presence='read')
+    with locked.ctx():
+        tokens.revoke_token(tokens.find_by_name('Old'))
+    for bad in (None, 'hh_wrong', revoked):
+        resp = locked.get(path, bad)
+        assert resp.status_code == 401, (path, bad)
+        assert resp.get_json()['error'] == 'unauthorized'
+        assert resp.headers['WWW-Authenticate'] == 'Bearer realm="HomeHub"'
+        assert resp.headers['Cache-Control'] == 'no-store'
+    assert locked.get('/', secret).status_code == 200
+
+
+def test_site_password_mcp_without_valid_token_is_401(locked):
+    locked.token('Hermes', presence='read')
+    for bad in (None, 'hh_wrong'):
+        resp = locked.post('/mcp', bad, json={'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list'})
+        assert resp.status_code == 401 and resp.get_json()['error'] == 'unauthorized'
+
+
+@pytest.mark.parametrize('path', ['/', '/notes', '/admin/api', '/api/reminders', '/api/shopping'])
+def test_other_pages_still_redirect_with_or_without_token(locked, path):
+    secret = locked.token('Hermes', notice='read', shopping='write', reminders='write')
+    for headers in ({}, {'Authorization': f'Bearer {secret}'}):
+        resp = locked.client.get(path, headers=headers)
+        assert resp.status_code == 302 and resp.headers['Location'].endswith('/login'), (path, headers)
 
 
 def test_no_site_password_without_token_is_401(home):

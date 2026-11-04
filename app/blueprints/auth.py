@@ -49,8 +49,12 @@ def reload_config_and_auth():
     endpoint = request.endpoint or ''
     if cfg.get('password_hash'):
         if not session.get('authed') and not endpoint.startswith('static') and endpoint not in _OPEN_ENDPOINTS:
-            # A valid API token gets through to /api/v1 only (app/api); everything else logs in as before
-            if not api.token_opens_gate():
+            # /api/v1 (app/api): a valid token gets through, anything else gets the API's own 401.
+            # Every other page logs in as before; a token opens nothing outside /api/v1.
+            if api.is_api_request():
+                if not api.token_opens_gate():
+                    return api.unauthorized_response()
+            else:
                 return redirect(url_for('main.login'))
     else:
         if endpoint == 'main.login':

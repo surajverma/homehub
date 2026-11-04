@@ -102,23 +102,30 @@ def require_api(tool: str | None = None, level: str = 'read'):
 
 # --- Acting person ---
 
-def acting_name(token, by) -> str:
-    """The name a write is made as: a family member named in ``by``, or the token's own name."""
+def acting_name(token, by) -> tuple:
+    """(name a write is made as, True when ``by`` named a family member); else the token's own name."""
     if by is None:
-        return token.name
+        return _token_as_author(token), False
     if not token.act_as_members:
         raise ApiError(400, 'bad_request', _('This token cannot act as family members, so "by" is not allowed.'))
     wanted = sanitize_text(str(by)).strip()
     if not wanted:
-        return token.name
+        return _token_as_author(token), False
     if tokens.is_admin_name(wanted):
         raise ApiError(400, 'bad_request', _('The API cannot act as the admin.'))
     for member in tokens.family_members():
         if member.casefold() == wanted.casefold():
             if tokens.is_admin_name(member):
                 raise ApiError(400, 'bad_request', _('The API cannot act as the admin.'))
-            return member
+            return member, True
     raise ApiError(400, 'bad_request', _('%(name)s is not a family member.', name=wanted))
+
+
+def _token_as_author(token) -> str:
+    """The token's name, unless a family member or the admin now has that name: then its changes would look like theirs."""
+    if tokens.name_taken_by_person(token.name):
+        raise ApiError(409, 'conflict', _('This token is called %(name)s, the same as a person in HomeHub, so its changes would look like theirs. Ask the admin to rename the token under Admin tools > API access.', name=token.name))
+    return token.name
 
 
 class Context:
@@ -132,10 +139,10 @@ class Context:
         self.acting_given = acting_given
         self.target = None
 
-    def require_member(self) -> str:
+    def require_member(self, message: str | None = None) -> str:
         """The family member this call acts for; "by" is needed for changes that belong to a person."""
         if not self.acting_given:
-            raise ApiError(400, 'bad_request', _('Say which family member this is for with "by".'))
+            raise ApiError(400, 'bad_request', message or _('Say which family member this is for with "by".'))
         return self.user
 
 
@@ -155,9 +162,7 @@ def run_operation(op, token, args: dict, *, from_query=()):
         raise ApiError(400, 'bad_request', _('%(field)s %(problem)s.', field=exc.name, problem=exc.problem))
     ctx = Context(token, op, None, False)
     if op.is_write:
-        by = cleaned.pop('by', None)
-        ctx.user = acting_name(token, by)
-        ctx.acting_given = by is not None and ctx.user != token.name
+        ctx.user, ctx.acting_given = acting_name(token, cleaned.pop('by', None))
     try:
         payload = op.handler(ctx, cleaned)
         if op.is_write:

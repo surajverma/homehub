@@ -10,6 +10,13 @@ from . import tokens
 api_token_cli = AppGroup('api-token', help='Manage tokens for the HomeHub API (/api/v1).')
 
 
+def _fresh_config():
+    """Read config.yml now, as every web request does, so the name rules see the current family."""
+    from flask import current_app
+    from ..config import load_config
+    current_app.config['HOMEHUB_CONFIG'] = load_config()
+
+
 def _parse_tools(values) -> dict:
     permissions = {}
     for value in values:
@@ -44,6 +51,7 @@ def _print_token(secret: str):
 @click.option('--allow-delete', is_flag=True, help='Let the token move reminders to the trash (needs reminders=write).')
 def create_command(name, tool_values, act_as_members, allow_delete):
     """Create a token called NAME and print it once."""
+    _fresh_config()
     try:
         permissions = _parse_tools(tool_values)
         if allow_delete and not tokens.can_delete(tokens.clean_permissions(permissions, act_as_members)):
@@ -63,6 +71,7 @@ def create_command(name, tool_values, act_as_members, allow_delete):
 @api_token_cli.command('list')
 def list_command():
     """List tokens (the tokens themselves cannot be shown)."""
+    _fresh_config()
     rows = tokens.all_tokens()
     if not rows:
         click.echo('No API tokens. The API is off until you create one.')
@@ -71,6 +80,8 @@ def list_command():
         state = f'revoked {token.revoked_at:%Y-%m-%d %H:%M}' if token.revoked_at else 'active'
         used = f'{token.last_used_at:%Y-%m-%d %H:%M} UTC' if token.last_used_at else 'not used yet'
         flags = [f for f, on in (('act as family members', token.act_as_members), ('allow deleting', token.allow_delete)) if on]
+        if tokens.name_taken_by_person(token.name):
+            flags.append('same name as a person: writes blocked until renamed')
         click.echo(f'{token.name} ({token.prefix}…, {state}): {_summary(token)}'
                    + (f' [{", ".join(flags)}]' if flags else '') + f'; last used: {used}')
 
@@ -79,6 +90,7 @@ def list_command():
 @click.argument('name')
 def regenerate_command(name):
     """Give token NAME a new value; whatever uses the old one stops working. Also re-activates a revoked token."""
+    _fresh_config()
     token = tokens.find_by_name(name)
     if token is None:
         raise click.ClickException(f'No token called {name}.')
@@ -91,6 +103,7 @@ def regenerate_command(name):
 @click.argument('name')
 def revoke_command(name):
     """Revoke token NAME; whatever uses it stops working at once."""
+    _fresh_config()
     token = tokens.find_by_name(name)
     if token is None:
         raise click.ClickException(f'No token called {name}.')
@@ -99,3 +112,20 @@ def revoke_command(name):
         return
     tokens.revoke_token(token)
     click.echo(f'Token {token.name} revoked.')
+
+
+@api_token_cli.command('rename')
+@click.argument('old')
+@click.argument('new')
+def rename_command(old, new):
+    """Rename token OLD to NEW; the token itself and its access stay the same."""
+    _fresh_config()
+    token = tokens.find_by_name(old)
+    if token is None:
+        raise click.ClickException(f'No token called {old}.')
+    previous = token.name
+    try:
+        name = tokens.rename_token(token, new)
+    except tokens.TokenError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f'Token {previous} renamed to {name}.')

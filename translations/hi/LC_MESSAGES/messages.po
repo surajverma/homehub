@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 14:20+0000\n"
+"POT-Creation-Date: 2026-11-04 16:53+0000\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -76,6 +76,11 @@ msgstr "API एडमिन की ओर से काम नहीं कर �
 #, python-format
 msgid "%(name)s is not a family member."
 msgstr "%(name)s परिवार के सदस्य नहीं हैं।"
+
+#: app/api/core.py
+#, python-format
+msgid "This token is called %(name)s, the same as a person in HomeHub, so its changes would look like theirs. Ask the admin to rename the token under Admin tools > API access."
+msgstr "इस टोकन का नाम %(name)s है, जो HomeHub में किसी व्यक्ति का भी नाम है, इसलिए इसके बदलाव उनके लगेंगे। एडमिन से कहें कि एडमिन टूल > API एक्सेस में टोकन का नाम बदलें।"
 
 #: app/api/core.py
 msgid "Say which family member this is for with \"by\"."
@@ -171,13 +176,12 @@ msgstr "रकम सही नहीं है।"
 
 #: app/api/expenses.py
 #, python-format
-msgid "%(name)s cannot be the payer: use a family member."
-msgstr "%(name)s भुगतान करने वाले नहीं हो सकते: परिवार के किसी सदस्य का नाम दें।"
-
-#: app/api/expenses.py
-#, python-format
 msgid "Unknown category: %(name)s. Use one set on the expenses page: %(keys)s."
 msgstr "अनजान श्रेणी: %(name)s। खर्च वाले पेज पर बनी कोई श्रेणी इस्तेमाल करें: %(keys)s।"
+
+#: app/api/expenses.py
+msgid "Say which family member paid with \"by\"."
+msgstr "\"by\" से बताएं कि परिवार के किस सदस्य ने भुगतान किया।"
 
 #: app/api/expenses.py app/api/household.py
 #, python-format
@@ -187,10 +191,6 @@ msgstr "%(field)s खाली नहीं हो सकता।"
 #: app/api/expenses.py
 msgid "Send either amount, or unit_price and quantity."
 msgstr "या तो amount भेजें, या unit_price और quantity।"
-
-#: app/api/expenses.py
-msgid "Say who paid with \"payer\" (or \"by\")."
-msgstr "\"payer\" (या \"by\") से बताएं कि भुगतान किसने किया।"
 
 #: app/api/home.py
 msgid "This needs a token that can act as family members."
@@ -378,8 +378,17 @@ msgstr "MCP एंडपॉइंट सिर्फ़ POST स्वीका�
 
 #: app/api/routes.py
 #, python-format
+msgid "%(field)s was given more than once."
+msgstr "%(field)s एक से ज़्यादा बार दिया गया।"
+
+#: app/api/routes.py
+#, python-format
 msgid "%(field)s is not a known field here."
 msgstr "%(field)s यहां कोई जाना-पहचाना फ़ील्ड नहीं है।"
+
+#: app/api/tokens.py
+msgid "Not available for this tool"
+msgstr "इस टूल के लिए उपलब्ध नहीं"
 
 #: app/api/tokens.py
 msgid "Who is home"
@@ -410,8 +419,12 @@ msgid "Notice board"
 msgstr "सूचना बोर्ड"
 
 #: app/api/tokens.py
-msgid "The notice"
-msgstr "सूचना"
+msgid "Read only. Only the admin can change the notice in HomeHub."
+msgstr "सिर्फ़ पढ़ने के लिए। सूचना HomeHub में सिर्फ़ एडमिन बदल सकता है।"
+
+#: app/api/tokens.py
+msgid "Not available: only the admin can change the notice"
+msgstr "उपलब्ध नहीं: सूचना सिर्फ़ एडमिन बदल सकता है"
 
 #: app/api/tokens.py templates/index.html
 msgid "Reminders"
@@ -497,7 +510,7 @@ msgstr "दोहराने वाले खर्च और एंट्र�
 msgid "Skip or restore a recurring day, change its quantity, add an expense"
 msgstr "दोहराने वाले दिन को छोड़ें या वापस लाएं, उसकी मात्रा बदलें, खर्च जोड़ें"
 
-#: app/api/tokens.py
+#: app/api/tokens.py static/js/pages/api_access.js
 msgid "Give the token a name."
 msgstr "टोकन को एक नाम दें।"
 
@@ -570,6 +583,11 @@ msgstr "टोकन को कम से कम एक टूल की अन�
 #: app/blueprints/api_admin.py
 msgid "That token was not found."
 msgstr "यह टोकन नहीं मिला।"
+
+#: app/blueprints/api_admin.py
+#, python-format
+msgid "Token %(old)s renamed to %(new)s. The token itself did not change."
+msgstr "टोकन %(old)s का नाम बदलकर %(new)s कर दिया गया। टोकन खुद नहीं बदला।"
 
 #: app/blueprints/api_admin.py
 #, python-format
@@ -1458,6 +1476,28 @@ msgstr "कॉपी हो गया"
 #: static/js/pages/api_access.js
 msgid "Select the text and copy it."
 msgstr "टेक्स्ट चुनें और कॉपी करें।"
+
+#: static/js/pages/api_access.js
+msgid "Rename token"
+msgstr "टोकन का नाम बदलें"
+
+#: static/js/pages/api_access.js
+#, python-brace-format
+msgid "Give {name} a new name. The token itself and its access stay the same."
+msgstr "{name} को नया नाम दें। टोकन और उसकी अनुमति वही रहेंगी।"
+
+#: static/js/pages/api_access.js
+msgid "New name"
+msgstr "नया नाम"
+
+#: static/js/pages/api_access.js templates/api_access.html
+msgid "Rename"
+msgstr "नाम बदलें"
+
+#: static/js/pages/api_access.js
+#, python-brace-format
+msgid "The name can be at most {num} characters."
+msgstr "नाम ज़्यादा से ज़्यादा {num} अक्षरों का हो सकता है।"
 
 #: static/js/pages/backups.js
 #, python-brace-format
@@ -2547,10 +2587,6 @@ msgstr "पढ़ना और बदलना:"
 msgid "%(tool)s: %(level)s"
 msgstr "%(tool)s: %(level)s"
 
-#: templates/api_access.html templates/media.html
-msgid "Not available"
-msgstr "उपलब्ध नहीं"
-
 #: templates/api_access.html
 msgid "Act as family members"
 msgstr "परिवार के सदस्यों की ओर से काम करें"
@@ -2607,6 +2643,10 @@ msgstr "परिवार के सदस्यों की ओर से क
 #: templates/api_access.html
 msgid "Can move reminders to the trash"
 msgstr "रिमाइंडर ट्रैश में भेज सकता है"
+
+#: templates/api_access.html
+msgid "This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed."
+msgstr "इस टोकन का नाम परिवार के किसी सदस्य या एडमिन जैसा है, इसलिए इसके बदलाव उनके लगेंगे। नाम बदलने तक इससे बदलाव नहीं किए जा सकते।"
 
 #: templates/api_access.html
 msgid "Currently reaches nothing: its tools are switched off in config.yml."
@@ -3979,6 +4019,10 @@ msgid "Preview %(name)s in new tab"
 msgstr "%(name)s को नए टैब में देखें"
 
 #: templates/media.html
+msgid "Not available"
+msgstr "उपलब्ध नहीं"
+
+#: templates/media.html
 msgid "Delete this download and its file?"
 msgstr "क्या यह डाउनलोड और इसकी फ़ाइल हटा दें?"
 
@@ -4287,4 +4331,13 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "Create, download and restore backups of HomeHub's data."
 #~ msgstr "HomeHub के डेटा का बैकअप बनाएं, डाउनलोड करें और उससे डेटा वापस लाएं।"
+
+#~ msgid "%(name)s cannot be the payer: use a family member."
+#~ msgstr "%(name)s भुगतान करने वाले नहीं हो सकते: परिवार के किसी सदस्य का नाम दें।"
+
+#~ msgid "Say who paid with \"payer\" (or \"by\")."
+#~ msgstr "\"payer\" (या \"by\") से बताएं कि भुगतान किसने किया।"
+
+#~ msgid "The notice"
+#~ msgstr "सूचना"
 

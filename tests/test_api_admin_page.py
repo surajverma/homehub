@@ -234,3 +234,50 @@ def test_presets(home):
     assert set(p['ai_assistant']['permissions']) == {'presence', 'notice'}
     body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
     assert 'data-preset="read_all"' in body and 'data-preset="home_automation"' in body and 'data-preset="ai_assistant"' in body
+
+
+def test_rename_on_the_page(home):
+    secret = shown_secret(create(home, name='Hermes', notice='read'))
+    with home.ctx():
+        token_id = ApiToken.query.one().id
+    resp = home.client.post(f'/admin/api/{token_id}/rename', data={'user': ADMIN, 'name': 'Kitchen agent'})
+    assert resp.status_code == 302
+    assert home.get('/', secret).get_json()['token'] == 'Kitchen agent'  # the token keeps working
+    resp = home.client.post(f'/admin/api/{token_id}/rename', data={'user': ADMIN, 'name': 'Priya'}, follow_redirects=True)
+    assert 'family member' in resp.get_data(as_text=True)
+    with home.ctx():
+        assert ApiToken.query.one().name == 'Kitchen agent'
+
+
+def test_rename_needs_the_unlocked_admin(bare):
+    with bare.ctx():
+        admin.set_admin_password(PASSWORD)
+        tokens.create_token('Hermes', {'notice': 'read'})
+        token_id = ApiToken.query.one().id
+    resp = bare.client.post(f'/admin/api/{token_id}/rename', data={'user': ADMIN, 'name': 'X'})
+    assert resp.status_code == 302 and resp.headers['Location'].endswith('/')
+    with bare.ctx():
+        assert ApiToken.query.one().name == 'Hermes'
+
+
+def test_name_clash_is_flagged(home):
+    create(home, name='Asha', notice='read')
+    home.set(family_members=['Priya', 'Dad', 'Mom', 'Asha'])
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert 'Writes are blocked until it is renamed' in body
+
+
+def test_notice_row_and_dash_explain_themselves(home):
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    row = body.split('data-tool="notice"')[1].split('</tr>')[0]
+    assert 'Read only. Only the admin can change the notice in HomeHub.' in row
+    reason = 'Not available: only the admin can change the notice'
+    assert f'title="{reason}"' in row and f'aria-label="{reason}"' in row
+
+
+def test_every_row_has_actions_in_the_same_place(home):
+    create(home, name='Short', notice='read')
+    create(home, name='Long', **{t.key: 'read' for t in tokens.TOOLS})
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert body.count('class="flex flex-wrap items-center gap-2 token-actions"') == 2
+    assert body.count('>Rename</button>') == 2

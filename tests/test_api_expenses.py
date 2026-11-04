@@ -160,8 +160,8 @@ def test_add_one_off(home, agent):
     data = resp.get_json()
     assert data['amount'] == 100.0 and data['payer'] == 'Priya' and data['created_by'] == 'Priya'
     assert data['category'] == 'Groceries' and data['date'] == TODAY.isoformat() and data['recurring_id'] is None
-    resp = home.post('/expenses', agent, json={'title': 'Taxi', 'amount': 250, 'payer': 'dad', 'date': YESTERDAY.isoformat(), 'by': 'Priya'})
-    assert resp.get_json()['payer'] == 'Dad' and resp.get_json()['created_by'] == 'Priya'
+    resp = home.post('/expenses', agent, json={'title': 'Taxi', 'amount': 250, 'date': YESTERDAY.isoformat(), 'by': 'dad'})
+    assert resp.get_json()['payer'] == 'Dad' and resp.get_json()['created_by'] == 'Dad'
     # It shows on the expenses page's own month data
     month = home.client.get(f'/api/expenses/month?year={TODAY.year}&month={TODAY.month}').get_json()
     titles = [e['title'] for day in month['by_date'].values() for e in day['entries']]
@@ -175,7 +175,6 @@ def test_add_one_off(home, agent):
     {'title': 'X', 'amount': 0, 'by': 'Priya'},
     {'title': 'X', 'amount': -5, 'by': 'Priya'},
     {'title': '', 'amount': 5, 'by': 'Priya'},
-    {'title': 'X', 'amount': 5, 'payer': 'Stranger', 'by': 'Priya'},
     {'title': 'X', 'amount': 5, 'category': 'Unknown', 'by': 'Priya'},
     {'title': 'X', 'amount': 5, 'split_with': ['Dad'], 'by': 'Priya'},
     {'title': 'X', 'amount': 5},
@@ -184,11 +183,28 @@ def test_add_rejects(home, agent, body):
     assert home.post('/expenses', agent, json=body).status_code == 400
 
 
-def test_token_without_act_as_must_name_the_payer(home):
+def test_payer_is_always_the_person_in_by(home, agent):
+    resp = home.post('/expenses', agent, json={'title': 'X', 'amount': 5})
+    assert resp.status_code == 400 and resp.get_json()['message'] == 'Say which family member paid with "by".'
+    resp = home.post('/expenses', agent, json={'title': 'X', 'amount': 5, 'payer': 'Dad', 'by': 'Priya'})
+    assert resp.status_code == 400 and 'payer is not a known field' in resp.get_json()['message']
+    resp = home.post('/expenses', agent, json={'title': 'X', 'amount': 5, 'by': 'Administrator'})
+    assert resp.status_code == 400 and 'admin' in resp.get_json()['message']
+    resp = home.post('/expenses', agent, json={'title': 'X', 'amount': 5, 'by': 'Mom'})
+    assert resp.status_code == 201 and (resp.get_json()['payer'], resp.get_json()['created_by']) == ('Mom', 'Mom')
+
+
+def test_token_without_act_as_cannot_add_expenses(home):
     secret = home.token('Script', expenses='write')
-    assert home.post('/expenses', secret, json={'title': 'X', 'amount': 5}).status_code == 400
-    resp = home.post('/expenses', secret, json={'title': 'X', 'amount': 5, 'payer': 'Mom'})
-    assert resp.status_code == 201 and resp.get_json()['created_by'] == 'Script'
+    resp = home.post('/expenses', secret, json={'title': 'X', 'amount': 5})
+    assert resp.status_code == 400 and '"by"' in resp.get_json()['message']
+    assert home.post('/expenses', secret, json={'title': 'X', 'amount': 5, 'by': 'Mom'}).status_code == 400
+
+
+def test_payer_is_not_in_the_schema(home, agent):
+    spec = home.get('/openapi.json', agent).get_json()
+    body = spec['paths']['/expenses']['post']['requestBody']['content']['application/json']['schema']
+    assert 'payer' not in body['properties'] and 'by' in body['required']
 
 
 def test_no_deletes_rule_edits_or_settlements(home, agent):

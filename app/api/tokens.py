@@ -22,7 +22,8 @@ TOKEN_PREFIX = 'hh_'
 # 'hh_' and four characters of the random part: enough to tell tokens apart in the list
 SHOWN_PREFIX_LENGTH = 7
 NAME_MAX_LENGTH = 40
-ACTIVITY_KEEP = 500
+# Changes kept per token, so one busy client cannot push another client's history out
+ACTIVITY_KEEP = 200
 LAST_USED_EVERY = timedelta(minutes=1)
 LEVELS = ('read', 'write')
 
@@ -43,6 +44,8 @@ class Tool:
     levels: tuple
     read_help_text: str
     write_help_text: str | None = None
+    # Why there is no Read & write level (shown on the dash in the token page's table)
+    no_write_reason_text: str | None = None
 
     @property
     def label(self) -> str:
@@ -56,6 +59,10 @@ class Tool:
     def write_help(self) -> str | None:
         return _(self.write_help_text) if self.write_help_text else None
 
+    @property
+    def no_write_reason(self) -> str:
+        return _(self.no_write_reason_text) if self.no_write_reason_text else _('Not available for this tool')
+
 
 # In the order the token page lists them
 TOOLS = (
@@ -64,7 +71,8 @@ TOOLS = (
     Tool('statuses', 'personal_status', True, N_('Personal status'), ('read', 'write'),
          N_("Everyone's status text"), N_("Set or clear a person's status (needs Act as family members)")),
     Tool('notice', None, True, N_('Notice board'), ('read',),
-         N_('The notice'), None),
+         N_('Read only. Only the admin can change the notice in HomeHub.'), None,
+         N_('Not available: only the admin can change the notice')),
     Tool('reminders', 'calendar', True, N_('Reminders'), ('read', 'write'),
          N_('Reminders for a day, a week or a range'), N_('Add a reminder, mark it done or not done')),
     Tool('shopping', 'shopping_list', False, N_('Shopping list'), ('read', 'write'),
@@ -206,6 +214,20 @@ def create_token(name, permissions: dict, act_as_members: bool = False, allow_de
     return token, secret
 
 
+def name_taken_by_person(name: str, config: dict | None = None) -> bool:
+    """True when ``name`` is now a family member's or an admin name (for example after config.yml changed)."""
+    folded = (name or '').casefold()
+    return is_admin_name(name, config) or any(folded == m.casefold() for m in family_members(config))
+
+
+def rename_token(token: ApiToken, new_name) -> str:
+    """Give the token a new name (same rules as a new token); its value and access stay the same."""
+    name = check_name(new_name, exclude_id=token.id)
+    token.name = name
+    db.session.commit()
+    return name
+
+
 def regenerate_token(token: ApiToken) -> str:
     """Give the token a new secret; the old one stops working at once. A revoked token becomes active again."""
     secret = generate_secret()
@@ -314,9 +336,10 @@ def log_activity(token: ApiToken, acting_as: str, action: str, target: str) -> N
         created_at=utcnow(),
     ))
     db.session.flush()
-    keep = db.session.query(ApiActivity.id).order_by(ApiActivity.id.desc()).offset(ACTIVITY_KEEP - 1).limit(1).scalar()
+    keep = (db.session.query(ApiActivity.id).filter(ApiActivity.token_id == token.id)
+            .order_by(ApiActivity.id.desc()).offset(ACTIVITY_KEEP - 1).limit(1).scalar())
     if keep is not None:
-        ApiActivity.query.filter(ApiActivity.id < keep).delete(synchronize_session=False)
+        ApiActivity.query.filter(ApiActivity.token_id == token.id, ApiActivity.id < keep).delete(synchronize_session=False)
     db.session.commit()
 
 

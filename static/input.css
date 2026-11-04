@@ -534,3 +534,20 @@ input[type="file"]::file-selector-button:hover { background-color: var(--hover-b
 .chart-swatch { display: inline-block; width: 0.625rem; height: 0.625rem; margin-right: 0.25rem; border-radius: 2px; vertical-align: -1px; }
 .charts-toggle-icon { transition: transform 0.15s ease; }
 .charts-toggle[aria-expanded="false"] .charts-toggle-icon { transform: rotate(-90deg); }
+
+/* API access page: preset chips. Same look as secondary buttons in both themes; the applied one is filled */
+.preset-chip {
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: var(--card-background-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+.preset-chip:hover { background-color: var(--hover-bg); }
+.preset-chip[aria-pressed="true"],
+.preset-chip[aria-pressed="true"]:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25);
+}

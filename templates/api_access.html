@@ -43,9 +43,9 @@
       <div>
         <p class="text-sm font-medium mb-2" id="presetLabel">{{ _('Start from a preset') }}</p>
         <div class="flex flex-wrap gap-2" role="group" aria-labelledby="presetLabel" id="presetButtons" data-presets="{{ presets|tojson|forceescape }}">
-          <button type="button" class="btn btn-secondary btn-sm preset-chip" data-preset="read_all" aria-pressed="false"><i class="fa-solid fa-eye" aria-hidden="true"></i>{{ _('Read everything') }}</button>
-          <button type="button" class="btn btn-secondary btn-sm preset-chip" data-preset="home_automation" aria-pressed="false"><i class="fa-solid fa-house-signal" aria-hidden="true"></i>{{ _('Home automation') }}</button>
-          <button type="button" class="btn btn-secondary btn-sm preset-chip" data-preset="ai_assistant" aria-pressed="false"><i class="fa-solid fa-robot" aria-hidden="true"></i>{{ _('AI assistant') }}</button>
+          <button type="button" class="btn btn-sm preset-chip" data-preset="read_all" aria-pressed="false"><i class="fa-solid fa-eye" aria-hidden="true"></i>{{ _('Read everything') }}</button>
+          <button type="button" class="btn btn-sm preset-chip" data-preset="home_automation" aria-pressed="false"><i class="fa-solid fa-house-signal" aria-hidden="true"></i>{{ _('Home automation') }}</button>
+          <button type="button" class="btn btn-sm preset-chip" data-preset="ai_assistant" aria-pressed="false"><i class="fa-solid fa-robot" aria-hidden="true"></i>{{ _('AI assistant') }}</button>
         </div>
       </div>
 
@@ -74,7 +74,7 @@
                 <input type="radio" name="perm_{{ tool.key }}" value="{{ level }}" class="tool-level" {% if chosen == level %}checked{% endif %}
                        aria-label="{{ _('%(tool)s: %(level)s', tool=tool.label, level=level_names[level]) }}">
                 {% else %}
-                <span class="text-gray-400" aria-label="{{ _('Not available') }}">–</span>
+                <span class="text-gray-400 cursor-help" title="{{ tool.no_write_reason }}" aria-label="{{ tool.no_write_reason }}" role="img">–</span>
                 {% endif %}
               </td>
               {% endfor %}
@@ -117,7 +117,8 @@
       {% for item in tokens_list %}
       {% set t = item.token %}
       <li class="list-row flex-col items-stretch gap-2 text-sm token-item" data-token="{{ t.name }}">
-        <div class="flex flex-wrap items-start justify-between gap-3">
+        {# One layout for every row and screen size: details first, then the actions underneath #}
+        <div class="flex flex-col gap-2">
           <div class="min-w-0">
             <div class="font-medium break-words">
               {{ t.name }} <span class="text-xs font-normal text-gray-500 font-mono">{{ t.prefix }}…</span>
@@ -133,6 +134,9 @@
               {% if item.can_delete %}<span class="whitespace-nowrap"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> {{ _('Can move reminders to the trash') }}</span>{% endif %}
             </div>
             {% endif %}
+            {% if item.name_clash %}
+            <div class="text-xs text-red-600 mt-0.5 token-name-clash" role="note">{{ _('This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed.') }}</div>
+            {% endif %}
             {% if item.reaches_nothing and not t.revoked_at %}
             <div class="text-xs text-amber-700 mt-0.5">{{ _('Currently reaches nothing: its tools are switched off in config.yml.') }}</div>
             {% endif %}
@@ -141,7 +145,13 @@
               {% if t.last_used_at %}{{ _('Last used %(time)s', time=t.last_used_at|localtime) }}{% else %}{{ _('Not used yet') }}{% endif %}
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex flex-wrap items-center gap-2 token-actions">
+            <form method="POST" action="{{ url_for('main.api_access_rename', token_id=t.id) }}" class="rename-form"
+                  data-current="{{ t.name }}" data-max="{{ name_max }}">
+              <input type="hidden" name="user" value="{{ user }}">
+              <input type="hidden" name="name" value="">
+              <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen" aria-hidden="true"></i>{{ _('Rename') }}</button>
+            </form>
             <form method="POST" action="{{ url_for('main.api_access_regenerate', token_id=t.id) }}"
                   data-confirm="{{ _('Make a new token for %(name)s? The current one stops working at once, so update whatever uses it.', name=t.name) if not t.revoked_at else _('Make a new token for %(name)s? It gets the same access as before.', name=t.name) }}"
                   data-confirm-action="{{ _('Regenerate') }}">

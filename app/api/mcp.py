@@ -30,6 +30,9 @@ LATEST_LEGACY = LEGACY_VERSIONS[0]
 # A request without the MCP-Protocol-Version header comes from a client older than 2025-06-18
 NO_HEADER_VERSION = '2025-03-26'
 STRUCTURED_FROM = '2025-06-18'
+# JSON-RPC batching was removed from MCP in this version; older clients may send at most MAX_BATCH messages
+NO_BATCH_FROM = '2025-06-18'
+MAX_BATCH = 10
 
 META_VERSION = 'io.modelcontextprotocol/protocolVersion'
 META_SERVER_INFO = 'io.modelcontextprotocol/serverInfo'
@@ -224,6 +227,30 @@ def _handle(token, message: dict) -> tuple:
     return 200, {'jsonrpc': '2.0', 'id': msg_id, 'result': result}
 
 
+def _batch_problem(body: list) -> str | None:
+    """Why a JSON-RPC batch is refused, or None. Nothing in a refused batch runs.
+
+    Batching was removed from MCP in 2025-06-18, so it is only accepted from older clients, and
+    then at most MAX_BATCH messages (one request must not make hundreds of changes).
+    """
+    if not body:
+        return 'Invalid Request: empty batch'
+    header = request.headers.get('MCP-Protocol-Version')
+    versions = {header} if header else set()
+    for message in body:
+        params = message.get('params') if isinstance(message, dict) and isinstance(message.get('params'), dict) else {}
+        meta = params.get('_meta') if isinstance(params.get('_meta'), dict) else {}
+        if meta.get(META_VERSION) is not None:
+            versions.add(str(meta.get(META_VERSION)))
+        if isinstance(message, dict) and message.get('method') == 'initialize' and isinstance(params.get('protocolVersion'), str):
+            versions.add(params['protocolVersion'])
+    if any(v >= NO_BATCH_FROM for v in versions):
+        return f'Invalid Request: JSON-RPC batches are not supported from protocol version {NO_BATCH_FROM}'
+    if len(body) > MAX_BATCH:
+        return f'Invalid Request: a batch can have at most {MAX_BATCH} messages'
+    return None
+
+
 def _origin_allowed() -> bool:
     """MCP requires checking Origin to block DNS rebinding: a present Origin must be this host."""
     origin = request.headers.get('Origin')
@@ -248,8 +275,9 @@ def mcp_endpoint():
     except (UnicodeDecodeError, ValueError):
         return json_response(_rpc_error(None, PARSE_ERROR, 'Parse error'), 400)
     if isinstance(body, list):
-        if not body:
-            return json_response(_rpc_error(None, INVALID_REQUEST, 'Empty batch'), 400)
+        problem = _batch_problem(body)
+        if problem:
+            return json_response(_rpc_error(None, INVALID_REQUEST, problem), 400)
         answers = [_handle(token, m) for m in body]
         replies = [r for _s, r in answers if r is not None]
         if not replies:

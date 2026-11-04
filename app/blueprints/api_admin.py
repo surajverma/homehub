@@ -70,6 +70,8 @@ def _summary(token: ApiToken, config) -> dict:
         'access': access,
         'reaches_nothing': not reachable,
         'can_delete': bool(token.allow_delete) and tokens.can_delete(stored),
+        # A family member or the admin now has this name, so writes made as the token are refused
+        'name_clash': tokens.name_taken_by_person(token.name, config),
         'activity': tokens.recent_activity(token, 20),
     }
 
@@ -140,6 +142,25 @@ def api_access_regenerate(token_id):
         return redirect(url_for('main.api_access_page', user=_user()))
     secret = tokens.regenerate_token(token)
     return _render(new_secret=secret, new_name=token.name)
+
+
+@main_bp.route('/admin/api/<int:token_id>/rename', methods=['POST'])
+def api_access_rename(token_id):
+    denied = _require_admin()
+    if denied:
+        return denied
+    token = _get_token(token_id)
+    if token is None:
+        flash(_('That token was not found.'), 'error')
+        return redirect(url_for('main.api_access_page', user=_user()))
+    old_name = token.name
+    try:
+        new_name = tokens.rename_token(token, request.form.get('name', ''))
+    except tokens.TokenError as exc:
+        flash(str(exc), 'error')
+        return redirect(url_for('main.api_access_page', user=_user()))
+    flash(_('Token %(old)s renamed to %(new)s. The token itself did not change.', old=old_name, new=new_name), 'success')
+    return redirect(url_for('main.api_access_page', user=_user()))
 
 
 @main_bp.route('/admin/api/<int:token_id>/revoke', methods=['POST'])

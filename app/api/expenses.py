@@ -12,7 +12,6 @@ from .. import admin
 from ..blueprints import expenses as web
 from ..models import ExpenseEntry, RecurringExpense, db
 from ..security import sanitize_text
-from . import tokens
 from .core import ApiError
 from .home import MAX_RANGE_DAYS, day_label
 from .registry import iso, operation
@@ -195,14 +194,6 @@ def expenses_set_quantity(ctx, args):
     return {**_entry(entry), 'summary': _summary(entry)}
 
 
-def _member_or_admin(raw: str) -> str:
-    wanted = sanitize_text(raw or '').strip()
-    for person in web._split_people(tokens._config()):
-        if person.casefold() == wanted.casefold():
-            return person
-    raise ApiError(400, 'bad_request', _('%(name)s cannot be the payer: use a family member.', name=wanted))
-
-
 def _category(raw: str | None, settings: dict):
     if raw is None or not raw.strip():
         return None
@@ -216,19 +207,21 @@ def _category(raw: str | None, settings: dict):
 
 @operation('expenses_add', tool='expenses', level='write', method='POST', path='/expenses',
            title='Add an expense',
-           description=('Add a one-off expense: either an amount, or a unit price and a quantity. The payer defaults to the '
-                        'family member in "by". Dates default to today; future dates are not allowed. Not split.'),
+           description=('Add a one-off expense: either an amount, or a unit price and a quantity. "by" is required: the '
+                        'expense is recorded as paid by the person in "by". To record that someone else paid, that person '
+                        'must ask, or use HomeHub. Dates default to today; future dates are not allowed. Not split.'),
            properties={
                'title': {'type': 'string', 'in': 'body', 'minLength': 1, 'maxLength': 256, 'description': 'What it was, for example "Groceries".'},
                'amount': {'type': 'number', 'in': 'body', 'exclusiveMinimum': 0, 'maximum': MAX_NUMBER, 'description': 'The total. Leave out when sending unit_price and quantity.'},
                'unit_price': {'type': 'number', 'in': 'body', 'exclusiveMinimum': 0, 'maximum': MAX_NUMBER, 'description': 'Price of one unit.'},
                'quantity': {'type': 'number', 'in': 'body', 'exclusiveMinimum': 0, 'maximum': MAX_NUMBER, 'description': 'How many units.'},
                'category': {'type': 'string', 'in': 'body', 'maxLength': 64, 'description': 'Optional category, one of those set on the expenses page.'},
-               'payer': {'type': 'string', 'in': 'body', 'maxLength': 64, 'description': 'Who paid: a family member. Defaults to the person in "by".'},
                'date': {'type': 'string', 'format': 'date', 'in': 'body', 'description': 'The day, YYYY-MM-DD (default today).'},
            },
-           required=('title',), success_status=201)
+           required=('title', 'by'), success_status=201)
 def expenses_add(ctx, args):
+    # Through the API the payer is always the person the change is for
+    payer = ctx.require_member(_('Say which family member paid with "by".'))
     today = _bring_up_to_date()
     title = sanitize_text(args['title'])
     if not title:
@@ -249,12 +242,6 @@ def expenses_add(ctx, args):
     if day > today:
         raise ApiError(400, 'bad_request', _('Only today and earlier days can be changed.'))
     settings = _settings()
-    if args.get('payer') is not None:
-        payer = _member_or_admin(args['payer'])
-    elif ctx.acting_given:
-        payer = ctx.user
-    else:
-        raise ApiError(400, 'bad_request', _('Say who paid with "payer" (or "by").'))
     entry = ExpenseEntry(date=day, title=title, category=_category(args.get('category'), settings), unit_price=unit_price,
                          quantity=quantity, amount=amount, payer=payer, split_with=None, created_by=ctx.user)
     db.session.add(entry)

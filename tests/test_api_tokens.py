@@ -212,3 +212,72 @@ def test_cli_works_with_an_admin_password_set(home):
     with home.ctx():
         admin.set_admin_password('4321')
     assert run(home, 'create', 'X', '--tool', 'notice=read').exit_code == 0
+
+
+def test_activity_is_pruned_per_token(home, monkeypatch):
+    monkeypatch.setattr(tokens, 'ACTIVITY_KEEP', 3)
+    home.token('Busy', notice='read')
+    home.token('Quiet', notice='read')
+    with home.ctx():
+        busy, quiet = tokens.find_by_name('Busy'), tokens.find_by_name('Quiet')
+        tokens.log_activity(quiet, 'Mom', 'notes_add', 'keep me')
+        for i in range(50):
+            tokens.log_activity(busy, 'Dad', 'shopping_add', f'item {i}')
+        assert [a.target for a in tokens.recent_activity(quiet)] == ['keep me']
+        assert [a.target for a in tokens.recent_activity(busy)] == ['item 49', 'item 48', 'item 47']
+        assert ApiActivity.query.count() == 4
+
+
+def test_default_activity_limit_is_200_per_token():
+    assert tokens.ACTIVITY_KEEP == 200
+
+
+# --- A token whose name is now a person's ---
+
+def test_writes_as_a_token_named_like_a_new_family_member_are_refused(home):
+    secret = home.token('Asha', act_as=True, notes='write')
+    assert home.post('/notes', secret, json={'content': 'before'}).status_code == 201
+    home.set(family_members=['Priya', 'Dad', 'Mom', 'asha'])
+    resp = home.post('/notes', secret, json={'content': 'after'})
+    assert resp.status_code == 409 and resp.get_json()['error'] == 'conflict'
+    assert 'rename' in resp.get_json()['message']
+    # Acting as a real family member still works, and so does reading
+    assert home.post('/notes', secret, json={'content': 'for Mom', 'by': 'Mom'}).status_code == 201
+    assert home.get('/notes', secret).status_code == 200
+    with home.ctx():
+        tokens.rename_token(tokens.find_by_name('Asha'), 'Asha bot')
+    assert home.post('/notes', secret, json={'content': 'renamed'}).get_json()['creator'] == 'Asha bot'
+
+
+def test_rename_follows_the_name_rules(home):
+    home.token('Hermes', notice='read')
+    home.token('Other', notice='read')
+    with home.ctx():
+        token = tokens.find_by_name('Hermes')
+        for bad in ('', 'Priya', 'admin', 'other', 'x' * 41):
+            with pytest.raises(tokens.TokenError):
+                tokens.rename_token(token, bad)
+        assert tokens.rename_token(token, 'hermes') == 'hermes'  # its own name in another case is fine
+        assert tokens.rename_token(token, 'Hermes 2') == 'Hermes 2'
+
+
+def test_cli_rename(home):
+    secret = home.token('Hermes', notice='read')
+    result = run(home, 'rename', 'hermes', 'Kitchen agent')
+    assert result.exit_code == 0 and 'renamed to Kitchen agent' in result.output
+    assert home.get('/', secret).get_json()['token'] == 'Kitchen agent'
+    assert run(home, 'rename', 'Kitchen agent', 'Priya').exit_code != 0
+    assert run(home, 'rename', 'Nobody', 'X').exit_code != 0
+
+
+def test_cli_list_flags_a_name_clash(home):
+    home.token('Asha', notice='read')
+    home.set(family_members=['Priya', 'Asha'])
+    assert 'writes blocked until renamed' in run(home, 'list').output
+
+
+def test_repeated_query_parameter_has_its_own_message(home):
+    secret = home.token('Hermes', reminders='read')
+    resp = home.get('/reminders?scope=week&scope=today', secret)
+    assert resp.status_code == 400 and resp.get_json()['message'] == 'scope was given more than once.'
+    assert 'not a known field' in home.get('/reminders?colour=red', secret).get_json()['message']

@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-11-04 14:20+0000\n"
+"POT-Creation-Date: 2026-11-04 16:53+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -73,6 +73,11 @@ msgstr ""
 #: app/api/core.py app/api/home.py
 #, python-format
 msgid "%(name)s is not a family member."
+msgstr ""
+
+#: app/api/core.py
+#, python-format
+msgid "This token is called %(name)s, the same as a person in HomeHub, so its changes would look like theirs. Ask the admin to rename the token under Admin tools > API access."
 msgstr ""
 
 #: app/api/core.py
@@ -169,12 +174,11 @@ msgstr ""
 
 #: app/api/expenses.py
 #, python-format
-msgid "%(name)s cannot be the payer: use a family member."
+msgid "Unknown category: %(name)s. Use one set on the expenses page: %(keys)s."
 msgstr ""
 
 #: app/api/expenses.py
-#, python-format
-msgid "Unknown category: %(name)s. Use one set on the expenses page: %(keys)s."
+msgid "Say which family member paid with \"by\"."
 msgstr ""
 
 #: app/api/expenses.py app/api/household.py
@@ -184,10 +188,6 @@ msgstr ""
 
 #: app/api/expenses.py
 msgid "Send either amount, or unit_price and quantity."
-msgstr ""
-
-#: app/api/expenses.py
-msgid "Say who paid with \"payer\" (or \"by\")."
 msgstr ""
 
 #: app/api/home.py
@@ -376,7 +376,16 @@ msgstr ""
 
 #: app/api/routes.py
 #, python-format
+msgid "%(field)s was given more than once."
+msgstr ""
+
+#: app/api/routes.py
+#, python-format
 msgid "%(field)s is not a known field here."
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Not available for this tool"
 msgstr ""
 
 #: app/api/tokens.py
@@ -408,7 +417,11 @@ msgid "Notice board"
 msgstr ""
 
 #: app/api/tokens.py
-msgid "The notice"
+msgid "Read only. Only the admin can change the notice in HomeHub."
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Not available: only the admin can change the notice"
 msgstr ""
 
 #: app/api/tokens.py templates/index.html
@@ -495,7 +508,7 @@ msgstr ""
 msgid "Skip or restore a recurring day, change its quantity, add an expense"
 msgstr ""
 
-#: app/api/tokens.py
+#: app/api/tokens.py static/js/pages/api_access.js
 msgid "Give the token a name."
 msgstr ""
 
@@ -567,6 +580,11 @@ msgstr ""
 
 #: app/blueprints/api_admin.py
 msgid "That token was not found."
+msgstr ""
+
+#: app/blueprints/api_admin.py
+#, python-format
+msgid "Token %(old)s renamed to %(new)s. The token itself did not change."
 msgstr ""
 
 #: app/blueprints/api_admin.py
@@ -1455,6 +1473,28 @@ msgstr ""
 
 #: static/js/pages/api_access.js
 msgid "Select the text and copy it."
+msgstr ""
+
+#: static/js/pages/api_access.js
+msgid "Rename token"
+msgstr ""
+
+#: static/js/pages/api_access.js
+#, python-brace-format
+msgid "Give {name} a new name. The token itself and its access stay the same."
+msgstr ""
+
+#: static/js/pages/api_access.js
+msgid "New name"
+msgstr ""
+
+#: static/js/pages/api_access.js templates/api_access.html
+msgid "Rename"
+msgstr ""
+
+#: static/js/pages/api_access.js
+#, python-brace-format
+msgid "The name can be at most {num} characters."
 msgstr ""
 
 #: static/js/pages/backups.js
@@ -2545,10 +2585,6 @@ msgstr ""
 msgid "%(tool)s: %(level)s"
 msgstr ""
 
-#: templates/api_access.html templates/media.html
-msgid "Not available"
-msgstr ""
-
 #: templates/api_access.html
 msgid "Act as family members"
 msgstr ""
@@ -2604,6 +2640,10 @@ msgstr ""
 
 #: templates/api_access.html
 msgid "Can move reminders to the trash"
+msgstr ""
+
+#: templates/api_access.html
+msgid "This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed."
 msgstr ""
 
 #: templates/api_access.html
@@ -3974,6 +4014,10 @@ msgstr ""
 #: templates/media.html templates/pdfs.html templates/upload.html
 #, python-format
 msgid "Preview %(name)s in new tab"
+msgstr ""
+
+#: templates/media.html
+msgid "Not available"
 msgstr ""
 
 #: templates/media.html

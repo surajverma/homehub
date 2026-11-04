@@ -2096,7 +2096,7 @@
       "post": {
         "operationId": "expenses_add",
         "summary": "Add an expense",
-        "description": "Add a one-off expense: either an amount, or a unit price and a quantity. The payer defaults to the family member in \"by\". Dates default to today; future dates are not allowed. Not split.",
+        "description": "Add a one-off expense: either an amount, or a unit price and a quantity. \"by\" is required: the expense is recorded as paid by the person in \"by\". To record that someone else paid, that person must ask, or use HomeHub. Dates default to today; future dates are not allowed. Not split.",
         "tags": [
           "Expenses"
         ],
@@ -2138,11 +2138,6 @@
                     "maxLength": 64,
                     "description": "Optional category, one of those set on the expenses page."
                   },
-                  "payer": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "description": "Who paid: a family member. Defaults to the person in \"by\"."
-                  },
                   "date": {
                     "type": "string",
                     "format": "date",
@@ -2156,7 +2151,8 @@
                 },
                 "additionalProperties": false,
                 "required": [
-                  "title"
+                  "title",
+                  "by"
                 ]
               }
             }

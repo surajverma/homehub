@@ -63,7 +63,7 @@ def _make_view(op):
                 if key not in query_names or key in args:
                     raise ApiError(400, 'bad_request', _unknown_field(key))
                 if len(values) > 1:
-                    raise ApiError(400, 'bad_request', _unknown_field(key))
+                    raise ApiError(400, 'bad_request', _repeated_field(key))
                 args[key] = values[0]
             if op.method != 'GET':
                 body = core.read_json_body()
@@ -78,6 +78,11 @@ def _make_view(op):
 
     view.__name__ = op.name
     return view
+
+
+def _repeated_field(key: str) -> str:
+    from flask_babel import gettext as _
+    return _('%(field)s was given more than once.', field=key)
 
 
 def _unknown_field(key: str) -> str:

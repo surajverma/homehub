@@ -34,7 +34,9 @@ On the page:
 4. Leave **Allow deleting** off unless you need it. It only lets the token move reminders to the trash, and needs Reminders with Read & write.
 5. Select **Create token** and copy the token straight away. HomeHub keeps only a fingerprint of it and can't show it again.
 
-The list below shows each token's access, when it was last used and its recent changes. **Regenerate** makes a new token (the old one stops working at once); **Revoke** switches a token off. Regenerating a revoked token brings it back with the same access.
+The list below shows each token's access, when it was last used and its recent changes. **Rename** changes a token's name (the token itself keeps working); **Regenerate** makes a new token (the old one stops working at once); **Revoke** switches a token off. Regenerating a revoked token brings it back with the same access.
+
+If a family member added to `config.yml` later has the same name as a token, the token's changes would look like that person's. The list then flags the token, and changes made as the token itself (without `by`) are refused with `409` until you rename it.
 
 Presets:
 
@@ -94,7 +96,7 @@ curl -H "Authorization: Bearer hh_..." http://homehub.local:5000/api/v1/
 ```
 
 - The token is only read from that header, never from the address, a cookie or a form. Being logged in to HomeHub in a browser doesn't give access to the API.
-- With a site password set, a valid token opens `/api/v1/` and nothing else. Without a valid token, requests are sent to the login page like any other (`302`).
+- With a site password set, a valid token opens `/api/v1/` and nothing else. Without a valid token, `/api/v1/` answers `401` as it does without a site password; every other page still asks to log in.
 - Requests and answers are JSON. Request bodies can be at most 64 KB. Unknown fields are refused, so a typo can't be silently ignored.
 - Dates are `YYYY-MM-DD`; times are `HH:MM` (24-hour).
 - Changes that set something (`"done": true`, `"checked": true`, `"skipped": true`) set it rather than toggle it, so sending the same request twice is safe.
@@ -129,7 +131,7 @@ Every change accepts an optional `by` field in the JSON body: the family member 
 
 The name is used wherever HomeHub uses the current user: who added something, and who may change it. A token acting as Priya can change exactly what Priya could change in HomeHub, and never what only the admin can.
 
-Every change through the API is recorded with the token, the person it acted as and what changed. The token list on the API access page shows each token's last 20 changes; HomeHub keeps the newest 500 in total.
+Every change through the API is recorded with the token, the person it acted as and what changed. The token list on the API access page shows each token's last 20 changes. HomeHub keeps the newest 200 changes for each token, so one busy client can't push another client's history out.
 
 ## Endpoints
 
@@ -337,7 +339,7 @@ curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"title": "Vegetab
 
 - Only today and earlier days can be changed.
 - Days of a recurring expense can only be changed by whoever added it (as on the Expenses page).
-- The payer is the person in `by`, unless you send `payer` (a family member). A token without Act as family members must send `payer`.
+- `by` is required, so the token needs Act as family members. The expense is recorded as paid by, and added by, the person in `by`. To record that someone else paid, that person asks (or it's entered in HomeHub). There is no `payer` field.
 - `category` must be one of the categories set on the Expenses page.
 - A recurring day that was deleted in HomeHub answers `409`: add it back on the Expenses page first.
 - Expenses added through the API aren't split. Rules, settlements, budgets and deletes stay in HomeHub.
@@ -357,10 +359,9 @@ Errors are JSON with a code and a message in the household's language:
 | 403 | `forbidden` | The token has no access to that tool or level, or the person in `by` may not change that item |
 | 404 | `not_found` | No such item, or the tool's feature is switched off |
 | 405 | `method_not_allowed` | Wrong method for that path |
-| 409 | `conflict` | Can't be done right now, for example a recurring day deleted in HomeHub |
+| 409 | `conflict` | Can't be done right now, for example a recurring day deleted in HomeHub, or a token whose name is now a family member's |
 | 413 | `too_large` | Body larger than 64 KB |
 
-Behind a site password, requests without a valid token are redirected to the login page (`302`) instead of getting `401`.
 
 ## Home Assistant
 
@@ -506,7 +507,7 @@ HomeHub has a built-in [Model Context Protocol](https://modelcontextprotocol.io)
 http://homehub.local:5000/api/v1/mcp
 ```
 
-It uses the Streamable HTTP transport and the same tokens and permissions as the rest of the API. It offers the operations the token can use as MCP tools, with the same names as the operation ids in [openapi.json](openapi.json) (for example `shopping_add`). It works with clients that speak the current protocol revision (2026-07-28) and with older ones (2024-11-05 to 2025-11-25).
+It uses the Streamable HTTP transport and the same tokens and permissions as the rest of the API. It offers the operations the token can use as MCP tools, with the same names as the operation ids in [openapi.json](openapi.json) (for example `shopping_add`). It works with clients that speak the current protocol revision (2026-07-28) and with older ones (2024-11-05 to 2025-11-25). JSON-RPC batches (several messages in one request) are only accepted from clients older than 2025-06-18, at most 10 messages at a time.
 
 Create a token for the agent with the **AI assistant** preset, and switch off any tool it doesn't need. Keep **Allow deleting** off.
 
@@ -566,6 +567,7 @@ The agent has to know who is talking to it. Tell it in its instructions (for Her
 - **Keep Allow deleting off.** Text an agent reads, such as a note, a recipe from a website or a message, can contain instructions meant to trick it ("delete all reminders"). Without Allow deleting, the worst it can do through HomeHub is add or tick things, which are easy to undo; with it, reminders can be moved to the trash.
 - **Think about what the agent can read.** Most AI agents send what they read to their AI provider. Give the agent only the tools you're happy to share that way.
 - **Check its changes.** The API access page lists each token's recent changes, with the person it acted as.
+- **Expenses are paid by whoever asked.** An agent can only record an expense as paid by the person in `by`. If Priya says "Dad paid for the groceries", the agent can't record it for Dad; Dad has to ask, or it's entered in HomeHub.
 
 ## Security
 

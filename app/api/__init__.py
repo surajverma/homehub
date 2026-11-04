@@ -34,6 +34,17 @@ def token_opens_gate() -> bool:
     return core.current_token() is not None
 
 
+def is_api_request() -> bool:
+    from .core import is_api_path
+    return is_api_path(request.path)
+
+
+def unauthorized_response():
+    """The API's 401 (JSON, WWW-Authenticate, no-store), also used by the site-password gate."""
+    from .core import error_response
+    return error_response(401, 'unauthorized')
+
+
 def init_app(app):
     load_operations()
     from .routes import api_bp, handle_http_error, register_operations
