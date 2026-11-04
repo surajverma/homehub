@@ -74,6 +74,28 @@ TABLES = [
         last_generated_date DATE,
         timestamp TIMESTAMP
     )""",
+    # The JSON API (app/api). Older versions ignore these tables.
+    """CREATE TABLE IF NOT EXISTS api_token (
+        id INTEGER PRIMARY KEY,
+        name VARCHAR(40) COLLATE NOCASE NOT NULL UNIQUE,
+        token_hash VARCHAR(64) NOT NULL UNIQUE,
+        prefix VARCHAR(16) NOT NULL,
+        permissions TEXT NOT NULL DEFAULT '{}',
+        act_as_members BOOLEAN NOT NULL DEFAULT 0,
+        allow_delete BOOLEAN NOT NULL DEFAULT 0,
+        created_at TIMESTAMP,
+        last_used_at TIMESTAMP,
+        revoked_at TIMESTAMP
+    )""",
+    """CREATE TABLE IF NOT EXISTS api_activity (
+        id INTEGER PRIMARY KEY,
+        token_id INTEGER,
+        token_name VARCHAR(40),
+        acting_as VARCHAR(64),
+        action VARCHAR(64),
+        target VARCHAR(200),
+        created_at TIMESTAMP
+    )""",
 ]
 
 # Columns on tables that the statements above may have just created
