@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block content %}
+{% set level_names = {'none': _('No access'), 'read': _('Read'), 'write': _('Read & write')} %}
+<div class="max-w-5xl mx-auto space-y-6" id="apiAccessPage" data-after-post="{{ '1' if new_secret or error else '' }}" data-page-url="{{ url_for('main.api_access_page', user=user) }}">
+  <div>
+    <h1 class="page-title">{{ _('API access') }}</h1>
+    <p class="page-subtitle">{{ _('Tokens let Home Assistant, phone shortcuts, scripts and AI assistants use HomeHub. The API is off until you create a token.') }}</p>
+  </div>
+
+  {% if new_secret %}
+  <!-- Shown once, in the answer to the request that made it -->
+  <div class="card p-4 space-y-3 border-l-4" style="border-left-color: var(--primary-color);" id="newTokenPanel" role="status">
+    <h2 class="section-title"><i class="fa-solid fa-key section-icon" aria-hidden="true"></i>{{ _('New token for %(name)s', name=new_name) }}</h2>
+    <p class="text-sm font-semibold">{{ _('Copy this token now. HomeHub keeps only a fingerprint of it and cannot show it again.') }}</p>
+    <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+      <input type="text" readonly id="newTokenValue" class="w-full font-mono text-sm" value="{{ new_secret }}" aria-label="{{ _('Token') }}" autocomplete="off" spellcheck="false">
+      <button type="button" class="btn btn-primary btn-sm flex-shrink-0" data-copy-target="newTokenValue"><i class="fa-solid fa-copy" aria-hidden="true"></i>{{ _('Copy') }}</button>
+    </div>
+    <p class="text-sm">{{ _('Try it:') }}</p>
+    <div class="flex items-start gap-2">
+      <pre class="text-xs border rounded p-2 overflow-x-auto flex-1 min-w-0" id="newTokenCurl">curl -H "Authorization: Bearer {{ new_secret }}" {{ base_url }}/api/v1/</pre>
+      <button type="button" class="btn btn-secondary btn-sm flex-shrink-0" data-copy-target="newTokenCurl" title="{{ _('Copy the example') }}"><i class="fa-solid fa-copy" aria-hidden="true"></i>{{ _('Copy') }}</button>
+    </div>
+    <p class="text-xs text-gray-500">{{ _('Keep it secret: anyone with this token can use what it gives access to. If it leaks, regenerate or revoke it below.') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Create -->
+  <div class="card p-4 space-y-4">
+    <h2 class="section-title"><i class="fa-solid fa-plus section-icon" aria-hidden="true"></i>{{ _('Create a token') }}</h2>
+    {% if error %}
+    <p class="text-sm text-red-600" role="alert" id="createError">{{ error }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('main.api_access_create') }}" id="createTokenForm" class="space-y-4" autocomplete="off">
+      <input type="hidden" name="user" value="{{ user }}">
+      <div>
+        <label class="block text-sm font-medium mb-1" for="tokenName">{{ _('Name') }}</label>
+        <input type="text" id="tokenName" name="name" class="w-full sm:max-w-md" maxlength="{{ name_max }}" required
+               placeholder="{{ _('For example Home Assistant or Hermes') }}" value="{{ form.name or '' }}" aria-describedby="tokenNameHelp">
+        <p class="text-xs text-gray-500 mt-1" id="tokenNameHelp">{{ _('Things this token adds without acting as a family member show this name as who added them. Up to %(num)s characters; it cannot be the name of a family member, the admin or another token.', num=name_max) }}</p>
+      </div>
+
+      <div>
+        <p class="text-sm font-medium mb-2" id="presetLabel">{{ _('Start from a preset') }}</p>
+        <div class="flex flex-wrap gap-2" role="group" aria-labelledby="presetLabel" id="presetButtons" data-presets="{{ presets|tojson|forceescape }}">
+          <button type="button" class="btn btn-secondary btn-sm preset-chip" data-preset="read_all" aria-pressed="false"><i class="fa-solid fa-eye" aria-hidden="true"></i>{{ _('Read everything') }}</button>
+          <button type="button" class="btn btn-secondary btn-sm preset-chip" data-preset="home_automation" aria-pressed="false"><i class="fa-solid fa-house-signal" aria-hidden="true"></i>{{ _('Home automation') }}</button>
+          <button type="button" class="btn btn-secondary btn-sm preset-chip" data-preset="ai_assistant" aria-pressed="false"><i class="fa-solid fa-robot" aria-hidden="true"></i>{{ _('AI assistant') }}</button>
+        </div>
+      </div>
+
+      <div class="border rounded-lg overflow-x-auto">
+        <table class="w-full text-sm" id="toolTable">
+          <caption class="sr-only">{{ _('Access per tool') }}</caption>
+          <thead>
+            <tr class="text-left text-xs text-gray-500">
+              <th scope="col" class="p-2 font-medium">{{ _('Tool') }}</th>
+              {% for level in ['none', 'read', 'write'] %}
+              <th scope="col" class="p-2 font-medium text-center whitespace-nowrap">{{ level_names[level] }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for tool in tools %}
+            {% set chosen = form.permissions.get(tool.key, 'none') if form.permissions else 'none' %}
+            <tr class="border-t tool-row" data-tool="{{ tool.key }}">
+              <th scope="row" class="p-2 text-left font-normal">
+                <span class="font-medium">{{ tool.label }}</span>
+                <span class="block text-xs text-gray-500">{{ tool.read_help }}{% if tool.write_help %}. {{ _('Read & write:') }} {{ tool.write_help }}{% endif %}</span>
+              </th>
+              {% for level in ['none', 'read', 'write'] %}
+              <td class="p-2 text-center">
+                {% if level == 'none' or level in tool.levels %}
+                <input type="radio" name="perm_{{ tool.key }}" value="{{ level }}" class="tool-level" {% if chosen == level %}checked{% endif %}
+                       aria-label="{{ _('%(tool)s: %(level)s', tool=tool.label, level=level_names[level]) }}">
+                {% else %}
+                <span class="text-gray-400" aria-label="{{ _('Not available') }}">–</span>
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="act_as" value="1" id="actAs" class="mt-1" {% if form.act_as %}checked{% endif %} aria-describedby="actAsHelp">
+            <span><span class="font-medium">{{ _('Act as family members') }}</span>
+              <span class="block text-xs text-gray-500" id="actAsHelp">{{ _('Lets the client say which family member a change is for (the "by" field), for example the person who messaged an AI assistant. Needed to set who is home or a person\'s status. Never includes the admin.') }}</span></span>
+          </label>
+          <p class="text-xs mt-1 ml-6 hidden" id="actAsAuto" role="status" style="color: var(--primary-text);">{{ _('Act as family members was turned on, because setting who is home or a person\'s status needs it.') }}</p>
+        </div>
+        <div>
+          <label class="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="allow_delete" value="1" id="allowDelete" class="mt-1" {% if form.allow_delete %}checked{% endif %} aria-describedby="allowDeleteHelp">
+            <span><span class="font-medium">{{ _('Allow deleting') }}</span>
+              <span class="block text-xs text-gray-500" id="allowDeleteHelp">{{ _('Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things.') }}</span></span>
+          </label>
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-500"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> {{ _('Whatever a token can read can leave your home if the client passes it on. AI agents usually send what they read to their provider.') }}</p>
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-key" aria-hidden="true"></i>{{ _('Create token') }}</button>
+    </form>
+  </div>
+
+  <!-- List -->
+  <div class="card p-4 space-y-3">
+    <h2 class="section-title"><i class="fa-solid fa-list section-icon" aria-hidden="true"></i>{{ _('Tokens') }}</h2>
+    {% set guide_link %}<a href="{{ guide_url }}" target="_blank" rel="noopener noreferrer" class="hover:underline" style="color: var(--primary-text);">{{ _('API guide') }}</a>{% endset -%}
+    <p class="text-xs text-gray-500">{{ _('Endpoints, examples for Home Assistant and scripts, and tips for AI agents are in the %(link)s.')|html_params(link=guide_link) }}</p>
+    {% if tokens_list %}
+    <ul class="border rounded-lg overflow-hidden" id="tokenList">
+      {% for item in tokens_list %}
+      {% set t = item.token %}
+      <li class="list-row flex-col items-stretch gap-2 text-sm token-item" data-token="{{ t.name }}">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="font-medium break-words">
+              {{ t.name }} <span class="text-xs font-normal text-gray-500 font-mono">{{ t.prefix }}…</span>
+              {% if t.revoked_at %}<span class="ml-1 px-1.5 py-0.5 rounded text-xs font-normal bg-gray-100 text-gray-600 whitespace-nowrap">{{ _('Revoked') }}</span>{% endif %}
+            </div>
+            <div class="text-xs mt-0.5 token-access">
+              {% for a in item.access %}<span class="{{ '' if a.enabled else 'line-through text-gray-400' }}" {% if not a.enabled %}title="{{ _('Switched off in config.yml') }}"{% endif %}>{{ a.label }}: {{ a.level }}</span>{{ ' · ' if not loop.last }}{% endfor %}
+            </div>
+            {% if t.act_as_members or item.can_delete %}
+            <div class="text-xs text-gray-500 mt-0.5">
+              {% if t.act_as_members %}<span class="whitespace-nowrap"><i class="fa-solid fa-users" aria-hidden="true"></i> {{ _('Acts as family members') }}</span>{% endif %}
+              {% if t.act_as_members and item.can_delete %} · {% endif %}
+              {% if item.can_delete %}<span class="whitespace-nowrap"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> {{ _('Can move reminders to the trash') }}</span>{% endif %}
+            </div>
+            {% endif %}
+            {% if item.reaches_nothing and not t.revoked_at %}
+            <div class="text-xs text-amber-700 mt-0.5">{{ _('Currently reaches nothing: its tools are switched off in config.yml.') }}</div>
+            {% endif %}
+            <div class="text-xs text-gray-500 mt-0.5">
+              {{ _('Created %(time)s', time=t.created_at|localtime) }} ·
+              {% if t.last_used_at %}{{ _('Last used %(time)s', time=t.last_used_at|localtime) }}{% else %}{{ _('Not used yet') }}{% endif %}
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <form method="POST" action="{{ url_for('main.api_access_regenerate', token_id=t.id) }}"
+                  data-confirm="{{ _('Make a new token for %(name)s? The current one stops working at once, so update whatever uses it.', name=t.name) if not t.revoked_at else _('Make a new token for %(name)s? It gets the same access as before.', name=t.name) }}"
+                  data-confirm-action="{{ _('Regenerate') }}">
+              <input type="hidden" name="user" value="{{ user }}">
+              <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate" aria-hidden="true"></i>{{ _('Regenerate') }}</button>
+            </form>
+            {% if not t.revoked_at %}
+            <form method="POST" action="{{ url_for('main.api_access_revoke', token_id=t.id) }}"
+                  data-confirm="{{ _('Revoke %(name)s? Anything that uses this token stops working at once.', name=t.name) }}"
+                  data-confirm-action="{{ _('Revoke') }}">
+              <input type="hidden" name="user" value="{{ user }}">
+              <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-ban" aria-hidden="true"></i>{{ _('Revoke') }}</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        <details class="text-xs">
+          <summary class="cursor-pointer text-gray-500">{{ _('Recent activity') }} ({{ item.activity|length }})</summary>
+          {% if item.activity %}
+          <ul class="mt-2 space-y-1">
+            {% for a in item.activity %}
+            <li><span class="text-gray-500 tabular-nums">{{ a.created_at|localtime }}</span> · {{ a.acting_as }} · <code>{{ a.action }}</code> · {{ a.target }}</li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="mt-2 text-gray-500">{{ _('No changes made with this token yet.') }}</p>
+          {% endif %}
+        </details>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-gray-500">{{ _('No tokens yet. The API is off.') }}</p>
+    {% endif %}
+    <p class="text-xs text-gray-500">{{ _('On the server you can do the same with:') }} <code>docker exec -it homehub flask api-token --help</code></p>
+  </div>
+</div>
+<script src="{{ asset_url('js/pages/api_access.js') }}"></script>
+{% endblock %}

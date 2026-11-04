@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+  <div>
+    <h1 class="page-title">{{ _('API access') }}</h1>
+    <p class="page-subtitle">{{ _('Tokens let Home Assistant, phone shortcuts, scripts and AI assistants use HomeHub.') }}</p>
+  </div>
+  <div class="card p-4 space-y-3" id="apiAccessLocked">
+    <h2 class="section-title"><i class="fa-solid fa-lock section-icon" aria-hidden="true"></i>{{ _('Set an admin password first') }}</h2>
+    <p class="text-sm">{{ _('Tokens can read and change your household\'s data, so this page needs an admin password. On the server, run:') }}</p>
+    <pre class="text-xs border rounded p-2 overflow-x-auto">docker exec -it homehub flask set-admin-password</pre>
+    <p class="text-sm">{{ _('Then switch to the admin user, unlock it, and open Admin tools > API access again.') }}</p>
+    <p class="text-sm">{{ _('Until then, you can manage tokens on the server instead, for example:') }}</p>
+    <pre class="text-xs border rounded p-2 overflow-x-auto">docker exec -it homehub flask api-token create "Home Assistant" --tool presence=write --tool reminders=read --act-as-members
+docker exec -it homehub flask api-token list
+docker exec -it homehub flask api-token revoke "Home Assistant"</pre>
+    {% set guide_link %}<a href="{{ guide_url }}" target="_blank" rel="noopener noreferrer" class="hover:underline" style="color: var(--primary-text);">{{ _('API guide') }}</a>{% endset -%}
+    <p class="text-xs text-gray-500">{{ _('Endpoints, examples for Home Assistant and scripts, and tips for AI agents are in the %(link)s.')|html_params(link=guide_link) }}</p>
+  </div>
+</div>
+{% endblock %}

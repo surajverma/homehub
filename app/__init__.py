@@ -129,6 +129,7 @@ def create_app(test_config: dict | None = None):
     from .blueprints import weather  # noqa: F401
     from .blueprints import backups  # noqa: F401
     from .blueprints import calendar_feed  # noqa: F401
+    from .blueprints import api_admin  # noqa: F401
     app.register_blueprint(main_bp)
     from . import api as _api
     _api.init_app(app)
