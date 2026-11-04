@@ -158,13 +158,21 @@ def create_app(test_config: dict | None = None):
                 break
         return redirect(back)
 
+    # Pages that read ?user= on the server; the ?user=Name link (base.html) leaves it in their address
+    user_param_endpoints = {
+        'main.backups_page', 'main.restore_preview', 'main.restore_upload_preview',
+        'main.edit_chore', 'main.edit_recipe', 'main.api_access_page',
+    }
+
     @app.context_processor
     def inject_auth_state():
+        from flask import request
         from . import admin as _admin
         return {
             'is_authed': bool(session.get('authed')),
             'admin_password_enabled': _admin.admin_password_enabled(),
             'admin_unlocked': _admin.admin_unlocked(),
+            'keeps_user_param': request.endpoint in user_param_endpoints,
         }
 
     @app.cli.command('set-admin-password')

@@ -12,6 +12,7 @@ def load_operations():
     if _loaded:
         return
     from . import routes  # noqa: F401 (defines the overview operation)
+    from . import home  # noqa: F401
     _loaded.append(True)
 
 

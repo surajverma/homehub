@@ -115,6 +115,807 @@
         }
       }
     },
+    "/presence": {
+      "get": {
+        "operationId": "presence_list",
+        "summary": "Who is home",
+        "description": "Every family member's Who is home status: home, away (the web app can also set out or traveling), or null when not set.",
+        "tags": [
+          "Who is home"
+        ],
+        "x-homehub-tool": "presence",
+        "x-homehub-level": "read",
+        "responses": {
+          "200": {
+            "description": "The result as JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/presence/{name}": {
+      "put": {
+        "operationId": "presence_set",
+        "summary": "Set who is home",
+        "description": "Set a family member Home or Away, for example from a Home Assistant zone automation. The name is matched without regard to case. Needs a token that can act as family members.",
+        "tags": [
+          "Who is home"
+        ],
+        "x-homehub-tool": "presence",
+        "x-homehub-level": "write",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "The family member, for example Priya.",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "home",
+                      "away"
+                    ],
+                    "description": "home or away (any case)."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statuses": {
+      "get": {
+        "operationId": "statuses_list",
+        "summary": "Personal statuses",
+        "description": "Every family member's personal status text (null when they have none).",
+        "tags": [
+          "Personal status"
+        ],
+        "x-homehub-tool": "statuses",
+        "x-homehub-level": "read",
+        "responses": {
+          "200": {
+            "description": "The result as JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statuses/me": {
+      "put": {
+        "operationId": "statuses_set",
+        "summary": "Set my status",
+        "description": "Set or clear the personal status of the family member named in \"by\" (required). An empty text clears it.",
+        "tags": [
+          "Personal status"
+        ],
+        "x-homehub-tool": "statuses",
+        "x-homehub-level": "write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "The status, for example \"Working from home\". Empty clears it."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "text",
+                  "by"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notice": {
+      "get": {
+        "operationId": "notice_get",
+        "summary": "Notice board",
+        "description": "The notice on the Welcome page (simple HTML), who last changed it and when. Only the admin edits it, in HomeHub.",
+        "tags": [
+          "Notice board"
+        ],
+        "x-homehub-tool": "notice",
+        "x-homehub-level": "read",
+        "responses": {
+          "200": {
+            "description": "The result as JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reminders": {
+      "get": {
+        "operationId": "reminders_list",
+        "summary": "Reminders",
+        "description": "Reminders for today (the default), this week (Monday to Sunday, as the calendar shows it), or a range of at most 62 days. Dates of recurring reminders are included (they have a negative id and a recurring_id); reminders in the trash are not.",
+        "tags": [
+          "Reminders"
+        ],
+        "x-homehub-tool": "reminders",
+        "x-homehub-level": "read",
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "description": "today or week. Leave out when sending from and to.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "today",
+                "week"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "First day, YYYY-MM-DD.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Last day, YYYY-MM-DD.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The result as JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "reminders_add",
+        "summary": "Add a reminder",
+        "description": "Add a one-off reminder (recurring reminders are set up in HomeHub).",
+        "tags": [
+          "Reminders"
+        ],
+        "x-homehub-tool": "reminders",
+        "x-homehub-level": "write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "What to remember."
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "The day, YYYY-MM-DD."
+                  },
+                  "time": {
+                    "type": "string",
+                    "format": "time",
+                    "description": "Optional time, HH:MM (24-hour). Without it the reminder lasts all day."
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 5000,
+                    "description": "Optional details."
+                  },
+                  "category": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "Optional category key from config.yml (reminders > categories), for example health."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "title",
+                  "date"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reminders/{reminder_id}/done": {
+      "put": {
+        "operationId": "reminders_set_done",
+        "summary": "Mark a reminder done or not done",
+        "description": "Set a reminder done (true) or not done (false). Setting the same value again changes nothing. Only whoever added the reminder may change it.",
+        "tags": [
+          "Reminders"
+        ],
+        "x-homehub-tool": "reminders",
+        "x-homehub-level": "write",
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "description": "The reminder id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "done": {
+                    "type": "boolean",
+                    "description": "true for done, false for not done."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "done"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reminders/{reminder_id}": {
+      "delete": {
+        "operationId": "reminders_trash",
+        "summary": "Move a reminder to the trash",
+        "description": "Move a reminder to the calendar's trash, where it can be restored for 7 days. Needs a token with Allow deleting. Only whoever added the reminder may do this.",
+        "tags": [
+          "Reminders"
+        ],
+        "x-homehub-tool": "reminders",
+        "x-homehub-level": "write",
+        "x-homehub-needs-allow-delete": true,
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "description": "The reminder id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/openapi.json": {
       "get": {
         "operationId": "openapi",

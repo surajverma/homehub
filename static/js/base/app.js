@@ -142,11 +142,19 @@
                     switcher.appendChild(opt);
                 });
                 const existing = localStorage.getItem('username');
+                // Opened with ?user= naming the admin: ask for the admin password first (see base.html)
+                const pending = window.HomeHubAdmin.pendingUser;
                 if (existing){
                     switcher.value = existing;
-                } else {
+                } else if (!pending) {
                     // Show first-run user selection modal now that DOM is ready
                     showUserSelectModal(users);
+                }
+                if (pending){
+                    requestAdminUnlock().then(function(ok){
+                        if (ok){ localStorage.setItem('username', pending); location.reload(); }
+                        else if (!localStorage.getItem('username')) showUserSelectModal(users);
+                    });
                 }
                 switcher.addEventListener('change', async function(){
                     const admin = window.HomeHubAdmin;
