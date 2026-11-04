@@ -113,7 +113,7 @@ def test_status_needs_by(home, agent):
 
 def test_by_must_be_a_family_member(home, agent):
     resp = home.post('/notes', agent, json={'content': 'x', 'by': 'Stranger'})
-    assert resp.status_code in (400, 404)
+    assert resp.status_code == 400
     resp = home.put('/presence/Priya', agent, json={'status': 'home', 'by': 'Stranger'})
     assert resp.status_code == 400 and 'Stranger' in resp.get_json()['message']
 

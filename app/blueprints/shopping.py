@@ -5,8 +5,29 @@ from ..models import db, ShoppingItem, GroceryHistory
 from ..blueprints import main_bp, json_error_response
 from ..clock import utcnow
 from ..admin import can_modify
-from ..security import sanitize_text
+from ..security import sanitize_text, sanitize_tags
 import json
+
+
+def add_shopping_item(item: str, creator: str, tags: list) -> ShoppingItem:
+    """Add an item (already sanitised) and remember it for suggestions; commits."""
+    shopping_item = ShoppingItem(item=item, creator=creator, tags=json.dumps(tags))
+    db.session.add(shopping_item)
+    db.session.add(GroceryHistory(item=item, creator=creator))
+    db.session.commit()
+    return shopping_item
+
+
+def item_tags(raw) -> list:
+    try:
+        tags = json.loads(raw or '[]')
+    except Exception:
+        tags = []
+    return tags
+
+
+def shopping_item_dict(i: ShoppingItem) -> dict:
+    return {"id": i.id, "item": i.item, "checked": i.checked, "creator": i.creator, "timestamp": i.timestamp.isoformat(), "tags": item_tags(i.tags)}
 
 
 @main_bp.route('/shopping', methods=['GET', 'POST'])
@@ -26,11 +47,8 @@ def shopping():
                 # Fallback: comma separated
                 tags_list = [t.strip() for t in raw_tags.split(',') if t.strip()]
         # sanitize each tag
-        tags_list = [sanitize_text(t) for t in tags_list if isinstance(t, str) and t.strip()]
-        shopping_item = ShoppingItem(item=item, creator=creator, tags=json.dumps(tags_list))
-        db.session.add(shopping_item)
-        db.session.add(GroceryHistory(item=item, creator=creator))
-        db.session.commit()
+        tags_list = sanitize_tags(tags_list)
+        add_shopping_item(item, creator, tags_list)
         flash(_('Item added.'), 'success')
         return redirect(url_for('main.shopping'))
     # Filtering by tags (if provided)
@@ -126,13 +144,7 @@ def api_get_shopping():
                 items = [i for i in items if match(i.tags)]
         except Exception:
             pass
-    def to_dict(i):
-        try:
-            tags = json.loads(i.tags or '[]')
-        except Exception:
-            tags = []
-        return {"id": i.id, "item": i.item, "checked": i.checked, "creator": i.creator, "timestamp": i.timestamp.isoformat(), "tags": tags}
-    return jsonify([to_dict(i) for i in items])
+    return jsonify([shopping_item_dict(i) for i in items])
 
 
 @main_bp.route('/api/shopping/<int:item_id>', methods=['PUT'])

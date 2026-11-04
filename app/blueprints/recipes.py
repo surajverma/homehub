@@ -3,8 +3,18 @@ from flask_babel import gettext as _
 from ..models import db, Recipe
 from ..blueprints import main_bp, json_error_response
 from ..admin import can_modify
-from ..security import sanitize_text, sanitize_html, is_http_url
+from ..security import sanitize_text, sanitize_html, is_http_url, sanitize_tags
 import json
+
+
+def recipe_link_ok(link) -> bool:
+    """A recipe link is optional; when given it must be an http(s) address."""
+    return not link or is_http_url(link)
+
+
+def recipe_has_body(ingredients, instructions) -> bool:
+    """A recipe needs ingredients or instructions (or both)."""
+    return bool(ingredients and ingredients.strip()) or bool(instructions and instructions.strip())
 
 
 @main_bp.route('/recipes', methods=['GET', 'POST'])
@@ -13,7 +23,7 @@ def recipes():
         recipe_id = request.form.get('recipe_id')
         title = sanitize_text(request.form['title'])
         link = sanitize_text(request.form.get('link'))
-        if link and not is_http_url(link):
+        if not recipe_link_ok(link):
             flash(_('Invalid link URL.'), 'error')
             recipes_list = Recipe.query.order_by(Recipe.timestamp.desc()).all()
             config = current_app.config['HOMEHUB_CONFIG']
@@ -32,9 +42,9 @@ def recipes():
                     tags_list = []
             except Exception:
                 tags_list = [t.strip() for t in raw_tags.split(',') if t.strip()]
-        tags_list = [sanitize_text(t) for t in tags_list if isinstance(t, str) and t.strip()]
+        tags_list = sanitize_tags(tags_list)
         
-        if not (ingredients and ingredients.strip()) and not (instructions and instructions.strip()):
+        if not recipe_has_body(ingredients, instructions):
             flash(_('Please add ingredients or instructions (or both).'), 'error')
             recipes_list = Recipe.query.order_by(Recipe.timestamp.desc()).all()
             config = current_app.config['HOMEHUB_CONFIG']

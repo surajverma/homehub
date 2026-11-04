@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 from ..models import db, Chore, RecurringChore
 from ..blueprints import main_bp, json_error_response
 from ..admin import is_admin, can_modify
-from ..security import sanitize_text
+from ..security import sanitize_text, sanitize_tags
 from ..recurrence import next_occurrence as _next_occurrence, first_on_or_after as _next_due_on_or_after, serialized
 from ..undo import offer_undo, restore_row, restorer, row_to_dict, same_record, stamp
 import json
@@ -171,7 +171,7 @@ def chores():
                     tags_list = []
             except Exception:
                 tags_list = [t.strip() for t in raw_tags.split(',') if t.strip()]
-        tags_list = [sanitize_text(t) for t in tags_list if isinstance(t, str) and t.strip()]
+        tags_list = sanitize_tags(tags_list)
         is_recurring = request.form.get('is_recurring') in ('1', 'on', 'true', 'yes')
         if is_recurring:
             try:
@@ -388,6 +388,76 @@ def _restore_chore_done(payload: dict) -> None:
     rule.last_generated_date = date.fromisoformat(last) if last else None
 
 
+def recurring_chore_ticked(chore: Chore, rule: RecurringChore, today: date) -> bool:
+    """True when the current round of a recurring chore is already ticked off (or the chore is done for good)."""
+    return bool(chore.done) or _ticked_for_now(chore, rule, today)
+
+
+def reopen_recurring_chore(chore: Chore, rule: RecurringChore, today: date) -> date | None:
+    """Take back the tick on a recurring chore; returns the date it is due on again and commits.
+
+    None when the rule has ended, and then nothing is changed.
+    """
+    current = _next_due_on_or_after(rule, today)
+    if current is None:
+        return None
+    reopened = chore.due_date if chore.done else current
+    chore.done = False
+    chore.due_date = reopened
+    rule.last_generated_date = reopened
+    db.session.commit()
+    return reopened
+
+
+def tick_recurring_chore(chore: Chore, rule: RecurringChore) -> tuple:
+    """Tick off the current round: the chore moves to its next date, or is done after its last one; commits.
+
+    Returns (what the undo needs to put it back, the next due date or None when that was the last date).
+    """
+    before = {
+        'chore_id': chore.id,
+        'due_date': chore.due_date.isoformat(),
+        'done': bool(chore.done),
+        'rule_id': rule.id,
+        'chore_timestamp': stamp(chore),
+        'rule_timestamp': stamp(rule),
+        'last_generated_date': rule.last_generated_date.isoformat() if rule.last_generated_date else None,
+    }
+    next_due = _next_occurrence(rule, chore.due_date)
+    if rule.end_date and next_due > rule.end_date:
+        chore.done = True
+        # Past the end date, so the next page load leaves it done instead of reopening it
+        rule.last_generated_date = next_due
+        next_due = None
+    else:
+        chore.due_date = next_due
+        chore.done = False
+        rule.last_generated_date = next_due
+    db.session.commit()
+    return before, next_due
+
+
+def chore_tags(raw) -> list:
+    try:
+        tg = json.loads(raw or '[]')
+    except Exception:
+        tg = []
+    return tg
+
+
+def chore_dict(i: Chore) -> dict:
+    return {
+        "id": i.id,
+        "description": i.description,
+        "done": i.done,
+        "creator": i.creator,
+        "timestamp": i.timestamp.isoformat(),
+        "due_date": i.due_date.strftime('%Y-%m-%d') if i.due_date else None,
+        "recurring_id": i.recurring_id,
+        "tags": chore_tags(i.tags),
+    }
+
+
 @main_bp.route('/chores/toggle/<int:chore_id>', methods=['POST'])
 def toggle_chore(chore_id):
     chore = db.get_or_404(Chore, chore_id)
@@ -395,41 +465,20 @@ def toggle_chore(chore_id):
         rule = db.session.get(RecurringChore, getattr(chore, 'recurring_id', None))
         if rule and chore.due_date:
             today = date.today()
-            current = _next_due_on_or_after(rule, today)
-            if chore.done or _ticked_for_now(chore, rule, today):
+            if recurring_chore_ticked(chore, rule, today):
                 # Already ticked: a second tap takes the tick back instead of skipping another date
-                if current is None:
+                reopened = reopen_recurring_chore(chore, rule, today)
+                if reopened is None:
                     flash(_('This recurring chore has ended.'), 'info')
                     return redirect(url_for('main.chores'))
-                reopened = chore.due_date if chore.done else current
-                chore.done = False
-                chore.due_date = reopened
-                rule.last_generated_date = reopened
-                db.session.commit()
                 flash(_('%(chore)s is open again. Due on %(date)s.', chore=chore.description, date=reopened), 'info')
                 return redirect(url_for('main.chores'))
             # Ticking a recurring chore moves it to its next date, so offer a way back
-            before = {
-                'chore_id': chore.id,
-                'due_date': chore.due_date.isoformat(),
-                'done': bool(chore.done),
-                'rule_id': rule.id,
-                'chore_timestamp': stamp(chore),
-                'rule_timestamp': stamp(rule),
-                'last_generated_date': rule.last_generated_date.isoformat() if rule.last_generated_date else None,
-            }
-            next_due = _next_occurrence(rule, chore.due_date)
-            if rule.end_date and next_due > rule.end_date:
-                chore.done = True
-                # Past the end date, so the next page load leaves it done instead of reopening it
-                rule.last_generated_date = next_due
+            before, next_due = tick_recurring_chore(chore, rule)
+            if next_due is None:
                 message = _('%(chore)s done. That was its last date.', chore=chore.description)
             else:
-                chore.due_date = next_due
-                chore.done = False
-                rule.last_generated_date = next_due
                 message = _('%(chore)s done. Next due on %(date)s.', chore=chore.description, date=next_due)
-            db.session.commit()
             offer_undo('chore_done', before, message)
             return redirect(url_for('main.chores'))
         else:
@@ -509,22 +558,7 @@ def api_get_chores():
                 items = [i for i in items if match(i.tags)]
         except Exception:
             pass
-    def to_dict(i):
-        try:
-            tg = json.loads(i.tags or '[]')
-        except Exception:
-            tg = []
-        return {
-            "id": i.id,
-            "description": i.description,
-            "done": i.done,
-            "creator": i.creator,
-            "timestamp": i.timestamp.isoformat(),
-            "due_date": i.due_date.strftime('%Y-%m-%d') if i.due_date else None,
-            "recurring_id": i.recurring_id,
-            "tags": tg,
-        }
-    return jsonify([to_dict(i) for i in items])
+    return jsonify([chore_dict(i) for i in items])
 
 
 @main_bp.route('/api/chores/<int:chore_id>', methods=['PUT'])

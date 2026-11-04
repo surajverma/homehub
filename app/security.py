@@ -75,3 +75,8 @@ def sanitize_html(value: str) -> str:
 def sanitize_text(value: str) -> str:
     # Plain-text sanitize: strip tags and trim whitespace
     return bleach.clean(value or "", strip=True).strip()
+
+
+def sanitize_tags(values) -> list:
+    """Tags as stored: each one plain-text sanitised, blanks and non-text entries dropped."""
+    return [sanitize_text(t) for t in values if isinstance(t, str) and t.strip()]
