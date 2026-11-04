@@ -295,6 +295,20 @@ Step-by-step setup for each app, turning on alerts on iPhone, and how times work
 **Keep the link secret:** anyone who has it can read your reminders.
 If it leaks, change the token in `config.yml`; old links stop working straight away.
 
+## API, Home Assistant and AI agents (optional)
+
+HomeHub has a token-protected JSON API at `/api/v1/` and a built-in [MCP](https://modelcontextprotocol.io) endpoint at `/api/v1/mcp`, so Home Assistant, phone shortcuts, NFC tags, Node-RED, scripts and AI agents (such as Hermes or Claude) can read and update who is home, reminders, the shopping list, chores, notes, recipes, the expiry tracker and expenses.
+
+The API is off until you create a token. Switch to the admin user and open **Admin tools > API access** on the Welcome page (it needs an [admin password](#admin-password-optional)), or use the command line:
+
+```bash
+docker exec -it homehub flask api-token create "Home Assistant" --tool presence=write --tool reminders=read --act-as-members
+```
+
+Each token gets only the tools you pick, read-only or read and write. Keep tokens secret, and don't expose HomeHub to the internet: for agents outside your home, use a VPN such as Tailscale.
+
+Endpoints, curl examples, Home Assistant YAML, phone shortcuts and setting up AI agents: [docs/api.md](docs/api.md).
+
 ## Language
 
 HomeHub can show its interface in another language. Set it for the whole household in `config.yml`:

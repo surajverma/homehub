@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-31 10:18+0000\n"
+"POT-Creation-Date: 2026-11-04 14:20+0000\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -22,9 +22,522 @@ msgstr ""
 msgid "Upload is too large. The limit is %(limit)s MB."
 msgstr "अपलोड बहुत बड़ा है। सीमा %(limit)s MB है।"
 
-#: app/blueprints/__init__.py app/blueprints/expenses.py
+#: app/api/core.py
+msgid "A valid API token is required. Send it as \"Authorization: Bearer <token>\"."
+msgstr "एक सही API टोकन ज़रूरी है। इसे \"Authorization: Bearer <token>\" के रूप में भेजें।"
+
+#: app/api/core.py
+msgid "This token does not have access to that."
+msgstr "इस टोकन को इसकी अनुमति नहीं है।"
+
+#: app/api/core.py
+msgid "Not found."
+msgstr "नहीं मिला।"
+
+#: app/api/core.py
+msgid "The request is not valid."
+msgstr "अनुरोध सही नहीं है।"
+
+#: app/api/core.py
+msgid "That cannot be done right now."
+msgstr "यह अभी नहीं किया जा सकता।"
+
+#: app/api/core.py
+msgid "The request is too large."
+msgstr "अनुरोध बहुत बड़ा है।"
+
+#: app/api/core.py
+msgid "That method is not allowed here."
+msgstr "यहां यह तरीका (method) इस्तेमाल नहीं किया जा सकता।"
+
+#: app/api/core.py app/blueprints/__init__.py app/blueprints/expenses.py
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।"
+
+#: app/api/core.py
+#, python-format
+msgid "This token can read %(tool)s but not change it."
+msgstr "यह टोकन %(tool)s पढ़ सकता है, लेकिन बदल नहीं सकता।"
+
+#: app/api/core.py
+#, python-format
+msgid "This token has no access to %(tool)s."
+msgstr "इस टोकन को %(tool)s की अनुमति नहीं है।"
+
+#: app/api/core.py
+msgid "This token cannot act as family members, so \"by\" is not allowed."
+msgstr "यह टोकन परिवार के सदस्यों की ओर से काम नहीं कर सकता, इसलिए \"by\" की अनुमति नहीं है।"
+
+#: app/api/core.py
+msgid "The API cannot act as the admin."
+msgstr "API एडमिन की ओर से काम नहीं कर सकता।"
+
+#: app/api/core.py app/api/home.py
+#, python-format
+msgid "%(name)s is not a family member."
+msgstr "%(name)s परिवार के सदस्य नहीं हैं।"
+
+#: app/api/core.py
+msgid "Say which family member this is for with \"by\"."
+msgstr "\"by\" से बताएं कि यह परिवार के किस सदस्य के लिए है।"
+
+#: app/api/core.py
+msgid "This token is not allowed to delete."
+msgstr "इस टोकन को हटाने की अनुमति नहीं है।"
+
+#: app/api/core.py
+#, python-format
+msgid "%(field)s %(problem)s."
+msgstr "%(field)s: %(problem)s।"
+
+#: app/api/core.py
+msgid "The request body can be at most 64 KB."
+msgstr "अनुरोध का डेटा ज़्यादा से ज़्यादा 64 KB हो सकता है।"
+
+#: app/api/core.py
+msgid "The request body must be JSON."
+msgstr "अनुरोध का डेटा JSON होना चाहिए।"
+
+#: app/api/core.py
+msgid "The request body must be a JSON object."
+msgstr "अनुरोध का डेटा एक JSON ऑब्जेक्ट होना चाहिए।"
+
+#: app/api/expenses.py
+#, python-format
+msgid "quantity %(num)s,"
+msgstr "मात्रा %(num)s,"
+
+#: app/api/expenses.py
+msgid "Use either date or from and to, not both."
+msgstr "या तो date इस्तेमाल करें या from और to, दोनों नहीं।"
+
+#: app/api/expenses.py app/api/home.py
+msgid "Send both from and to."
+msgstr "from और to दोनों भेजें।"
+
+#: app/api/expenses.py app/api/home.py
+msgid "to must be on or after from."
+msgstr "to की तारीख from के दिन या उसके बाद की होनी चाहिए।"
+
+#: app/api/expenses.py app/api/home.py
+#, python-format
+msgid "The range can be at most %(num)s days."
+msgstr "अवधि ज़्यादा से ज़्यादा %(num)s दिन की हो सकती है।"
+
+#: app/api/expenses.py
+msgid "Only today and earlier days can be changed."
+msgstr "सिर्फ़ आज और पिछले दिन बदले जा सकते हैं।"
+
+#: app/api/expenses.py
+msgid "That recurring expense was not found."
+msgstr "यह दोहराने वाला खर्च नहीं मिला।"
+
+#: app/api/expenses.py
+#, python-format
+msgid "%(title)s on %(date)s was deleted in HomeHub. Add it back on the expenses page first."
+msgstr "%(date)s का %(title)s HomeHub में हटा दिया गया था। पहले इसे खर्च वाले पेज पर वापस जोड़ें।"
+
+#: app/api/expenses.py app/blueprints/expenses.py
+msgid "That day is not part of this recurring rule."
+msgstr "वह दिन इस दोहराने के नियम में नहीं आता।"
+
+#: app/api/expenses.py
+#, python-format
+msgid "%(name)s cannot change this entry."
+msgstr "%(name)s यह एंट्री नहीं बदल सकते।"
+
+#: app/api/expenses.py app/blueprints/expenses.py
+msgid "Only recurring days can be skipped."
+msgstr "सिर्फ़ दोहराने वाले दिन छोड़े जा सकते हैं।"
+
+#: app/api/expenses.py
+#, python-format
+msgid "%(title)s skipped on %(date)s."
+msgstr "%(date)s को %(title)s छोड़ दिया गया।"
+
+#: app/api/expenses.py
+#, python-format
+msgid "%(title)s restored on %(date)s."
+msgstr "%(date)s को %(title)s वापस जोड़ दिया गया।"
+
+#: app/api/expenses.py
+msgid "This entry has no unit price, so its quantity cannot set the amount."
+msgstr "इस एंट्री की प्रति यूनिट कीमत नहीं है, इसलिए मात्रा से रकम तय नहीं हो सकती।"
+
+#: app/api/expenses.py app/blueprints/expense_import.py
+#: app/blueprints/expenses.py
+msgid "Invalid amount."
+msgstr "रकम सही नहीं है।"
+
+#: app/api/expenses.py
+#, python-format
+msgid "%(name)s cannot be the payer: use a family member."
+msgstr "%(name)s भुगतान करने वाले नहीं हो सकते: परिवार के किसी सदस्य का नाम दें।"
+
+#: app/api/expenses.py
+#, python-format
+msgid "Unknown category: %(name)s. Use one set on the expenses page: %(keys)s."
+msgstr "अनजान श्रेणी: %(name)s। खर्च वाले पेज पर बनी कोई श्रेणी इस्तेमाल करें: %(keys)s।"
+
+#: app/api/expenses.py app/api/household.py
+#, python-format
+msgid "%(field)s cannot be empty."
+msgstr "%(field)s खाली नहीं हो सकता।"
+
+#: app/api/expenses.py
+msgid "Send either amount, or unit_price and quantity."
+msgstr "या तो amount भेजें, या unit_price और quantity।"
+
+#: app/api/expenses.py
+msgid "Say who paid with \"payer\" (or \"by\")."
+msgstr "\"payer\" (या \"by\") से बताएं कि भुगतान किसने किया।"
+
+#: app/api/home.py
+msgid "This needs a token that can act as family members."
+msgstr "इसके लिए ऐसा टोकन चाहिए जो परिवार के सदस्यों की ओर से काम कर सके।"
+
+#: app/api/home.py static/js/pages/home/presence.js templates/index.html
+msgid "Home"
+msgstr "घर पर"
+
+#: app/api/home.py static/js/pages/home/presence.js templates/index.html
+msgid "Away"
+msgstr "घर से दूर"
+
+#: app/api/home.py static/js/pages/home/presence.js templates/index.html
+msgid "Out"
+msgstr "बाहर"
+
+#: app/api/home.py static/js/pages/home/presence.js templates/index.html
+msgid "Traveling"
+msgstr "यात्रा पर"
+
+#: app/api/home.py
+#, python-format
+msgid "%(name)s is home."
+msgstr "%(name)s घर पर हैं।"
+
+#: app/api/home.py
+#, python-format
+msgid "%(name)s is away."
+msgstr "%(name)s घर से दूर हैं।"
+
+#: app/api/home.py
+#, python-format
+msgid "Status for %(name)s: %(text)s"
+msgstr "%(name)s का स्टेटस: %(text)s"
+
+#: app/api/home.py
+#, python-format
+msgid "Status for %(name)s cleared."
+msgstr "%(name)s का स्टेटस हटा दिया गया।"
+
+#: app/api/home.py
+msgid "Use either scope or from and to, not both."
+msgstr "या तो scope इस्तेमाल करें या from और to, दोनों नहीं।"
+
+#: app/api/home.py app/blueprints/dashboard.py
+msgid "Title required"
+msgstr "शीर्षक ज़रूरी है"
+
+#: app/api/home.py
+#, python-format
+msgid "Unknown category: %(name)s. Use a key from config.yml: %(keys)s."
+msgstr "अनजान श्रेणी: %(name)s। config.yml की कोई key इस्तेमाल करें: %(keys)s।"
+
+#: app/api/home.py
+#, python-format
+msgid "Reminder added: %(title)s, %(when)s."
+msgstr "रिमाइंडर जोड़ दिया गया: %(title)s, %(when)s।"
+
+#: app/api/home.py
+msgid "This is a date of a recurring reminder. Recurring reminders are changed in HomeHub."
+msgstr "यह दोहराने वाले रिमाइंडर की एक तारीख है। दोहराने वाले रिमाइंडर HomeHub में ही बदले जाते हैं।"
+
+#: app/api/home.py
+msgid "That reminder was not found."
+msgstr "यह रिमाइंडर नहीं मिला।"
+
+#: app/api/home.py
+#, python-format
+msgid "%(name)s cannot change this reminder."
+msgstr "%(name)s यह रिमाइंडर नहीं बदल सकते।"
+
+#: app/api/home.py
+#, python-format
+msgid "%(title)s is done."
+msgstr "%(title)s पूरा हुआ।"
+
+#: app/api/home.py
+#, python-format
+msgid "%(title)s is not done."
+msgstr "%(title)s अभी बाकी है।"
+
+#: app/api/home.py
+#, python-format
+msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक कैलेंडर से वापस लाया जा सकता है।"
+
+#: app/api/household.py
+#, python-format
+msgid "Added to the shopping list: %(item)s."
+msgstr "शॉपिंग लिस्ट में जोड़ा गया: %(item)s।"
+
+#: app/api/household.py
+msgid "That item was not found."
+msgstr "यह आइटम नहीं मिला।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(item)s ticked off."
+msgstr "%(item)s पर निशान लगा दिया गया।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(item)s is back on the shopping list."
+msgstr "%(item)s फिर से शॉपिंग लिस्ट में है।"
+
+#: app/api/household.py
+#, python-format
+msgid "Chore added: %(chore)s, due %(date)s."
+msgstr "काम जोड़ दिया गया: %(chore)s, नियत तारीख %(date)s।"
+
+#: app/api/household.py
+#, python-format
+msgid "Chore added: %(chore)s."
+msgstr "काम जोड़ दिया गया: %(chore)s।"
+
+#: app/api/household.py
+msgid "That chore was not found."
+msgstr "यह काम नहीं मिला।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(chore)s is already done. Next due on %(date)s."
+msgstr "%(chore)s पहले ही पूरा हो चुका है। अगली नियत तारीख: %(date)s।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(chore)s is already done."
+msgstr "%(chore)s पहले ही पूरा हो चुका है।"
+
+#: app/api/household.py app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s done. That was its last date."
+msgstr "%(chore)s पूरा हुआ। यह इसकी आखिरी तारीख थी।"
+
+#: app/api/household.py app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s done. Next due on %(date)s."
+msgstr "%(chore)s पूरा हुआ। अगली नियत तारीख: %(date)s।"
+
+#: app/api/household.py app/blueprints/chores.py
+msgid "This recurring chore has ended."
+msgstr "यह दोहराने वाला काम खत्म हो चुका है।"
+
+#: app/api/household.py app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s is open again. Due on %(date)s."
+msgstr "%(chore)s फिर से बाकी है। नियत तारीख: %(date)s।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(chore)s is not done."
+msgstr "%(chore)s अभी बाकी है।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(chore)s done."
+msgstr "%(chore)s पूरा हुआ।"
+
+#: app/api/household.py app/blueprints/notes.py
+msgid "Note added."
+msgstr "नोट जोड़ दिया गया।"
+
+#: app/api/household.py app/blueprints/recipes.py
+msgid "Invalid link URL."
+msgstr "लिंक का यूआरएल सही नहीं है।"
+
+#: app/api/household.py app/blueprints/recipes.py static/js/pages/recipes.js
+msgid "Please add ingredients or instructions (or both)."
+msgstr "कृपया सामग्री या बनाने की विधि (या दोनों) लिखें।"
+
+#: app/api/household.py
+#, python-format
+msgid "Recipe added: %(title)s."
+msgstr "व्यंजन जोड़ दिया गया: %(title)s।"
+
+#: app/api/household.py
+#, python-format
+msgid "Added %(name)s, expires %(date)s."
+msgstr "%(name)s जोड़ दिया गया, एक्सपायरी %(date)s।"
+
+#: app/api/mcp.py
+msgid "The MCP endpoint only accepts POST."
+msgstr "MCP एंडपॉइंट सिर्फ़ POST स्वीकार करता है।"
+
+#: app/api/routes.py
+#, python-format
+msgid "%(field)s is not a known field here."
+msgstr "%(field)s यहां कोई जाना-पहचाना फ़ील्ड नहीं है।"
+
+#: app/api/tokens.py
+msgid "Who is home"
+msgstr "घर पर कौन है"
+
+#: app/api/tokens.py
+msgid "Everyone's Home or Away"
+msgstr "हर किसी का घर पर या घर से दूर होना"
+
+#: app/api/tokens.py
+msgid "Set a person Home or Away (needs Act as family members)"
+msgstr "किसी को घर पर या घर से दूर सेट करें (परिवार के सदस्यों की ओर से काम करना ज़रूरी)"
+
+#: app/api/tokens.py
+msgid "Personal status"
+msgstr "निजी स्टेटस"
+
+#: app/api/tokens.py
+msgid "Everyone's status text"
+msgstr "हर किसी का स्टेटस"
+
+#: app/api/tokens.py
+msgid "Set or clear a person's status (needs Act as family members)"
+msgstr "किसी का स्टेटस सेट करें या हटाएं (परिवार के सदस्यों की ओर से काम करना ज़रूरी)"
+
+#: app/api/tokens.py
+msgid "Notice board"
+msgstr "सूचना बोर्ड"
+
+#: app/api/tokens.py
+msgid "The notice"
+msgstr "सूचना"
+
+#: app/api/tokens.py templates/index.html
+msgid "Reminders"
+msgstr "रिमाइंडर"
+
+#: app/api/tokens.py
+msgid "Reminders for a day, a week or a range"
+msgstr "एक दिन, एक हफ़्ते या किसी अवधि के रिमाइंडर"
+
+#: app/api/tokens.py
+msgid "Add a reminder, mark it done or not done"
+msgstr "रिमाइंडर जोड़ें, उसे पूरा या बाकी मार्क करें"
+
+#: app/api/tokens.py
+msgid "Shopping list"
+msgstr "शॉपिंग लिस्ट"
+
+#: app/api/tokens.py
+msgid "Items with their tags"
+msgstr "आइटम और उनके टैग"
+
+#: app/api/tokens.py
+msgid "Add an item, tick or untick it"
+msgstr "आइटम जोड़ें, उस पर निशान लगाएं या हटाएं"
+
+#: app/api/tokens.py templates/index.html
+msgid "Chores"
+msgstr "घर के काम"
+
+#: app/api/tokens.py
+msgid "Chores with due dates and tags"
+msgstr "नियत तारीख और टैग के साथ घर के काम"
+
+#: app/api/tokens.py
+msgid "Add a chore, mark it done or not done"
+msgstr "काम जोड़ें, उसे पूरा या बाकी मार्क करें"
+
+#: app/api/tokens.py
+msgid "Notes"
+msgstr "नोट्स"
+
+#: app/api/tokens.py
+msgid "Shared notes"
+msgstr "साझा नोट्स"
+
+#: app/api/tokens.py
+msgid "Add a note"
+msgstr "नोट जोड़ें"
+
+#: app/api/tokens.py
+msgid "Recipes"
+msgstr "व्यंजन"
+
+#: app/api/tokens.py
+msgid "Recipes with their tags"
+msgstr "व्यंजन और उनके टैग"
+
+#: app/api/tokens.py
+msgid "Add a recipe"
+msgstr "व्यंजन जोड़ें"
+
+#: app/api/tokens.py
+msgid "Expiry tracker"
+msgstr "एक्सपायरी ट्रैकर"
+
+#: app/api/tokens.py
+msgid "Items with expiry dates"
+msgstr "एक्सपायरी तारीख वाले आइटम"
+
+#: app/api/tokens.py templates/shopping.html
+msgid "Add an item"
+msgstr "आइटम जोड़ें"
+
+#: app/api/tokens.py
+msgid "Expenses"
+msgstr "खर्च"
+
+#: app/api/tokens.py
+msgid "Recurring expenses and entries"
+msgstr "दोहराने वाले खर्च और एंट्री"
+
+#: app/api/tokens.py
+msgid "Skip or restore a recurring day, change its quantity, add an expense"
+msgstr "दोहराने वाले दिन को छोड़ें या वापस लाएं, उसकी मात्रा बदलें, खर्च जोड़ें"
+
+#: app/api/tokens.py
+msgid "Give the token a name."
+msgstr "टोकन को एक नाम दें।"
+
+#: app/api/tokens.py
+#, python-format
+msgid "The name can be at most %(num)s characters."
+msgstr "नाम ज़्यादा से ज़्यादा %(num)s अक्षरों का हो सकता है।"
+
+#: app/api/tokens.py
+msgid "The name cannot be the admin name."
+msgstr "नाम एडमिन का नाम नहीं हो सकता।"
+
+#: app/api/tokens.py
+msgid "The name cannot be the name of a family member."
+msgstr "नाम परिवार के किसी सदस्य का नाम नहीं हो सकता।"
+
+#: app/api/tokens.py
+#, python-format
+msgid "A revoked token is already called %(name)s. Regenerate it to use it again, or pick another name."
+msgstr "%(name)s नाम का एक रद्द किया गया टोकन पहले से है। उसे फिर से इस्तेमाल करने के लिए नया बनाएं, या कोई और नाम चुनें।"
+
+#: app/api/tokens.py
+#, python-format
+msgid "A token called %(name)s already exists."
+msgstr "%(name)s नाम का टोकन पहले से मौजूद है।"
+
+#: app/api/tokens.py
+#, python-format
+msgid "Unknown tool: %(name)s."
+msgstr "अनजान टूल: %(name)s।"
+
+#: app/api/tokens.py
+#, python-format
+msgid "%(tool)s cannot be given the level %(level)s."
+msgstr "%(tool)s को %(level)s स्तर नहीं दिया जा सकता।"
+
+#: app/api/tokens.py
+#, python-format
+msgid "%(tool)s with Read & write needs Act as family members."
+msgstr "पढ़ने और बदलने वाले %(tool)s के लिए परिवार के सदस्यों की ओर से काम करना ज़रूरी है।"
 
 #: app/blueprints/__init__.py
 msgid "Offline"
@@ -37,6 +550,31 @@ msgstr "आप ऑफ़लाइन हैं"
 #: app/blueprints/__init__.py
 msgid "This page is not available offline."
 msgstr "यह पेज ऑफ़लाइन उपलब्ध नहीं है।"
+
+#: app/blueprints/api_admin.py
+msgid "Only admin can manage API tokens."
+msgstr "API टोकन सिर्फ़ एडमिन संभाल सकता है।"
+
+#: app/blueprints/api_admin.py templates/api_access.html
+msgid "Read & write"
+msgstr "पढ़ना और बदलना"
+
+#: app/blueprints/api_admin.py templates/api_access.html
+msgid "Read"
+msgstr "पढ़ना"
+
+#: app/blueprints/api_admin.py
+msgid "Give the token access to at least one tool."
+msgstr "टोकन को कम से कम एक टूल की अनुमति दें।"
+
+#: app/blueprints/api_admin.py
+msgid "That token was not found."
+msgstr "यह टोकन नहीं मिला।"
+
+#: app/blueprints/api_admin.py
+#, python-format
+msgid "Token %(name)s revoked. Anything that used it can no longer reach HomeHub."
+msgstr "टोकन %(name)s रद्द कर दिया गया। जो कुछ इसे इस्तेमाल करता था, वह अब HomeHub तक नहीं पहुंच सकता।"
 
 #: app/blueprints/auth.py
 msgid "This request came from another website and was blocked."
@@ -215,25 +753,6 @@ msgid "Recurring chore rule deleted."
 msgstr "दोहराने वाले काम का नियम हटा दिया गया।"
 
 #: app/blueprints/chores.py
-msgid "This recurring chore has ended."
-msgstr "यह दोहराने वाला काम खत्म हो चुका है।"
-
-#: app/blueprints/chores.py
-#, python-format
-msgid "%(chore)s is open again. Due on %(date)s."
-msgstr "%(chore)s फिर से बाकी है। नियत तारीख: %(date)s।"
-
-#: app/blueprints/chores.py
-#, python-format
-msgid "%(chore)s done. That was its last date."
-msgstr "%(chore)s पूरा हुआ। यह इसकी आखिरी तारीख थी।"
-
-#: app/blueprints/chores.py
-#, python-format
-msgid "%(chore)s done. Next due on %(date)s."
-msgstr "%(chore)s पूरा हुआ। अगली नियत तारीख: %(date)s।"
-
-#: app/blueprints/chores.py
 msgid "Chore deleted."
 msgstr "काम हटा दिया गया।"
 
@@ -264,10 +783,6 @@ msgstr "यह दोहराने वाला रिमाइंडर ख�
 #: app/blueprints/dashboard.py
 msgid "With these settings there are no dates left from today. Choose a later end date."
 msgstr "इन सेटिंग के साथ आज से आगे कोई तारीख नहीं बचती। आगे की कोई आखिरी तारीख चुनें।"
-
-#: app/blueprints/dashboard.py
-msgid "Title required"
-msgstr "शीर्षक ज़रूरी है"
 
 #: app/blueprints/dashboard.py
 msgid "Invalid date"
@@ -378,10 +893,6 @@ msgstr "शीर्षक खाली है।"
 #: app/blueprints/expense_import.py
 msgid "No amount (for example a credit or a balance line)."
 msgstr "रकम नहीं है (जैसे जमा हुई रकम या बैलेंस वाली पंक्ति)।"
-
-#: app/blueprints/expense_import.py app/blueprints/expenses.py
-msgid "Invalid amount."
-msgstr "रकम सही नहीं है।"
 
 #: app/blueprints/expense_import.py
 msgid "Choose who paid, below."
@@ -623,10 +1134,6 @@ msgid "Not allowed to change entry."
 msgstr "आपको यह एंट्री बदलने की अनुमति नहीं है।"
 
 #: app/blueprints/expenses.py
-msgid "Only recurring days can be skipped."
-msgstr "सिर्फ़ दोहराने वाले दिन छोड़े जा सकते हैं।"
-
-#: app/blueprints/expenses.py
 msgid "Day skipped."
 msgstr "दिन छोड़ दिया गया।"
 
@@ -637,10 +1144,6 @@ msgstr "दिन वापस जोड़ दिया गया।"
 #: app/blueprints/expenses.py
 msgid "Not allowed to restore this day."
 msgstr "आपको यह दिन वापस जोड़ने की अनुमति नहीं है।"
-
-#: app/blueprints/expenses.py
-msgid "That day is not part of this recurring rule."
-msgstr "वह दिन इस दोहराने के नियम में नहीं आता।"
 
 #: app/blueprints/expenses.py
 msgid "That day is already there."
@@ -755,10 +1258,6 @@ msgid "Not allowed to edit note."
 msgstr "आपको यह नोट संपादित करने की अनुमति नहीं है।"
 
 #: app/blueprints/notes.py
-msgid "Note added."
-msgstr "नोट जोड़ दिया गया।"
-
-#: app/blueprints/notes.py
 msgid "Note deleted."
 msgstr "नोट हटा दिया गया।"
 
@@ -777,14 +1276,6 @@ msgstr "क्यूआर कोड हटा दिया गया।"
 #: app/blueprints/qr.py
 msgid "Not allowed to delete QR code."
 msgstr "आपको यह क्यूआर कोड हटाने की अनुमति नहीं है।"
-
-#: app/blueprints/recipes.py
-msgid "Invalid link URL."
-msgstr "लिंक का यूआरएल सही नहीं है।"
-
-#: app/blueprints/recipes.py static/js/pages/recipes.js
-msgid "Please add ingredients or instructions (or both)."
-msgstr "कृपया सामग्री या बनाने की विधि (या दोनों) लिखें।"
 
 #: app/blueprints/recipes.py
 msgid "Recipe updated."
@@ -959,6 +1450,14 @@ msgstr "अगला साल"
 #: static/js/month-picker.js
 msgid "This month"
 msgstr "यह महीना"
+
+#: static/js/pages/api_access.js
+msgid "Copied"
+msgstr "कॉपी हो गया"
+
+#: static/js/pages/api_access.js
+msgid "Select the text and copy it."
+msgstr "टेक्स्ट चुनें और कॉपी करें।"
 
 #: static/js/pages/backups.js
 #, python-brace-format
@@ -1266,22 +1765,6 @@ msgstr "क्या यह दोहराने का नियम हटा 
 #: static/js/pages/expenses_recurring.js templates/expenses_recurring.html
 msgid "Delete Rule"
 msgstr "नियम हटाएं"
-
-#: static/js/pages/home/presence.js templates/index.html
-msgid "Home"
-msgstr "घर पर"
-
-#: static/js/pages/home/presence.js templates/index.html
-msgid "Away"
-msgstr "घर से दूर"
-
-#: static/js/pages/home/presence.js templates/index.html
-msgid "Out"
-msgstr "बाहर"
-
-#: static/js/pages/home/presence.js templates/index.html
-msgid "Traveling"
-msgstr "यात्रा पर"
 
 #: static/js/pages/home/presence.js
 msgid "Status cleared"
@@ -1971,6 +2454,236 @@ msgstr "रकम के हिसाब से"
 #, python-format
 msgid "%(name)s split value"
 msgstr "%(name)s के बंटवारे की वैल्यू"
+
+#: templates/api_access.html
+msgid "No access"
+msgstr "अनुमति नहीं"
+
+#: templates/api_access.html templates/api_access_locked.html
+#: templates/index.html
+msgid "API access"
+msgstr "API एक्सेस"
+
+#: templates/api_access.html
+msgid "Tokens let Home Assistant, phone shortcuts, scripts and AI assistants use HomeHub. The API is off until you create a token."
+msgstr "टोकन से Home Assistant, फ़ोन शॉर्टकट, स्क्रिप्ट और AI असिस्टेंट HomeHub इस्तेमाल कर सकते हैं। जब तक आप टोकन नहीं बनाते, API बंद रहता है।"
+
+#: templates/api_access.html
+#, python-format
+msgid "New token for %(name)s"
+msgstr "%(name)s के लिए नया टोकन"
+
+#: templates/api_access.html
+msgid "Copy this token now. HomeHub keeps only a fingerprint of it and cannot show it again."
+msgstr "यह टोकन अभी कॉपी कर लें। HomeHub इसकी सिर्फ़ एक पहचान (फ़िंगरप्रिंट) रखता है और इसे दोबारा नहीं दिखा सकता।"
+
+#: templates/api_access.html
+msgid "Token"
+msgstr "टोकन"
+
+#: templates/api_access.html
+msgid "Copy"
+msgstr "कॉपी करें"
+
+#: templates/api_access.html
+msgid "Try it:"
+msgstr "आज़माएं:"
+
+#: templates/api_access.html
+msgid "Copy the example"
+msgstr "उदाहरण कॉपी करें"
+
+#: templates/api_access.html
+msgid "Keep it secret: anyone with this token can use what it gives access to. If it leaks, regenerate or revoke it below."
+msgstr "इसे गुप्त रखें: जिसके पास यह टोकन है, वह इसकी अनुमति वाली हर चीज़ इस्तेमाल कर सकता है। अगर यह लीक हो जाए, तो नीचे से इसे नया बनाएं या रद्द करें।"
+
+#: templates/api_access.html
+msgid "Create a token"
+msgstr "टोकन बनाएं"
+
+#: templates/api_access.html
+msgid "Name"
+msgstr "नाम"
+
+#: templates/api_access.html
+msgid "For example Home Assistant or Hermes"
+msgstr "जैसे Home Assistant या Hermes"
+
+#: templates/api_access.html
+#, python-format
+msgid "Things this token adds without acting as a family member show this name as who added them. Up to %(num)s characters; it cannot be the name of a family member, the admin or another token."
+msgstr "परिवार के किसी सदस्य की ओर से काम किए बिना यह टोकन जो कुछ जोड़ता है, उसमें जोड़ने वाले के रूप में यही नाम दिखता है। ज़्यादा से ज़्यादा %(num)s अक्षर; यह परिवार के किसी सदस्य, एडमिन या किसी दूसरे टोकन का नाम नहीं हो सकता।"
+
+#: templates/api_access.html
+msgid "Start from a preset"
+msgstr "किसी तैयार सेटिंग से शुरू करें"
+
+#: templates/api_access.html
+msgid "Read everything"
+msgstr "सब कुछ पढ़ना"
+
+#: templates/api_access.html
+msgid "Home automation"
+msgstr "होम ऑटोमेशन"
+
+#: templates/api_access.html
+msgid "AI assistant"
+msgstr "AI असिस्टेंट"
+
+#: templates/api_access.html
+msgid "Access per tool"
+msgstr "हर टूल की अनुमति"
+
+#: templates/api_access.html
+msgid "Tool"
+msgstr "टूल"
+
+#: templates/api_access.html
+msgid "Read & write:"
+msgstr "पढ़ना और बदलना:"
+
+#: templates/api_access.html
+#, python-format
+msgid "%(tool)s: %(level)s"
+msgstr "%(tool)s: %(level)s"
+
+#: templates/api_access.html templates/media.html
+msgid "Not available"
+msgstr "उपलब्ध नहीं"
+
+#: templates/api_access.html
+msgid "Act as family members"
+msgstr "परिवार के सदस्यों की ओर से काम करें"
+
+#: templates/api_access.html
+msgid "Lets the client say which family member a change is for (the \"by\" field), for example the person who messaged an AI assistant. Needed to set who is home or a person's status. Never includes the admin."
+msgstr "इससे ऐप बता सकता है कि बदलाव परिवार के किस सदस्य के लिए है (\"by\" फ़ील्ड), जैसे जिसने AI असिस्टेंट को मैसेज किया। घर पर कौन है या किसी का स्टेटस सेट करने के लिए ज़रूरी। इसमें एडमिन कभी शामिल नहीं होता।"
+
+#: templates/api_access.html
+msgid "Act as family members was turned on, because setting who is home or a person's status needs it."
+msgstr "परिवार के सदस्यों की ओर से काम करना चालू कर दिया गया, क्योंकि घर पर कौन है या किसी का स्टेटस सेट करने के लिए यह ज़रूरी है।"
+
+#: templates/api_access.html
+msgid "Allow deleting"
+msgstr "हटाने की अनुमति दें"
+
+#: templates/api_access.html
+msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+msgstr "सिर्फ़ रिमाइंडर को ट्रैश में भेजता है, जहां से उन्हें वापस लाया जा सकता है। इसके लिए रिमाइंडर में पढ़ना और बदलना ज़रूरी है। AI एजेंट के लिए इसे बंद रखें: वे जो टेक्स्ट पढ़ते हैं, वह उन्हें चीज़ें हटाने के लिए बहका सकता है।"
+
+#: templates/api_access.html
+msgid "Whatever a token can read can leave your home if the client passes it on. AI agents usually send what they read to their provider."
+msgstr "टोकन जो कुछ पढ़ सकता है, वह आपके घर से बाहर जा सकता है अगर ऐप उसे आगे भेज दे। AI एजेंट आम तौर पर जो पढ़ते हैं, उसे अपनी सेवा देने वाली कंपनी को भेजते हैं।"
+
+#: templates/api_access.html
+msgid "Create token"
+msgstr "टोकन बनाएं"
+
+#: templates/api_access.html
+msgid "Tokens"
+msgstr "टोकन"
+
+#: templates/api_access.html templates/api_access_locked.html
+msgid "API guide"
+msgstr "API गाइड"
+
+#: templates/api_access.html templates/api_access_locked.html
+#, python-format
+msgid "Endpoints, examples for Home Assistant and scripts, and tips for AI agents are in the %(link)s."
+msgstr "एंडपॉइंट, Home Assistant और स्क्रिप्ट के उदाहरण, और AI एजेंट के लिए सुझाव %(link)s में हैं।"
+
+#: templates/api_access.html
+msgid "Revoked"
+msgstr "रद्द"
+
+#: templates/api_access.html
+msgid "Switched off in config.yml"
+msgstr "config.yml में बंद है"
+
+#: templates/api_access.html
+msgid "Acts as family members"
+msgstr "परिवार के सदस्यों की ओर से काम करता है"
+
+#: templates/api_access.html
+msgid "Can move reminders to the trash"
+msgstr "रिमाइंडर ट्रैश में भेज सकता है"
+
+#: templates/api_access.html
+msgid "Currently reaches nothing: its tools are switched off in config.yml."
+msgstr "अभी यह किसी चीज़ तक नहीं पहुंचता: इसके टूल config.yml में बंद हैं।"
+
+#: templates/api_access.html
+#, python-format
+msgid "Created %(time)s"
+msgstr "%(time)s को बनाया गया"
+
+#: templates/api_access.html
+#, python-format
+msgid "Last used %(time)s"
+msgstr "आखिरी बार %(time)s को इस्तेमाल हुआ"
+
+#: templates/api_access.html
+msgid "Not used yet"
+msgstr "अभी तक इस्तेमाल नहीं हुआ"
+
+#: templates/api_access.html
+#, python-format
+msgid "Make a new token for %(name)s? The current one stops working at once, so update whatever uses it."
+msgstr "%(name)s के लिए नया टोकन बनाएं? मौजूदा टोकन तुरंत काम करना बंद कर देगा, इसलिए जो कुछ इसे इस्तेमाल करता है उसे अपडेट करें।"
+
+#: templates/api_access.html
+#, python-format
+msgid "Make a new token for %(name)s? It gets the same access as before."
+msgstr "%(name)s के लिए नया टोकन बनाएं? इसे पहले जैसी ही अनुमति मिलेगी।"
+
+#: templates/api_access.html
+msgid "Regenerate"
+msgstr "नया बनाएं"
+
+#: templates/api_access.html
+#, python-format
+msgid "Revoke %(name)s? Anything that uses this token stops working at once."
+msgstr "%(name)s रद्द करें? जो कुछ इस टोकन को इस्तेमाल करता है, वह तुरंत काम करना बंद कर देगा।"
+
+#: templates/api_access.html
+msgid "Revoke"
+msgstr "रद्द करें"
+
+#: templates/api_access.html
+msgid "Recent activity"
+msgstr "हाल के बदलाव"
+
+#: templates/api_access.html
+msgid "No changes made with this token yet."
+msgstr "इस टोकन से अभी तक कोई बदलाव नहीं हुआ।"
+
+#: templates/api_access.html
+msgid "No tokens yet. The API is off."
+msgstr "अभी कोई टोकन नहीं है। API बंद है।"
+
+#: templates/api_access.html
+msgid "On the server you can do the same with:"
+msgstr "सर्वर पर आप यही काम इससे कर सकते हैं:"
+
+#: templates/api_access_locked.html
+msgid "Tokens let Home Assistant, phone shortcuts, scripts and AI assistants use HomeHub."
+msgstr "टोकन से Home Assistant, फ़ोन शॉर्टकट, स्क्रिप्ट और AI असिस्टेंट HomeHub इस्तेमाल कर सकते हैं।"
+
+#: templates/api_access_locked.html
+msgid "Set an admin password first"
+msgstr "पहले एडमिन पासवर्ड सेट करें"
+
+#: templates/api_access_locked.html
+msgid "Tokens can read and change your household's data, so this page needs an admin password. On the server, run:"
+msgstr "टोकन आपके घर का डेटा पढ़ और बदल सकते हैं, इसलिए इस पेज के लिए एडमिन पासवर्ड ज़रूरी है। सर्वर पर यह चलाएं:"
+
+#: templates/api_access_locked.html
+msgid "Then switch to the admin user, unlock it, and open Admin tools > API access again."
+msgstr "फिर एडमिन यूज़र पर जाएं, उसे अनलॉक करें, और एडमिन टूल > API एक्सेस फिर से खोलें।"
+
+#: templates/api_access_locked.html
+msgid "Until then, you can manage tokens on the server instead, for example:"
+msgstr "तब तक आप टोकन सर्वर पर संभाल सकते हैं, जैसे:"
 
 #: templates/backup_restore.html
 msgid "Back to backups"
@@ -3066,10 +3779,6 @@ msgid "Remove my status"
 msgstr "मेरा स्टेटस हटाएं"
 
 #: templates/index.html
-msgid "Chores"
-msgstr "घर के काम"
-
-#: templates/index.html
 msgid "Open full list"
 msgstr "पूरी लिस्ट खोलें"
 
@@ -3078,12 +3787,12 @@ msgid "No open chores right now."
 msgstr "अभी कोई काम बाकी नहीं है।"
 
 #: templates/index.html
-msgid "Backup"
-msgstr "बैकअप"
+msgid "Admin tools"
+msgstr "एडमिन टूल"
 
 #: templates/index.html
-msgid "Create, download and restore backups of HomeHub's data."
-msgstr "HomeHub के डेटा का बैकअप बनाएं, डाउनलोड करें और उससे डेटा वापस लाएं।"
+msgid "Back up HomeHub's data, and manage tokens for the API."
+msgstr "HomeHub के डेटा का बैकअप लें, और API के टोकन संभालें।"
 
 #: templates/index.html
 msgid "Manage backups"
@@ -3099,12 +3808,12 @@ msgid "Until then, you can make and restore backups on the server with flask bac
 msgstr "तब तक आप सर्वर पर flask backup और flask restore से बैकअप बना सकते हैं और उससे डेटा वापस ला सकते हैं। ज़्यादा जानकारी के लिए %(link)s देखें।"
 
 #: templates/index.html
-msgid "Calendar & Reminders"
-msgstr "कैलेंडर और रिमाइंडर"
+msgid "API tokens are managed on the server with flask api-token until an admin password is set."
+msgstr "जब तक एडमिन पासवर्ड सेट नहीं होता, API टोकन सर्वर पर flask api-token से संभाले जाते हैं।"
 
 #: templates/index.html
-msgid "Reminders"
-msgstr "रिमाइंडर"
+msgid "Calendar & Reminders"
+msgstr "कैलेंडर और रिमाइंडर"
 
 #: templates/index.html
 msgid "Back to Today"
@@ -3268,10 +3977,6 @@ msgstr "अभी कोई डाउनलोड नहीं है।"
 #, python-format
 msgid "Preview %(name)s in new tab"
 msgstr "%(name)s को नए टैब में देखें"
-
-#: templates/media.html
-msgid "Not available"
-msgstr "उपलब्ध नहीं"
 
 #: templates/media.html
 msgid "Delete this download and its file?"
@@ -3468,10 +4173,6 @@ msgid "%(count)s to buy"
 msgstr "%(count)s खरीदने हैं"
 
 #: templates/shopping.html
-msgid "Add an item"
-msgstr "आइटम जोड़ें"
-
-#: templates/shopping.html
 msgid "Tags (stores, categories)"
 msgstr "टैग (दुकान, श्रेणी)"
 
@@ -3580,4 +4281,10 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "Add a backup zip from another device to the list, for example to restore it here. Larger than the upload limit? Copy it into data/backups/ on the server instead."
 #~ msgstr "किसी दूसरे डिवाइस से बैकअप की ज़िप फ़ाइल सूची में जोड़ें, जैसे उसका डेटा यहां वापस लाने के लिए। फ़ाइल अपलोड की सीमा से बड़ी है? तो उसे सर्वर पर data/backups/ में कॉपी करें।"
+
+#~ msgid "Backup"
+#~ msgstr "बैकअप"
+
+#~ msgid "Create, download and restore backups of HomeHub's data."
+#~ msgstr "HomeHub के डेटा का बैकअप बनाएं, डाउनलोड करें और उससे डेटा वापस लाएं।"
 

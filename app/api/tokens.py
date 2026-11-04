@@ -13,7 +13,7 @@ import bleach
 from datetime import timedelta
 
 from flask import current_app, g, has_request_context
-from flask_babel import gettext as _, lazy_gettext as _l
+from flask_babel import gettext as _
 
 from ..clock import utcnow
 from ..models import ApiActivity, ApiToken, db
@@ -27,6 +27,11 @@ LAST_USED_EVERY = timedelta(minutes=1)
 LEVELS = ('read', 'write')
 
 
+def N_(text):
+    """Marks a string for translation (pybabel extracts N_); it is translated when shown."""
+    return text
+
+
 @dataclass(frozen=True)
 class Tool:
     key: str
@@ -34,34 +39,46 @@ class Tool:
     feature: str | None
     # What a missing feature_toggles line means (the same defaults as the sidebar in base.html)
     default_on: bool
-    label: object
+    label_text: str
     levels: tuple
-    read_help: object
-    write_help: object = None
+    read_help_text: str
+    write_help_text: str | None = None
+
+    @property
+    def label(self) -> str:
+        return _(self.label_text)
+
+    @property
+    def read_help(self) -> str:
+        return _(self.read_help_text)
+
+    @property
+    def write_help(self) -> str | None:
+        return _(self.write_help_text) if self.write_help_text else None
 
 
 # In the order the token page lists them
 TOOLS = (
-    Tool('presence', 'who_is_home', True, _l('Who is home'), ('read', 'write'),
-         _l("Everyone's Home or Away"), _l('Set a person Home or Away (needs Act as family members)')),
-    Tool('statuses', 'personal_status', True, _l('Personal status'), ('read', 'write'),
-         _l("Everyone's status text"), _l("Set or clear a person's status (needs Act as family members)")),
-    Tool('notice', None, True, _l('Notice board'), ('read',),
-         _l('The notice'), None),
-    Tool('reminders', 'calendar', True, _l('Reminders'), ('read', 'write'),
-         _l('Reminders for a day, a week or a range'), _l('Add a reminder, mark it done or not done')),
-    Tool('shopping', 'shopping_list', False, _l('Shopping list'), ('read', 'write'),
-         _l('Items with their tags'), _l('Add an item, tick or untick it')),
-    Tool('chores', 'chores', False, _l('Chores'), ('read', 'write'),
-         _l('Chores with due dates and tags'), _l('Add a chore, mark it done or not done')),
-    Tool('notes', 'notes', False, _l('Notes'), ('read', 'write'),
-         _l('Shared notes'), _l('Add a note')),
-    Tool('recipes', 'recipes', False, _l('Recipes'), ('read', 'write'),
-         _l('Recipes with their tags'), _l('Add a recipe')),
-    Tool('expiry', 'expiry_tracker', False, _l('Expiry tracker'), ('read', 'write'),
-         _l('Items with expiry dates'), _l('Add an item')),
-    Tool('expenses', 'expense_tracker', True, _l('Expenses'), ('read', 'write'),
-         _l('Recurring expenses and entries'), _l('Skip or restore a recurring day, change its quantity, add an expense')),
+    Tool('presence', 'who_is_home', True, N_('Who is home'), ('read', 'write'),
+         N_("Everyone's Home or Away"), N_('Set a person Home or Away (needs Act as family members)')),
+    Tool('statuses', 'personal_status', True, N_('Personal status'), ('read', 'write'),
+         N_("Everyone's status text"), N_("Set or clear a person's status (needs Act as family members)")),
+    Tool('notice', None, True, N_('Notice board'), ('read',),
+         N_('The notice'), None),
+    Tool('reminders', 'calendar', True, N_('Reminders'), ('read', 'write'),
+         N_('Reminders for a day, a week or a range'), N_('Add a reminder, mark it done or not done')),
+    Tool('shopping', 'shopping_list', False, N_('Shopping list'), ('read', 'write'),
+         N_('Items with their tags'), N_('Add an item, tick or untick it')),
+    Tool('chores', 'chores', False, N_('Chores'), ('read', 'write'),
+         N_('Chores with due dates and tags'), N_('Add a chore, mark it done or not done')),
+    Tool('notes', 'notes', False, N_('Notes'), ('read', 'write'),
+         N_('Shared notes'), N_('Add a note')),
+    Tool('recipes', 'recipes', False, N_('Recipes'), ('read', 'write'),
+         N_('Recipes with their tags'), N_('Add a recipe')),
+    Tool('expiry', 'expiry_tracker', False, N_('Expiry tracker'), ('read', 'write'),
+         N_('Items with expiry dates'), N_('Add an item')),
+    Tool('expenses', 'expense_tracker', True, N_('Expenses'), ('read', 'write'),
+         N_('Recurring expenses and entries'), N_('Skip or restore a recurring day, change its quantity, add an expense')),
 )
 TOOLS_BY_KEY = {t.key: t for t in TOOLS}
 # Tools whose writes change a person, so they only make sense when the token can act as family members
