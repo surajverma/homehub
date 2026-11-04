@@ -115,6 +115,22 @@ LATE_COLUMNS = [
     # Filled from the legacy frequency below, then 'month' for anything left (matches app/recurrence.py)
     ('recurring_reminder', 'unit', 'TEXT', None),
     ('recurring_reminder', 'anchor_day', 'INTEGER', None),
+    # API tables (app/api): a table left by an unreleased earlier layout gets the columns it lacks
+    ('api_token', 'name', 'VARCHAR(40) COLLATE NOCASE', None),
+    ('api_token', 'token_hash', 'VARCHAR(64)', None),
+    ('api_token', 'prefix', "VARCHAR(16) NOT NULL DEFAULT ''", None),
+    ('api_token', 'permissions', "TEXT NOT NULL DEFAULT '{}'", None),
+    ('api_token', 'act_as_members', 'BOOLEAN NOT NULL DEFAULT 0', None),
+    ('api_token', 'allow_delete', 'BOOLEAN NOT NULL DEFAULT 0', None),
+    ('api_token', 'created_at', 'TIMESTAMP', None),
+    ('api_token', 'last_used_at', 'TIMESTAMP', None),
+    ('api_token', 'revoked_at', 'TIMESTAMP', None),
+    ('api_activity', 'token_id', 'INTEGER', None),
+    ('api_activity', 'token_name', 'VARCHAR(40)', None),
+    ('api_activity', 'acting_as', 'VARCHAR(64)', None),
+    ('api_activity', 'action', 'VARCHAR(64)', None),
+    ('api_activity', 'target', 'VARCHAR(200)', None),
+    ('api_activity', 'created_at', 'TIMESTAMP', None),
 ]
 
 
