@@ -1121,6 +1121,11 @@ def _redirect_to_view(d: date | None = None):
     return redirect(url_for('main.expenses', y=y, m=m, sel=sel))
 
 
+def can_skip(e: ExpenseEntry) -> bool:
+    """Only a recurring day can be skipped (never a settlement); a skipped day can always be restored."""
+    return e.recurring_id is not None and not e.is_settlement
+
+
 @main_bp.route('/expenses/skip/<int:entry_id>', methods=['POST'])
 def toggle_skip_expense_entry(entry_id):
     """Skip a day (e.g. no newspaper) without deleting it, or restore a skipped day."""
@@ -1130,7 +1135,7 @@ def toggle_skip_expense_entry(entry_id):
         flash(_('Not allowed to change entry.'), 'error')
         return _redirect_to_view(entry.date)
     # Only recurring days can be skipped; a skipped day can always be restored
-    if not entry.skipped and (entry.recurring_id is None or entry.is_settlement):
+    if not entry.skipped and not can_skip(entry):
         flash(_('Only recurring days can be skipped.'), 'error')
         return _redirect_to_view(entry.date)
     entry.skipped = not bool(entry.skipped)

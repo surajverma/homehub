@@ -1934,6 +1934,540 @@
         }
       }
     },
+    "/expenses/rules": {
+      "get": {
+        "operationId": "expenses_rules",
+        "summary": "Recurring expenses",
+        "description": "Recurring expense rules that are still running (not ended): id, title, unit price, usual quantity, frequency and category. Use this to match what a person says, such as \"milk\" or \"newspaper\", to a rule.",
+        "tags": [
+          "Expenses"
+        ],
+        "x-homehub-tool": "expenses",
+        "x-homehub-level": "read",
+        "responses": {
+          "200": {
+            "description": "The result as JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expenses": {
+      "get": {
+        "operationId": "expenses_list",
+        "summary": "Expense entries",
+        "description": "Expense entries for one day (date, default today) or a range of at most 62 days (from and to). Skipped recurring days are listed with skipped true and do not count as spending.",
+        "tags": [
+          "Expenses"
+        ],
+        "x-homehub-tool": "expenses",
+        "x-homehub-level": "read",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "description": "One day, YYYY-MM-DD.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "First day, YYYY-MM-DD.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Last day, YYYY-MM-DD.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The result as JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "expenses_add",
+        "summary": "Add an expense",
+        "description": "Add a one-off expense: either an amount, or a unit price and a quantity. The payer defaults to the family member in \"by\". Dates default to today; future dates are not allowed. Not split.",
+        "tags": [
+          "Expenses"
+        ],
+        "x-homehub-tool": "expenses",
+        "x-homehub-level": "write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "What it was, for example \"Groceries\"."
+                  },
+                  "amount": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1000000000.0,
+                    "description": "The total. Leave out when sending unit_price and quantity."
+                  },
+                  "unit_price": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1000000000.0,
+                    "description": "Price of one unit."
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1000000000.0,
+                    "description": "How many units."
+                  },
+                  "category": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "Optional category, one of those set on the expenses page."
+                  },
+                  "payer": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "Who paid: a family member. Defaults to the person in \"by\"."
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "The day, YYYY-MM-DD (default today)."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "title"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expenses/rules/{rule_id}/days/{day}/skipped": {
+      "put": {
+        "operationId": "expenses_set_skipped",
+        "summary": "Skip or restore a recurring day",
+        "description": "Skip a day of a recurring expense (true), for example no newspaper today, or restore it (false). Setting the same value again changes nothing. Only whoever added the rule may change its days.",
+        "tags": [
+          "Expenses"
+        ],
+        "x-homehub-tool": "expenses",
+        "x-homehub-level": "write",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "description": "The recurring rule id from GET /expenses/rules.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "day",
+            "in": "path",
+            "required": true,
+            "description": "The day, YYYY-MM-DD (today or earlier).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "skipped": {
+                    "type": "boolean",
+                    "description": "true to skip the day, false to restore it."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "skipped"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expenses/rules/{rule_id}/days/{day}": {
+      "patch": {
+        "operationId": "expenses_set_quantity",
+        "summary": "Change a recurring day's quantity",
+        "description": "Change the quantity of a recurring expense on one day, for example 3 litres of milk instead of 2. The amount becomes unit price times quantity. Only whoever added the rule may change its days.",
+        "tags": [
+          "Expenses"
+        ],
+        "x-homehub-tool": "expenses",
+        "x-homehub-level": "write",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "description": "The recurring rule id from GET /expenses/rules.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "day",
+            "in": "path",
+            "required": true,
+            "description": "The day, YYYY-MM-DD (today or earlier).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1000000000.0,
+                    "description": "The new quantity (greater than zero)."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "quantity"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/openapi.json": {
       "get": {
         "operationId": "openapi",
