@@ -172,14 +172,19 @@ def run_operation(op, token, args: dict, *, from_query=()):
     return op.success_status, payload
 
 
-def read_json_body() -> dict:
-    """The request body as a JSON object (empty when there is no body); at most 64 KB."""
+def read_json_body_raw() -> bytes:
+    """The request body as bytes; at most 64 KB."""
     from werkzeug.exceptions import RequestEntityTooLarge
     request.max_content_length = MAX_BODY_BYTES
     try:
-        raw = request.get_data(cache=True)
+        return request.get_data(cache=True)
     except RequestEntityTooLarge:
         raise ApiError(413, 'too_large', _('The request body can be at most 64 KB.'))
+
+
+def read_json_body() -> dict:
+    """The request body as a JSON object (empty when there is no body); at most 64 KB."""
+    raw = read_json_body_raw()
     if not raw.strip():
         return {}
     try:
