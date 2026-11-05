@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 04:52+0000\n"
+"POT-Creation-Date: 2026-11-05 05:29+0000\n"
 "PO-Revision-Date: 2026-10-11 13:20+0800\n"
 "Last-Translator: ump45nose\n"
 "Language: zh\n"
@@ -322,6 +322,11 @@ msgstr ""
 
 #: app/api/household.py
 msgid "That chore was not found."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "This is an old copy of the recurring chore %(chore)s. Use chore %(id)s, the current one."
 msgstr ""
 
 #: app/api/household.py

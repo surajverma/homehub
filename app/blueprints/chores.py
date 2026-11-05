@@ -19,16 +19,25 @@ def _parse_date(value):
         return None
 
 
+def _recurring_chores_in_order():
+    """Chores made by recurring rules, each rule's active one first (the earliest due, then the newest)."""
+    return (
+        Chore.query
+        .filter(Chore.recurring_id.isnot(None))
+        .order_by(Chore.recurring_id.asc(), Chore.due_date.asc(), Chore.timestamp.desc())
+    )
+
+
+def active_recurring_chore(rule_id: int) -> Chore | None:
+    """The chore that _ensure_current_recurring_chores keeps up to date for a rule; any other is an old copy."""
+    return _recurring_chores_in_order().filter(Chore.recurring_id == rule_id).first()
+
+
 @serialized
 def _ensure_current_recurring_chores(today: date | None = None):
     today = today or date.today()
     rules = RecurringChore.query.all()
-    active_rows = (
-        Chore.query
-        .filter(Chore.recurring_id.isnot(None))
-        .order_by(Chore.recurring_id.asc(), Chore.due_date.asc(), Chore.timestamp.desc())
-        .all()
-    )
+    active_rows = _recurring_chores_in_order().all()
     active_by_rule: dict[int, Chore] = {}
     for row in active_rows:
         if row.recurring_id is None or row.recurring_id in active_by_rule:

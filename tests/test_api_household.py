@@ -182,3 +182,70 @@ def test_each_write_is_logged(home, agent):
     with home.ctx():
         rows = [(a.acting_as, a.action) for a in ApiActivity.query.order_by(ApiActivity.id).all()]
     assert rows == [('Priya', 'shopping_add'), ('Hermes', 'notes_add')]
+
+
+# --- Recurring chores behind the times (the API brings them up to date first, as the page does) ---
+
+def stale_daily_chore(home, days_behind=4):
+    today = date.today()
+    behind = today - timedelta(days=days_behind)
+    with home.ctx():
+        rule = RecurringChore(description='Feed the cat', creator='Mom', interval=1, unit='day',
+                              start_date=today - timedelta(days=10), last_generated_date=behind)
+        db.session.add(rule)
+        db.session.commit()
+        chore = Chore(description='Feed the cat', creator='Mom', tags='[]', due_date=behind, recurring_id=rule.id, done=False)
+        db.session.add(chore)
+        db.session.commit()
+        return chore.id
+
+
+def test_stale_recurring_chore_ticks_todays_round(home, agent):
+    today = date.today()
+    cid = stale_daily_chore(home)
+    data = home.put(f'/chores/{cid}/done', agent, json={'done': True}).get_json()
+    assert data['done'] is True and data['due_date'] == (today + timedelta(days=1)).isoformat()
+    assert data['summary'].startswith('Feed the cat done. Next due on')
+    again = home.put(f'/chores/{cid}/done', agent, json={'done': True}).get_json()
+    assert again['due_date'] == data['due_date'] and 'already done' in again['summary']
+    back = home.put(f'/chores/{cid}/done', agent, json={'done': False}).get_json()
+    assert back['done'] is False and back['due_date'] == today.isoformat()
+
+
+def test_stale_recurring_chore_through_mcp(home, agent):
+    today = date.today()
+    cid = stale_daily_chore(home)
+
+    def call(done):
+        resp = home.post('/mcp', agent, json={'jsonrpc': '2.0', 'id': 1, 'method': 'tools/call',
+                                              'params': {'name': 'chores_set_done', 'arguments': {'chore_id': cid, 'done': done}}},
+                         headers={'MCP-Protocol-Version': '2025-06-18'})
+        return resp.get_json()['result']['structuredContent']
+    first = call(True)
+    assert first['done'] is True and first['due_date'] == (today + timedelta(days=1)).isoformat()
+    second = call(True)
+    assert second['due_date'] == first['due_date'] and 'already done' in second['summary']
+
+
+def test_old_copy_of_a_recurring_chore_is_refused(home, agent):
+    cid = stale_daily_chore(home)
+    with home.ctx():
+        chore = db.session.get(Chore, cid)
+        # A second row for the same rule, due later: the earlier one is the active one
+        old = Chore(description='Feed the cat', creator='Mom', tags='[]', due_date=date.today() + timedelta(days=5),
+                    recurring_id=chore.recurring_id, done=False)
+        db.session.add(old)
+        db.session.commit()
+        old_id = old.id
+    resp = home.put(f'/chores/{old_id}/done', agent, json={'done': True})
+    assert resp.status_code == 409 and f'Use chore {cid}' in resp.get_json()['message']
+    with home.ctx():
+        assert db.session.get(Chore, old_id).due_date == date.today() + timedelta(days=5)
+
+
+def test_chore_edit_sees_current_data(home, agent):
+    cid = stale_daily_chore(home)
+    resp = home.patch(f'/chores/{cid}', agent, json={'description': 'X', 'by': 'Mom'})
+    assert resp.status_code == 409
+    with home.ctx():
+        assert db.session.get(Chore, cid).due_date == date.today()  # brought up to date first

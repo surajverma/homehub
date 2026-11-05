@@ -115,6 +115,23 @@ def chores_add(ctx, args):
     return {**_chore(chore, {}, date.today()), 'summary': summary}
 
 
+def _current_chore(chore_id: int):
+    """The chore after recurring chores are brought up to date, as the Chores page does on load.
+
+    Returns (chore, its rule or None). An old copy of a recurring chore is refused, so the
+    current round is the one that changes.
+    """
+    chores_web._ensure_current_recurring_chores(date.today())
+    chore = _get(Chore, chore_id, _('That chore was not found.'))
+    rule = db.session.get(RecurringChore, chore.recurring_id) if chore.recurring_id else None
+    if rule is not None:
+        active = chores_web.active_recurring_chore(rule.id)
+        if active is not None and active.id != chore.id:
+            raise ApiError(409, 'conflict', _('This is an old copy of the recurring chore %(chore)s. Use chore %(id)s, the current one.',
+                                              chore=chore.description, id=active.id))
+    return chore, rule
+
+
 @operation('chores_set_done', tool='chores', level='write', method='PUT', path='/chores/<int:chore_id>/done',
            title='Mark a chore done or not done',
            description=('Set a chore done (true) or not done (false); setting the same value again changes nothing. '
@@ -123,9 +140,8 @@ def chores_add(ctx, args):
                        'done': {'type': 'boolean', 'in': 'body', 'description': 'true for done, false for not done.'}},
            required=('chore_id', 'done'), idempotent=True)
 def chores_set_done(ctx, args):
-    chore = _get(Chore, args['chore_id'], _('That chore was not found.'))
+    chore, rule = _current_chore(args['chore_id'])
     today = date.today()
-    rule = db.session.get(RecurringChore, chore.recurring_id) if chore.recurring_id else None
     want = args['done']
     name = chore.description
     if rule is not None and chore.due_date:
@@ -310,6 +326,7 @@ def shopping_edit(ctx, args):
 def chores_edit(ctx, args):
     if not any(k in args for k in ('description', 'due_date', 'tags')):
         raise nothing_to_change()
+    chores_web._ensure_current_recurring_chores(date.today())
     chore = _get(Chore, args['chore_id'], _('That chore was not found.'))
     if chore.recurring_id:
         raise ApiError(409, 'conflict', _('This chore belongs to a recurring chore. Recurring chores are changed in HomeHub.'))

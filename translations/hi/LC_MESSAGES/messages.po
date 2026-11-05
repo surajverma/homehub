@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 04:52+0000\n"
+"POT-Creation-Date: 2026-11-05 05:29+0000\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -323,6 +323,11 @@ msgstr "काम जोड़ दिया गया: %(chore)s।"
 #: app/api/household.py
 msgid "That chore was not found."
 msgstr "यह काम नहीं मिला।"
+
+#: app/api/household.py
+#, python-format
+msgid "This is an old copy of the recurring chore %(chore)s. Use chore %(id)s, the current one."
+msgstr "यह दोहराने वाले काम %(chore)s की पुरानी कॉपी है। मौजूदा काम %(id)s इस्तेमाल करें।"
 
 #: app/api/household.py
 #, python-format
