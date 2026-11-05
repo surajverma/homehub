@@ -1,6 +1,7 @@
 from flask import current_app, request, session, redirect, url_for, render_template, flash, jsonify
 from ..blueprints import main_bp
 from .. import admin
+from .. import api
 from ..config import load_config, upload_limit_bytes
 from ..models import db
 from werkzeug.security import check_password_hash
@@ -48,7 +49,13 @@ def reload_config_and_auth():
     endpoint = request.endpoint or ''
     if cfg.get('password_hash'):
         if not session.get('authed') and not endpoint.startswith('static') and endpoint not in _OPEN_ENDPOINTS:
-            return redirect(url_for('main.login'))
+            # /api/v1 (app/api): a valid token gets through, anything else gets the API's own 401.
+            # Every other page logs in as before; a token opens nothing outside /api/v1.
+            if api.is_api_request():
+                if not api.token_opens_gate():
+                    return api.unauthorized_response()
+            else:
+                return redirect(url_for('main.login'))
     else:
         if endpoint == 'main.login':
             return redirect(url_for('main.index'))

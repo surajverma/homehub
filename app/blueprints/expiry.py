@@ -7,6 +7,14 @@ from ..admin import can_modify
 from ..security import sanitize_text
 
 
+def days_left(item: ExpiryItem, today: date):
+    """Days until the item expires (negative once past), or None without a date."""
+    try:
+        return (item.expiry_date - today).days
+    except Exception:
+        return None
+
+
 @main_bp.route('/expiry', methods=['GET', 'POST'])
 def expiry():
     if request.method == 'POST':
@@ -23,11 +31,7 @@ def expiry():
     # Annotate with days_left for template logic
     enriched = []
     for it in items:
-        try:
-            days_left = (it.expiry_date - today).days
-        except Exception:
-            days_left = None
-        enriched.append((it, days_left))
+        enriched.append((it, days_left(it, today)))
     config = current_app.config['HOMEHUB_CONFIG']
     return render_template('expiry.html', items=enriched, today=today, config=config)
 

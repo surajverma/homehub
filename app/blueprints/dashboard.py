@@ -90,6 +90,48 @@ def _show_chores_on_homepage() -> bool:
         return False
 
 
+def who_statuses_for(family) -> dict:
+    """{name: 'Home' | 'Away' | ...} for family members who have a Who is home status."""
+    return {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
+
+
+def member_statuses_for(family) -> dict:
+    """{name: text} for family members with a non-empty personal status."""
+    return {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
+
+
+def set_home_status(name: str, status: str) -> None:
+    """Store ``name``'s Who is home status (English keys such as 'Home' and 'Away') and commit."""
+    hs = HomeStatus.query.filter_by(name=name).first()
+    if hs:
+        hs.status = status
+    else:
+        db.session.add(HomeStatus(name=name, status=status))
+    db.session.commit()
+
+
+def save_member_status(name: str, text: str) -> None:
+    """Store ``name``'s personal status text and commit."""
+    ms = MemberStatus.query.filter_by(name=name).first()
+    now = utcnow()
+    if ms:
+        ms.text = text
+        ms.updated_at = now
+    else:
+        db.session.add(MemberStatus(name=name, text=text, updated_at=now))
+    db.session.commit()
+
+
+def clear_member_status(name: str) -> bool:
+    """Remove ``name``'s personal status; True when there was one."""
+    ms = MemberStatus.query.filter_by(name=name).first()
+    if not ms:
+        return False
+    db.session.delete(ms)
+    db.session.commit()
+    return True
+
+
 @main_bp.route('/')
 def index():
     return _render_dashboard(calendar_only=False)
@@ -106,8 +148,8 @@ def _render_dashboard(calendar_only=False):
     show_chores_on_homepage = _show_chores_on_homepage()
     # Who is Home summary
     family = list(dict.fromkeys(config.get('family_members', [])))
-    who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
-    member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
+    who_statuses = who_statuses_for(family)
+    member_statuses = member_statuses_for(family)
     # Extract reminder categories
     reminder_categories = []
     try:
@@ -211,25 +253,19 @@ def _serialize_recurring_rule(rr: RecurringReminder):
     }
 
 
-@main_bp.route('/api/reminders')
-def api_reminders_list():
-    scope = (request.args.get('scope', 'day') or 'day').lower()
-    base_date = _parse_date_param(request.args.get('date'), date.today())
-    q = Reminder.query.filter(Reminder.deleted_at.is_(None))
-    if scope == 'month':
-        start = base_date.replace(day=1)
-        if start.month == 12:
-            next_month = start.replace(year=start.year + 1, month=1, day=1)
-        else:
-            next_month = start.replace(month=start.month + 1, day=1)
-        end = next_month - timedelta(days=1)
-        q = q.filter(Reminder.date >= start, Reminder.date <= end)
-    elif scope == 'week':
-        start = base_date - timedelta(days=base_date.weekday())
-        end = start + timedelta(days=6)
-        q = q.filter(Reminder.date >= start, Reminder.date <= end)
-    else:
-        q = q.filter(Reminder.date == base_date)
+def week_bounds(base_date: date) -> tuple:
+    """Monday to Sunday of the week holding ``base_date``, as the calendar's week view uses."""
+    start = base_date - timedelta(days=base_date.weekday())
+    return start, start + timedelta(days=6)
+
+
+def reminders_in_window(window_start: date, window_end: date):
+    """Reminders dated in the window (trashed ones left out) plus the dates recurring rules add there.
+
+    Returns (stored rows, generated rows, rules, {rule id: [dates]}, everything sorted). Generated
+    rows are unsaved Reminder objects with a negative id, as /api/reminders has always shown them.
+    """
+    q = Reminder.query.filter(Reminder.deleted_at.is_(None), Reminder.date >= window_start, Reminder.date <= window_end)
     try:
         from sqlalchemy import case
         rows = q.order_by(
@@ -240,22 +276,13 @@ def api_reminders_list():
         ).all()
     except Exception:
         rows = q.order_by(Reminder.date.asc(), Reminder.id.asc()).all()
-    # Generate from recurring rules within scope window (without altering past)
+    # Generate from recurring rules within the window (without altering past)
     try:
         rules = RecurringReminder.query.all()
     except Exception:
         rules = []
     gen_rows = []
     rule_dates = {}  # rr.id -> list of dates within window
-    if scope == 'month':
-        window_start = start
-        window_end = end
-    elif scope == 'week':
-        window_start = start
-        window_end = end
-    else:
-        window_start = base_date
-        window_end = base_date
     for rr in rules:
         for d in occurrences_between(rr, window_start, window_end):
             # ensure not already present in DB rows for that date/title
@@ -271,6 +298,25 @@ def api_reminders_list():
         combined.sort(key=lambda r: (r.date, (r.time is None or r.time == ''), r.time or '', r.id))
     except Exception:
         pass
+    return rows, gen_rows, rules, rule_dates, combined
+
+
+@main_bp.route('/api/reminders')
+def api_reminders_list():
+    scope = (request.args.get('scope', 'day') or 'day').lower()
+    base_date = _parse_date_param(request.args.get('date'), date.today())
+    if scope == 'month':
+        start = base_date.replace(day=1)
+        if start.month == 12:
+            next_month = start.replace(year=start.year + 1, month=1, day=1)
+        else:
+            next_month = start.replace(month=start.month + 1, day=1)
+        end = next_month - timedelta(days=1)
+    elif scope == 'week':
+        start, end = week_bounds(base_date)
+    else:
+        start = end = base_date
+    rows, gen_rows, rules, rule_dates, combined = reminders_in_window(start, end)
     data = [_serialize_reminder(r) for r in combined]
     counts = {}
     categories_counts = {}
@@ -452,6 +498,29 @@ def api_recurring_rules_update_delete(rid):
                     'undo_token': _stash_reminder_rule(before, successor)})
 
 
+def save_one_off_reminder(start_d, start_t, end_d, end_t, all_day, title, description, creator, category, color) -> Reminder:
+    """Add a reminder that does not repeat and commit. Text must already be sanitised; category and color are."""
+    r = Reminder(
+        date=start_d,
+        time=start_t,
+        start_date=start_d,
+        start_time=start_t,
+        end_date=end_d,
+        end_time=end_t,
+        all_day=all_day,
+        title=title,
+        description=description,
+        creator=creator,
+    )
+    if hasattr(r, 'category'):
+        r.category = sanitize_text(category) if category else None
+    if hasattr(r, 'color'):
+        r.color = sanitize_text(color) if color else None
+    db.session.add(r)
+    db.session.commit()
+    return r
+
+
 @main_bp.route('/api/reminders', methods=['POST'])
 def api_reminders_create():
     payload = request.get_json(silent=True) or {}
@@ -499,35 +568,17 @@ def api_reminders_create():
         db.session.add(rr)
         db.session.commit()
         return jsonify({'ok': True, 'recurring_id': rr.id})
-    r = Reminder(
-        date=start_d,
-        time=start_t,
-        start_date=start_d,
-        start_time=start_t,
-        end_date=end_d,
-        end_time=end_t,
-        all_day=all_day,
-        title=title,
-        description=description,
-        creator=creator,
-    )
-    cat = payload.get('category'); col = payload.get('color')
-    if hasattr(r, 'category'):
-        r.category = sanitize_text(cat) if cat else None
-    if hasattr(r, 'color'):
-        r.color = sanitize_text(col) if col else None
-    db.session.add(r)
-    db.session.commit()
+    r = save_one_off_reminder(start_d, start_t, end_d, end_t, all_day, title, description, creator,
+                              payload.get('category'), payload.get('color'))
     return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
 
 
-@main_bp.route('/api/reminders/<int:rid>', methods=['PATCH'])
-def api_reminders_update(rid):
-    r = db.get_or_404(Reminder, rid)
-    payload = request.get_json(silent=True) or {}
-    user = sanitize_text(payload.get('creator', ''))
-    if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
+def apply_reminder_changes(r: Reminder, payload: dict) -> str | None:
+    """Apply the fields in ``payload`` to a reminder, as the calendar's edit does; nothing is committed.
+
+    Returns the message to show when the dates or times don't fit together (the changes are then not
+    meant to be saved), else None. A key sent as null keeps the current value.
+    """
     if 'title' in payload:
         title = sanitize_text(payload['title'])
         if title:
@@ -588,7 +639,7 @@ def api_reminders_update(rid):
 
     ok, err = _validate_range(new_start_d, new_start_t, new_end_d, new_end_t)
     if not ok:
-        return jsonify({'ok': False, 'error': err}), 400
+        return err
 
     r.date = new_start_d
     if hasattr(r, 'time'):
@@ -607,6 +658,19 @@ def api_reminders_update(rid):
         r.category = sanitize_text(payload.get('category')) if payload.get('category') else None
     if hasattr(r, 'color') and 'color' in payload:
         r.color = sanitize_text(payload.get('color')) if payload.get('color') else None
+    return None
+
+
+@main_bp.route('/api/reminders/<int:rid>', methods=['PATCH'])
+def api_reminders_update(rid):
+    r = db.get_or_404(Reminder, rid)
+    payload = request.get_json(silent=True) or {}
+    user = sanitize_text(payload.get('creator', ''))
+    if not can_modify(user, r.creator or ''):
+        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
+    err = apply_reminder_changes(r, payload)
+    if err:
+        return jsonify({'ok': False, 'error': err}), 400
     db.session.commit()
     return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
 
@@ -892,18 +956,13 @@ def who_is_home_action():
                 flash(_('No status to clear.'), 'info')
     else:
         status = sanitize_text(request.form.get('status', '')) or 'Away'
-        hs = HomeStatus.query.filter_by(name=name).first()
-        if hs:
-            hs.status = status
-        else:
-            db.session.add(HomeStatus(name=name, status=status))
-        db.session.commit()
+        set_home_status(name, status)
         result = 'updated'
         if request.headers.get('X-Requested-With') != 'fetch':
             flash(_('Status updated.'), 'success')
     if request.headers.get('X-Requested-With') == 'fetch':
-        who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
-        member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
+        who_statuses = who_statuses_for(family)
+        member_statuses = member_statuses_for(family)
         result = result or 'updated'
         return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses, 'result': result})
     date_q = request.args.get('date') or request.form.get('date')
@@ -929,19 +988,12 @@ def member_status_update():
         else:
             flash(_('Status cannot be empty.'), 'error')
             return redirect(url_for('main.index'))
-    ms = MemberStatus.query.filter_by(name=name).first()
-    now = utcnow()
-    if ms:
-        ms.text = text
-        ms.updated_at = now
-    else:
-        db.session.add(MemberStatus(name=name, text=text, updated_at=now))
-    db.session.commit()
+    save_member_status(name, text)
     if request.headers.get('X-Requested-With') != 'fetch':
         flash(_('Status saved.'), 'success')
     if request.headers.get('X-Requested-With') == 'fetch':
-        who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
-        member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
+        who_statuses = who_statuses_for(family)
+        member_statuses = member_statuses_for(family)
         return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses, 'result': 'saved'})
     return redirect(url_for('main.index'))
 
@@ -957,16 +1009,12 @@ def member_status_delete():
         if request.headers.get('X-Requested-With') == 'fetch':
             return jsonify({'ok': False, 'error': _('Invalid user')}), 400
         return redirect(url_for('main.index'))
-    ms = MemberStatus.query.filter_by(name=name).first()
-    removed = False
-    if ms:
-        db.session.delete(ms)
-        db.session.commit()
-        removed = True
+    removed = clear_member_status(name)
+    if removed:
         if request.headers.get('X-Requested-With') != 'fetch':
             flash(_('Status removed.'), 'success')
     if request.headers.get('X-Requested-With') == 'fetch':
-        who_statuses = {s.name: s.status for s in HomeStatus.query.all() if s.name in family}
-        member_statuses = {ms.name: ms.text for ms in MemberStatus.query.all() if ms.name in family and (ms.text or '').strip()}
+        who_statuses = who_statuses_for(family)
+        member_statuses = member_statuses_for(family)
         return jsonify({'ok': True, 'who_statuses': who_statuses, 'member_statuses': member_statuses, 'result': 'removed' if removed else 'none'})
     return redirect(url_for('main.index'))

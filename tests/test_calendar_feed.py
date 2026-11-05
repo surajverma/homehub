@@ -204,6 +204,12 @@ def test_site_password_still_gates_every_other_route(app, client, configure):
         url = _url_for_rule(rule)
         for method in sorted(rule.methods - {'HEAD', 'OPTIONS'}):
             resp = client.open(url, method=method, headers={'Sec-Fetch-Site': 'same-origin'})
+            if rule.endpoint.startswith('api_v1.'):
+                # The token API answers its own 401 instead of sending API clients to the login page
+                assert resp.status_code == 401, (method, url, resp.status_code)
+                assert resp.get_json()['error'] == 'unauthorized', (method, url)
+                checked += 1
+                continue
             assert resp.status_code == 302, (method, url, resp.status_code)
             assert resp.headers['Location'].endswith('/login'), (method, url)
             checked += 1

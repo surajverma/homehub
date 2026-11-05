@@ -69,10 +69,37 @@
             unlocked: {{ 'true' if admin_unlocked else 'false' }},
             names: [{{ config.admin_name | tojson }}, 'Administrator', 'admin'],
             isAdminName: function(name){ return this.names.indexOf(name) !== -1; },
-            needsPassword: function(name){ return this.passwordEnabled && !this.unlocked && this.isAdminName(name); }
+            needsPassword: function(name){ return this.passwordEnabled && !this.unlocked && this.isAdminName(name); },
+            keepUserParam: {{ 'true' if keeps_user_param else 'false' }}
         };
         try{
             if (window.HomeHubAdmin.needsPassword(localStorage.getItem('username'))) { localStorage.removeItem('username'); }
+        }catch(e){}
+        // ?user=Name opens HomeHub as that person, as if picked in the user switcher (for dashboards and wall tablets).
+        // Unknown names are ignored; the admin still needs the admin password (app.js asks for it).
+        try{
+            (function(){
+                var params = new URLSearchParams(location.search);
+                if (!params.has('user')) return;
+                var admin = window.HomeHubAdmin;
+                var wanted = (params.get('user') || '').trim().toLowerCase();
+                var users = [admin.names[0]].concat({{ config.family_members | tojson }});
+                var match = null;
+                for (var i = 0; i < users.length; i++){ if (String(users[i]).toLowerCase() === wanted){ match = users[i]; break; } }
+                if (!match) return;
+                if (!admin.keepUserParam){
+                    params.delete('user');
+                    var qs = params.toString();
+                    history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+                }
+                if (localStorage.getItem('username') === match) return;
+                if (admin.needsPassword(match)){ admin.pendingUser = match; return; }
+                if (admin.unlocked && !admin.isAdminName(match)){
+                    admin.unlocked = false;
+                    fetch('/admin/lock', { method: 'POST' }).catch(function(){});
+                }
+                localStorage.setItem('username', match);
+            })();
         }catch(e){}
     </script>
     <script>
@@ -148,6 +175,14 @@
                 {% for href, icon, label, enabled in nav_links if enabled %}
                 <a href="{{ href }}" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ label }}"><i class="fa-solid {{ icon }} w-5 text-center"></i><span class="nav-label">{{ label }}</span></a>
                 {% endfor %}
+                {# Shown only while the admin is the selected user (app.js, like the Welcome page's Admin tools card).
+                   Navigation only: the pages check the admin themselves. app.js adds ?user= to the links. #}
+                <div id="sidebarAdmin" class="admin-only sidebar-admin" style="display:none" role="group" aria-labelledby="sidebarAdminLabel">
+                    <p id="sidebarAdminLabel" class="nav-label sidebar-admin-label">{{ _('Admin') }}</p>
+                    {% for href, icon, label in [('/admin/backups', 'fa-box-archive', _('Backups')), ('/admin/api', 'fa-key', _('API access'))] %}
+                    <a href="{{ href }}" data-user-link class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ label }}"><i class="fa-solid {{ icon }} w-5 text-center" aria-hidden="true"></i><span class="nav-label">{{ label }}</span></a>
+                    {% endfor %}
+                </div>
             </nav>
             <script src="{{ asset_url('js/base/active_link.js') }}"></script>
         </aside>

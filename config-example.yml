@@ -102,6 +102,11 @@ calendar_feed:
   token: ""
   alerts: true # false = events without phone alerts
 
+# JSON API and MCP endpoint for Home Assistant, scripts and AI agents (/api/v1/). There is no
+# setting here: it is off until you create a token under Admin tools > API access, or with
+#   docker exec -it homehub flask api-token create NAME --tool presence=write ...
+# See docs/api.md.
+
 # Weather widget on the Welcome page (Open-Meteo, no account needed). Off unless enabled.
 weather:
   enabled: false

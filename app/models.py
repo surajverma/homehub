@@ -274,3 +274,40 @@ class UndoStash(db.Model):
     kind = db.Column(db.String(32), nullable=False)
     payload = db.Column(db.Text, nullable=False)  # JSON
     expires_at = db.Column(db.DateTime, nullable=False)
+
+
+class ApiToken(db.Model):
+    """A token for the JSON API (/api/v1/). Only a SHA-256 fingerprint of the token is kept."""
+    __tablename__ = 'api_token'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(40, collation='NOCASE'), unique=True, nullable=False)
+    token_hash = db.Column(db.String(64), unique=True, nullable=False)
+    # The first characters of the token, to recognise it in the list
+    prefix = db.Column(db.String(16), nullable=False)
+    # JSON: {tool: "read" | "write"}
+    permissions = db.Column(db.Text, nullable=False, default='{}')
+    act_as_members = db.Column(db.Boolean, nullable=False, default=False)
+    allow_delete = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    last_used_at = db.Column(db.DateTime)
+    revoked_at = db.Column(db.DateTime)
+
+    @property
+    def permission_map(self) -> dict:
+        try:
+            value = json.loads(self.permissions or '{}')
+        except (TypeError, ValueError):
+            return {}
+        return value if isinstance(value, dict) else {}
+
+
+class ApiActivity(db.Model):
+    """One row per change made through the API: which token, acting as whom, what."""
+    __tablename__ = 'api_activity'
+    id = db.Column(db.Integer, primary_key=True)
+    token_id = db.Column(db.Integer)
+    token_name = db.Column(db.String(40))
+    acting_as = db.Column(db.String(64))
+    action = db.Column(db.String(64))
+    target = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=utcnow)

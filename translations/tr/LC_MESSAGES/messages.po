@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-31 10:18+0000\n"
+"POT-Creation-Date: 2026-11-05 05:30+0000\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -22,8 +22,599 @@ msgstr ""
 msgid "Upload is too large. The limit is %(limit)s MB."
 msgstr "Yükleme çok büyük. Sınır %(limit)s MB."
 
-#: app/blueprints/__init__.py app/blueprints/expenses.py
+#: app/api/core.py
+msgid "A valid API token is required. Send it as \"Authorization: Bearer <token>\"."
+msgstr ""
+
+#: app/api/core.py
+msgid "This token does not have access to that."
+msgstr ""
+
+#: app/api/core.py
+msgid "Not found."
+msgstr ""
+
+#: app/api/core.py
+msgid "The request is not valid."
+msgstr ""
+
+#: app/api/core.py
+msgid "That cannot be done right now."
+msgstr ""
+
+#: app/api/core.py
+msgid "The request is too large."
+msgstr ""
+
+#: app/api/core.py
+msgid "That method is not allowed here."
+msgstr ""
+
+#: app/api/core.py app/blueprints/__init__.py app/blueprints/expenses.py
 msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: app/api/core.py
+#, python-format
+msgid "This token can read %(tool)s but not change it."
+msgstr ""
+
+#: app/api/core.py
+#, python-format
+msgid "This token has no access to %(tool)s."
+msgstr ""
+
+#: app/api/core.py
+msgid "This token cannot act as family members, so \"by\" is not allowed."
+msgstr ""
+
+#: app/api/core.py
+msgid "The API cannot act as the admin."
+msgstr ""
+
+#: app/api/core.py app/api/home.py
+#, python-format
+msgid "%(name)s is not a family member."
+msgstr ""
+
+#: app/api/core.py
+#, python-format
+msgid "This token is called %(name)s, the same as a person in HomeHub, so its changes would look like theirs. Ask the admin to rename the token under Admin tools > API access."
+msgstr ""
+
+#: app/api/core.py
+msgid "Say which family member this is for with \"by\"."
+msgstr ""
+
+#: app/api/core.py
+msgid "This token is not allowed to delete."
+msgstr ""
+
+#: app/api/core.py
+#, python-format
+msgid "%(field)s %(problem)s."
+msgstr ""
+
+#: app/api/core.py
+msgid "The request body can be at most 64 KB."
+msgstr ""
+
+#: app/api/core.py
+msgid "The request body must be JSON."
+msgstr ""
+
+#: app/api/core.py
+msgid "The request body must be a JSON object."
+msgstr ""
+
+#: app/api/expenses.py
+#, python-format
+msgid "quantity %(num)s,"
+msgstr ""
+
+#: app/api/expenses.py
+msgid "Use either date or from and to, not both."
+msgstr ""
+
+#: app/api/expenses.py app/api/home.py
+msgid "Send both from and to."
+msgstr ""
+
+#: app/api/expenses.py app/api/home.py
+msgid "to must be on or after from."
+msgstr ""
+
+#: app/api/expenses.py app/api/home.py
+#, python-format
+msgid "The range can be at most %(num)s days."
+msgstr ""
+
+#: app/api/expenses.py
+msgid "Only today and earlier days can be changed."
+msgstr ""
+
+#: app/api/expenses.py
+msgid "That recurring expense was not found."
+msgstr ""
+
+#: app/api/expenses.py
+#, python-format
+msgid "%(title)s on %(date)s was deleted in HomeHub. Add it back on the expenses page first."
+msgstr ""
+
+#: app/api/expenses.py app/blueprints/expenses.py
+msgid "That day is not part of this recurring rule."
+msgstr "O gün bu yinelenme kuralına ait değil."
+
+#: app/api/expenses.py
+#, python-format
+msgid "%(name)s cannot change this entry."
+msgstr ""
+
+#: app/api/expenses.py app/blueprints/expenses.py
+msgid "Only recurring days can be skipped."
+msgstr "Yalnızca yinelenen günler atlanabilir."
+
+#: app/api/expenses.py
+#, python-format
+msgid "%(title)s skipped on %(date)s."
+msgstr ""
+
+#: app/api/expenses.py
+#, python-format
+msgid "%(title)s restored on %(date)s."
+msgstr ""
+
+#: app/api/expenses.py
+msgid "This entry has no unit price, so its quantity cannot set the amount."
+msgstr ""
+
+#: app/api/expenses.py app/blueprints/expense_import.py
+#: app/blueprints/expenses.py
+msgid "Invalid amount."
+msgstr "Geçersiz tutar."
+
+#: app/api/expenses.py
+#, python-format
+msgid "Unknown category: %(name)s. Use one set on the expenses page: %(keys)s."
+msgstr ""
+
+#: app/api/expenses.py
+msgid "Say which family member paid with \"by\"."
+msgstr ""
+
+#: app/api/expenses.py app/api/household.py
+#, python-format
+msgid "%(field)s cannot be empty."
+msgstr ""
+
+#: app/api/expenses.py
+msgid "Send either amount, or unit_price and quantity."
+msgstr ""
+
+#: app/api/home.py
+msgid "This needs a token that can act as family members."
+msgstr ""
+
+#: app/api/home.py static/js/pages/home/presence.js templates/index.html
+msgid "Home"
+msgstr "Evde"
+
+#: app/api/home.py static/js/pages/home/presence.js templates/index.html
+msgid "Away"
+msgstr "Uzakta"
+
+#: app/api/home.py static/js/pages/home/presence.js templates/index.html
+msgid "Out"
+msgstr "Dışarıda"
+
+#: app/api/home.py static/js/pages/home/presence.js templates/index.html
+msgid "Traveling"
+msgstr "Seyahatte"
+
+#: app/api/home.py
+#, python-format
+msgid "%(name)s is home."
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "%(name)s is away."
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "Status for %(name)s: %(text)s"
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "Status for %(name)s cleared."
+msgstr ""
+
+#: app/api/home.py
+msgid "Use either scope or from and to, not both."
+msgstr ""
+
+#: app/api/home.py app/blueprints/dashboard.py
+msgid "Title required"
+msgstr "Başlık zorunlu"
+
+#: app/api/home.py
+#, python-format
+msgid "Unknown category: %(name)s. Use a key from config.yml: %(keys)s."
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "Reminder added: %(title)s, %(when)s."
+msgstr ""
+
+#: app/api/home.py
+msgid "This is a date of a recurring reminder. Recurring reminders are changed in HomeHub."
+msgstr ""
+
+#: app/api/home.py
+msgid "That reminder was not found."
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "%(name)s cannot change this reminder."
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "%(title)s is done."
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "%(title)s is not done."
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+msgstr ""
+
+#: app/api/home.py
+msgid "Send at least one field to change."
+msgstr ""
+
+#: app/api/home.py
+msgid "This reminder belongs to a recurring reminder. Recurring reminders are changed in HomeHub."
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "Reminder updated: %(title)s, %(when)s."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Added to the shopping list: %(item)s."
+msgstr ""
+
+#: app/api/household.py
+msgid "That item was not found."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(item)s ticked off."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(item)s is back on the shopping list."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Chore added: %(chore)s, due %(date)s."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Chore added: %(chore)s."
+msgstr ""
+
+#: app/api/household.py
+msgid "That chore was not found."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "This is an old copy of the recurring chore %(chore)s. Use chore %(id)s, the current one."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(chore)s is already done. Next due on %(date)s."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(chore)s is already done."
+msgstr ""
+
+#: app/api/household.py app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s done. That was its last date."
+msgstr "%(chore)s tamamlandı. Bu son tarihiydi."
+
+#: app/api/household.py app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s done. Next due on %(date)s."
+msgstr "%(chore)s tamamlandı. Sıradaki tarih: %(date)s."
+
+#: app/api/household.py app/blueprints/chores.py
+msgid "This recurring chore has ended."
+msgstr "Bu yinelenen görev sona erdi."
+
+#: app/api/household.py app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s is open again. Due on %(date)s."
+msgstr "%(chore)s yeniden açık. Son tarih: %(date)s."
+
+#: app/api/household.py
+#, python-format
+msgid "%(chore)s is not done."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(chore)s done."
+msgstr ""
+
+#: app/api/household.py app/blueprints/notes.py
+msgid "Note added."
+msgstr "Not eklendi."
+
+#: app/api/household.py app/blueprints/recipes.py
+msgid "Invalid link URL."
+msgstr "Geçersiz bağlantı adresi."
+
+#: app/api/household.py app/blueprints/recipes.py static/js/pages/recipes.js
+msgid "Please add ingredients or instructions (or both)."
+msgstr "Lütfen malzemeleri ya da hazırlanışı (ya da ikisini) ekleyin."
+
+#: app/api/household.py
+#, python-format
+msgid "Recipe added: %(title)s."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Added %(name)s, expires %(date)s."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this item."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Shopping item updated: %(item)s%(tags)s."
+msgstr ""
+
+#: app/api/household.py
+msgid "This chore belongs to a recurring chore. Recurring chores are changed in HomeHub."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this chore."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid ", due %(date)s"
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Chore updated: %(chore)s%(due)s."
+msgstr ""
+
+#: app/api/household.py
+msgid "That recipe was not found."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this recipe."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Recipe updated: %(title)s."
+msgstr ""
+
+#: app/api/mcp.py
+msgid "The MCP endpoint only accepts POST."
+msgstr ""
+
+#: app/api/routes.py
+#, python-format
+msgid "%(field)s was given more than once."
+msgstr ""
+
+#: app/api/routes.py
+#, python-format
+msgid "%(field)s is not a known field here."
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Not available for this tool"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Who is home"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Everyone's Home or Away"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Set a person Home or Away (needs Act as family members)"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Personal status"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Everyone's status text"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Set or clear a person's status (needs Act as family members)"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Notice board"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Read only. Only the admin can change the notice in HomeHub."
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Not available: only the admin can change the notice"
+msgstr ""
+
+#: app/api/tokens.py templates/index.html
+msgid "Reminders"
+msgstr "Hatırlatıcılar"
+
+#: app/api/tokens.py
+msgid "Reminders for a day, a week or a range"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Add and edit reminders, mark them done or not done"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Shopping list"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Items with their tags"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Add, edit and tick items"
+msgstr ""
+
+#: app/api/tokens.py templates/index.html
+msgid "Chores"
+msgstr "Ev İşleri"
+
+#: app/api/tokens.py
+msgid "Chores with due dates and tags"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Add and edit chores, mark them done or not done"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Notes"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Shared notes"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Add a note"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Recipes"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Recipes with their tags"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Add and edit recipes"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Expiry tracker"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Items with expiry dates"
+msgstr ""
+
+#: app/api/tokens.py templates/shopping.html
+msgid "Add an item"
+msgstr "Öğe ekle"
+
+#: app/api/tokens.py
+msgid "Expenses"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Recurring expenses and entries"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Skip or restore a recurring day, change its quantity, add an expense"
+msgstr ""
+
+#: app/api/tokens.py static/js/pages/api_access.js
+msgid "Give the token a name."
+msgstr ""
+
+#: app/api/tokens.py
+#, python-format
+msgid "The name can be at most %(num)s characters."
+msgstr ""
+
+#: app/api/tokens.py
+msgid "The name cannot be the admin name."
+msgstr ""
+
+#: app/api/tokens.py
+msgid "The name cannot be the name of a family member."
+msgstr ""
+
+#: app/api/tokens.py
+#, python-format
+msgid "A revoked token is already called %(name)s. Regenerate it to use it again, or pick another name."
+msgstr ""
+
+#: app/api/tokens.py
+#, python-format
+msgid "A token called %(name)s already exists."
+msgstr ""
+
+#: app/api/tokens.py
+#, python-format
+msgid "Unknown tool: %(name)s."
+msgstr ""
+
+#: app/api/tokens.py
+#, python-format
+msgid "%(tool)s cannot be given the level %(level)s."
+msgstr ""
+
+#: app/api/tokens.py
+#, python-format
+msgid "%(tool)s with Read & write needs Act as family members."
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Revoke the token before deleting it."
 msgstr ""
 
 #: app/blueprints/__init__.py
@@ -37,6 +628,41 @@ msgstr "Çevrimdışısınız"
 #: app/blueprints/__init__.py
 msgid "This page is not available offline."
 msgstr "Bu sayfa çevrimdışı kullanılamıyor."
+
+#: app/blueprints/api_admin.py
+msgid "Only admin can manage API tokens."
+msgstr ""
+
+#: app/blueprints/api_admin.py templates/api_access.html
+msgid "Read & write"
+msgstr ""
+
+#: app/blueprints/api_admin.py templates/api_access.html
+msgid "Read"
+msgstr ""
+
+#: app/blueprints/api_admin.py
+msgid "Give the token access to at least one tool."
+msgstr ""
+
+#: app/blueprints/api_admin.py
+msgid "That token was not found."
+msgstr ""
+
+#: app/blueprints/api_admin.py
+#, python-format
+msgid "Token %(old)s renamed to %(new)s. The token itself did not change."
+msgstr ""
+
+#: app/blueprints/api_admin.py
+#, python-format
+msgid "Token %(name)s deleted."
+msgstr ""
+
+#: app/blueprints/api_admin.py
+#, python-format
+msgid "Token %(name)s revoked. Anything that used it can no longer reach HomeHub."
+msgstr ""
 
 #: app/blueprints/auth.py
 msgid "This request came from another website and was blocked."
@@ -214,25 +840,6 @@ msgid "Recurring chore rule deleted."
 msgstr "Yinelenen görev kuralı silindi."
 
 #: app/blueprints/chores.py
-msgid "This recurring chore has ended."
-msgstr "Bu yinelenen görev sona erdi."
-
-#: app/blueprints/chores.py
-#, python-format
-msgid "%(chore)s is open again. Due on %(date)s."
-msgstr "%(chore)s yeniden açık. Son tarih: %(date)s."
-
-#: app/blueprints/chores.py
-#, python-format
-msgid "%(chore)s done. That was its last date."
-msgstr "%(chore)s tamamlandı. Bu son tarihiydi."
-
-#: app/blueprints/chores.py
-#, python-format
-msgid "%(chore)s done. Next due on %(date)s."
-msgstr "%(chore)s tamamlandı. Sıradaki tarih: %(date)s."
-
-#: app/blueprints/chores.py
 msgid "Chore deleted."
 msgstr "Görev silindi."
 
@@ -263,10 +870,6 @@ msgstr "Bu yinelenen hatırlatıcı zaten sona erdi ve geçmiş tarihleri olduğ
 #: app/blueprints/dashboard.py
 msgid "With these settings there are no dates left from today. Choose a later end date."
 msgstr "Bu ayarlarla bugünden itibaren hiç tarih kalmıyor. Daha ileri bir bitiş tarihi seçin."
-
-#: app/blueprints/dashboard.py
-msgid "Title required"
-msgstr "Başlık zorunlu"
 
 #: app/blueprints/dashboard.py
 msgid "Invalid date"
@@ -376,10 +979,6 @@ msgstr ""
 #: app/blueprints/expense_import.py
 msgid "No amount (for example a credit or a balance line)."
 msgstr ""
-
-#: app/blueprints/expense_import.py app/blueprints/expenses.py
-msgid "Invalid amount."
-msgstr "Geçersiz tutar."
 
 #: app/blueprints/expense_import.py
 msgid "Choose who paid, below."
@@ -610,10 +1209,6 @@ msgid "Not allowed to change entry."
 msgstr "Kaydı değiştirme izniniz yok."
 
 #: app/blueprints/expenses.py
-msgid "Only recurring days can be skipped."
-msgstr "Yalnızca yinelenen günler atlanabilir."
-
-#: app/blueprints/expenses.py
 msgid "Day skipped."
 msgstr "Gün atlandı."
 
@@ -624,10 +1219,6 @@ msgstr "Gün geri alındı."
 #: app/blueprints/expenses.py
 msgid "Not allowed to restore this day."
 msgstr "Bu günü geri getirme izniniz yok."
-
-#: app/blueprints/expenses.py
-msgid "That day is not part of this recurring rule."
-msgstr "O gün bu yinelenme kuralına ait değil."
 
 #: app/blueprints/expenses.py
 msgid "That day is already there."
@@ -741,10 +1332,6 @@ msgid "Not allowed to edit note."
 msgstr "Notu düzenleme izniniz yok."
 
 #: app/blueprints/notes.py
-msgid "Note added."
-msgstr "Not eklendi."
-
-#: app/blueprints/notes.py
 msgid "Note deleted."
 msgstr "Not silindi."
 
@@ -763,14 +1350,6 @@ msgstr "QR kod silindi."
 #: app/blueprints/qr.py
 msgid "Not allowed to delete QR code."
 msgstr "QR kodu silme izniniz yok."
-
-#: app/blueprints/recipes.py
-msgid "Invalid link URL."
-msgstr "Geçersiz bağlantı adresi."
-
-#: app/blueprints/recipes.py static/js/pages/recipes.js
-msgid "Please add ingredients or instructions (or both)."
-msgstr "Lütfen malzemeleri ya da hazırlanışı (ya da ikisini) ekleyin."
 
 #: app/blueprints/recipes.py
 msgid "Recipe updated."
@@ -943,6 +1522,36 @@ msgstr ""
 
 #: static/js/month-picker.js
 msgid "This month"
+msgstr ""
+
+#: static/js/pages/api_access.js
+msgid "Copied"
+msgstr ""
+
+#: static/js/pages/api_access.js
+msgid "Select the text and copy it."
+msgstr ""
+
+#: static/js/pages/api_access.js
+msgid "Rename token"
+msgstr ""
+
+#: static/js/pages/api_access.js
+#, python-brace-format
+msgid "Give {name} a new name. The token itself and its access stay the same."
+msgstr ""
+
+#: static/js/pages/api_access.js
+msgid "New name"
+msgstr ""
+
+#: static/js/pages/api_access.js templates/api_access.html
+msgid "Rename"
+msgstr ""
+
+#: static/js/pages/api_access.js
+#, python-brace-format
+msgid "The name can be at most {num} characters."
 msgstr ""
 
 #: static/js/pages/backups.js
@@ -1247,22 +1856,6 @@ msgstr "Bu yinelenme kuralı silinsin mi?"
 #: static/js/pages/expenses_recurring.js templates/expenses_recurring.html
 msgid "Delete Rule"
 msgstr "Kuralı Sil"
-
-#: static/js/pages/home/presence.js templates/index.html
-msgid "Home"
-msgstr "Evde"
-
-#: static/js/pages/home/presence.js templates/index.html
-msgid "Away"
-msgstr "Uzakta"
-
-#: static/js/pages/home/presence.js templates/index.html
-msgid "Out"
-msgstr "Dışarıda"
-
-#: static/js/pages/home/presence.js templates/index.html
-msgid "Traveling"
-msgstr "Seyahatte"
 
 #: static/js/pages/home/presence.js
 msgid "Status cleared"
@@ -1709,11 +2302,11 @@ msgid "Add"
 msgstr "Ekle"
 
 #: static/js/base/app.js static/js/pages/expenses.js
-#: static/js/pages/home/reminders.js static/js/tags.js templates/backups.html
-#: templates/chores.html templates/expiry.html templates/media.html
-#: templates/notes.html templates/pdfs.html templates/qr.html
-#: templates/recipes.html templates/shopping.html templates/shorten.html
-#: templates/upload.html
+#: static/js/pages/home/reminders.js static/js/tags.js
+#: templates/api_access.html templates/backups.html templates/chores.html
+#: templates/expiry.html templates/media.html templates/notes.html
+#: templates/pdfs.html templates/qr.html templates/recipes.html
+#: templates/shopping.html templates/shorten.html templates/upload.html
 msgid "Delete"
 msgstr "Sil"
 
@@ -1942,6 +2535,241 @@ msgstr "Tutara göre"
 msgid "%(name)s split value"
 msgstr "%(name)s paylaşım değeri"
 
+#: templates/api_access.html
+msgid "No access"
+msgstr ""
+
+#: templates/api_access.html templates/api_access_locked.html
+#: templates/base.html templates/index.html
+msgid "API access"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Tokens let Home Assistant, phone shortcuts, scripts and AI assistants use HomeHub. The API is off until you create a token."
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "New token for %(name)s"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Copy this token now. HomeHub keeps only a fingerprint of it and cannot show it again."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Token"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Copy"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Try it:"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Copy the example"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Keep it secret: anyone with this token can use what it gives access to. If it leaks, regenerate or revoke it below."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Create a token"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Name"
+msgstr ""
+
+#: templates/api_access.html
+msgid "For example Home Assistant or Hermes"
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "Things this token adds without acting as a family member show this name as who added them. Up to %(num)s characters; it cannot be the name of a family member, the admin or another token."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Start from a preset"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Read everything"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Home automation"
+msgstr ""
+
+#: templates/api_access.html
+msgid "AI assistant"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Access per tool"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Tool"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Read & write:"
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "%(tool)s: %(level)s"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Act as family members"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Lets the client say which family member a change is for (the \"by\" field), for example the person who messaged an AI assistant. Needed to set who is home or a person's status. Never includes the admin."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Act as family members was turned on, because setting who is home or a person's status needs it."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Allow deleting"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Whatever a token can read can leave your home if the client passes it on. AI agents usually send what they read to their provider."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Create token"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Tokens"
+msgstr ""
+
+#: templates/api_access.html templates/api_access_locked.html
+msgid "API guide"
+msgstr ""
+
+#: templates/api_access.html templates/api_access_locked.html
+#, python-format
+msgid "Endpoints, examples for Home Assistant and scripts, and tips for AI agents are in the %(link)s."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Revoked"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Switched off in config.yml"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Acts as family members"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Can move reminders to the trash"
+msgstr ""
+
+#: templates/api_access.html
+msgid "This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Currently reaches nothing: its tools are switched off in config.yml."
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "Created %(time)s"
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "Last used %(time)s"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Not used yet"
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "Make a new token for %(name)s? The current one stops working at once, so update whatever uses it."
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "Make a new token for %(name)s? It gets the same access as before."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Regenerate"
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "Revoke %(name)s? Anything that uses this token stops working at once."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Revoke"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Recent activity"
+msgstr ""
+
+#: templates/api_access.html
+msgid "No changes made with this token yet."
+msgstr ""
+
+#: templates/api_access.html
+msgid "No tokens yet. The API is off."
+msgstr ""
+
+#: templates/api_access.html
+msgid "On the server you can do the same with:"
+msgstr ""
+
+#: templates/api_access_locked.html
+msgid "Tokens let Home Assistant, phone shortcuts, scripts and AI assistants use HomeHub."
+msgstr ""
+
+#: templates/api_access_locked.html
+msgid "Set an admin password first"
+msgstr ""
+
+#: templates/api_access_locked.html
+msgid "Tokens can read and change your household's data, so this page needs an admin password. On the server, run:"
+msgstr ""
+
+#: templates/api_access_locked.html
+msgid "Then switch to the admin user, unlock it, and open Admin tools > API access again."
+msgstr ""
+
+#: templates/api_access_locked.html
+msgid "Until then, you can manage tokens on the server instead, for example:"
+msgstr ""
+
 #: templates/backup_restore.html
 msgid "Back to backups"
 msgstr ""
@@ -1997,7 +2825,7 @@ msgstr "Yönetici şifresi"
 msgid "Remove this file"
 msgstr ""
 
-#: templates/backups.html
+#: templates/backups.html templates/base.html
 msgid "Backups"
 msgstr ""
 
@@ -2177,6 +3005,10 @@ msgstr "QR Üretici"
 #: templates/base.html templates/expenses.html
 msgid "Expense Tracker"
 msgstr "Harcama Takibi"
+
+#: templates/base.html
+msgid "Admin"
+msgstr ""
 
 #: templates/base.html
 msgid "Menu"
@@ -3028,10 +3860,6 @@ msgid "Remove my status"
 msgstr "Durumumu kaldır"
 
 #: templates/index.html
-msgid "Chores"
-msgstr "Ev İşleri"
-
-#: templates/index.html
 msgid "Open full list"
 msgstr "Tüm listeyi aç"
 
@@ -3040,11 +3868,11 @@ msgid "No open chores right now."
 msgstr "Şu anda açık ev işi yok."
 
 #: templates/index.html
-msgid "Backup"
+msgid "Admin tools"
 msgstr ""
 
 #: templates/index.html
-msgid "Create, download and restore backups of HomeHub's data."
+msgid "Back up HomeHub's data, and manage tokens for the API."
 msgstr ""
 
 #: templates/index.html
@@ -3061,12 +3889,12 @@ msgid "Until then, you can make and restore backups on the server with flask bac
 msgstr ""
 
 #: templates/index.html
-msgid "Calendar & Reminders"
-msgstr "Takvim ve Hatırlatıcılar"
+msgid "API tokens are managed on the server with flask api-token until an admin password is set."
+msgstr ""
 
 #: templates/index.html
-msgid "Reminders"
-msgstr "Hatırlatıcılar"
+msgid "Calendar & Reminders"
+msgstr "Takvim ve Hatırlatıcılar"
 
 #: templates/index.html
 msgid "Back to Today"
@@ -3430,10 +4258,6 @@ msgid "%(count)s to buy"
 msgstr "%(count)s alınacak"
 
 #: templates/shopping.html
-msgid "Add an item"
-msgstr "Öğe ekle"
-
-#: templates/shopping.html
 msgid "Tags (stores, categories)"
 msgstr "Etiketler (mağazalar, kategoriler)"
 
@@ -3529,5 +4353,32 @@ msgstr "Bu dosya silinsin mi? Sunucudan kaldırılır."
 #~ msgstr ""
 
 #~ msgid "Add a backup zip from another device to the list, for example to restore it here. Larger than the upload limit? Copy it into data/backups/ on the server instead."
+#~ msgstr ""
+
+#~ msgid "Backup"
+#~ msgstr ""
+
+#~ msgid "Create, download and restore backups of HomeHub's data."
+#~ msgstr ""
+
+#~ msgid "%(name)s cannot be the payer: use a family member."
+#~ msgstr ""
+
+#~ msgid "Say who paid with \"payer\" (or \"by\")."
+#~ msgstr ""
+
+#~ msgid "The notice"
+#~ msgstr ""
+
+#~ msgid "Add a reminder, mark it done or not done"
+#~ msgstr ""
+
+#~ msgid "Add an item, tick or untick it"
+#~ msgstr ""
+
+#~ msgid "Add a chore, mark it done or not done"
+#~ msgstr ""
+
+#~ msgid "Add a recipe"
 #~ msgstr ""
 

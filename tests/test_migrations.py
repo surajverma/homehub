@@ -130,3 +130,28 @@ def test_existing_null_units_keep_their_legacy_schedule(tmp_path):
     conn.close()
     # Null units follow the same fallback the scheduler used: daily/weekly by frequency, else monthly
     assert units == {1: 'week', 2: 'month', 3: 'month', 4: 'day', 5: 'week'}
+
+
+def test_api_tables_from_an_earlier_layout_get_missing_columns(tmp_path):
+    """An api_token table left by an unreleased earlier version is completed, never dropped."""
+    path = str(tmp_path / 'app.db')
+    make_old_db(path)
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE TABLE api_token (id INTEGER PRIMARY KEY, name TEXT NOT NULL, token_hash TEXT NOT NULL, "
+                 "permissions TEXT, created_at TIMESTAMP)")
+    conn.execute("INSERT INTO api_token (id, name, token_hash, permissions) VALUES (1, 'Old', 'abc', '{}')")
+    conn.execute("CREATE TABLE api_activity (id INTEGER PRIMARY KEY, token_id INTEGER, created_at TIMESTAMP)")
+    conn.commit()
+    conn.close()
+    assert migrations.run(path)
+    conn = sqlite3.connect(path)
+    for table, column, _type, _default in migrations.LATE_COLUMNS:
+        if table.startswith('api_'):
+            assert column in columns(conn, table), (table, column)
+    assert conn.execute("SELECT name, token_hash, prefix, act_as_members, allow_delete, revoked_at FROM api_token").fetchall() == [
+        ('Old', 'abc', '', 0, 0, None)]
+    conn.close()
+    # The app can read the upgraded table
+    engine = create_engine('sqlite:///' + path)
+    with engine.connect() as c:
+        assert c.execute(db.select(models.ApiToken.__table__)).fetchall()

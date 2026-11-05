@@ -142,11 +142,19 @@
                     switcher.appendChild(opt);
                 });
                 const existing = localStorage.getItem('username');
+                // Opened with ?user= naming the admin: ask for the admin password first (see base.html)
+                const pending = window.HomeHubAdmin.pendingUser;
                 if (existing){
                     switcher.value = existing;
-                } else {
+                } else if (!pending) {
                     // Show first-run user selection modal now that DOM is ready
                     showUserSelectModal(users);
+                }
+                if (pending){
+                    requestAdminUnlock().then(function(ok){
+                        if (ok){ localStorage.setItem('username', pending); location.reload(); }
+                        else if (!localStorage.getItem('username')) showUserSelectModal(users);
+                    });
                 }
                 switcher.addEventListener('change', async function(){
                     const admin = window.HomeHubAdmin;
@@ -241,6 +249,11 @@
             document.querySelectorAll('.edit-btn[data-creator], .editable-owner-only[data-creator]').forEach(el => {
                 const creator = el.getAttribute('data-creator');
                 el.style.display = allowed(creator) ? '' : 'none';
+            });
+            // Links to pages that read the user from the address (the sidebar's admin links), like the forms' hidden user field
+            // Only the query is set, so the link's own path is never rebuilt from page text
+            document.querySelectorAll('a[data-user-link]').forEach(function(a){
+                a.search = current ? '?user=' + encodeURIComponent(current) : '';
             });
             // Admin-only blocks (the server checks again on submit)
             document.querySelectorAll('.admin-only').forEach(el => {
