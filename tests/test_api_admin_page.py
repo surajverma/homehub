@@ -340,8 +340,8 @@ def test_sidebar_has_the_admin_group(bare, path):
     body = bare.client.get(path).get_data(as_text=True)
     assert 'id="sidebarAdmin" class="admin-only sidebar-admin" style="display:none"' in body
     group = sidebar_admin(body)
-    assert 'href="/admin/backups" data-user-link="/admin/backups"' in group and 'fa-box-archive' in group
-    assert 'href="/admin/api" data-user-link="/admin/api"' in group and 'fa-key' in group
+    assert 'href="/admin/backups" data-user-link' in group and 'fa-box-archive' in group
+    assert 'href="/admin/api" data-user-link' in group and 'fa-key' in group
     assert 'title="Backups"' in group and 'title="API access"' in group
     assert group.count('class="flex items-center gap-3 py-2 px-3 sidebar-link"') == 2
     # Inside the sidebar nav, after the other links

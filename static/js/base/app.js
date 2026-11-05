@@ -251,8 +251,9 @@
                 el.style.display = allowed(creator) ? '' : 'none';
             });
             // Links to pages that read the user from the address (the sidebar's admin links), like the forms' hidden user field
+            // Only the query is set, so the link's own path is never rebuilt from page text
             document.querySelectorAll('a[data-user-link]').forEach(function(a){
-                a.setAttribute('href', a.getAttribute('data-user-link') + '?user=' + encodeURIComponent(current));
+                a.search = current ? '?user=' + encodeURIComponent(current) : '';
             });
             // Admin-only blocks (the server checks again on submit)
             document.querySelectorAll('.admin-only').forEach(el => {

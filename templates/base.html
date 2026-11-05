@@ -180,7 +180,7 @@
                 <div id="sidebarAdmin" class="admin-only sidebar-admin" style="display:none" role="group" aria-labelledby="sidebarAdminLabel">
                     <p id="sidebarAdminLabel" class="nav-label sidebar-admin-label">{{ _('Admin') }}</p>
                     {% for href, icon, label in [('/admin/backups', 'fa-box-archive', _('Backups')), ('/admin/api', 'fa-key', _('API access'))] %}
-                    <a href="{{ href }}" data-user-link="{{ href }}" class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ label }}"><i class="fa-solid {{ icon }} w-5 text-center" aria-hidden="true"></i><span class="nav-label">{{ label }}</span></a>
+                    <a href="{{ href }}" data-user-link class="flex items-center gap-3 py-2 px-3 sidebar-link" title="{{ label }}"><i class="fa-solid {{ icon }} w-5 text-center" aria-hidden="true"></i><span class="nav-label">{{ label }}</span></a>
                     {% endfor %}
                 </div>
             </nav>
