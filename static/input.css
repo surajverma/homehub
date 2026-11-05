@@ -551,3 +551,20 @@ input[type="file"]::file-selector-button:hover { background-color: var(--hover-b
     color: #fff;
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25);
 }
+
+/* Sidebar: the Admin group (links to Backups and API access), shown only to the admin */
+.sidebar .sidebar-admin {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+.sidebar .sidebar-admin-label {
+    padding: 0 0.75rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sidebar-link-color);
+    opacity: 0.8;
+}

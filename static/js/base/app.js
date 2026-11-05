@@ -250,6 +250,10 @@
                 const creator = el.getAttribute('data-creator');
                 el.style.display = allowed(creator) ? '' : 'none';
             });
+            // Links to pages that read the user from the address (the sidebar's admin links), like the forms' hidden user field
+            document.querySelectorAll('a[data-user-link]').forEach(function(a){
+                a.setAttribute('href', a.getAttribute('data-user-link') + '?user=' + encodeURIComponent(current));
+            });
             // Admin-only blocks (the server checks again on submit)
             document.querySelectorAll('.admin-only').forEach(el => {
                 el.style.display = (current === adminName || current === 'Administrator' || current === 'admin') ? '' : 'none';

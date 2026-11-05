@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 05:29+0000\n"
+"POT-Creation-Date: 2026-11-05 05:30+0000\n"
 "PO-Revision-Date: 2026-10-11 13:20+0800\n"
 "Last-Translator: ump45nose\n"
 "Language: zh\n"
@@ -2540,7 +2540,7 @@ msgid "No access"
 msgstr ""
 
 #: templates/api_access.html templates/api_access_locked.html
-#: templates/index.html
+#: templates/base.html templates/index.html
 msgid "API access"
 msgstr ""
 
@@ -2825,7 +2825,7 @@ msgstr "管理员密码"
 msgid "Remove this file"
 msgstr ""
 
-#: templates/backups.html
+#: templates/backups.html templates/base.html
 msgid "Backups"
 msgstr ""
 
@@ -3005,6 +3005,10 @@ msgstr "二维码生成"
 #: templates/base.html templates/expenses.html
 msgid "Expense Tracker"
 msgstr "支出记账"
+
+#: templates/base.html
+msgid "Admin"
+msgstr ""
 
 #: templates/base.html
 msgid "Menu"

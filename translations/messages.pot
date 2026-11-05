@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-11-05 05:29+0000\n"
+"POT-Creation-Date: 2026-11-05 05:30+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -2568,7 +2568,7 @@ msgid "No access"
 msgstr ""
 
 #: templates/api_access.html templates/api_access_locked.html
-#: templates/index.html
+#: templates/base.html templates/index.html
 msgid "API access"
 msgstr ""
 
@@ -2854,7 +2854,7 @@ msgstr ""
 msgid "Remove this file"
 msgstr ""
 
-#: templates/backups.html
+#: templates/backups.html templates/base.html
 msgid "Backups"
 msgstr ""
 
@@ -3034,6 +3034,10 @@ msgstr ""
 
 #: templates/base.html templates/expenses.html
 msgid "Expense Tracker"
+msgstr ""
+
+#: templates/base.html
+msgid "Admin"
 msgstr ""
 
 #: templates/base.html

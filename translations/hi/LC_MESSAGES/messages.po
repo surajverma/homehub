@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 05:29+0000\n"
+"POT-Creation-Date: 2026-11-05 05:30+0000\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -2570,7 +2570,7 @@ msgid "No access"
 msgstr "अनुमति नहीं"
 
 #: templates/api_access.html templates/api_access_locked.html
-#: templates/index.html
+#: templates/base.html templates/index.html
 msgid "API access"
 msgstr "API एक्सेस"
 
@@ -2856,7 +2856,7 @@ msgstr "एडमिन पासवर्ड"
 msgid "Remove this file"
 msgstr "यह फ़ाइल हटाएं"
 
-#: templates/backups.html
+#: templates/backups.html templates/base.html
 msgid "Backups"
 msgstr "बैकअप"
 
@@ -3037,6 +3037,10 @@ msgstr "क्यूआर जेनरेटर"
 #: templates/base.html templates/expenses.html
 msgid "Expense Tracker"
 msgstr "खर्च ट्रैकर"
+
+#: templates/base.html
+msgid "Admin"
+msgstr "एडमिन"
 
 #: templates/base.html
 msgid "Menu"

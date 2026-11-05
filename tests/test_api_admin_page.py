@@ -327,3 +327,36 @@ def test_delete_from_another_site_is_blocked(home):
 def test_write_help_mentions_edits(home):
     body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
     assert 'Add, edit and tick items' in body and 'Add and edit recipes' in body
+
+
+# --- Admin group in the sidebar (navigation only) ---
+
+def sidebar_admin(body):
+    return body.split('id="sidebarAdmin"')[1].split('</div>')[0]
+
+
+@pytest.mark.parametrize('path', ['/', '/notes', '/shopping'])
+def test_sidebar_has_the_admin_group(bare, path):
+    body = bare.client.get(path).get_data(as_text=True)
+    assert 'id="sidebarAdmin" class="admin-only sidebar-admin" style="display:none"' in body
+    group = sidebar_admin(body)
+    assert 'href="/admin/backups" data-user-link="/admin/backups"' in group and 'fa-box-archive' in group
+    assert 'href="/admin/api" data-user-link="/admin/api"' in group and 'fa-key' in group
+    assert 'title="Backups"' in group and 'title="API access"' in group
+    assert group.count('class="flex items-center gap-3 py-2 px-3 sidebar-link"') == 2
+    # Inside the sidebar nav, after the other links
+    nav = body.split('id="sidebarNav"')[1].split('</nav>')[0]
+    assert 'id="sidebarAdmin"' in nav
+
+
+def test_admin_links_still_refuse_others(bare):
+    # No admin password: both pages explain how to set one
+    assert bare.client.get('/admin/api?user=Administrator').status_code == 403
+    assert bare.client.get('/admin/backups?user=Administrator').status_code == 403
+    with bare.ctx():
+        admin.set_admin_password(PASSWORD)
+    # Password set but this browser hasn't unlocked it, or a family member: sent back to Welcome
+    for user in (ADMIN, 'Priya'):
+        for page in ('/admin/api', '/admin/backups'):
+            resp = bare.client.get(f'{page}?user={user}')
+            assert resp.status_code == 302 and resp.headers['Location'].endswith('/'), (page, user)
