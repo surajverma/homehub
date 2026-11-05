@@ -281,3 +281,49 @@ def test_every_row_has_actions_in_the_same_place(home):
     body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
     assert body.count('class="flex flex-wrap items-center gap-2 token-actions"') == 2
     assert body.count('>Rename</button>') == 2
+
+
+def test_delete_on_the_page(home):
+    create(home, name='Hermes', notice='read')
+    with home.ctx():
+        token_id = ApiToken.query.one().id
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert f'/admin/api/{token_id}/delete' not in body  # only revoked tokens can be deleted
+    resp = home.client.post(f'/admin/api/{token_id}/delete', data={'user': ADMIN}, follow_redirects=True)
+    assert 'Revoke the token before deleting it' in resp.get_data(as_text=True)
+    home.client.post(f'/admin/api/{token_id}/revoke', data={'user': ADMIN})
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert re.search(r'delete"\s+data-confirm="Delete Hermes\? This removes it from the list for good\. Its activity history is kept\."', body)
+    home.client.post(f'/admin/api/{token_id}/delete', data={'user': ADMIN})
+    with home.ctx():
+        assert ApiToken.query.count() == 0
+    assert create(home, name='Hermes', notice='read').status_code == 200
+
+
+def test_delete_needs_the_unlocked_admin(bare):
+    with bare.ctx():
+        admin.set_admin_password(PASSWORD)
+        row, _secret = tokens.create_token('Hermes', {'notice': 'read'})
+        tokens.revoke_token(row)
+        token_id = row.id
+    for user in (ADMIN, 'Priya'):
+        assert bare.client.post(f'/admin/api/{token_id}/delete', data={'user': user}).status_code == 302
+    assert bare.client.get(f'/admin/api/{token_id}/delete').status_code in (302, 405)
+    with bare.ctx():
+        assert ApiToken.query.count() == 1
+
+
+def test_delete_from_another_site_is_blocked(home):
+    with home.ctx():
+        row, _secret = tokens.create_token('Hermes', {'notice': 'read'})
+        tokens.revoke_token(row)
+        token_id = row.id
+    resp = home.client.post(f'/admin/api/{token_id}/delete', data={'user': ADMIN}, headers={'Sec-Fetch-Site': 'cross-site'})
+    assert resp.status_code == 403
+    with home.ctx():
+        assert ApiToken.query.count() == 1
+
+
+def test_write_help_mentions_edits(home):
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert 'Add, edit and tick items' in body and 'Add and edit recipes' in body

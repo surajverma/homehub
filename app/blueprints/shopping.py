@@ -18,6 +18,24 @@ def add_shopping_item(item: str, creator: str, tags: list) -> ShoppingItem:
     return shopping_item
 
 
+def edited_tags(raw_tags: list) -> list:
+    """Tags sent with an edit, as the edit routes store them: text entries, each sanitised."""
+    return [sanitize_text(t) for t in raw_tags if isinstance(t, str)]
+
+
+def edit_shopping_item(item: ShoppingItem, new_item, raw_tags) -> list:
+    """Change an item's text (when given as text) and, unless raw_tags is None, replace its tags; commits.
+
+    Returns the item's tags as stored.
+    """
+    if isinstance(new_item, str):
+        item.item = sanitize_text(new_item)
+    if raw_tags is not None:
+        item.tags = json.dumps(edited_tags(raw_tags))
+    db.session.commit()
+    return item_tags(item.tags)
+
+
 def item_tags(raw) -> list:
     try:
         tags = json.loads(raw or '[]')
@@ -157,15 +175,7 @@ def api_update_shopping(item_id):
             return jsonify({"ok": False, "error": "not allowed"}), 403
         new_item = data.get('item')
         raw_tags = data.get('tags', [])
-        if isinstance(new_item, str):
-            item.item = sanitize_text(new_item)
-        tags = []
-        if isinstance(raw_tags, list):
-            for t in raw_tags:
-                if isinstance(t, str):
-                    tags.append(sanitize_text(t))
-        item.tags = json.dumps(tags)
-        db.session.commit()
+        tags = edit_shopping_item(item, new_item, raw_tags if isinstance(raw_tags, list) else [])
         return jsonify({"ok": True, "item": {"id": item.id, "item": item.item, "tags": tags}})
     except Exception:
         return json_error_response('Could not update shopping item %s', item_id)

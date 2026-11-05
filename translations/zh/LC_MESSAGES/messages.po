@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 16:53+0000\n"
+"POT-Creation-Date: 2026-11-05 04:52+0000\n"
 "PO-Revision-Date: 2026-10-11 13:20+0800\n"
 "Last-Translator: ump45nose\n"
 "Language: zh\n"
@@ -278,6 +278,19 @@ msgstr ""
 msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
 msgstr ""
 
+#: app/api/home.py
+msgid "Send at least one field to change."
+msgstr ""
+
+#: app/api/home.py
+msgid "This reminder belongs to a recurring reminder. Recurring reminders are changed in HomeHub."
+msgstr ""
+
+#: app/api/home.py
+#, python-format
+msgid "Reminder updated: %(title)s, %(when)s."
+msgstr ""
+
 #: app/api/household.py
 #, python-format
 msgid "Added to the shopping list: %(item)s."
@@ -372,6 +385,49 @@ msgstr ""
 msgid "Added %(name)s, expires %(date)s."
 msgstr ""
 
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this item."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Shopping item updated: %(item)s%(tags)s."
+msgstr ""
+
+#: app/api/household.py
+msgid "This chore belongs to a recurring chore. Recurring chores are changed in HomeHub."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this chore."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid ", due %(date)s"
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Chore updated: %(chore)s%(due)s."
+msgstr ""
+
+#: app/api/household.py
+msgid "That recipe was not found."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this recipe."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "Recipe updated: %(title)s."
+msgstr ""
+
 #: app/api/mcp.py
 msgid "The MCP endpoint only accepts POST."
 msgstr ""
@@ -435,7 +491,7 @@ msgid "Reminders for a day, a week or a range"
 msgstr ""
 
 #: app/api/tokens.py
-msgid "Add a reminder, mark it done or not done"
+msgid "Add and edit reminders, mark them done or not done"
 msgstr ""
 
 #: app/api/tokens.py
@@ -447,7 +503,7 @@ msgid "Items with their tags"
 msgstr ""
 
 #: app/api/tokens.py
-msgid "Add an item, tick or untick it"
+msgid "Add, edit and tick items"
 msgstr ""
 
 #: app/api/tokens.py templates/index.html
@@ -459,7 +515,7 @@ msgid "Chores with due dates and tags"
 msgstr ""
 
 #: app/api/tokens.py
-msgid "Add a chore, mark it done or not done"
+msgid "Add and edit chores, mark them done or not done"
 msgstr ""
 
 #: app/api/tokens.py
@@ -483,7 +539,7 @@ msgid "Recipes with their tags"
 msgstr ""
 
 #: app/api/tokens.py
-msgid "Add a recipe"
+msgid "Add and edit recipes"
 msgstr ""
 
 #: app/api/tokens.py
@@ -552,6 +608,10 @@ msgstr ""
 msgid "%(tool)s with Read & write needs Act as family members."
 msgstr ""
 
+#: app/api/tokens.py
+msgid "Revoke the token before deleting it."
+msgstr ""
+
 #: app/blueprints/__init__.py
 msgid "Offline"
 msgstr "离线"
@@ -587,6 +647,11 @@ msgstr ""
 #: app/blueprints/api_admin.py
 #, python-format
 msgid "Token %(old)s renamed to %(new)s. The token itself did not change."
+msgstr ""
+
+#: app/blueprints/api_admin.py
+#, python-format
+msgid "Token %(name)s deleted."
 msgstr ""
 
 #: app/blueprints/api_admin.py
@@ -2232,11 +2297,11 @@ msgid "Add"
 msgstr "添加"
 
 #: static/js/base/app.js static/js/pages/expenses.js
-#: static/js/pages/home/reminders.js static/js/tags.js templates/backups.html
-#: templates/chores.html templates/expiry.html templates/media.html
-#: templates/notes.html templates/pdfs.html templates/qr.html
-#: templates/recipes.html templates/shopping.html templates/shorten.html
-#: templates/upload.html
+#: static/js/pages/home/reminders.js static/js/tags.js
+#: templates/api_access.html templates/backups.html templates/chores.html
+#: templates/expiry.html templates/media.html templates/notes.html
+#: templates/pdfs.html templates/qr.html templates/recipes.html
+#: templates/shopping.html templates/shorten.html templates/upload.html
 msgid "Delete"
 msgstr "删除"
 
@@ -2648,6 +2713,11 @@ msgstr ""
 
 #: templates/api_access.html
 msgid "Regenerate"
+msgstr ""
+
+#: templates/api_access.html
+#, python-format
+msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
 msgstr ""
 
 #: templates/api_access.html
@@ -4289,5 +4359,17 @@ msgstr "删除此文件？它将从服务器上移除。"
 #~ msgstr ""
 
 #~ msgid "The notice"
+#~ msgstr ""
+
+#~ msgid "Add a reminder, mark it done or not done"
+#~ msgstr ""
+
+#~ msgid "Add an item, tick or untick it"
+#~ msgstr ""
+
+#~ msgid "Add a chore, mark it done or not done"
+#~ msgstr ""
+
+#~ msgid "Add a recipe"
 #~ msgstr ""
 

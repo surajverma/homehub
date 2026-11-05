@@ -95,6 +95,8 @@ def public_schema(prop: dict) -> dict:
     out = copy.deepcopy(prop)
     for key in ('in', 'x-casefold'):
         out.pop(key, None)
+    if out.pop('x-nullable', False):
+        out['type'] = [out['type'], 'null']
     return out
 
 
@@ -175,6 +177,9 @@ def validate(op: Operation, args: dict, *, from_query=()) -> dict:
         if prop is None:
             raise ArgumentError(name, 'is not a known field')
         if value is None:
+            # null clears a field that allows it (x-nullable); elsewhere it counts as not sent
+            if prop.get('x-nullable'):
+                cleaned[name] = None
             continue
         cleaned[name] = _check(name, prop, value, name in from_query)
     for name in op.required:

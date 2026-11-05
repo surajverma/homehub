@@ -437,6 +437,19 @@ def tick_recurring_chore(chore: Chore, rule: RecurringChore) -> tuple:
     return before, next_due
 
 
+def update_chore_fields(chore: Chore, description, raw_tags) -> list:
+    """Change a chore's description (when given as text) and, unless raw_tags is None, replace its tags; commits.
+
+    Returns the chore's tags as stored.
+    """
+    if isinstance(description, str):
+        chore.description = sanitize_text(description)
+    if raw_tags is not None:
+        chore.tags = json.dumps([sanitize_text(t) for t in raw_tags if isinstance(t, str)])
+    db.session.commit()
+    return chore_tags(chore.tags)
+
+
 def chore_tags(raw) -> list:
     try:
         tg = json.loads(raw or '[]')
@@ -571,15 +584,7 @@ def api_update_chore(chore_id):
             return jsonify({"ok": False, "error": "not allowed"}), 403
         desc = data.get('description')
         raw_tags = data.get('tags', [])
-        if isinstance(desc, str):
-            chore.description = sanitize_text(desc)
-        tags = []
-        if isinstance(raw_tags, list):
-            for t in raw_tags:
-                if isinstance(t, str):
-                    tags.append(sanitize_text(t))
-        chore.tags = json.dumps(tags)
-        db.session.commit()
+        tags = update_chore_fields(chore, desc, raw_tags if isinstance(raw_tags, list) else [])
         return jsonify({"ok": True, "item": {"id": chore.id, "description": chore.description, "tags": tags}})
     except Exception:
         return json_error_response('Could not update chore %s', chore_id)

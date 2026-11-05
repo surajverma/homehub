@@ -573,13 +573,12 @@ def api_reminders_create():
     return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
 
 
-@main_bp.route('/api/reminders/<int:rid>', methods=['PATCH'])
-def api_reminders_update(rid):
-    r = db.get_or_404(Reminder, rid)
-    payload = request.get_json(silent=True) or {}
-    user = sanitize_text(payload.get('creator', ''))
-    if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
+def apply_reminder_changes(r: Reminder, payload: dict) -> str | None:
+    """Apply the fields in ``payload`` to a reminder, as the calendar's edit does; nothing is committed.
+
+    Returns the message to show when the dates or times don't fit together (the changes are then not
+    meant to be saved), else None. A key sent as null keeps the current value.
+    """
     if 'title' in payload:
         title = sanitize_text(payload['title'])
         if title:
@@ -640,7 +639,7 @@ def api_reminders_update(rid):
 
     ok, err = _validate_range(new_start_d, new_start_t, new_end_d, new_end_t)
     if not ok:
-        return jsonify({'ok': False, 'error': err}), 400
+        return err
 
     r.date = new_start_d
     if hasattr(r, 'time'):
@@ -659,6 +658,19 @@ def api_reminders_update(rid):
         r.category = sanitize_text(payload.get('category')) if payload.get('category') else None
     if hasattr(r, 'color') and 'color' in payload:
         r.color = sanitize_text(payload.get('color')) if payload.get('color') else None
+    return None
+
+
+@main_bp.route('/api/reminders/<int:rid>', methods=['PATCH'])
+def api_reminders_update(rid):
+    r = db.get_or_404(Reminder, rid)
+    payload = request.get_json(silent=True) or {}
+    user = sanitize_text(payload.get('creator', ''))
+    if not can_modify(user, r.creator or ''):
+        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
+    err = apply_reminder_changes(r, payload)
+    if err:
+        return jsonify({'ok': False, 'error': err}), 400
     db.session.commit()
     return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
 

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 16:53+0000\n"
+"POT-Creation-Date: 2026-11-05 04:52+0000\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -278,6 +278,19 @@ msgstr "%(title)s अभी बाकी है।"
 msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
 msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक कैलेंडर से वापस लाया जा सकता है।"
 
+#: app/api/home.py
+msgid "Send at least one field to change."
+msgstr "बदलने के लिए कम से कम एक फ़ील्ड भेजें।"
+
+#: app/api/home.py
+msgid "This reminder belongs to a recurring reminder. Recurring reminders are changed in HomeHub."
+msgstr "यह रिमाइंडर एक दोहराने वाले रिमाइंडर का हिस्सा है। दोहराने वाले रिमाइंडर HomeHub में ही बदले जाते हैं।"
+
+#: app/api/home.py
+#, python-format
+msgid "Reminder updated: %(title)s, %(when)s."
+msgstr "रिमाइंडर बदल दिया गया: %(title)s, %(when)s।"
+
 #: app/api/household.py
 #, python-format
 msgid "Added to the shopping list: %(item)s."
@@ -372,6 +385,49 @@ msgstr "व्यंजन जोड़ दिया गया: %(title)s।"
 msgid "Added %(name)s, expires %(date)s."
 msgstr "%(name)s जोड़ दिया गया, एक्सपायरी %(date)s।"
 
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this item."
+msgstr "%(name)s यह आइटम नहीं बदल सकते।"
+
+#: app/api/household.py
+#, python-format
+msgid "Shopping item updated: %(item)s%(tags)s."
+msgstr "शॉपिंग आइटम बदल दिया गया: %(item)s%(tags)s।"
+
+#: app/api/household.py
+msgid "This chore belongs to a recurring chore. Recurring chores are changed in HomeHub."
+msgstr "यह काम एक दोहराने वाले काम का हिस्सा है। दोहराने वाले काम HomeHub में ही बदले जाते हैं।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this chore."
+msgstr "%(name)s यह काम नहीं बदल सकते।"
+
+#: app/api/household.py
+#, python-format
+msgid ", due %(date)s"
+msgstr ", नियत तारीख %(date)s"
+
+#: app/api/household.py
+#, python-format
+msgid "Chore updated: %(chore)s%(due)s."
+msgstr "काम बदल दिया गया: %(chore)s%(due)s।"
+
+#: app/api/household.py
+msgid "That recipe was not found."
+msgstr "यह व्यंजन नहीं मिला।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this recipe."
+msgstr "%(name)s यह व्यंजन नहीं बदल सकते।"
+
+#: app/api/household.py
+#, python-format
+msgid "Recipe updated: %(title)s."
+msgstr "व्यंजन बदल दिया गया: %(title)s।"
+
 #: app/api/mcp.py
 msgid "The MCP endpoint only accepts POST."
 msgstr "MCP एंडपॉइंट सिर्फ़ POST स्वीकार करता है।"
@@ -435,8 +491,8 @@ msgid "Reminders for a day, a week or a range"
 msgstr "एक दिन, एक हफ़्ते या किसी अवधि के रिमाइंडर"
 
 #: app/api/tokens.py
-msgid "Add a reminder, mark it done or not done"
-msgstr "रिमाइंडर जोड़ें, उसे पूरा या बाकी मार्क करें"
+msgid "Add and edit reminders, mark them done or not done"
+msgstr "रिमाइंडर जोड़ें और बदलें, उन्हें पूरा या बाकी मार्क करें"
 
 #: app/api/tokens.py
 msgid "Shopping list"
@@ -447,8 +503,8 @@ msgid "Items with their tags"
 msgstr "आइटम और उनके टैग"
 
 #: app/api/tokens.py
-msgid "Add an item, tick or untick it"
-msgstr "आइटम जोड़ें, उस पर निशान लगाएं या हटाएं"
+msgid "Add, edit and tick items"
+msgstr "आइटम जोड़ें, बदलें और उन पर निशान लगाएं"
 
 #: app/api/tokens.py templates/index.html
 msgid "Chores"
@@ -459,8 +515,8 @@ msgid "Chores with due dates and tags"
 msgstr "नियत तारीख और टैग के साथ घर के काम"
 
 #: app/api/tokens.py
-msgid "Add a chore, mark it done or not done"
-msgstr "काम जोड़ें, उसे पूरा या बाकी मार्क करें"
+msgid "Add and edit chores, mark them done or not done"
+msgstr "काम जोड़ें और बदलें, उन्हें पूरा या बाकी मार्क करें"
 
 #: app/api/tokens.py
 msgid "Notes"
@@ -483,8 +539,8 @@ msgid "Recipes with their tags"
 msgstr "व्यंजन और उनके टैग"
 
 #: app/api/tokens.py
-msgid "Add a recipe"
-msgstr "व्यंजन जोड़ें"
+msgid "Add and edit recipes"
+msgstr "व्यंजन जोड़ें और बदलें"
 
 #: app/api/tokens.py
 msgid "Expiry tracker"
@@ -552,6 +608,10 @@ msgstr "%(tool)s को %(level)s स्तर नहीं दिया जा 
 msgid "%(tool)s with Read & write needs Act as family members."
 msgstr "पढ़ने और बदलने वाले %(tool)s के लिए परिवार के सदस्यों की ओर से काम करना ज़रूरी है।"
 
+#: app/api/tokens.py
+msgid "Revoke the token before deleting it."
+msgstr "हटाने से पहले टोकन रद्द करें।"
+
 #: app/blueprints/__init__.py
 msgid "Offline"
 msgstr "ऑफ़लाइन"
@@ -588,6 +648,11 @@ msgstr "यह टोकन नहीं मिला।"
 #, python-format
 msgid "Token %(old)s renamed to %(new)s. The token itself did not change."
 msgstr "टोकन %(old)s का नाम बदलकर %(new)s कर दिया गया। टोकन खुद नहीं बदला।"
+
+#: app/blueprints/api_admin.py
+#, python-format
+msgid "Token %(name)s deleted."
+msgstr "टोकन %(name)s हटा दिया गया।"
 
 #: app/blueprints/api_admin.py
 #, python-format
@@ -2260,11 +2325,11 @@ msgid "Add"
 msgstr "जोड़ें"
 
 #: static/js/base/app.js static/js/pages/expenses.js
-#: static/js/pages/home/reminders.js static/js/tags.js templates/backups.html
-#: templates/chores.html templates/expiry.html templates/media.html
-#: templates/notes.html templates/pdfs.html templates/qr.html
-#: templates/recipes.html templates/shopping.html templates/shorten.html
-#: templates/upload.html
+#: static/js/pages/home/reminders.js static/js/tags.js
+#: templates/api_access.html templates/backups.html templates/chores.html
+#: templates/expiry.html templates/media.html templates/notes.html
+#: templates/pdfs.html templates/qr.html templates/recipes.html
+#: templates/shopping.html templates/shorten.html templates/upload.html
 msgid "Delete"
 msgstr "हटाएं"
 
@@ -2679,6 +2744,11 @@ msgstr "%(name)s के लिए नया टोकन बनाएं? इस
 #: templates/api_access.html
 msgid "Regenerate"
 msgstr "नया बनाएं"
+
+#: templates/api_access.html
+#, python-format
+msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
+msgstr "%(name)s हटाएं? यह इसे सूची से हमेशा के लिए हटा देगा। इसके बदलावों का इतिहास रखा जाता है।"
 
 #: templates/api_access.html
 #, python-format
@@ -4340,4 +4410,16 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "The notice"
 #~ msgstr "सूचना"
+
+#~ msgid "Add a reminder, mark it done or not done"
+#~ msgstr "रिमाइंडर जोड़ें, उसे पूरा या बाकी मार्क करें"
+
+#~ msgid "Add an item, tick or untick it"
+#~ msgstr "आइटम जोड़ें, उस पर निशान लगाएं या हटाएं"
+
+#~ msgid "Add a chore, mark it done or not done"
+#~ msgstr "काम जोड़ें, उसे पूरा या बाकी मार्क करें"
+
+#~ msgid "Add a recipe"
+#~ msgstr "व्यंजन जोड़ें"
 

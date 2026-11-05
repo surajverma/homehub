@@ -163,6 +163,25 @@ def api_access_rename(token_id):
     return redirect(url_for('main.api_access_page', user=_user()))
 
 
+@main_bp.route('/admin/api/<int:token_id>/delete', methods=['POST'])
+def api_access_delete(token_id):
+    denied = _require_admin()
+    if denied:
+        return denied
+    token = _get_token(token_id)
+    if token is None:
+        flash(_('That token was not found.'), 'error')
+        return redirect(url_for('main.api_access_page', user=_user()))
+    name = token.name
+    try:
+        tokens.delete_token(token)
+    except tokens.TokenError as exc:
+        flash(str(exc), 'error')
+    else:
+        flash(_('Token %(name)s deleted.', name=name), 'success')
+    return redirect(url_for('main.api_access_page', user=_user()))
+
+
 @main_bp.route('/admin/api/<int:token_id>/revoke', methods=['POST'])
 def api_access_revoke(token_id):
     denied = _require_admin()

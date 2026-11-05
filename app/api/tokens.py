@@ -74,15 +74,15 @@ TOOLS = (
          N_('Read only. Only the admin can change the notice in HomeHub.'), None,
          N_('Not available: only the admin can change the notice')),
     Tool('reminders', 'calendar', True, N_('Reminders'), ('read', 'write'),
-         N_('Reminders for a day, a week or a range'), N_('Add a reminder, mark it done or not done')),
+         N_('Reminders for a day, a week or a range'), N_('Add and edit reminders, mark them done or not done')),
     Tool('shopping', 'shopping_list', False, N_('Shopping list'), ('read', 'write'),
-         N_('Items with their tags'), N_('Add an item, tick or untick it')),
+         N_('Items with their tags'), N_('Add, edit and tick items')),
     Tool('chores', 'chores', False, N_('Chores'), ('read', 'write'),
-         N_('Chores with due dates and tags'), N_('Add a chore, mark it done or not done')),
+         N_('Chores with due dates and tags'), N_('Add and edit chores, mark them done or not done')),
     Tool('notes', 'notes', False, N_('Notes'), ('read', 'write'),
          N_('Shared notes'), N_('Add a note')),
     Tool('recipes', 'recipes', False, N_('Recipes'), ('read', 'write'),
-         N_('Recipes with their tags'), N_('Add a recipe')),
+         N_('Recipes with their tags'), N_('Add and edit recipes')),
     Tool('expiry', 'expiry_tracker', False, N_('Expiry tracker'), ('read', 'write'),
          N_('Items with expiry dates'), N_('Add an item')),
     Tool('expenses', 'expense_tracker', True, N_('Expenses'), ('read', 'write'),
@@ -238,6 +238,24 @@ def regenerate_token(token: ApiToken) -> str:
     token.created_at = utcnow()
     db.session.commit()
     return secret
+
+
+def delete_token(token: ApiToken) -> None:
+    """Remove a revoked token for good, so its name can be used again.
+
+    Its activity rows stay in the database (they keep the token's name) for the record, at most
+    the newest ACTIVITY_KEEP of them. They are detached from the token id, which a new token could
+    get again, so they show nowhere on the page.
+    """
+    if not token.revoked_at:
+        raise TokenError(_('Revoke the token before deleting it.'))
+    keep = (db.session.query(ApiActivity.id).filter(ApiActivity.token_id == token.id)
+            .order_by(ApiActivity.id.desc()).offset(ACTIVITY_KEEP - 1).limit(1).scalar())
+    if keep is not None:
+        ApiActivity.query.filter(ApiActivity.token_id == token.id, ApiActivity.id < keep).delete(synchronize_session=False)
+    ApiActivity.query.filter(ApiActivity.token_id == token.id).update({ApiActivity.token_id: None}, synchronize_session=False)
+    db.session.delete(token)
+    db.session.commit()
 
 
 def revoke_token(token: ApiToken) -> None:

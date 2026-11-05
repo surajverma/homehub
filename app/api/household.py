@@ -4,6 +4,8 @@ from datetime import date
 
 from flask_babel import gettext as _
 
+from .. import admin
+
 from ..blueprints import chores as chores_web
 from ..blueprints import expiry as expiry_web
 from ..blueprints import recipes as recipes_web
@@ -11,7 +13,7 @@ from ..blueprints import shopping as shopping_web
 from ..models import Chore, ExpiryItem, Note, Recipe, RecurringChore, ShoppingItem, db
 from ..security import sanitize_html, sanitize_tags, sanitize_text
 from .core import ApiError
-from .home import day_label
+from .home import day_label, nothing_to_change
 from .registry import iso, operation, tags_property
 
 
@@ -255,3 +257,105 @@ def expiry_add(ctx, args):
     ctx.target = f'#{item.id} {name}'
     return {**_expiry(item, date.today()),
             'summary': _('Added %(name)s, expires %(date)s.', name=name, date=day_label(item.expiry_date))}
+
+
+# --- Edits (only where the web app has an edit, with the same ownership rule) ---
+
+def _owned(ctx, owner, message):
+    """403 unless the acting person may change a record owned by ``owner`` (the web's rule)."""
+    if not admin.can_modify(ctx.user, owner or ''):
+        raise ApiError(403, 'forbidden', message)
+
+
+def _edit_tags(args):
+    """Tags sent with an edit replace the list; blank entries are dropped, as when adding."""
+    if 'tags' not in args:
+        return None
+    return [t for t in args['tags'] if t.strip()]
+
+
+def _tag_note(tags) -> str:
+    return f" ({', '.join(tags)})" if tags else ''
+
+
+@operation('shopping_edit', tool='shopping', level='write', method='PATCH', path='/shopping/<int:item_id>',
+           title='Edit a shopping item',
+           description='Change an item\'s text and/or its tags (the list sent replaces the old one). Only whoever added the item may change it.',
+           properties={'item_id': {'type': 'integer', 'in': 'path', 'description': 'The item id from the list.'},
+                       'item': {'type': 'string', 'in': 'body', 'minLength': 1, 'maxLength': 256, 'description': 'New text.'},
+                       'tags': tags_property('New tags, replacing the old ones, for example ["Costco", "Bakery"].')},
+           required=('item_id',), idempotent=True)
+def shopping_edit(ctx, args):
+    if 'item' not in args and 'tags' not in args:
+        raise nothing_to_change()
+    row = _get(ShoppingItem, args['item_id'], _('That item was not found.'))
+    _owned(ctx, row.creator, _('%(name)s cannot change this item.', name=ctx.user))
+    new_item = args['item'] if 'item' in args and _text(args['item'], 'item') else None
+    tags = shopping_web.edit_shopping_item(row, new_item, _edit_tags(args))
+    ctx.target = f'#{row.id} {row.item}'
+    return {**shopping_web.shopping_item_dict(row),
+            'summary': _('Shopping item updated: %(item)s%(tags)s.', item=row.item, tags=_tag_note(tags))}
+
+
+@operation('chores_edit', tool='chores', level='write', method='PATCH', path='/chores/<int:chore_id>',
+           title='Edit a chore',
+           description=('Change a one-off chore: description, due date (null clears it) and/or tags (the list sent replaces the old one). '
+                        'Only whoever added the chore may change it. Recurring chores are changed in HomeHub.'),
+           properties={'chore_id': {'type': 'integer', 'in': 'path', 'description': 'The chore id from the list.'},
+                       'description': {'type': 'string', 'in': 'body', 'minLength': 1, 'maxLength': 1000, 'description': 'New description.'},
+                       'due_date': {'type': 'string', 'format': 'date', 'in': 'body', 'x-nullable': True,
+                                    'description': 'New due date, YYYY-MM-DD, or null for none.'},
+                       'tags': tags_property('New tags, replacing the old ones.')},
+           required=('chore_id',), idempotent=True)
+def chores_edit(ctx, args):
+    if not any(k in args for k in ('description', 'due_date', 'tags')):
+        raise nothing_to_change()
+    chore = _get(Chore, args['chore_id'], _('That chore was not found.'))
+    if chore.recurring_id:
+        raise ApiError(409, 'conflict', _('This chore belongs to a recurring chore. Recurring chores are changed in HomeHub.'))
+    _owned(ctx, chore.creator, _('%(name)s cannot change this chore.', name=ctx.user))
+    description = args['description'] if 'description' in args and _text(args['description'], 'description') else None
+    if 'due_date' in args:
+        chore.due_date = args['due_date']
+    chores_web.update_chore_fields(chore, description, _edit_tags(args))
+    ctx.target = f'#{chore.id} {chore.description}'
+    due = (_(', due %(date)s', date=day_label(chore.due_date)) if chore.due_date else '')
+    return {**_chore(chore, {}, date.today()),
+            'summary': _('Chore updated: %(chore)s%(due)s.', chore=chore.description, due=due)}
+
+
+@operation('recipes_edit', tool='recipes', level='write', method='PATCH', path='/recipes/<int:recipe_id>',
+           title='Edit a recipe',
+           description=('Change a recipe: any of title, link, ingredients, instructions and tags (the list sent replaces the old one). '
+                        'It must still have ingredients or instructions, and a link must be an http or https address. '
+                        'Only whoever added the recipe may change it.'),
+           properties={'recipe_id': {'type': 'integer', 'in': 'path', 'description': 'The recipe id from the list.'},
+                       'title': {'type': 'string', 'in': 'body', 'minLength': 1, 'maxLength': 256, 'description': 'New name.'},
+                       'link': {'type': 'string', 'in': 'body', 'maxLength': 512, 'description': 'New web address; empty removes it.'},
+                       'ingredients': {'type': 'string', 'in': 'body', 'maxLength': 20000, 'description': 'New ingredients (simple HTML allowed).'},
+                       'instructions': {'type': 'string', 'in': 'body', 'maxLength': 20000, 'description': 'New instructions (simple HTML allowed).'},
+                       'tags': tags_property('New tags, replacing the old ones.')},
+           required=('recipe_id',), idempotent=True)
+def recipes_edit(ctx, args):
+    if not any(k in args for k in ('title', 'link', 'ingredients', 'instructions', 'tags')):
+        raise nothing_to_change()
+    recipe = _get(Recipe, args['recipe_id'], _('That recipe was not found.'))
+    _owned(ctx, recipe.creator, _('%(name)s cannot change this recipe.', name=ctx.user))
+    title = _text(args['title'], 'title') if 'title' in args else recipe.title
+    link = sanitize_text(args['link']) if 'link' in args else (recipe.link or '')
+    if not recipes_web.recipe_link_ok(link):
+        raise ApiError(400, 'bad_request', _('Invalid link URL.'))
+    ingredients = sanitize_html(args['ingredients']) if 'ingredients' in args else (recipe.ingredients or '')
+    instructions = sanitize_html(args['instructions']) if 'instructions' in args else (recipe.instructions or '')
+    if not recipes_web.recipe_has_body(ingredients, instructions):
+        raise ApiError(400, 'bad_request', _('Please add ingredients or instructions (or both).'))
+    recipe.title = title
+    recipe.link = link
+    recipe.ingredients = ingredients
+    recipe.instructions = instructions
+    tags = _edit_tags(args)
+    if tags is not None:
+        recipe.tags = json.dumps(sanitize_tags(tags))
+    db.session.commit()
+    ctx.target = f'#{recipe.id} {title}'
+    return {**_recipe(recipe), 'summary': _('Recipe updated: %(title)s.', title=title)}

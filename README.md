@@ -305,7 +305,7 @@ The API is off until you create a token. Switch to the admin user and open **Adm
 docker exec -it homehub flask api-token create "Home Assistant" --tool presence=write --tool reminders=read --act-as-members
 ```
 
-Each token gets only the tools you pick, read-only or read and write. Keep tokens secret, and don't expose HomeHub to the internet: for agents outside your home, use a VPN such as Tailscale.
+Each token gets only the tools you pick, read-only or read and write. Keep tokens secret, and don't expose HomeHub to the internet: for agents outside your home, use a VPN such as Tailscale. Set your [timezone](#timezone-optional) too, so "today" means the same day for the API as for you.
 
 Endpoints, curl examples, Home Assistant YAML, phone shortcuts and setting up AI agents: [docs/api.md](docs/api.md).
 

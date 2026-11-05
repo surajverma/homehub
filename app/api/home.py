@@ -271,3 +271,70 @@ def reminders_trash(ctx, args):
     return {'id': r.id, 'title': r.title, 'trashed': True,
             'summary': _('%(title)s moved to the trash. It can be restored from the calendar for 7 days.', title=r.title)}
 
+
+
+def nothing_to_change():
+    return ApiError(400, 'bad_request', _('Send at least one field to change.'))
+
+
+@operation('reminders_edit', tool='reminders', level='write', method='PATCH', path='/reminders/<int(signed=True):reminder_id>',
+           title='Edit a reminder',
+           description=('Change a one-off reminder: any of title, date, time (null makes it all-day), description and category. '
+                        'Only whoever added the reminder may change it. Recurring reminders are changed in HomeHub.'),
+           properties={
+               'reminder_id': ID_PROPERTY,
+               'title': {'type': 'string', 'in': 'body', 'minLength': 1, 'maxLength': 256, 'description': 'New title.'},
+               'date': {'type': 'string', 'format': 'date', 'in': 'body', 'description': 'New day, YYYY-MM-DD.'},
+               'time': {'type': 'string', 'format': 'time', 'in': 'body', 'x-nullable': True,
+                        'description': 'New time, HH:MM (24-hour), or null to make it all-day.'},
+               'description': {'type': 'string', 'in': 'body', 'maxLength': 5000, 'description': 'New details (empty clears them).'},
+               'category': {'type': 'string', 'in': 'body', 'maxLength': 64,
+                            'description': 'Category key from config.yml (reminders > categories); empty clears it.'},
+           },
+           required=('reminder_id',), idempotent=True)
+def reminders_edit(ctx, args):
+    if args['reminder_id'] < 0:
+        raise ApiError(409, 'conflict', _('This is a date of a recurring reminder. Recurring reminders are changed in HomeHub.'))
+    editable = ('title', 'date', 'time', 'description', 'category')
+    if not any(k in args for k in editable):
+        raise nothing_to_change()
+    r = db.session.get(Reminder, args['reminder_id'])
+    if r is None or r.deleted_at is not None:
+        raise ApiError(404, 'not_found', _('That reminder was not found.'))
+    if r.recurring_id:
+        raise ApiError(409, 'conflict', _('This reminder belongs to a recurring reminder. Recurring reminders are changed in HomeHub.'))
+    if not admin.can_modify(ctx.user, r.creator or ''):
+        raise ApiError(403, 'forbidden', _('%(name)s cannot change this reminder.', name=ctx.user))
+    payload = {}
+    if 'title' in args:
+        title = sanitize_text(args['title'])
+        if not title:
+            raise ApiError(400, 'bad_request', _('Title required'))
+        payload['title'] = title
+    if 'description' in args:
+        payload['description'] = args['description']
+    if 'date' in args:
+        payload['date'] = args['date'].isoformat()
+    if args.get('time') is not None:
+        payload['time'] = args['time']
+    if 'category' in args:
+        category = args['category'].strip()
+        if category and category not in _categories():
+            raise ApiError(400, 'bad_request', _('Unknown category: %(name)s. Use a key from config.yml: %(keys)s.',
+                                                 name=category, keys=', '.join(_categories()) or '-'))
+        payload['category'] = category or None
+    # The calendar's own edit logic; it keeps a time sent as null, so clearing it is done below
+    problem = dashboard.apply_reminder_changes(r, payload)
+    if problem:
+        raise ApiError(400, 'bad_request', problem)
+    if 'time' in args and args['time'] is None:
+        r.time = None
+        r.start_time = None
+        r.all_day = not r.end_date and not r.end_time
+        ok, problem = dashboard._validate_range(r.start_date or r.date, None, r.end_date, r.end_time)
+        if not ok:
+            raise ApiError(400, 'bad_request', problem)
+    db.session.commit()
+    ctx.target = f'#{r.id} {r.title}'
+    when = day_label(r.start_date or r.date) + (f' {r.start_time}' if r.start_time else '')
+    return {**_reminder(r), 'summary': _('Reminder updated: %(title)s, %(when)s.', title=r.title, when=when)}

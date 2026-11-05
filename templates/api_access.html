@@ -158,6 +158,14 @@
               <input type="hidden" name="user" value="{{ user }}">
               <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate" aria-hidden="true"></i>{{ _('Regenerate') }}</button>
             </form>
+            {% if t.revoked_at %}
+            <form method="POST" action="{{ url_for('main.api_access_delete', token_id=t.id) }}"
+                  data-confirm="{{ _('Delete %(name)s? This removes it from the list for good. Its activity history is kept.', name=t.name) }}"
+                  data-confirm-action="{{ _('Delete') }}">
+              <input type="hidden" name="user" value="{{ user }}">
+              <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash-can" aria-hidden="true"></i>{{ _('Delete') }}</button>
+            </form>
+            {% endif %}
             {% if not t.revoked_at %}
             <form method="POST" action="{{ url_for('main.api_access_revoke', token_id=t.id) }}"
                   data-confirm="{{ _('Revoke %(name)s? Anything that uses this token stops working at once.', name=t.name) }}"

@@ -914,6 +914,126 @@
             }
           }
         }
+      },
+      "patch": {
+        "operationId": "reminders_edit",
+        "summary": "Edit a reminder",
+        "description": "Change a one-off reminder: any of title, date, time (null makes it all-day), description and category. Only whoever added the reminder may change it. Recurring reminders are changed in HomeHub.",
+        "tags": [
+          "Reminders"
+        ],
+        "x-homehub-tool": "reminders",
+        "x-homehub-level": "write",
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "description": "The reminder id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "New title."
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "New day, YYYY-MM-DD."
+                  },
+                  "time": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "time",
+                    "description": "New time, HH:MM (24-hour), or null to make it all-day."
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 5000,
+                    "description": "New details (empty clears them)."
+                  },
+                  "category": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "Category key from config.yml (reminders > categories); empty clears it."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/shopping": {
@@ -1882,6 +2002,353 @@
         },
         "responses": {
           "201": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shopping/{item_id}": {
+      "patch": {
+        "operationId": "shopping_edit",
+        "summary": "Edit a shopping item",
+        "description": "Change an item's text and/or its tags (the list sent replaces the old one). Only whoever added the item may change it.",
+        "tags": [
+          "Shopping list"
+        ],
+        "x-homehub-tool": "shopping",
+        "x-homehub-level": "write",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "description": "The item id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "New text."
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "maxItems": 20,
+                    "description": "New tags, replacing the old ones, for example [\"Costco\", \"Bakery\"]."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chores/{chore_id}": {
+      "patch": {
+        "operationId": "chores_edit",
+        "summary": "Edit a chore",
+        "description": "Change a one-off chore: description, due date (null clears it) and/or tags (the list sent replaces the old one). Only whoever added the chore may change it. Recurring chores are changed in HomeHub.",
+        "tags": [
+          "Chores"
+        ],
+        "x-homehub-tool": "chores",
+        "x-homehub-level": "write",
+        "parameters": [
+          {
+            "name": "chore_id",
+            "in": "path",
+            "required": true,
+            "description": "The chore id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000,
+                    "description": "New description."
+                  },
+                  "due_date": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "description": "New due date, YYYY-MM-DD, or null for none."
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "maxItems": 20,
+                    "description": "New tags, replacing the old ones."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/{recipe_id}": {
+      "patch": {
+        "operationId": "recipes_edit",
+        "summary": "Edit a recipe",
+        "description": "Change a recipe: any of title, link, ingredients, instructions and tags (the list sent replaces the old one). It must still have ingredients or instructions, and a link must be an http or https address. Only whoever added the recipe may change it.",
+        "tags": [
+          "Recipes"
+        ],
+        "x-homehub-tool": "recipes",
+        "x-homehub-level": "write",
+        "parameters": [
+          {
+            "name": "recipe_id",
+            "in": "path",
+            "required": true,
+            "description": "The recipe id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "New name."
+                  },
+                  "link": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "description": "New web address; empty removes it."
+                  },
+                  "ingredients": {
+                    "type": "string",
+                    "maxLength": 20000,
+                    "description": "New ingredients (simple HTML allowed)."
+                  },
+                  "instructions": {
+                    "type": "string",
+                    "maxLength": 20000,
+                    "description": "New instructions (simple HTML allowed)."
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "maxItems": 20,
+                    "description": "New tags, replacing the old ones."
+                  },
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
             "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
             "content": {
               "application/json": {

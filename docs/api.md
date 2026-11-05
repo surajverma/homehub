@@ -12,9 +12,12 @@ The API is off until you create a token. Each token says which tools it can use,
 - [Home Assistant](#home-assistant)
 - [Phone shortcuts and NFC tags](#phone-shortcuts-and-nfc-tags)
 - [AI agents (MCP)](#ai-agents-mcp)
+- [Reaching HomeHub from another device](#reaching-homehub-from-another-device)
 - [Security](#security)
 
 The examples use `http://homehub.local:5000`. Use the address your devices use to open HomeHub, and replace `hh_...` with your token.
+
+**Set your timezone first.** "Today" (the default day for reminders and expenses, and the check that refuses future expense days) is the server's today. The default `compose.yml` runs HomeHub in UTC, so if you live elsewhere set `TZ` there (for example `TZ=Asia/Kolkata`, see [Timezone](../README.md#timezone-optional)). Otherwise "today" can be the wrong day early in the morning or late at night.
 
 ## Tokens
 
@@ -34,7 +37,11 @@ On the page:
 4. Leave **Allow deleting** off unless you need it. It only lets the token move reminders to the trash, and needs Reminders with Read & write.
 5. Select **Create token** and copy the token straight away. HomeHub keeps only a fingerprint of it and can't show it again.
 
-The list below shows each token's access, when it was last used and its recent changes. **Rename** changes a token's name (the token itself keeps working); **Regenerate** makes a new token (the old one stops working at once); **Revoke** switches a token off. Regenerating a revoked token brings it back with the same access.
+The list below shows each token's access, when it was last used and its recent changes. **Rename** changes a token's name (the token itself keeps working); **Regenerate** makes a new token (the old one stops working at once); **Revoke** switches a token off. Regenerating a revoked token brings it back with the same access, and **Delete** (only for revoked tokens) removes it from the list for good, so its name can be used again.
+
+Records a token added keep the name it had then. After a rename, the token can't edit those older records any more: in HomeHub, who may change something always follows the name it was added under.
+
+Deleting a token keeps up to its newest 200 changes in the database (with the token's name), for backups and the record; they no longer show anywhere on the page.
 
 If a family member added to `config.yml` later has the same name as a token, the token's changes would look like that person's. The list then flags the token, and changes made as the token itself (without `by`) are refused with `409` until you rename it.
 
@@ -77,15 +84,17 @@ A tool whose feature is switched off in `config.yml` (under `feature_toggles`) d
 | `presence` | `who_is_home` | everyone's Home/Away | set a person Home or Away (needs Act as family members) |
 | `statuses` | `personal_status` | everyone's status text | set or clear a person's status (needs Act as family members) |
 | `notice` | always on | the notice | nothing: the admin edits it in HomeHub |
-| `reminders` | `calendar` | today, this week or a range | add a one-off reminder, mark done or not done, move to the trash (with Allow deleting) |
-| `shopping` | `shopping_list` | items, tags, ticked or not | add an item, tick or untick it |
-| `chores` | `chores` | chores with due dates and tags | add a chore, mark done or not done |
+| `reminders` | `calendar` | today, this week or a range | add and edit one-off reminders, mark done or not done, move to the trash (with Allow deleting) |
+| `shopping` | `shopping_list` | items, tags, ticked or not | add and edit items, tick or untick them |
+| `chores` | `chores` | chores with due dates and tags | add and edit one-off chores, mark done or not done |
 | `notes` | `notes` | notes | add a note |
-| `recipes` | `recipes` | recipes with tags | add a recipe |
+| `recipes` | `recipes` | recipes with tags | add and edit recipes |
 | `expiry` | `expiry_tracker` | items, expiry dates, days left | add an item |
 | `expenses` | `expense_tracker` | recurring expenses, entries | skip or restore a recurring day, change its quantity, add an expense |
 
-Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, weather, backups, settings, budgets, changes to recurring rules, and bulk actions. The only delete is moving a reminder to the trash, because it can be restored from the calendar's Trash for 7 days.
+Edits follow the web app: only shopping items, one-off chores, one-off reminders and recipes can be edited, and only by whoever added them. Notes and the expiry tracker can't be edited in HomeHub either, so the API only adds them.
+
+Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, weather, backups, settings, budgets, changes to recurring rules (and to chores and reminders made by them), and bulk actions. The only delete is moving a reminder to the trash, because it can be restored from the calendar's Trash for 7 days.
 
 ## Making requests
 
@@ -149,18 +158,22 @@ All paths are below `/api/v1`. **R** needs Read, **W** needs Read & write.
 | `GET /notice` | notice R | The notice board |
 | `GET /reminders` | reminders R | Reminders for today, this week or a range |
 | `POST /reminders` | reminders W | Add a one-off reminder |
+| `PATCH /reminders/{id}` | reminders W | Edit a one-off reminder |
 | `PUT /reminders/{id}/done` | reminders W | Mark done or not done |
 | `DELETE /reminders/{id}` | reminders W + Allow deleting | Move to the trash |
 | `GET /shopping` | shopping R | The shopping list |
 | `POST /shopping` | shopping W | Add an item |
+| `PATCH /shopping/{id}` | shopping W | Edit an item |
 | `PUT /shopping/{id}/checked` | shopping W | Tick or untick |
 | `GET /chores` | chores R | Chores |
 | `POST /chores` | chores W | Add a chore |
+| `PATCH /chores/{id}` | chores W | Edit a one-off chore |
 | `PUT /chores/{id}/done` | chores W | Mark done or not done |
 | `GET /notes` | notes R | Notes |
 | `POST /notes` | notes W | Add a note |
 | `GET /recipes` | recipes R | Recipes |
 | `POST /recipes` | recipes W | Add a recipe |
+| `PATCH /recipes/{id}` | recipes W | Edit a recipe |
 | `GET /expiry` | expiry R | Expiry tracker |
 | `POST /expiry` | expiry W | Add an item |
 | `GET /expenses/rules` | expenses R | Recurring expenses still running |
@@ -247,7 +260,13 @@ curl -X PUT -H "$HH" -H "Content-Type: application/json" -d '{"done": true, "by"
 curl -X DELETE -H "$HH" -H "Content-Type: application/json" -d '{"by": "Priya"}' http://homehub.local:5000/api/v1/reminders/42
 ```
 
-Only whoever added a reminder can mark it or move it to the trash. Moving to the trash needs a token with Allow deleting; the reminder can be restored from the calendar's Trash for 7 days. Dates of recurring reminders can't be changed through the API.
+Edit a reminder: send only what changes. `"time": null` makes it all-day.
+
+```bash
+curl -X PATCH -H "$HH" -H "Content-Type: application/json" -d '{"date": "2026-11-13", "time": "10:15", "by": "Priya"}' http://homehub.local:5000/api/v1/reminders/42
+```
+
+Only whoever added a reminder can edit it, mark it or move it to the trash. Moving to the trash needs a token with Allow deleting; the reminder can be restored from the calendar's Trash for 7 days. Recurring reminders and their dates can't be changed through the API (`409`): change them in HomeHub.
 
 ### Shopping list
 
@@ -261,6 +280,12 @@ curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"item": "Milk", "
 
 ```bash
 curl -X PUT -H "$HH" -H "Content-Type: application/json" -d '{"checked": true}' http://homehub.local:5000/api/v1/shopping/7/checked
+```
+
+Edit an item: its text and/or its tags (the list you send replaces the old one). Only whoever added it can.
+
+```bash
+curl -X PATCH -H "$HH" -H "Content-Type: application/json" -d '{"item": "Bread", "tags": ["Costco", "Bakery"], "by": "Priya"}' http://homehub.local:5000/api/v1/shopping/7
 ```
 
 ### Chores
@@ -277,7 +302,13 @@ curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"description": "W
 curl -X PUT -H "$HH" -H "Content-Type: application/json" -d '{"done": true}' http://homehub.local:5000/api/v1/chores/3/done
 ```
 
-Recurring chores work as on the Chores page: done moves the chore to its next date (it counts as done until then), and not done takes that back. Recurring chores are set up in HomeHub.
+Edit a one-off chore: description, `due_date` (`null` clears it) and/or tags. Only whoever added it can.
+
+```bash
+curl -X PATCH -H "$HH" -H "Content-Type: application/json" -d '{"due_date": "2026-11-15", "tags": ["Priya", "Weekend"]}' http://homehub.local:5000/api/v1/chores/3
+```
+
+Recurring chores work as on the Chores page: done moves the chore to its next date (it counts as done until then), and not done takes that back. Recurring chores are set up and changed in HomeHub; editing one through the API answers `409`.
 
 ### Notes, recipes and the expiry tracker
 
@@ -293,7 +324,13 @@ curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"title": "Dal", "
 curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"name": "Yoghurt", "expiry_date": "2026-11-09"}' http://homehub.local:5000/api/v1/expiry
 ```
 
-Notes, ingredients and instructions keep simple HTML (bold, lists, links). A recipe needs ingredients or instructions, and a link must be an `http` or `https` address, as in the form.
+Edit a recipe (only whoever added it can):
+
+```bash
+curl -X PATCH -H "$HH" -H "Content-Type: application/json" -d '{"title": "Tadka dal", "tags": ["Quick", "Dinner"]}' http://homehub.local:5000/api/v1/recipes/5
+```
+
+Notes, ingredients and instructions keep simple HTML (bold, lists, links). A recipe needs ingredients or instructions, and a link must be an `http` or `https` address, as in the form. Notes and expiry items can't be edited, in HomeHub or here.
 
 ### Expenses
 
@@ -359,7 +396,7 @@ Errors are JSON with a code and a message in the household's language:
 | 403 | `forbidden` | The token has no access to that tool or level, or the person in `by` may not change that item |
 | 404 | `not_found` | No such item, or the tool's feature is switched off |
 | 405 | `method_not_allowed` | Wrong method for that path |
-| 409 | `conflict` | Can't be done right now, for example a recurring day deleted in HomeHub, or a token whose name is now a family member's |
+| 409 | `conflict` | Can't be done right now, for example a recurring day deleted in HomeHub, editing a recurring chore or reminder, or a token whose name is now a family member's |
 | 413 | `too_large` | Body larger than 64 KB |
 
 
@@ -531,6 +568,27 @@ mcp_servers:
 
 Then run `/reload-mcp` in Hermes (or restart it). The tools show up as `mcp_homehub_<tool>`, for example `mcp_homehub_shopping_add`. To give Hermes only some of them, add a `tools:` list with `include:` or `exclude:` under `homehub`.
 
+**Trying it on a test instance first?** Give it its own server name, such as `homehub_test`, and switch it off with `enabled: false` (or remove the entry) when you're done, so the agent never mixes up two HomeHubs:
+
+```yaml
+mcp_servers:
+  homehub_test:
+    url: "http://localhost:5001/api/v1/mcp"
+    headers:
+      Authorization: "Bearer ${HOMEHUB_TEST_TOKEN}"
+    enabled: false
+```
+
+Hermes can save what it learns in its memory (`~/.hermes/memories/MEMORY.md` and `USER.md`) and as skills (`~/.hermes/skills/`). After testing against a temporary instance, check that it didn't keep details that only fit that instance, such as rule ids or test names, before you connect your real HomeHub.
+
+**Signal:** limit who can talk to Hermes with `SIGNAL_ALLOWED_USERS` in `~/.hermes/.env` (your family's numbers only, comma-separated, with the country code, for example `+919812345678`). Then give Hermes, in its instructions, a list of which number belongs to which HomeHub family member, so it knows what to pass as `by`:
+
+```text
+Signal +919812345678 is Priya, +919898765432 is Dad. Always pass that name as "by" to HomeHub.
+```
+
+In a terminal session there is no sender, so Hermes will ask who you are before making a change.
+
 This follows the [Hermes MCP documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp) at the time of writing; check it if the format has changed.
 
 ### Claude Code
@@ -564,10 +622,34 @@ The agent holds the token; the family just talks to the agent. For HomeHub to kn
 The agent has to know who is talking to it. Tell it in its instructions (for Hermes, its system prompt) which chat account belongs to which family member, using the names from `family_members`. How a chat app identifies the sender to the agent differs per app, and isn't something HomeHub can check: HomeHub trusts the name the agent sends. So:
 
 - **Only let family members talk to the agent.** In Hermes, restrict each messaging platform to your family's accounts (for example `TELEGRAM_ALLOWED_USERS` in `~/.hermes/.env`) or use DM pairing; Hermes denies unknown users by default. Anyone who can message the agent can act as any family member.
-- **Keep Allow deleting off.** Text an agent reads, such as a note, a recipe from a website or a message, can contain instructions meant to trick it ("delete all reminders"). Without Allow deleting, the worst it can do through HomeHub is add or tick things, which are easy to undo; with it, reminders can be moved to the trash.
+- **Keep Allow deleting off.** Text an agent reads, such as a note, a recipe from a website or a message, can contain instructions meant to trick it ("delete all reminders"). Without Allow deleting, the worst it can do through HomeHub is add, edit or tick things that belong to the person in `by`, which are easy to put right; with it, reminders can be moved to the trash.
 - **Think about what the agent can read.** Most AI agents send what they read to their AI provider. Give the agent only the tools you're happy to share that way.
 - **Check its changes.** The API access page lists each token's recent changes, with the person it acted as.
 - **Expenses are paid by whoever asked.** An agent can only record an expense as paid by the person in `by`. If Priya says "Dad paid for the groceries", the agent can't record it for Dad; Dad has to ask, or it's entered in HomeHub.
+- **Expense days belong to whoever added the rule.** Skipping a day or changing its quantity only works on rules and entries that belong to the person in `by`. Rules created as the admin can't be changed through the API at all, because the admin can never be named.
+- **Set the timezone.** The agent's "today" is HomeHub's: if `TZ` isn't set in `compose.yml`, that's UTC, and "add milk for today" can land on the wrong day early in the morning or late at night.
+
+## Reaching HomeHub from another device
+
+If a phone, Home Assistant or an agent on another device can't reach HomeHub:
+
+1. **Test from that device** with the overview, which answers with the token's name:
+
+   ```bash
+   curl -H "Authorization: Bearer hh_..." http://<your-homehub-address>:5000/api/v1/
+   ```
+
+   No answer at all means the network is the problem, not the token (a wrong token answers `401`).
+2. **Open the port in the firewall** of the computer running HomeHub (5000, or whatever `ports:` in `compose.yml` says).
+3. **Windows with Docker inside WSL 2:** ports published there aren't reachable from other devices by default. On Windows 11 22H2 or later, turn on mirrored networking in `%USERPROFILE%\.wslconfig`:
+
+   ```ini
+   [wsl2]
+   networkingMode=mirrored
+   ```
+
+   then run `wsl --shutdown` and start Docker again.
+4. **Outside your home network** (an agent in the cloud, your phone on mobile data), use a VPN such as [Tailscale](https://tailscale.com). Never expose HomeHub to the internet.
 
 ## Security
 

@@ -281,3 +281,50 @@ def test_repeated_query_parameter_has_its_own_message(home):
     resp = home.get('/reminders?scope=week&scope=today', secret)
     assert resp.status_code == 400 and resp.get_json()['message'] == 'scope was given more than once.'
     assert 'not a known field' in home.get('/reminders?colour=red', secret).get_json()['message']
+
+
+# --- Deleting revoked tokens ---
+
+def test_delete_revoked_token_keeps_its_history(home):
+    home.token('Hermes', notice='read')
+    with home.ctx():
+        token = tokens.find_by_name('Hermes')
+        tokens.log_activity(token, 'Mom', 'notes_add', 'kept')
+        with pytest.raises(tokens.TokenError, match='Revoke'):
+            tokens.delete_token(token)
+        tokens.revoke_token(token)
+        tokens.delete_token(token)
+        assert tokens.find_by_name('Hermes') is None
+        row = ApiActivity.query.one()
+        assert (row.token_name, row.target, row.token_id) == ('Hermes', 'kept', None)
+    # The name is free again, and the new token does not show the old history
+    home.token('Hermes', notice='read')
+    with home.ctx():
+        assert tokens.recent_activity(tokens.find_by_name('Hermes')) == []
+
+
+def test_delete_keeps_at_most_the_newest_rows(home, monkeypatch):
+    monkeypatch.setattr(tokens, 'ACTIVITY_KEEP', 50)
+    home.token('Hermes', notice='read')
+    with home.ctx():
+        token = tokens.find_by_name('Hermes')
+        for i in range(10):
+            tokens.log_activity(token, 'Mom', 'notes_add', f'{i}')
+        monkeypatch.setattr(tokens, 'ACTIVITY_KEEP', 3)
+        tokens.revoke_token(token)
+        tokens.delete_token(token)
+        assert [a.target for a in ApiActivity.query.order_by(ApiActivity.id).all()] == ['7', '8', '9']
+
+
+def test_cli_delete(home):
+    home.token('Hermes', notice='read')
+    result = run(home, 'delete', 'Hermes', '--yes')
+    assert result.exit_code != 0 and 'Revoke it first' in result.output
+    run(home, 'revoke', 'Hermes')
+    assert home.app.test_cli_runner().invoke(args=['api-token', 'delete', 'Hermes'], input='n\n').exit_code != 0
+    with home.ctx():
+        assert tokens.find_by_name('Hermes') is not None
+    result = home.app.test_cli_runner().invoke(args=['api-token', 'delete', 'hermes'], input='y\n')
+    assert result.exit_code == 0 and 'deleted' in result.output
+    assert run(home, 'create', 'Hermes', '--tool', 'notice=read').exit_code == 0
+    assert run(home, 'delete', 'Nobody', '--yes').exit_code != 0
