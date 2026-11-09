@@ -29,6 +29,9 @@
       "name": "Notice board"
     },
     {
+      "name": "Weather"
+    },
+    {
       "name": "Reminders"
     },
     {
@@ -2401,6 +2404,90 @@
         }
       }
     },
+    "/weather": {
+      "get": {
+        "operationId": "weather_get",
+        "summary": "Weather",
+        "description": "The weather at home, from Open-Meteo for the place set in config.yml (the same data as the Welcome page): current conditions, the next 24 hours and the next 7 days, with descriptions in the household language and the units used. HomeHub keeps it for 15 minutes before asking again. It never says where the home is and takes no location.",
+        "tags": [
+          "Weather"
+        ],
+        "x-homehub-tool": "weather",
+        "x-homehub-level": "read",
+        "responses": {
+          "200": {
+            "description": "The result as JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No latitude and longitude in config.yml, so HomeHub cannot look the weather up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Open-Meteo could not be reached; try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/expenses/rules": {
       "get": {
         "operationId": "expenses_rules",
@@ -3023,7 +3110,7 @@
         "properties": {
           "error": {
             "type": "string",
-            "description": "Machine-readable code: unauthorized, forbidden, not_found, bad_request, conflict, too_large, method_not_allowed, server_error."
+            "description": "Machine-readable code: unauthorized, forbidden, not_found, bad_request, conflict, too_large, method_not_allowed, server_error, upstream_error."
           },
           "message": {
             "type": "string",

@@ -33,6 +33,7 @@ def default_message(code: str) -> str:
         'too_large': _('The request is too large.'),
         'method_not_allowed': _('That method is not allowed here.'),
         'server_error': _('Something went wrong. Please try again.'),
+        'upstream_error': _('A service HomeHub relies on could not be reached. Try again later.'),
     }.get(code, code)
 
 
@@ -75,7 +76,7 @@ def check_access(token, tool: str | None, level: str) -> None:
     if tool is None:
         return
     if not tokens.tool_enabled(tool):
-        raise ApiError(404, 'not_found')
+        raise ApiError(404, 'not_found', tokens.TOOLS_BY_KEY[tool].switched_off)
     granted = tokens.effective_permissions(token).get(tool)
     if not tokens.level_allows(granted, level):
         label = str(tokens.TOOLS_BY_KEY[tool].label)

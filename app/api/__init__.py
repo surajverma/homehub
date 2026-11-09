@@ -14,6 +14,7 @@ def load_operations():
     from . import routes  # noqa: F401 (defines the overview operation)
     from . import home  # noqa: F401
     from . import household  # noqa: F401
+    from . import weather  # noqa: F401
     from . import expenses  # noqa: F401
     from . import mcp  # noqa: F401
     _loaded.append(True)

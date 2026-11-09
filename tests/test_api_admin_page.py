@@ -189,7 +189,13 @@ def test_only_enabled_tools_are_offered(home):
 def test_table_lists_tools_in_order_with_dash_for_missing_levels(home):
     body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
     order = [m for m in re.findall(r'data-tool="(\w+)"', body)]
-    assert order == [t.key for t in tokens.TOOLS]
+    # Weather is off unless config.yml switches it on
+    assert order == [t.key for t in tokens.TOOLS if t.key != 'weather']
+    home.set(weather={'enabled': True, 'latitude': '1', 'longitude': '2'})
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert [m for m in re.findall(r'data-tool="(\w+)"', body)] == [t.key for t in tokens.TOOLS]
+    weather_row = body.split('data-tool="weather"')[1].split('</tr>')[0]
+    assert 'value="write"' not in weather_row and 'Not available: weather can only be read' in weather_row
     notice_row = body.split('data-tool="notice"')[1].split('</tr>')[0]
     assert 'value="write"' not in notice_row and '–' in notice_row
 
@@ -222,12 +228,12 @@ def test_presets(home):
     all_on = [t.key for t in tokens.TOOLS]
     p = api_admin.presets(all_on)
     assert p['read_all'] == {'permissions': {k: 'read' for k in all_on}, 'act_as': False, 'allow_delete': False}
-    assert p['home_automation'] == {'permissions': {'presence': 'write', 'notice': 'read', 'reminders': 'read'},
+    assert p['home_automation'] == {'permissions': {'presence': 'write', 'notice': 'read', 'weather': 'read', 'reminders': 'read'},
                                     'act_as': True, 'allow_delete': False}
     ai = p['ai_assistant']
     assert ai['act_as'] is True and ai['allow_delete'] is False
-    assert ai['permissions']['notice'] == 'read'
-    assert all(ai['permissions'][k] == 'write' for k in all_on if k != 'notice')
+    assert ai['permissions']['notice'] == 'read' and ai['permissions']['weather'] == 'read'
+    assert all(ai['permissions'][k] == 'write' for k in all_on if k not in ('notice', 'weather'))
     # Switched-off tools are left out of every preset
     p = api_admin.presets(['presence', 'notice'])
     assert p['home_automation']['permissions'] == {'presence': 'write', 'notice': 'read'}

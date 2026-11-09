@@ -50,8 +50,8 @@ Presets:
 | Preset | Access | Act as family members | Allow deleting |
 |---|---|:---:|:---:|
 | Read everything | Every tool: Read | | |
-| Home automation | Who is home: Read & write; Notice board and Reminders: Read | ✓ | |
-| AI assistant | Every tool: Read & write (Notice board: Read) | ✓ | |
+| Home automation | Who is home: Read & write; Notice board, Weather and Reminders: Read | ✓ | |
+| AI assistant | Every tool: Read & write (Notice board and Weather: Read) | ✓ | |
 
 ### On the server
 
@@ -77,7 +77,7 @@ docker exec -it homehub flask api-token revoke "Home Assistant"
 docker exec -it homehub flask api-token activity "Home Assistant" --csv > activity.csv
 ```
 
-`create` and `regenerate` print the token once. Tools for `--tool`: `presence`, `statuses`, `notice`, `reminders`, `shopping`, `chores`, `notes`, `recipes`, `expiry`, `expenses`, each `=read` or `=write`. Add `--allow-delete` to let the token move reminders to the trash. `activity` lists the token's stored changes, newest first; add `--csv` for a CSV file.
+`create` and `regenerate` print the token once. Tools for `--tool`: `presence`, `statuses`, `notice`, `weather`, `reminders`, `shopping`, `chores`, `notes`, `recipes`, `expiry`, `expenses`, each `=read` or `=write` (`notice` and `weather` only `=read`). Add `--allow-delete` to let the token move reminders to the trash. `activity` lists the token's stored changes, newest first; add `--csv` for a CSV file.
 
 ### Tools and features
 
@@ -88,6 +88,7 @@ A tool whose feature is switched off in `config.yml` (under `feature_toggles`) d
 | `presence` | `who_is_home` | everyone's Home/Away | set a person Home or Away (needs Act as family members) |
 | `statuses` | `personal_status` | everyone's status text | set or clear a person's status (needs Act as family members) |
 | `notice` | always on | the notice | nothing: the admin edits it in HomeHub |
+| `weather` | `weather > enabled` | current weather, the next 24 hours and 7 days | nothing: weather can only be read |
 | `reminders` | `calendar` | today, this week or a range | add and edit one-off reminders, mark done or not done, move to the trash (with Allow deleting) |
 | `shopping` | `shopping_list` | items, tags, ticked or not | add and edit items, tick or untick them |
 | `chores` | `chores` | chores with due dates and tags | add and edit one-off chores, mark done or not done |
@@ -98,7 +99,7 @@ A tool whose feature is switched off in `config.yml` (under `feature_toggles`) d
 
 Edits follow the web app: only shopping items, one-off chores, one-off reminders and recipes can be edited, and only by whoever added them. Notes and the expiry tracker can't be edited in HomeHub either, so the API only adds them.
 
-Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, weather, backups, settings, budgets, changes to recurring rules (and to chores and reminders made by them), and bulk actions. The only delete is moving a reminder to the trash, because it can be restored from the calendar's Trash for 7 days.
+Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, backups, settings, budgets, changes to recurring rules (and to chores and reminders made by them), and bulk actions. The only delete is moving a reminder to the trash, because it can be restored from the calendar's Trash for 7 days.
 
 ## Making requests
 
@@ -160,6 +161,7 @@ All paths are below `/api/v1`. **R** needs Read, **W** needs Read & write.
 | `GET /statuses` | statuses R | Personal statuses |
 | `PUT /statuses/me` | statuses W | Set or clear the status of the person in `by` |
 | `GET /notice` | notice R | The notice board |
+| `GET /weather` | weather R | Current weather and the forecast |
 | `GET /reminders` | reminders R | Reminders for today, this week or a range |
 | `POST /reminders` | reminders W | Add a one-off reminder |
 | `PATCH /reminders/{id}` | reminders W | Edit a one-off reminder |
@@ -233,6 +235,32 @@ curl -H "$HH" http://homehub.local:5000/api/v1/notice
 ```
 
 `content` is simple HTML. Only the admin edits the notice, in HomeHub.
+
+### Weather
+
+```bash
+curl -H "$HH" http://homehub.local:5000/api/v1/weather
+```
+
+The same weather as the Welcome page widget, for the place set under `weather` in `config.yml` (it needs `enabled: true` and a `latitude` and `longitude`). The answer (shortened here) has everything the widget can show, so a client can pick what it needs:
+
+```json
+{
+  "fetched_at": "2026-11-09T08:15:02Z",
+  "units": {"temperature": "°C", "wind_speed": "km/h", "wind_direction": "°", "precipitation": "mm", "snowfall": "cm", "humidity": "%", "cloud_cover": "%", "precipitation_probability": "%", "pressure": "hPa", "visibility": "m"},
+  "current": {"time": "2026-11-09T13:45+05:30", "description": "Partly Cloudy", "weather_code": 2, "is_day": true, "temperature": 27.4, "feels_like": 29.1, "humidity": 61, "dew_point": 19.2, "precipitation": 0.0, "rain": 0.0, "showers": 0.0, "snowfall": 0.0, "pressure": 1011.2, "cloud_cover": 40, "visibility": 24140.0, "uv_index": 5.3, "wind_speed": 11.2, "wind_gusts": 20.5, "wind_direction": 225, "wind_direction_compass": "SW"},
+  "hourly": [{"time": "2026-11-09T13:00+05:30", "description": "Overcast", "temperature": 26.0, "feels_like": 27.0, "precipitation_probability": 10, "precipitation": 0.0, "uv_index": 4.0, "wind_speed": 9.0, "...": "..."}],
+  "daily": [{"date": "2026-11-09", "description": "Light Rain", "temperature_max": 31.2, "temperature_min": 19.6, "precipitation_probability": 35, "precipitation": 1.4, "uv_index_max": 8.1, "wind_speed_max": 18.0, "sunrise": "2026-11-09T06:42+05:30", "sunset": "2026-11-09T17:58+05:30", "...": "..."}],
+  "summary": "Partly Cloudy, 27°C (feels like 29°C). Today 20 to 31°C, 35% chance of rain."
+}
+```
+
+- `hourly` covers the next 24 hours and `daily` the next 7 days, today first. `description` is in the household's language; `weather_code` is the [WMO code](https://open-meteo.com/en/docs) it comes from.
+- Times carry the UTC offset of the place. `fetched_at` is when HomeHub got the data from Open-Meteo, in UTC.
+- Units follow `units` in `config.yml`: `metric` or `imperial` (°F and mph; precipitation stays in mm). `units` says which apply.
+- HomeHub asks Open-Meteo at most every 15 minutes and shares the answer with the Welcome page, so polling the API doesn't add requests to Open-Meteo.
+- The answer never includes the latitude, longitude, place name or time zone name, and the endpoint takes no location: it only answers for the home.
+- With `enabled: false` it answers `404`. Without a latitude and longitude it answers `409` (the widget then uses the browser's location, which the server doesn't know). If Open-Meteo can't be reached it answers `502`.
 
 ### Reminders
 
@@ -402,13 +430,14 @@ Errors are JSON with a code and a message in the household's language:
 | 405 | `method_not_allowed` | Wrong method for that path |
 | 409 | `conflict` | Can't be done right now, for example a recurring day deleted in HomeHub, editing a recurring chore or reminder, or a token whose name is now a family member's |
 | 413 | `too_large` | Body larger than 64 KB |
+| 502 | `upstream_error` | Open-Meteo, which the weather comes from, couldn't be reached |
 
 
 ## Home Assistant
 
 A native Home Assistant (HACS) integration isn't planned, but the API covers the common uses, and anyone is welcome to build an integration on it. If you do, open an issue and it can be linked from the README.
 
-Create a token with the **Home automation** preset (Who is home: Read & write; Notice board and Reminders: Read; Act as family members). Put it in Home Assistant's `secrets.yaml` with the word `Bearer` in front:
+Create a token with the **Home automation** preset (Who is home: Read & write; Notice board, Weather and Reminders: Read; Act as family members). Put it in Home Assistant's `secrets.yaml` with the word `Bearer` in front:
 
 ```yaml
 homehub_auth: "Bearer hh_..."
@@ -483,6 +512,26 @@ rest:
 ```
 
 The notice and the reminders are kept in attributes, because a sensor's state can hold at most 255 characters.
+
+The weather, for a dashboard or an automation (HomeHub asks Open-Meteo at most every 15 minutes whatever the `scan_interval`):
+
+```yaml
+rest:
+  - resource: "http://homehub.local:5000/api/v1/weather"
+    headers:
+      Authorization: !secret homehub_auth
+    scan_interval: 900
+    sensor:
+      - name: "HomeHub temperature"
+        value_template: "{{ value_json.current.temperature }}"
+        unit_of_measurement: "°C"
+        json_attributes:
+          - current
+          - daily
+      - name: "HomeHub rain chance today"
+        value_template: "{{ value_json.daily[0].precipitation_probability }}"
+        unit_of_measurement: "%"
+```
 
 ### Dashboard cards
 

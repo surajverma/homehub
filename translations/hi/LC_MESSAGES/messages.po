@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 13:47+0530\n"
+"POT-Creation-Date: 2026-11-09 13:55+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -53,6 +53,10 @@ msgstr "यहां यह तरीका (method) इस्तेमाल �
 #: app/api/core.py app/blueprints/__init__.py app/blueprints/expenses.py
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।"
+
+#: app/api/core.py
+msgid "A service HomeHub relies on could not be reached. Try again later."
+msgstr "HomeHub जिस सेवा पर निर्भर है, उससे संपर्क नहीं हो सका। बाद में फिर से कोशिश करें।"
 
 #: app/api/core.py
 #, python-format
@@ -488,6 +492,22 @@ msgid "Not available: only the admin can change the notice"
 msgstr "उपलब्ध नहीं: सूचना सिर्फ़ एडमिन बदल सकता है"
 
 #: app/api/tokens.py templates/index.html
+msgid "Weather"
+msgstr "मौसम"
+
+#: app/api/tokens.py
+msgid "Current weather, the next 24 hours and 7 days, for the place set in config.yml"
+msgstr "config.yml में दी गई जगह का अभी का मौसम, अगले 24 घंटे और 7 दिन"
+
+#: app/api/tokens.py
+msgid "Not available: weather can only be read"
+msgstr "उपलब्ध नहीं: मौसम सिर्फ़ पढ़ा जा सकता है"
+
+#: app/api/tokens.py
+msgid "Weather is switched off in config.yml."
+msgstr "config.yml में मौसम बंद है।"
+
+#: app/api/tokens.py templates/index.html
 msgid "Reminders"
 msgstr "रिमाइंडर"
 
@@ -616,6 +636,24 @@ msgstr "पढ़ने और बदलने वाले %(tool)s के ल�
 #: app/api/tokens.py
 msgid "Revoke the token before deleting it."
 msgstr "हटाने से पहले टोकन रद्द करें।"
+
+#: app/api/weather.py
+msgid "Weather has no latitude and longitude in config.yml, so only a browser can look it up for its own location."
+msgstr "config.yml में मौसम के लिए अक्षांश और देशांतर नहीं दिए गए हैं, इसलिए सिर्फ़ ब्राउज़र ही अपनी जगह का मौसम देख सकता है।"
+
+#: app/api/weather.py
+msgid "The weather service could not be reached. Try again in a few minutes."
+msgstr "मौसम सेवा से संपर्क नहीं हो सका। कुछ मिनट बाद फिर से कोशिश करें।"
+
+#: app/api/weather.py
+#, python-format
+msgid "%(description)s, %(temp)s%(unit)s (feels like %(feels)s%(unit)s)."
+msgstr "%(description)s, %(temp)s%(unit)s (महसूस होता है %(feels)s%(unit)s)।"
+
+#: app/api/weather.py
+#, python-format
+msgid "Today %(low)s to %(high)s%(unit)s, %(chance)s%% chance of rain."
+msgstr "आज %(low)s से %(high)s%(unit)s, बारिश की संभावना %(chance)s%%।"
 
 #: app/blueprints/__init__.py
 msgid "Offline"
@@ -1427,6 +1465,103 @@ msgstr "यह बदलाव वापस नहीं लिया जा स
 #: app/undo.py
 msgid "Change undone."
 msgstr "बदलाव वापस ले लिया गया।"
+
+#: app/weather.py static/js/weather.js
+msgctxt "weather"
+msgid "Clear"
+msgstr "साफ़"
+
+#: app/weather.py static/js/weather.js
+msgid "Mainly Clear"
+msgstr "ज़्यादातर साफ़"
+
+#: app/weather.py static/js/weather.js
+msgid "Partly Cloudy"
+msgstr "आंशिक बादल"
+
+#: app/weather.py static/js/weather.js
+msgid "Overcast"
+msgstr "घने बादल"
+
+#: app/weather.py static/js/weather.js
+msgid "Fog"
+msgstr "कोहरा"
+
+#: app/weather.py static/js/weather.js
+msgid "Freezing Fog"
+msgstr "जमा देने वाला कोहरा"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Drizzle"
+msgstr "हल्की बूंदाबांदी"
+
+#: app/weather.py static/js/weather.js
+msgid "Drizzle"
+msgstr "बूंदाबांदी"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Drizzle"
+msgstr "तेज़ बूंदाबांदी"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Rain"
+msgstr "हल्की बारिश"
+
+#: app/weather.py static/js/weather.js
+msgid "Rain"
+msgstr "बारिश"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Rain"
+msgstr "तेज़ बारिश"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Snow"
+msgstr "हल्की बर्फ़बारी"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow"
+msgstr "बर्फ़बारी"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Snow"
+msgstr "भारी बर्फ़बारी"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow Grains"
+msgstr "बर्फ़ के दाने"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Showers"
+msgstr "हल्की बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Showers"
+msgstr "बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Showers"
+msgstr "तेज़ बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow Showers"
+msgstr "बर्फ़ की बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Snow Showers"
+msgstr "बर्फ़ की तेज़ बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Thunderstorm"
+msgstr "आंधी-तूफ़ान"
+
+#: app/weather.py static/js/weather.js
+msgid "Thunderstorm + Hail"
+msgstr "आंधी-तूफ़ान और ओले"
+
+#: app/weather.py static/js/weather.js templates/index.html
+msgid "Unknown"
+msgstr "पता नहीं"
 
 #: static/js/base/app.js static/js/pages/home/reminders.js
 msgid "Undo"
@@ -2343,103 +2478,6 @@ msgstr "हटाएं"
 #, python-brace-format
 msgid "Delete tag \"{tag}\"? This removes it from suggestions (items keep their tags)."
 msgstr "क्या टैग \"{tag}\" हटा दें? यह सिर्फ़ सुझावों से हटेगा (आइटम पर लगे टैग बने रहेंगे)।"
-
-#: static/js/weather.js
-msgctxt "weather"
-msgid "Clear"
-msgstr "साफ़"
-
-#: static/js/weather.js
-msgid "Mainly Clear"
-msgstr "ज़्यादातर साफ़"
-
-#: static/js/weather.js
-msgid "Partly Cloudy"
-msgstr "आंशिक बादल"
-
-#: static/js/weather.js
-msgid "Overcast"
-msgstr "घने बादल"
-
-#: static/js/weather.js
-msgid "Fog"
-msgstr "कोहरा"
-
-#: static/js/weather.js
-msgid "Freezing Fog"
-msgstr "जमा देने वाला कोहरा"
-
-#: static/js/weather.js
-msgid "Light Drizzle"
-msgstr "हल्की बूंदाबांदी"
-
-#: static/js/weather.js
-msgid "Drizzle"
-msgstr "बूंदाबांदी"
-
-#: static/js/weather.js
-msgid "Heavy Drizzle"
-msgstr "तेज़ बूंदाबांदी"
-
-#: static/js/weather.js
-msgid "Light Rain"
-msgstr "हल्की बारिश"
-
-#: static/js/weather.js
-msgid "Rain"
-msgstr "बारिश"
-
-#: static/js/weather.js
-msgid "Heavy Rain"
-msgstr "तेज़ बारिश"
-
-#: static/js/weather.js
-msgid "Light Snow"
-msgstr "हल्की बर्फ़बारी"
-
-#: static/js/weather.js
-msgid "Snow"
-msgstr "बर्फ़बारी"
-
-#: static/js/weather.js
-msgid "Heavy Snow"
-msgstr "भारी बर्फ़बारी"
-
-#: static/js/weather.js
-msgid "Snow Grains"
-msgstr "बर्फ़ के दाने"
-
-#: static/js/weather.js
-msgid "Light Showers"
-msgstr "हल्की बौछारें"
-
-#: static/js/weather.js
-msgid "Showers"
-msgstr "बौछारें"
-
-#: static/js/weather.js
-msgid "Heavy Showers"
-msgstr "तेज़ बौछारें"
-
-#: static/js/weather.js
-msgid "Snow Showers"
-msgstr "बर्फ़ की बौछारें"
-
-#: static/js/weather.js
-msgid "Heavy Snow Showers"
-msgstr "बर्फ़ की तेज़ बौछारें"
-
-#: static/js/weather.js
-msgid "Thunderstorm"
-msgstr "आंधी-तूफ़ान"
-
-#: static/js/weather.js
-msgid "Thunderstorm + Hail"
-msgstr "आंधी-तूफ़ान और ओले"
-
-#: static/js/weather.js templates/index.html
-msgid "Unknown"
-msgstr "पता नहीं"
 
 #: static/js/weather.js
 msgid "Invalid weather data received"
@@ -3874,10 +3912,6 @@ msgstr "%(name)s में आपका स्वागत है"
 #: templates/index.html
 msgid "Pick a tool from the left to get started."
 msgstr "शुरू करने के लिए बाईं ओर से कोई टूल चुनें।"
-
-#: templates/index.html
-msgid "Weather"
-msgstr "मौसम"
 
 #: templates/index.html
 msgid "Loading weather data..."

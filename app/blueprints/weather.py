@@ -1,5 +1,6 @@
 from flask import jsonify, request, current_app
 import requests
+from .. import weather
 from ..blueprints import main_bp
 from datetime import datetime, timezone
 
@@ -17,7 +18,11 @@ def weather_proxy():
     try:
         # Get all query parameters from the client request
         params = request.args.to_dict()
-        
+
+        # Without a place: the one in config.yml, from the cache the API shares (app/weather.py)
+        if 'latitude' not in params and 'longitude' not in params:
+            return _configured_place()
+
         # Validate required parameters
         if 'latitude' not in params or 'longitude' not in params:
             return jsonify({'error': 'Missing latitude or longitude parameter'}), 400
@@ -101,3 +106,16 @@ def weather_proxy():
     except Exception as e:
         current_app.logger.error(f'Unexpected error in weather proxy: {e}')
         return jsonify({'error': 'Internal server error'}), 500
+
+
+def _configured_place():
+    """Open-Meteo's answer for the place set in config.yml, with every field the widget and the API use."""
+    try:
+        data, _fetched_at = weather.forecast(current_app.config['HOMEHUB_CONFIG'])
+    except weather.WeatherError as exc:
+        if exc.reason == 'disabled':
+            return jsonify({'error': 'Weather is switched off'}), 404
+        if exc.reason == 'no_location':
+            return jsonify({'error': 'Missing latitude or longitude parameter'}), 400
+        return jsonify({'error': 'Failed to fetch weather data'}), 502
+    return jsonify(data)

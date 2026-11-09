@@ -51,7 +51,7 @@ def test_name_is_sanitised(home):
 def test_permission_rules(home):
     with home.ctx():
         with pytest.raises(tokens.TokenError, match='Unknown tool'):
-            tokens.create_token('A', {'weather': 'read'})
+            tokens.create_token('A', {'sunshine': 'read'})
         with pytest.raises(tokens.TokenError):
             tokens.create_token('A', {'notice': 'write'})
         with pytest.raises(tokens.TokenError, match='Act as family members'):

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 13:47+0530\n"
+"POT-Creation-Date: 2026-11-09 13:55+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -52,6 +52,10 @@ msgstr ""
 
 #: app/api/core.py app/blueprints/__init__.py app/blueprints/expenses.py
 msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: app/api/core.py
+msgid "A service HomeHub relies on could not be reached. Try again later."
 msgstr ""
 
 #: app/api/core.py
@@ -488,6 +492,22 @@ msgid "Not available: only the admin can change the notice"
 msgstr ""
 
 #: app/api/tokens.py templates/index.html
+msgid "Weather"
+msgstr "Hava Durumu"
+
+#: app/api/tokens.py
+msgid "Current weather, the next 24 hours and 7 days, for the place set in config.yml"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Not available: weather can only be read"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Weather is switched off in config.yml."
+msgstr ""
+
+#: app/api/tokens.py templates/index.html
 msgid "Reminders"
 msgstr "Hatırlatıcılar"
 
@@ -615,6 +635,24 @@ msgstr ""
 
 #: app/api/tokens.py
 msgid "Revoke the token before deleting it."
+msgstr ""
+
+#: app/api/weather.py
+msgid "Weather has no latitude and longitude in config.yml, so only a browser can look it up for its own location."
+msgstr ""
+
+#: app/api/weather.py
+msgid "The weather service could not be reached. Try again in a few minutes."
+msgstr ""
+
+#: app/api/weather.py
+#, python-format
+msgid "%(description)s, %(temp)s%(unit)s (feels like %(feels)s%(unit)s)."
+msgstr ""
+
+#: app/api/weather.py
+#, python-format
+msgid "Today %(low)s to %(high)s%(unit)s, %(chance)s%% chance of rain."
 msgstr ""
 
 #: app/blueprints/__init__.py
@@ -1412,6 +1450,103 @@ msgstr "Bu değişiklik geri alınamadı."
 #: app/undo.py
 msgid "Change undone."
 msgstr "Değişiklik geri alındı."
+
+#: app/weather.py static/js/weather.js
+msgctxt "weather"
+msgid "Clear"
+msgstr "Açık"
+
+#: app/weather.py static/js/weather.js
+msgid "Mainly Clear"
+msgstr "Çoğunlukla Açık"
+
+#: app/weather.py static/js/weather.js
+msgid "Partly Cloudy"
+msgstr "Parçalı Bulutlu"
+
+#: app/weather.py static/js/weather.js
+msgid "Overcast"
+msgstr "Kapalı"
+
+#: app/weather.py static/js/weather.js
+msgid "Fog"
+msgstr "Sis"
+
+#: app/weather.py static/js/weather.js
+msgid "Freezing Fog"
+msgstr "Dondurucu Sis"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Drizzle"
+msgstr "Hafif Çisenti"
+
+#: app/weather.py static/js/weather.js
+msgid "Drizzle"
+msgstr "Çisenti"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Drizzle"
+msgstr "Yoğun Çisenti"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Rain"
+msgstr "Hafif Yağmur"
+
+#: app/weather.py static/js/weather.js
+msgid "Rain"
+msgstr "Yağmur"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Rain"
+msgstr "Şiddetli Yağmur"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Snow"
+msgstr "Hafif Kar"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow"
+msgstr "Kar"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Snow"
+msgstr "Yoğun Kar"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow Grains"
+msgstr "Kar Tanecikleri"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Showers"
+msgstr "Hafif Sağanak"
+
+#: app/weather.py static/js/weather.js
+msgid "Showers"
+msgstr "Sağanak"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Showers"
+msgstr "Şiddetli Sağanak"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow Showers"
+msgstr "Kar Sağanağı"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Snow Showers"
+msgstr "Şiddetli Kar Sağanağı"
+
+#: app/weather.py static/js/weather.js
+msgid "Thunderstorm"
+msgstr "Gök Gürültülü Fırtına"
+
+#: app/weather.py static/js/weather.js
+msgid "Thunderstorm + Hail"
+msgstr "Gök Gürültülü Fırtına + Dolu"
+
+#: app/weather.py static/js/weather.js templates/index.html
+msgid "Unknown"
+msgstr "Bilinmiyor"
 
 #: static/js/base/app.js static/js/pages/home/reminders.js
 msgid "Undo"
@@ -2315,103 +2450,6 @@ msgstr "Sil"
 #, python-brace-format
 msgid "Delete tag \"{tag}\"? This removes it from suggestions (items keep their tags)."
 msgstr "\"{tag}\" etiketi silinsin mi? Bu, etiketi önerilerden kaldırır (öğeler etiketlerini korur)."
-
-#: static/js/weather.js
-msgctxt "weather"
-msgid "Clear"
-msgstr "Açık"
-
-#: static/js/weather.js
-msgid "Mainly Clear"
-msgstr "Çoğunlukla Açık"
-
-#: static/js/weather.js
-msgid "Partly Cloudy"
-msgstr "Parçalı Bulutlu"
-
-#: static/js/weather.js
-msgid "Overcast"
-msgstr "Kapalı"
-
-#: static/js/weather.js
-msgid "Fog"
-msgstr "Sis"
-
-#: static/js/weather.js
-msgid "Freezing Fog"
-msgstr "Dondurucu Sis"
-
-#: static/js/weather.js
-msgid "Light Drizzle"
-msgstr "Hafif Çisenti"
-
-#: static/js/weather.js
-msgid "Drizzle"
-msgstr "Çisenti"
-
-#: static/js/weather.js
-msgid "Heavy Drizzle"
-msgstr "Yoğun Çisenti"
-
-#: static/js/weather.js
-msgid "Light Rain"
-msgstr "Hafif Yağmur"
-
-#: static/js/weather.js
-msgid "Rain"
-msgstr "Yağmur"
-
-#: static/js/weather.js
-msgid "Heavy Rain"
-msgstr "Şiddetli Yağmur"
-
-#: static/js/weather.js
-msgid "Light Snow"
-msgstr "Hafif Kar"
-
-#: static/js/weather.js
-msgid "Snow"
-msgstr "Kar"
-
-#: static/js/weather.js
-msgid "Heavy Snow"
-msgstr "Yoğun Kar"
-
-#: static/js/weather.js
-msgid "Snow Grains"
-msgstr "Kar Tanecikleri"
-
-#: static/js/weather.js
-msgid "Light Showers"
-msgstr "Hafif Sağanak"
-
-#: static/js/weather.js
-msgid "Showers"
-msgstr "Sağanak"
-
-#: static/js/weather.js
-msgid "Heavy Showers"
-msgstr "Şiddetli Sağanak"
-
-#: static/js/weather.js
-msgid "Snow Showers"
-msgstr "Kar Sağanağı"
-
-#: static/js/weather.js
-msgid "Heavy Snow Showers"
-msgstr "Şiddetli Kar Sağanağı"
-
-#: static/js/weather.js
-msgid "Thunderstorm"
-msgstr "Gök Gürültülü Fırtına"
-
-#: static/js/weather.js
-msgid "Thunderstorm + Hail"
-msgstr "Gök Gürültülü Fırtına + Dolu"
-
-#: static/js/weather.js templates/index.html
-msgid "Unknown"
-msgstr "Bilinmiyor"
 
 #: static/js/weather.js
 msgid "Invalid weather data received"
@@ -3836,10 +3874,6 @@ msgstr "Hoş geldiniz: %(name)s"
 #: templates/index.html
 msgid "Pick a tool from the left to get started."
 msgstr "Başlamak için soldan bir araç seçin."
-
-#: templates/index.html
-msgid "Weather"
-msgstr "Hava Durumu"
 
 #: templates/index.html
 msgid "Loading weather data..."

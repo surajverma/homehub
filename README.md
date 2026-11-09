@@ -297,7 +297,7 @@ If it leaks, change the token in `config.yml`; old links stop working straight a
 
 ## API, Home Assistant and AI agents (optional)
 
-HomeHub has a token-protected JSON API at `/api/v1/` and a built-in [MCP](https://modelcontextprotocol.io) endpoint at `/api/v1/mcp`, so Home Assistant, phone shortcuts, NFC tags, Node-RED, scripts and AI agents (such as Hermes or Claude) can read and update who is home, reminders, the shopping list, chores, notes, recipes, the expiry tracker and expenses.
+HomeHub has a token-protected JSON API at `/api/v1/` and a built-in [MCP](https://modelcontextprotocol.io) endpoint at `/api/v1/mcp`, so Home Assistant, phone shortcuts, NFC tags, Node-RED, scripts and AI agents (such as Hermes or Claude) can read and update who is home, reminders, the shopping list, chores, notes, recipes, the expiry tracker and expenses, and read the notice board and the weather.
 
 The API is off until you create a token. Switch to the admin user and open **Admin tools > API access** on the Welcome page (it needs an [admin password](#admin-password-optional)), or use the command line:
 
@@ -438,7 +438,7 @@ weather:
 - **Two view modes:**
   - `compact`: Shows current temperature, weather condition, feels like, wind (with direction and gusts), humidity, and recent precipitation
   - `detailed`: Adds today's forecast with sunrise/sunset times, UV index, precipitation probability, and daily high/low temperatures
-- **Smart caching:** Weather data is cached for 15 minutes to respect API rate limits and improve performance
+- **Smart caching:** Weather data is cached for 15 minutes to respect API rate limits and improve performance. With coordinates in `config.yml`, the server fetches it and shares that cache with the [API](docs/api.md#weather)
 - **Flexible location:** Use configured coordinates or browser geolocation
 - **Timezone support:** Displays times in your configured timezone, or uses automatic detection
 - **Unit selection:** Choose between metric (°C, km/h, mm) or imperial (°F, mph, mm) units
@@ -521,11 +521,11 @@ It is **not designed or hardened to be safely exposed to the public internet.** 
 ### 🌤️ Weather Data & Third-Party Services
 
 The optional weather widget uses [Open-Meteo](https://open-meteo.com/), a free weather API service. When the weather widget is enabled:
-- Your browser makes requests to Open-Meteo's servers to fetch weather data
+- With `latitude` and `longitude` in `config.yml`, the HomeHub server fetches the weather from Open-Meteo; without them, your browser uses its own location and the server passes that request on
 - Location coordinates (latitude/longitude) are sent to their API
 - Open-Meteo has its own [privacy policy](https://open-meteo.com/en/terms) and terms of service
 
-By enabling the weather widget, you acknowledge that weather data is provided by a third-party service and is subject to their policies. HomeHub itself does not store or process weather data beyond local browser caching.
+By enabling the weather widget, you acknowledge that weather data is provided by a third-party service and is subject to their policies. HomeHub itself keeps weather data only in memory (on the server, for 15 minutes) and in the browser's cache. The API's weather answer never includes the coordinates or the place name.
 
 ## Have Fun!
 

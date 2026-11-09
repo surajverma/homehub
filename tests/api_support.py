@@ -59,7 +59,7 @@ class Home:
 
     def all_tools(self, name='Agent', level='write', act_as=True, allow_delete=False):
         from app.api import tokens
-        perms = {t.key: ('read' if t.key == 'notice' else level) for t in tokens.TOOLS}
+        perms = {t.key: (level if level in t.levels else 'read') for t in tokens.TOOLS}
         return self.token(name, act_as=act_as, allow_delete=allow_delete, **perms)
 
     def call(self, method, path, secret=None, json=None, headers=None, **kwargs):

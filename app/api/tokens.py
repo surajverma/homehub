@@ -36,7 +36,8 @@ def N_(text):
 @dataclass(frozen=True)
 class Tool:
     key: str
-    # Key under feature_toggles in config.yml, or None for a tool that is always on
+    # Key under feature_toggles in config.yml, "section.key" for a switch elsewhere in config.yml
+    # (weather.enabled), or None for a tool that is always on
     feature: str | None
     # What a missing feature_toggles line means (the same defaults as the sidebar in base.html)
     default_on: bool
@@ -46,6 +47,8 @@ class Tool:
     write_help_text: str | None = None
     # Why there is no Read & write level (shown on the dash in the token page's table)
     no_write_reason_text: str | None = None
+    # What the API says when the tool is switched off; without it, a plain "Not found."
+    switched_off_text: str | None = None
 
     @property
     def label(self) -> str:
@@ -58,6 +61,10 @@ class Tool:
     @property
     def write_help(self) -> str | None:
         return _(self.write_help_text) if self.write_help_text else None
+
+    @property
+    def switched_off(self) -> str | None:
+        return _(self.switched_off_text) if self.switched_off_text else None
 
     @property
     def no_write_reason(self) -> str:
@@ -73,6 +80,9 @@ TOOLS = (
     Tool('notice', None, True, N_('Notice board'), ('read',),
          N_('Read only. Only the admin can change the notice in HomeHub.'), None,
          N_('Not available: only the admin can change the notice')),
+    Tool('weather', 'weather.enabled', False, N_('Weather'), ('read',),
+         N_('Current weather, the next 24 hours and 7 days, for the place set in config.yml'), None,
+         N_('Not available: weather can only be read'), N_('Weather is switched off in config.yml.')),
     Tool('reminders', 'calendar', True, N_('Reminders'), ('read', 'write'),
          N_('Reminders for a day, a week or a range'), N_('Add and edit reminders, mark them done or not done')),
     Tool('shopping', 'shopping_list', False, N_('Shopping list'), ('read', 'write'),
@@ -107,7 +117,11 @@ def tool_enabled(key: str, config: dict | None = None) -> bool:
         return False
     if tool.feature is None:
         return True
-    toggles = (config if config is not None else _config()).get('feature_toggles') or {}
+    config = config if config is not None else _config()
+    section, dot, key = tool.feature.partition('.')
+    if dot:
+        return bool((config.get(section) or {}).get(key, tool.default_on))
+    toggles = config.get('feature_toggles') or {}
     return bool(toggles.get(tool.feature, tool.default_on))
 
 

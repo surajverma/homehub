@@ -21,7 +21,7 @@ RECENT_SHOWN = 20
 def presets(enabled_keys) -> dict:
     """The preset buttons: {key: {'permissions': {tool: level}, 'act_as': bool, 'allow_delete': bool}}."""
     enabled = [t for t in tokens.TOOLS if t.key in enabled_keys]
-    home_automation = {'presence': 'write', 'notice': 'read', 'reminders': 'read'}
+    home_automation = {'presence': 'write', 'notice': 'read', 'weather': 'read', 'reminders': 'read'}
     return {
         'read_all': {'permissions': {t.key: 'read' for t in enabled}, 'act_as': False, 'allow_delete': False},
         'home_automation': {'permissions': {k: v for k, v in home_automation.items() if k in enabled_keys},
