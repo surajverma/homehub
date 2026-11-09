@@ -293,7 +293,7 @@ def test_delete_on_the_page(home):
     assert 'Revoke the token before deleting it' in resp.get_data(as_text=True)
     home.client.post(f'/admin/api/{token_id}/revoke', data={'user': ADMIN})
     body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
-    assert re.search(r'delete"\s+data-confirm="Delete Hermes\? This removes it from the list for good\. Its activity history is kept\."', body)
+    assert re.search(r'delete"\s+data-confirm="Delete Hermes\? Its activity history is deleted too\."', body)
     home.client.post(f'/admin/api/{token_id}/delete', data={'user': ADMIN})
     with home.ctx():
         assert ApiToken.query.count() == 0

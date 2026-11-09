@@ -135,7 +135,7 @@ def rename_command(old, new):
 @click.argument('name')
 @click.option('--yes', is_flag=True, help='Do not ask for confirmation.')
 def delete_command(name, yes):
-    """Delete revoked token NAME for good (its activity history is kept). Revoke it first."""
+    """Delete revoked token NAME for good, with its activity history. Revoke it first."""
     _fresh_config()
     token = tokens.find_by_name(name)
     if token is None:
@@ -143,7 +143,7 @@ def delete_command(name, yes):
     if not token.revoked_at:
         raise click.ClickException(f'Token {token.name} is still active. Revoke it first: flask api-token revoke "{token.name}"')
     if not yes:
-        click.confirm(f'Delete {token.name}? This removes it from the list for good. Its activity history is kept.', abort=True)
+        click.confirm(f'Delete {token.name}? Its activity history is deleted too.', abort=True)
     deleted = token.name
     tokens.delete_token(token)
     click.echo(f'Token {deleted} deleted.')

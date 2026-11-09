@@ -37,11 +37,11 @@ On the page:
 4. Leave **Allow deleting** off unless you need it. It only lets the token move reminders to the trash, and needs Reminders with Read & write.
 5. Select **Create token** and copy the token straight away. HomeHub keeps only a fingerprint of it and can't show it again.
 
-The list below shows each token's access, when it was last used and its recent changes. **Rename** changes a token's name (the token itself keeps working); **Regenerate** makes a new token (the old one stops working at once); **Revoke** switches a token off. Regenerating a revoked token brings it back with the same access, and **Delete** (only for revoked tokens) removes it from the list for good, so its name can be used again.
+The list below shows each token's access, when it was last used and its recent changes. **Rename** changes a token's name (the token itself keeps working); **Regenerate** makes a new token (the old one stops working at once); **Revoke** switches a token off. Regenerating a revoked token brings it back with the same access, and **Delete** (only for revoked tokens) removes it from the list for good, with its activity history, so its name can be used again. Revoking keeps the history.
 
 Records a token added keep the name it had then. After a rename, the token can't edit those older records any more: in HomeHub, who may change something always follows the name it was added under.
 
-Deleting a token keeps up to its newest 200 changes in the database (with the token's name), for backups and the record; they no longer show anywhere on the page.
+HomeHub keeps the newest 200 changes of each token. Deleting a token deletes them too.
 
 If a family member added to `config.yml` later has the same name as a token, the token's changes would look like that person's. The list then flags the token, and changes made as the token itself (without `by`) are refused with `409` until you rename it.
 

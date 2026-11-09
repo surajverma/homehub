@@ -241,19 +241,13 @@ def regenerate_token(token: ApiToken) -> str:
 
 
 def delete_token(token: ApiToken) -> None:
-    """Remove a revoked token for good, so its name can be used again.
+    """Remove a revoked token for good, with its activity history, so its name can be used again.
 
-    Its activity rows stay in the database (they keep the token's name) for the record, at most
-    the newest ACTIVITY_KEEP of them. They are detached from the token id, which a new token could
-    get again, so they show nowhere on the page.
+    Revoking keeps the history; deleting removes it too (download the CSV first to keep a copy).
     """
     if not token.revoked_at:
         raise TokenError(_('Revoke the token before deleting it.'))
-    keep = (db.session.query(ApiActivity.id).filter(ApiActivity.token_id == token.id)
-            .order_by(ApiActivity.id.desc()).offset(ACTIVITY_KEEP - 1).limit(1).scalar())
-    if keep is not None:
-        ApiActivity.query.filter(ApiActivity.token_id == token.id, ApiActivity.id < keep).delete(synchronize_session=False)
-    ApiActivity.query.filter(ApiActivity.token_id == token.id).update({ApiActivity.token_id: None}, synchronize_session=False)
+    ApiActivity.query.filter(ApiActivity.token_id == token.id).delete(synchronize_session=False)
     db.session.delete(token)
     db.session.commit()
 

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 05:30+0000\n"
+"POT-Creation-Date: 2026-11-09 13:43+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -2752,8 +2752,8 @@ msgstr "नया बनाएं"
 
 #: templates/api_access.html
 #, python-format
-msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
-msgstr "%(name)s हटाएं? यह इसे सूची से हमेशा के लिए हटा देगा। इसके बदलावों का इतिहास रखा जाता है।"
+msgid "Delete %(name)s? Its activity history is deleted too."
+msgstr "%(name)s हटाएं? इसके बदलावों का इतिहास भी हट जाएगा।"
 
 #: templates/api_access.html
 #, python-format
@@ -4431,4 +4431,7 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "Add a recipe"
 #~ msgstr "व्यंजन जोड़ें"
+
+#~ msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
+#~ msgstr "%(name)s हटाएं? यह इसे सूची से हमेशा के लिए हटा देगा। इसके बदलावों का इतिहास रखा जाता है।"
 
