@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 13:55+0530\n"
+"POT-Creation-Date: 2026-11-09 14:17+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -875,12 +875,14 @@ msgid "Chore settings updated."
 msgstr "कामों की सेटिंग अपडेट हो गई।"
 
 #: app/blueprints/chores.py
-msgid "Recurring chore rule deleted."
-msgstr "दोहराने वाले काम का नियम हटा दिया गया।"
+#, python-format
+msgid "Recurring chore %(chore)s moved to the trash."
+msgstr "दोहराया जाने वाला काम %(chore)s ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/chores.py
-msgid "Chore deleted."
-msgstr "काम हटा दिया गया।"
+#, python-format
+msgid "%(chore)s moved to the trash."
+msgstr "%(chore)s ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/chores.py
 msgid "Not allowed to delete chore."
@@ -1065,6 +1067,21 @@ msgid_plural "%(num)s expenses imported."
 msgstr[0] "%(num)s खर्च इंपोर्ट हुआ।"
 msgstr[1] "%(num)s खर्च इंपोर्ट हुए।"
 
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense."
+msgstr "इसका दोहराने का नियम %(title)s अब मौजूद नहीं है, इसलिए इसे एक बार के खर्च के रूप में वापस लाया गया।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s was restored too."
+msgstr "इसका दोहराने का नियम %(title)s भी वापस लाया गया।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s was added back since it was deleted, so this copy cannot be restored. Delete it for good instead."
+msgstr "%(date)s का %(title)s हटाए जाने के बाद फिर से जोड़ा जा चुका है, इसलिए यह कॉपी वापस नहीं लाई जा सकती। इसके बजाय इसे हमेशा के लिए हटा दें।"
+
 #: app/blueprints/expenses.py static/js/pages/expenses_recurring.js
 msgid "Unit price must be greater than zero."
 msgstr "प्रति यूनिट कीमत शून्य से ज़्यादा होनी चाहिए।"
@@ -1206,12 +1223,12 @@ msgid "Not allowed to delete rule."
 msgstr "आपको यह नियम हटाने की अनुमति नहीं है।"
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries deleted."
-msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री भी हटा दी गईं।"
+msgid "Recurring rule moved to the trash with its generated entries."
+msgstr "दोहराने का नियम अपनी बनाई गई एंट्री के साथ ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries kept as history."
-msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री रिकॉर्ड के तौर पर रखी गई हैं।"
+msgid "Recurring rule moved to the trash. Its generated entries are kept as history."
+msgstr "दोहराने का नियम ट्रैश में भेज दिया गया। इसकी बनाई गई एंट्री इतिहास के तौर पर रखी गई हैं।"
 
 #: app/blueprints/expenses.py
 msgid "Only admin can update settings."
@@ -1243,9 +1260,10 @@ msgstr "बजट सेव हो गए।"
 msgid "Not allowed to delete entry."
 msgstr "आपको यह एंट्री हटाने की अनुमति नहीं है।"
 
-#: app/blueprints/expenses.py
-msgid "Expense deleted."
-msgstr "खर्च हटा दिया गया।"
+#: app/blueprints/expenses.py app/blueprints/recipes.py
+#, python-format
+msgid "%(title)s moved to the trash."
+msgstr "%(title)s ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/expenses.py
 msgid "Not allowed to edit entry."
@@ -1298,10 +1316,10 @@ msgstr "कोई एंट्री नहीं चुनी गई।"
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid "%(num)s expense deleted."
-msgid_plural "%(num)s expenses deleted."
-msgstr[0] "%(num)s खर्च हटा दिया गया।"
-msgstr[1] "%(num)s खर्च हटा दिए गए।"
+msgid "%(num)s expense moved to the trash."
+msgid_plural "%(num)s expenses moved to the trash."
+msgstr[0] "%(num)s खर्च ट्रैश में भेजा गया।"
+msgstr[1] "%(num)s खर्च ट्रैश में भेजे गए।"
 
 #: app/blueprints/expenses.py
 msgid "Invalid month parameter. Must be an integer between 1 and 12."
@@ -1328,8 +1346,9 @@ msgid "Item added."
 msgstr "आइटम जोड़ दिया गया।"
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
-msgid "Item deleted."
-msgstr "आइटम हटा दिया गया।"
+#, python-format
+msgid "%(item)s moved to the trash."
+msgstr "%(item)s ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
 msgid "Not allowed to delete item."
@@ -1384,8 +1403,8 @@ msgid "Not allowed to edit note."
 msgstr "आपको यह नोट संपादित करने की अनुमति नहीं है।"
 
 #: app/blueprints/notes.py
-msgid "Note deleted."
-msgstr "नोट हटा दिया गया।"
+msgid "Note moved to the trash."
+msgstr "नोट ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/notes.py
 msgid "Not allowed to delete note."
@@ -1416,8 +1435,8 @@ msgid "Not allowed to edit recipe."
 msgstr "आपको यह व्यंजन संपादित करने की अनुमति नहीं है।"
 
 #: app/blueprints/recipes.py
-msgid "Recipe deleted."
-msgstr "व्यंजन हटा दिया गया।"
+msgid "Not allowed to delete recipe."
+msgstr "यह व्यंजन हटाने की अनुमति नहीं है।"
 
 #: app/blueprints/shortener.py
 msgid "Please enter a valid http(s) URL."
@@ -1453,6 +1472,59 @@ msgstr "फ़ाइल हटा दी गई।"
 #: app/blueprints/uploads.py
 msgid "Not allowed to delete file."
 msgstr "आपको यह फ़ाइल हटाने की अनुमति नहीं है।"
+
+#: app/trash.py templates/base.html templates/notes.html
+msgid "Shared Notes"
+msgstr "साझा नोट्स"
+
+#: app/trash.py templates/base.html templates/shopping.html
+msgid "Shopping List"
+msgstr "शॉपिंग लिस्ट"
+
+#: app/trash.py templates/base.html
+msgid "To-Do/Chores"
+msgstr "टू-डू/घर के काम"
+
+#: app/trash.py templates/base.html templates/recipes.html
+msgid "Recipe Book"
+msgstr "व्यंजन-पुस्तिका"
+
+#: app/trash.py templates/base.html templates/expiry.html
+msgid "Expiry Tracker"
+msgstr "एक्सपायरी ट्रैकर"
+
+#: app/trash.py templates/base.html templates/expenses.html
+msgid "Expense Tracker"
+msgstr "खर्च ट्रैकर"
+
+#: app/trash.py
+msgid "That is no longer in the trash."
+msgstr "यह अब ट्रैश में नहीं है।"
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to restore %(name)s."
+msgstr "%(name)s को वापस लाने की अनुमति नहीं है।"
+
+#: app/trash.py
+#, python-format
+msgid "Could not restore %(name)s."
+msgstr "%(name)s को वापस नहीं लाया जा सका।"
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s restored."
+msgstr "%(name)s वापस लाया गया।"
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to delete %(name)s."
+msgstr "%(name)s को हटाने की अनुमति नहीं है।"
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s deleted for good."
+msgstr "%(name)s हमेशा के लिए हटा दिया गया।"
 
 #: app/undo.py
 msgid "It is too late to undo that."
@@ -1893,7 +1965,7 @@ msgid "Skip day"
 msgstr "यह दिन छोड़ें"
 
 #: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/backup_restore.html templates/backups.html
+#: templates/backup_restore.html templates/backups.html templates/trash.html
 msgid "Restore"
 msgstr "वापस लाएं"
 
@@ -2604,6 +2676,11 @@ msgstr "रकम के हिसाब से"
 msgid "%(name)s split value"
 msgstr "%(name)s के बंटवारे की वैल्यू"
 
+#: templates/_trash_link.html templates/base.html templates/index.html
+#: templates/trash.html
+msgid "Trash"
+msgstr "ट्रैश"
+
 #: templates/api_access.html
 msgid "No access"
 msgstr "अनुमति नहीं"
@@ -3071,33 +3148,13 @@ msgstr "मेन्यू बंद करें"
 msgid "Welcome"
 msgstr "होम"
 
-#: templates/base.html templates/notes.html
-msgid "Shared Notes"
-msgstr "साझा नोट्स"
-
 #: templates/base.html templates/upload.html
 msgid "Shared Cloud"
 msgstr "साझा क्लाउड"
 
-#: templates/base.html templates/shopping.html
-msgid "Shopping List"
-msgstr "शॉपिंग लिस्ट"
-
 #: templates/base.html
 msgid "Calendar"
 msgstr "कैलेंडर"
-
-#: templates/base.html
-msgid "To-Do/Chores"
-msgstr "टू-डू/घर के काम"
-
-#: templates/base.html templates/recipes.html
-msgid "Recipe Book"
-msgstr "व्यंजन-पुस्तिका"
-
-#: templates/base.html templates/expiry.html
-msgid "Expiry Tracker"
-msgstr "एक्सपायरी ट्रैकर"
 
 #: templates/base.html templates/shorten.html
 msgid "URL Shortener"
@@ -3114,10 +3171,6 @@ msgstr "पीडीएफ कंप्रेसर"
 #: templates/base.html
 msgid "QR Generator"
 msgstr "क्यूआर जेनरेटर"
-
-#: templates/base.html templates/expenses.html
-msgid "Expense Tracker"
-msgstr "खर्च ट्रैकर"
 
 #: templates/base.html
 msgid "Admin"
@@ -3889,7 +3942,7 @@ msgstr "आइटम जोड़ें"
 msgid "Nothing tracked yet."
 msgstr "अभी कुछ ट्रैक नहीं किया गया है।"
 
-#: templates/expiry.html
+#: templates/expiry.html templates/trash.html
 #, python-format
 msgid "%(num)s day left"
 msgid_plural "%(num)s days left"
@@ -4034,10 +4087,6 @@ msgstr "शीर्षक या विवरण से रिमाइंड�
 #: templates/index.html
 msgid "Recycle Bin"
 msgstr "रीसायकल बिन"
-
-#: templates/index.html
-msgid "Trash"
-msgstr "ट्रैश"
 
 #: templates/index.html
 msgid "Drag reminder cards onto a date to reschedule."
@@ -4426,6 +4475,50 @@ msgstr "क्या यह छोटा लिंक हटा दें?"
 msgid "Delete short link"
 msgstr "छोटा लिंक हटाएं"
 
+#: templates/trash.html
+msgid "What was deleted in the last 7 days, newest first. After 7 days it is deleted for good."
+msgstr "पिछले 7 दिनों में हटाई गई चीज़ें, सबसे नई पहले। 7 दिन बाद ये हमेशा के लिए हट जाती हैं।"
+
+#: templates/trash.html
+#, python-format
+msgid "Back to %(page)s"
+msgstr "%(page)s पर वापस जाएं"
+
+#: templates/trash.html
+msgid "Show deleted items from"
+msgstr "यहां से हटाई गई चीज़ें दिखाएं"
+
+#: templates/trash.html
+msgid "All"
+msgstr "सभी"
+
+#: templates/trash.html
+msgid "Nothing here. Deleted items stay in the trash for 7 days."
+msgstr "यहां कुछ नहीं है। हटाई गई चीज़ें 7 दिन तक ट्रैश में रहती हैं।"
+
+#: templates/trash.html
+#, python-format
+msgid "Deleted by %(name)s at %(time)s"
+msgstr "%(name)s ने %(time)s पर हटाया"
+
+#: templates/trash.html
+#, python-format
+msgid "Delete %(name)s for good? This cannot be undone."
+msgstr "%(name)s हमेशा के लिए हटाएं? यह वापस नहीं लिया जा सकता।"
+
+#: templates/trash.html
+msgid "Delete forever"
+msgstr "हमेशा के लिए हटाएं"
+
+#: templates/trash.html
+#, python-format
+msgid "Only %(name)s or the admin can restore this."
+msgstr "इसे सिर्फ़ %(name)s या एडमिन वापस ला सकते हैं।"
+
+#: templates/trash.html
+msgid "Only the admin can restore this."
+msgstr "इसे सिर्फ़ एडमिन वापस ला सकता है।"
+
 #: templates/upload.html
 msgid "Files shared with everyone on the home network."
 msgstr "घर के नेटवर्क पर सबके साथ शेयर की गई फ़ाइलें।"
@@ -4511,4 +4604,33 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
 #~ msgstr "%(name)s हटाएं? यह इसे सूची से हमेशा के लिए हटा देगा। इसके बदलावों का इतिहास रखा जाता है।"
+
+#~ msgid "Recurring chore rule deleted."
+#~ msgstr "दोहराने वाले काम का नियम हटा दिया गया।"
+
+#~ msgid "Chore deleted."
+#~ msgstr "काम हटा दिया गया।"
+
+#~ msgid "Recurring rule deleted. Linked generated entries deleted."
+#~ msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री भी हटा दी गईं।"
+
+#~ msgid "Recurring rule deleted. Linked generated entries kept as history."
+#~ msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री रिकॉर्ड के तौर पर रखी गई हैं।"
+
+#~ msgid "Expense deleted."
+#~ msgstr "खर्च हटा दिया गया।"
+
+#~ msgid "%(num)s expense deleted."
+#~ msgid_plural "%(num)s expenses deleted."
+#~ msgstr[0] "%(num)s खर्च हटा दिया गया।"
+#~ msgstr[1] "%(num)s खर्च हटा दिए गए।"
+
+#~ msgid "Item deleted."
+#~ msgstr "आइटम हटा दिया गया।"
+
+#~ msgid "Note deleted."
+#~ msgstr "नोट हटा दिया गया।"
+
+#~ msgid "Recipe deleted."
+#~ msgstr "व्यंजन हटा दिया गया।"
 

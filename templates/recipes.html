@@ -1,12 +1,16 @@
 {% extends "base.html" %}
+{% from "_trash_link.html" import trash_link %}
 {% block content %}
 <!-- Quill Editor CSS (local) -->
 <link href="{{ url_for('static', filename='quill/quill.snow.css') }}" rel="stylesheet">
 
 <div class="max-w-5xl mx-auto">
-    <div class="page-header">
-        <h1 class="page-title">{{ _('Recipe Book') }}</h1>
-        <p class="page-subtitle">{{ _("The family's recipes, with ingredients and steps.") }}</p>
+    <div class="page-header flex items-start justify-between gap-4">
+        <div class="min-w-0">
+            <h1 class="page-title">{{ _('Recipe Book') }}</h1>
+            <p class="page-subtitle">{{ _("The family's recipes, with ingredients and steps.") }}</p>
+        </div>
+        {{ trash_link('recipes') }}
     </div>
     
     <!-- Add/Edit Form -->

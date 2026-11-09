@@ -552,6 +552,20 @@ input[type="file"]::file-selector-button:hover { background-color: var(--hover-b
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25);
 }
 
+/* Trash page: module filter links, the same look as the preset chips; the one shown is filled */
+.filter-chip {
+    background-color: var(--card-background-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+.filter-chip:hover { background-color: var(--hover-bg); }
+.filter-chip[aria-current="page"],
+.filter-chip[aria-current="page"]:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
 /* Sidebar: the Admin group (links to Backups and API access), shown only to the admin */
 .sidebar .sidebar-admin {
     margin-top: 1rem;

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 13:55+0530\n"
+"POT-Creation-Date: 2026-11-09 14:17+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -874,12 +874,14 @@ msgid "Chore settings updated."
 msgstr "Görev ayarları güncellendi."
 
 #: app/blueprints/chores.py
-msgid "Recurring chore rule deleted."
-msgstr "Yinelenen görev kuralı silindi."
+#, python-format
+msgid "Recurring chore %(chore)s moved to the trash."
+msgstr ""
 
 #: app/blueprints/chores.py
-msgid "Chore deleted."
-msgstr "Görev silindi."
+#, python-format
+msgid "%(chore)s moved to the trash."
+msgstr ""
 
 #: app/blueprints/chores.py
 msgid "Not allowed to delete chore."
@@ -1062,6 +1064,21 @@ msgid "%(num)s expense imported."
 msgid_plural "%(num)s expenses imported."
 msgstr[0] ""
 
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s was restored too."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s was added back since it was deleted, so this copy cannot be restored. Delete it for good instead."
+msgstr ""
+
 #: app/blueprints/expenses.py static/js/pages/expenses_recurring.js
 msgid "Unit price must be greater than zero."
 msgstr "Birim fiyat sıfırdan büyük olmalı."
@@ -1193,12 +1210,12 @@ msgid "Not allowed to delete rule."
 msgstr "Kuralı silme izniniz yok."
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries deleted."
-msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar da silindi."
+msgid "Recurring rule moved to the trash with its generated entries."
+msgstr ""
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries kept as history."
-msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar geçmiş olarak korundu."
+msgid "Recurring rule moved to the trash. Its generated entries are kept as history."
+msgstr ""
 
 #: app/blueprints/expenses.py
 msgid "Only admin can update settings."
@@ -1230,9 +1247,10 @@ msgstr ""
 msgid "Not allowed to delete entry."
 msgstr "Kaydı silme izniniz yok."
 
-#: app/blueprints/expenses.py
-msgid "Expense deleted."
-msgstr "Harcama silindi."
+#: app/blueprints/expenses.py app/blueprints/recipes.py
+#, python-format
+msgid "%(title)s moved to the trash."
+msgstr ""
 
 #: app/blueprints/expenses.py
 msgid "Not allowed to edit entry."
@@ -1285,9 +1303,9 @@ msgstr "Hiç kayıt seçilmedi."
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid "%(num)s expense deleted."
-msgid_plural "%(num)s expenses deleted."
-msgstr[0] "%(num)s harcama silindi."
+msgid "%(num)s expense moved to the trash."
+msgid_plural "%(num)s expenses moved to the trash."
+msgstr[0] ""
 
 #: app/blueprints/expenses.py
 msgid "Invalid month parameter. Must be an integer between 1 and 12."
@@ -1314,8 +1332,9 @@ msgid "Item added."
 msgstr "Öğe eklendi."
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
-msgid "Item deleted."
-msgstr "Öğe silindi."
+#, python-format
+msgid "%(item)s moved to the trash."
+msgstr ""
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
 msgid "Not allowed to delete item."
@@ -1370,8 +1389,8 @@ msgid "Not allowed to edit note."
 msgstr "Notu düzenleme izniniz yok."
 
 #: app/blueprints/notes.py
-msgid "Note deleted."
-msgstr "Not silindi."
+msgid "Note moved to the trash."
+msgstr ""
 
 #: app/blueprints/notes.py
 msgid "Not allowed to delete note."
@@ -1402,8 +1421,8 @@ msgid "Not allowed to edit recipe."
 msgstr "Tarifi düzenleme izniniz yok."
 
 #: app/blueprints/recipes.py
-msgid "Recipe deleted."
-msgstr "Tarif silindi."
+msgid "Not allowed to delete recipe."
+msgstr ""
 
 #: app/blueprints/shortener.py
 msgid "Please enter a valid http(s) URL."
@@ -1438,6 +1457,59 @@ msgstr "Dosya silindi."
 #: app/blueprints/uploads.py
 msgid "Not allowed to delete file."
 msgstr "Dosyayı silme izniniz yok."
+
+#: app/trash.py templates/base.html templates/notes.html
+msgid "Shared Notes"
+msgstr "Paylaşılan Notlar"
+
+#: app/trash.py templates/base.html templates/shopping.html
+msgid "Shopping List"
+msgstr "Alışveriş Listesi"
+
+#: app/trash.py templates/base.html
+msgid "To-Do/Chores"
+msgstr "Yapılacaklar/Ev İşleri"
+
+#: app/trash.py templates/base.html templates/recipes.html
+msgid "Recipe Book"
+msgstr "Tarif Defteri"
+
+#: app/trash.py templates/base.html templates/expiry.html
+msgid "Expiry Tracker"
+msgstr "Son Kullanma Takibi"
+
+#: app/trash.py templates/base.html templates/expenses.html
+msgid "Expense Tracker"
+msgstr "Harcama Takibi"
+
+#: app/trash.py
+msgid "That is no longer in the trash."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to restore %(name)s."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "Could not restore %(name)s."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s restored."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to delete %(name)s."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s deleted for good."
+msgstr ""
 
 #: app/undo.py
 msgid "It is too late to undo that."
@@ -1875,7 +1947,7 @@ msgid "Skip day"
 msgstr "Günü atla"
 
 #: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/backup_restore.html templates/backups.html
+#: templates/backup_restore.html templates/backups.html templates/trash.html
 msgid "Restore"
 msgstr "Geri getir"
 
@@ -2574,6 +2646,11 @@ msgstr "Tutara göre"
 msgid "%(name)s split value"
 msgstr "%(name)s paylaşım değeri"
 
+#: templates/_trash_link.html templates/base.html templates/index.html
+#: templates/trash.html
+msgid "Trash"
+msgstr "Çöp Kutusu"
+
 #: templates/api_access.html
 msgid "No access"
 msgstr ""
@@ -3038,33 +3115,13 @@ msgstr "Menüyü kapat"
 msgid "Welcome"
 msgstr "Hoş Geldiniz"
 
-#: templates/base.html templates/notes.html
-msgid "Shared Notes"
-msgstr "Paylaşılan Notlar"
-
 #: templates/base.html templates/upload.html
 msgid "Shared Cloud"
 msgstr "Paylaşılan Bulut"
 
-#: templates/base.html templates/shopping.html
-msgid "Shopping List"
-msgstr "Alışveriş Listesi"
-
 #: templates/base.html
 msgid "Calendar"
 msgstr "Takvim"
-
-#: templates/base.html
-msgid "To-Do/Chores"
-msgstr "Yapılacaklar/Ev İşleri"
-
-#: templates/base.html templates/recipes.html
-msgid "Recipe Book"
-msgstr "Tarif Defteri"
-
-#: templates/base.html templates/expiry.html
-msgid "Expiry Tracker"
-msgstr "Son Kullanma Takibi"
 
 #: templates/base.html templates/shorten.html
 msgid "URL Shortener"
@@ -3081,10 +3138,6 @@ msgstr "PDF Sıkıştırıcı"
 #: templates/base.html
 msgid "QR Generator"
 msgstr "QR Üretici"
-
-#: templates/base.html templates/expenses.html
-msgid "Expense Tracker"
-msgstr "Harcama Takibi"
 
 #: templates/base.html
 msgid "Admin"
@@ -3852,7 +3905,7 @@ msgstr "Öğe ekle"
 msgid "Nothing tracked yet."
 msgstr "Henüz takip edilen bir şey yok."
 
-#: templates/expiry.html
+#: templates/expiry.html templates/trash.html
 #, python-format
 msgid "%(num)s day left"
 msgid_plural "%(num)s days left"
@@ -3995,10 +4048,6 @@ msgstr "Hatırlatıcıları başlığa ya da açıklamaya göre ara"
 #: templates/index.html
 msgid "Recycle Bin"
 msgstr "Geri Dönüşüm Kutusu"
-
-#: templates/index.html
-msgid "Trash"
-msgstr "Çöp Kutusu"
 
 #: templates/index.html
 msgid "Drag reminder cards onto a date to reschedule."
@@ -4387,6 +4436,50 @@ msgstr "Bu kısa bağlantı silinsin mi?"
 msgid "Delete short link"
 msgstr "Kısa bağlantıyı sil"
 
+#: templates/trash.html
+msgid "What was deleted in the last 7 days, newest first. After 7 days it is deleted for good."
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Back to %(page)s"
+msgstr ""
+
+#: templates/trash.html
+msgid "Show deleted items from"
+msgstr ""
+
+#: templates/trash.html
+msgid "All"
+msgstr ""
+
+#: templates/trash.html
+msgid "Nothing here. Deleted items stay in the trash for 7 days."
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Deleted by %(name)s at %(time)s"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Delete %(name)s for good? This cannot be undone."
+msgstr ""
+
+#: templates/trash.html
+msgid "Delete forever"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Only %(name)s or the admin can restore this."
+msgstr ""
+
+#: templates/trash.html
+msgid "Only the admin can restore this."
+msgstr ""
+
 #: templates/upload.html
 msgid "Files shared with everyone on the home network."
 msgstr "Ev ağındaki herkesle paylaşılan dosyalar."
@@ -4460,4 +4553,32 @@ msgstr "Bu dosya silinsin mi? Sunucudan kaldırılır."
 
 #~ msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
 #~ msgstr ""
+
+#~ msgid "Recurring chore rule deleted."
+#~ msgstr "Yinelenen görev kuralı silindi."
+
+#~ msgid "Chore deleted."
+#~ msgstr "Görev silindi."
+
+#~ msgid "Recurring rule deleted. Linked generated entries deleted."
+#~ msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar da silindi."
+
+#~ msgid "Recurring rule deleted. Linked generated entries kept as history."
+#~ msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar geçmiş olarak korundu."
+
+#~ msgid "Expense deleted."
+#~ msgstr "Harcama silindi."
+
+#~ msgid "%(num)s expense deleted."
+#~ msgid_plural "%(num)s expenses deleted."
+#~ msgstr[0] "%(num)s harcama silindi."
+
+#~ msgid "Item deleted."
+#~ msgstr "Öğe silindi."
+
+#~ msgid "Note deleted."
+#~ msgstr "Not silindi."
+
+#~ msgid "Recipe deleted."
+#~ msgstr "Tarif silindi."
 

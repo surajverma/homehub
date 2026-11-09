@@ -74,6 +74,14 @@ TABLES = [
         last_generated_date DATE,
         timestamp TIMESTAMP
     )""",
+    # Undo and the shared trash (app/undo.py); normally made by db.create_all(), but `flask restore` runs these alone
+    """CREATE TABLE IF NOT EXISTS undo_stash (
+        id INTEGER PRIMARY KEY,
+        token VARCHAR(32) NOT NULL UNIQUE,
+        kind VARCHAR(32) NOT NULL,
+        payload TEXT NOT NULL,
+        expires_at DATETIME NOT NULL
+    )""",
     # The JSON API (app/api). Older versions ignore these tables.
     """CREATE TABLE IF NOT EXISTS api_token (
         id INTEGER PRIMARY KEY,
@@ -131,6 +139,12 @@ LATE_COLUMNS = [
     ('api_activity', 'action', 'VARCHAR(64)', None),
     ('api_activity', 'target', 'VARCHAR(200)', None),
     ('api_activity', 'created_at', 'TIMESTAMP', None),
+    # The shared trash keeps deleted records in the undo store (app/undo.py)
+    ('undo_stash', 'module', 'VARCHAR(32)', None),
+    ('undo_stash', 'label', 'VARCHAR(256)', None),
+    ('undo_stash', 'owner', 'VARCHAR(64)', None),
+    ('undo_stash', 'deleted_by', 'VARCHAR(128)', None),
+    ('undo_stash', 'deleted_at', 'TIMESTAMP', None),
 ]
 
 
@@ -153,6 +167,13 @@ def purge_reminder_trash(cur, now: datetime | None = None) -> int:
     now = now or datetime.now(timezone.utc).replace(tzinfo=None)
     cutoff = (now - timedelta(days=TRASH_RETENTION_DAYS)).strftime('%Y-%m-%d %H:%M:%S')
     cur.execute("DELETE FROM reminder WHERE deleted_at IS NOT NULL AND deleted_at < ?", (cutoff,))
+    return cur.rowcount
+
+
+def purge_expired_stashes(cur, now: datetime | None = None) -> int:
+    """Delete undo stashes and trash entries whose time is up."""
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
+    cur.execute("DELETE FROM undo_stash WHERE expires_at < ?", (now.strftime('%Y-%m-%d %H:%M:%S.%f'),))
     return cur.rowcount
 
 
@@ -229,6 +250,7 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
         # Anything else is scheduled monthly by the app's legacy fallback, so store that
         ok &= _step(conn, 'default recurring_reminder unit', cur.execute,
                     "UPDATE recurring_reminder SET unit='month' WHERE unit IS NULL OR unit=''")
+        ok &= _step(conn, 'purge expired trash', purge_expired_stashes, cur)
         if pdf_dir and os.path.isdir(pdf_dir):
             ok &= _step(conn, 'remove leftover PDF originals', remove_leftover_pdf_originals, cur, pdf_dir)
     finally:

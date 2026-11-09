@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_trash_link.html" import trash_link %}
 {% block content %}
 <div class="mx-auto max-w-5xl">
     <div class="page-header flex items-start justify-between gap-4">
@@ -6,6 +7,8 @@
             <h1 class="page-title">{{ _('To-Do / Chores') }}</h1>
             <p class="page-subtitle">{% if chores|selectattr('done')|list %}{{ _('%(count)s open, %(done)s done', count=chores|rejectattr('done')|list|length, done=chores|selectattr('done')|list|length) }}{% else %}{{ _('%(count)s open', count=chores|rejectattr('done')|list|length) }}{% endif %}</p>
         </div>
+        <div class="flex flex-wrap items-center justify-end gap-2">
+        {{ trash_link('chores') }}
         <form method="POST" action="/chores/settings" class="flex items-center gap-2 text-sm hidden" id="homepageToggleForm">
             <input type="hidden" name="user" id="settingsUser">
             <label class="inline-flex items-center gap-2 hidden" id="homepageToggleWrap">
@@ -14,6 +17,7 @@
             </label>
             <button type="submit" class="btn btn-secondary hidden" id="homepageSaveBtn">{{ _('Save') }}</button>
         </form>
+        </div>
     </div>
     <form method="POST" action="/chores" id="choreForm" class="card p-4 mb-4">
         <input type="hidden" name="chore_id" id="choreId" value="{{ form_chore_id if form_chore_id is defined else '' }}">

@@ -112,6 +112,8 @@ def create_app(test_config: dict | None = None):
 
     from .blueprints import main_bp
     from . import undo  # noqa: F401 registers the /undo route
+    from . import trash as _trash  # the Trash page and flask trash
+    _trash.init_app(app)
     # Register modular route modules to attach endpoints to main_bp
     from .blueprints import auth  # noqa: F401
     from .blueprints import dashboard  # noqa: F401

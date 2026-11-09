@@ -40,6 +40,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **Simple & Lightweight**: Runs smoothly on minimal hardware.
 * **Family-Focused**: Designed to be intuitive for users of all technical skill levels.
 * **Customizable**: Toggle features on or off and even change the color theme right from the `config.yml` file.
+* **Forgiving**: Deleted shopping items, chores, notes, recipes, expiry items and expenses go to a shared **Trash** for 7 days, so a slip of the finger can be undone.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/homehub-dark.gif">
@@ -226,6 +227,20 @@ docker exec -it homehub flask set-admin-password
 The `password` in `config.yml` is separate: it protects the whole site and keeps working as before. You write it in `config.yml` as plain text; HomeHub only keeps a salted hash of it in memory, and after 5 wrong attempts the login form makes that device wait a minute, like the admin password prompt.
 
 Logins and admin unlocks survive a restart: if `SECRET_KEY` is not set, HomeHub generates one on first start and keeps it in `data/secret_key`.
+
+## Trash
+
+Deleting something in HomeHub moves it to the **Trash** (in the menu) instead of removing it at once: shopping items, chores and recurring chores, notes, recipes, expiry items, expenses and recurring expenses. Right after a delete, the **Undo** button in the message brings it back; after that, the Trash page lists everything deleted in the last 7 days, newest first, with who deleted it and how many days are left. Each module page has a **Trash** link that shows only its own items.
+
+Whoever added an item (or the admin) can **Restore** it or **Delete forever**. After 7 days items are deleted for good automatically. On the server:
+
+```bash
+docker exec -it homehub flask trash list
+```
+
+```bash
+docker exec -it homehub flask trash restore 42
+```
 
 ## Backup and restore
 

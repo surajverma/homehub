@@ -5,6 +5,7 @@ from ..models import db, ExpiryItem
 from ..blueprints import main_bp
 from ..admin import can_modify
 from ..security import sanitize_text
+from ..undo import row_restorer, trash_info, trash_row
 
 
 def days_left(item: ExpiryItem, today: date):
@@ -41,9 +42,15 @@ def delete_expiry(item_id):
     it = db.get_or_404(ExpiryItem, item_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, it.creator):
-        db.session.delete(it)
-        db.session.commit()
-        flash(_('Item deleted.'), 'success')
+        trash_expiry_item(it, user, _('%(item)s moved to the trash.', item=it.name))
     else:
         flash(_('Not allowed to delete item.'), 'error')
     return redirect(url_for('main.expiry'))
+
+
+def trash_expiry_item(item: ExpiryItem, deleted_by: str, message: str | None = None) -> str:
+    """Move an expiry tracker item to the trash (restorable for 7 days). Commits."""
+    return trash_row('expiry_item', item, trash_info('expiry', item.name, item.creator, deleted_by), message)
+
+
+row_restorer('expiry_item', ExpiryItem)

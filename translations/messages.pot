@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-11-09 13:55+0530\n"
+"POT-Creation-Date: 2026-11-09 14:17+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -873,11 +873,13 @@ msgid "Chore settings updated."
 msgstr ""
 
 #: app/blueprints/chores.py
-msgid "Recurring chore rule deleted."
+#, python-format
+msgid "Recurring chore %(chore)s moved to the trash."
 msgstr ""
 
 #: app/blueprints/chores.py
-msgid "Chore deleted."
+#, python-format
+msgid "%(chore)s moved to the trash."
 msgstr ""
 
 #: app/blueprints/chores.py
@@ -1063,6 +1065,21 @@ msgid_plural "%(num)s expenses imported."
 msgstr[0] ""
 msgstr[1] ""
 
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s was restored too."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s was added back since it was deleted, so this copy cannot be restored. Delete it for good instead."
+msgstr ""
+
 #: app/blueprints/expenses.py static/js/pages/expenses_recurring.js
 msgid "Unit price must be greater than zero."
 msgstr ""
@@ -1204,11 +1221,11 @@ msgid "Not allowed to delete rule."
 msgstr ""
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries deleted."
+msgid "Recurring rule moved to the trash with its generated entries."
 msgstr ""
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries kept as history."
+msgid "Recurring rule moved to the trash. Its generated entries are kept as history."
 msgstr ""
 
 #: app/blueprints/expenses.py
@@ -1241,8 +1258,9 @@ msgstr ""
 msgid "Not allowed to delete entry."
 msgstr ""
 
-#: app/blueprints/expenses.py
-msgid "Expense deleted."
+#: app/blueprints/expenses.py app/blueprints/recipes.py
+#, python-format
+msgid "%(title)s moved to the trash."
 msgstr ""
 
 #: app/blueprints/expenses.py
@@ -1296,8 +1314,8 @@ msgstr ""
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid "%(num)s expense deleted."
-msgid_plural "%(num)s expenses deleted."
+msgid "%(num)s expense moved to the trash."
+msgid_plural "%(num)s expenses moved to the trash."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -1326,7 +1344,8 @@ msgid "Item added."
 msgstr ""
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
-msgid "Item deleted."
+#, python-format
+msgid "%(item)s moved to the trash."
 msgstr ""
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
@@ -1382,7 +1401,7 @@ msgid "Not allowed to edit note."
 msgstr ""
 
 #: app/blueprints/notes.py
-msgid "Note deleted."
+msgid "Note moved to the trash."
 msgstr ""
 
 #: app/blueprints/notes.py
@@ -1414,7 +1433,7 @@ msgid "Not allowed to edit recipe."
 msgstr ""
 
 #: app/blueprints/recipes.py
-msgid "Recipe deleted."
+msgid "Not allowed to delete recipe."
 msgstr ""
 
 #: app/blueprints/shortener.py
@@ -1450,6 +1469,59 @@ msgstr ""
 
 #: app/blueprints/uploads.py
 msgid "Not allowed to delete file."
+msgstr ""
+
+#: app/trash.py templates/base.html templates/notes.html
+msgid "Shared Notes"
+msgstr ""
+
+#: app/trash.py templates/base.html templates/shopping.html
+msgid "Shopping List"
+msgstr ""
+
+#: app/trash.py templates/base.html
+msgid "To-Do/Chores"
+msgstr ""
+
+#: app/trash.py templates/base.html templates/recipes.html
+msgid "Recipe Book"
+msgstr ""
+
+#: app/trash.py templates/base.html templates/expiry.html
+msgid "Expiry Tracker"
+msgstr ""
+
+#: app/trash.py templates/base.html templates/expenses.html
+msgid "Expense Tracker"
+msgstr ""
+
+#: app/trash.py
+msgid "That is no longer in the trash."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to restore %(name)s."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "Could not restore %(name)s."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s restored."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to delete %(name)s."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s deleted for good."
 msgstr ""
 
 #: app/undo.py
@@ -1891,7 +1963,7 @@ msgid "Skip day"
 msgstr ""
 
 #: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/backup_restore.html templates/backups.html
+#: templates/backup_restore.html templates/backups.html templates/trash.html
 msgid "Restore"
 msgstr ""
 
@@ -2602,6 +2674,11 @@ msgstr ""
 msgid "%(name)s split value"
 msgstr ""
 
+#: templates/_trash_link.html templates/base.html templates/index.html
+#: templates/trash.html
+msgid "Trash"
+msgstr ""
+
 #: templates/api_access.html
 msgid "No access"
 msgstr ""
@@ -3069,32 +3146,12 @@ msgstr ""
 msgid "Welcome"
 msgstr ""
 
-#: templates/base.html templates/notes.html
-msgid "Shared Notes"
-msgstr ""
-
 #: templates/base.html templates/upload.html
 msgid "Shared Cloud"
 msgstr ""
 
-#: templates/base.html templates/shopping.html
-msgid "Shopping List"
-msgstr ""
-
 #: templates/base.html
 msgid "Calendar"
-msgstr ""
-
-#: templates/base.html
-msgid "To-Do/Chores"
-msgstr ""
-
-#: templates/base.html templates/recipes.html
-msgid "Recipe Book"
-msgstr ""
-
-#: templates/base.html templates/expiry.html
-msgid "Expiry Tracker"
 msgstr ""
 
 #: templates/base.html templates/shorten.html
@@ -3111,10 +3168,6 @@ msgstr ""
 
 #: templates/base.html
 msgid "QR Generator"
-msgstr ""
-
-#: templates/base.html templates/expenses.html
-msgid "Expense Tracker"
 msgstr ""
 
 #: templates/base.html
@@ -3887,7 +3940,7 @@ msgstr ""
 msgid "Nothing tracked yet."
 msgstr ""
 
-#: templates/expiry.html
+#: templates/expiry.html templates/trash.html
 #, python-format
 msgid "%(num)s day left"
 msgid_plural "%(num)s days left"
@@ -4031,10 +4084,6 @@ msgstr ""
 
 #: templates/index.html
 msgid "Recycle Bin"
-msgstr ""
-
-#: templates/index.html
-msgid "Trash"
 msgstr ""
 
 #: templates/index.html
@@ -4422,6 +4471,50 @@ msgstr ""
 
 #: templates/shorten.html
 msgid "Delete short link"
+msgstr ""
+
+#: templates/trash.html
+msgid "What was deleted in the last 7 days, newest first. After 7 days it is deleted for good."
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Back to %(page)s"
+msgstr ""
+
+#: templates/trash.html
+msgid "Show deleted items from"
+msgstr ""
+
+#: templates/trash.html
+msgid "All"
+msgstr ""
+
+#: templates/trash.html
+msgid "Nothing here. Deleted items stay in the trash for 7 days."
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Deleted by %(name)s at %(time)s"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Delete %(name)s for good? This cannot be undone."
+msgstr ""
+
+#: templates/trash.html
+msgid "Delete forever"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Only %(name)s or the admin can restore this."
+msgstr ""
+
+#: templates/trash.html
+msgid "Only the admin can restore this."
 msgstr ""
 
 #: templates/upload.html

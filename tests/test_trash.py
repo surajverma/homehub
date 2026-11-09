@@ -1,0 +1,391 @@
+"""The shared 7-day trash: deletes keep a copy, the Trash page restores it, the same rules as each module."""
+import json
+import re
+import sqlite3
+from datetime import date, datetime, timedelta
+
+import pytest
+
+from api_support import Home
+from app import db, migrations, trash, undo
+from app.clock import utcnow
+from app.models import (Chore, ExpenseEntry, ExpiryItem, Note, Recipe, RecurringChore, RecurringExpense,
+                        ShoppingItem, UndoStash)
+
+TODAY = date.today()
+
+
+@pytest.fixture()
+def home(tmp_path, monkeypatch):
+    home = Home(tmp_path, monkeypatch)
+    with home.ctx():
+        db.session.execute(db.text("CREATE TABLE IF NOT EXISTS app_setting (key TEXT PRIMARY KEY, value TEXT)"))
+        db.session.commit()
+    return home
+
+
+def flashes(home):
+    with home.client.session_transaction() as sess:
+        return [(category, message) for category, message in sess.pop('_flashes', [])]
+
+
+def undo_offer(home):
+    """The Undo toast offered by the last request."""
+    offers = [json.loads(m) for c, m in flashes(home) if c == 'undo']
+    assert offers, 'no Undo offered'
+    return offers[-1]
+
+
+def trash_rows(home):
+    with home.ctx():
+        return [(e.module, e.label, e.owner, e.deleted_by) for e in trash.entries()]
+
+
+def entry_id(home, label):
+    with home.ctx():
+        return next(e.id for e in trash.entries() if e.label == label)
+
+
+def count(home, model):
+    with home.ctx():
+        return model.query.count()
+
+
+# --- Each module moves its deletes to the trash ---
+
+def add_shopping(home, item='Milk', creator='Priya'):
+    home.client.post('/shopping', data={'item': item, 'creator': creator, 'tags': '["Dairy"]'})
+    with home.ctx():
+        return ShoppingItem.query.filter_by(item=item).order_by(ShoppingItem.id.desc()).first().id
+
+
+def test_shopping_delete_goes_to_the_trash(home):
+    item_id = add_shopping(home)
+    flashes(home)
+    home.client.post(f'/shopping/delete/{item_id}', data={'user': 'Priya'})
+    offer = undo_offer(home)
+    assert offer['message'] == 'Milk moved to the trash.' and offer['seconds'] == 20
+    assert count(home, ShoppingItem) == 0
+    assert trash_rows(home) == [('shopping', 'Milk', 'Priya', 'Priya')]
+    with home.ctx():
+        entry = UndoStash.query.one()
+        assert timedelta(days=6, hours=23) < entry.expires_at - utcnow() <= timedelta(days=7)
+    # The toast's Undo restores it, tags and all
+    assert home.client.post(f"/undo/{offer['token']}").get_json() == {'ok': True}
+    with home.ctx():
+        item = ShoppingItem.query.one()
+        assert (item.id, item.item, item.creator, json.loads(item.tags)) == (item_id, 'Milk', 'Priya', ['Dairy'])
+        assert UndoStash.query.count() == 0
+
+
+def test_other_person_cannot_delete(home):
+    item_id = add_shopping(home)
+    home.client.post(f'/shopping/delete/{item_id}', data={'user': 'Dad'})
+    assert count(home, ShoppingItem) == 1 and trash_rows(home) == []
+
+
+@pytest.mark.parametrize('path, form, model, delete, module, label, message', [
+    ('/notes', {'content': '<b>Gate code</b> is 1234', 'creator': 'Mom'}, Note, '/notes/delete/{id}', 'notes',
+     'Gate code is 1234', 'Note moved to the trash.'),
+    ('/recipes', {'title': 'Dal', 'ingredients': 'Lentils', 'instructions': 'Cook', 'creator': 'Mom'}, Recipe,
+     '/recipes/delete/{id}', 'recipes', 'Dal', 'Dal moved to the trash.'),
+    ('/expiry', {'name': 'Passport', 'expiry_date': '2030-01-01', 'creator': 'Mom'}, ExpiryItem,
+     '/expiry/delete/{id}', 'expiry', 'Passport', 'Passport moved to the trash.'),
+    ('/chores', {'description': 'Water plants', 'creator': 'Mom'}, Chore, '/chores/delete/{id}', 'chores',
+     'Water plants', 'Water plants moved to the trash.'),
+])
+def test_each_module_moves_deletes_to_the_trash(home, path, form, model, delete, module, label, message):
+    home.client.post(path, data=form)
+    with home.ctx():
+        row = model.query.one()
+        row_id, before = row.id, undo.row_to_dict(row)
+    flashes(home)
+    home.client.post(delete.format(id=row_id), data={'user': 'Mom'})
+    assert undo_offer(home)['message'] == message
+    assert count(home, model) == 0
+    assert trash_rows(home) == [(module, label, 'Mom', 'Mom')]
+    resp = home.client.post(f'/trash/{entry_id(home, label)}/restore', data={'user': 'Mom'}, follow_redirects=True)
+    assert f'{label} restored.' in resp.get_data(as_text=True)
+    with home.ctx():
+        assert undo.row_to_dict(model.query.one()) == before
+    assert trash_rows(home) == []
+
+
+def test_recurring_chore_goes_to_the_trash_with_its_chores(home):
+    home.client.post('/chores', data={'description': 'Bins', 'creator': 'Dad', 'is_recurring': '1', 'rec_interval': '1',
+                                      'rec_unit': 'week', 'rec_start_date': TODAY.isoformat()})
+    with home.ctx():
+        rule = RecurringChore.query.one()
+        rule_id, chores = rule.id, Chore.query.filter_by(recurring_id=rule.id).count()
+    assert chores == 1
+    flashes(home)
+    home.client.post(f'/chores/recurring/delete/{rule_id}', data={'user': 'Dad'})
+    assert undo_offer(home)['message'] == 'Recurring chore Bins moved to the trash.'
+    assert count(home, RecurringChore) == 0 and count(home, Chore) == 0
+    assert trash_rows(home) == [('chores', 'Bins', 'Dad', 'Dad')]
+    home.client.post(f"/trash/{entry_id(home, 'Bins')}/restore", data={'user': 'Dad'})
+    with home.ctx():
+        assert RecurringChore.query.one().id == rule_id
+        assert Chore.query.filter_by(recurring_id=rule_id).count() == 1
+
+
+# --- The Trash page ---
+
+def test_page_lists_newest_first_and_filters_by_module(home):
+    for name in ('Milk', 'Eggs'):
+        home.client.post(f'/shopping/delete/{add_shopping(home, name)}', data={'user': 'Priya'})
+    home.client.post('/notes', data={'content': 'Call plumber', 'creator': 'Dad'})
+    with home.ctx():
+        note_id = Note.query.one().id
+    home.client.post(f'/notes/delete/{note_id}', data={'user': 'Dad'})
+    flashes(home)
+    resp = home.client.get('/trash')
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert body.index('Call plumber') < body.index('Eggs') < body.index('Milk')
+    assert 'Deleted by Priya' in body and '7 days left' in body
+    body = home.client.get('/trash?module=shopping').get_data(as_text=True)
+    assert 'Milk' in body and 'Shopping List · ' not in body and 'Eggs' in body and 'Call plumber' not in body
+    assert 'aria-current="page"' in body and 'Back to Shopping List' in body
+    # An unknown module shows everything
+    assert 'Call plumber' in home.client.get('/trash?module=nope').get_data(as_text=True)
+
+
+def test_page_is_for_everyone_and_in_the_sidebar(home):
+    body = home.client.get('/').get_data(as_text=True)
+    assert 'href="/trash"' in body
+    assert 'Nothing here' in home.client.get('/trash').get_data(as_text=True)
+
+
+def test_trash_page_follows_a_user_switch():
+    """Switching user in the top bar fires user-switched; the page re-checks who may restore without a reload."""
+    import os
+    from app import config as config_module
+    with open(os.path.join(config_module.BASE_DIR, 'static', 'js', 'pages', 'trash.js'), encoding='utf-8') as f:
+        script = f.read()
+    assert "addEventListener('user-switched'" in script
+
+
+@pytest.mark.parametrize('page, module', [('/shopping', 'shopping'), ('/notes', 'notes'), ('/recipes', 'recipes'),
+                                          ('/expiry', 'expiry'), ('/chores', 'chores'), ('/expenses', 'expenses')])
+def test_each_module_page_links_to_its_trash(home, page, module):
+    body = home.client.get(page).get_data(as_text=True)
+    assert f'href="/trash?module={module}"' in body
+
+
+def test_only_the_owner_or_admin_may_restore_or_delete(home):
+    home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
+    eid = entry_id(home, 'Milk')
+    resp = home.client.post(f'/trash/{eid}/restore', data={'user': 'Dad'}, follow_redirects=True)
+    assert 'Not allowed to restore Milk.' in resp.get_data(as_text=True)
+    resp = home.client.post(f'/trash/{eid}/delete', data={'user': 'Dad'}, follow_redirects=True)
+    assert 'Not allowed to delete Milk.' in resp.get_data(as_text=True)
+    assert len(trash_rows(home)) == 1 and count(home, ShoppingItem) == 0
+    # The page tells whose it is; the script hides the buttons for others
+    assert 'data-owner="Priya"' in home.client.get('/trash').get_data(as_text=True)
+    resp = home.client.post(f'/trash/{eid}/restore', data={'user': 'Administrator', 'module': 'shopping'})
+    assert resp.status_code == 302 and resp.headers['Location'].endswith('/trash?module=shopping')
+    assert count(home, ShoppingItem) == 1
+
+
+def test_delete_forever(home):
+    home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
+    eid = entry_id(home, 'Milk')
+    resp = home.client.post(f'/trash/{eid}/delete', data={'user': 'Priya'}, follow_redirects=True)
+    assert 'Milk deleted for good.' in resp.get_data(as_text=True)
+    assert trash_rows(home) == [] and count(home, ShoppingItem) == 0
+    resp = home.client.post(f'/trash/{eid}/restore', data={'user': 'Priya'}, follow_redirects=True)
+    assert 'That is no longer in the trash.' in resp.get_data(as_text=True)
+
+
+def test_restore_from_another_site_is_blocked(home):
+    home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
+    eid = entry_id(home, 'Milk')
+    resp = home.client.post(f'/trash/{eid}/restore', data={'user': 'Priya'}, headers={'Sec-Fetch-Site': 'cross-site'})
+    assert resp.status_code == 403 and count(home, ShoppingItem) == 0
+
+
+def test_restore_after_the_id_was_reused(home):
+    first = add_shopping(home, 'Milk')
+    home.client.post(f'/shopping/delete/{first}', data={'user': 'Priya'})
+    # SQLite hands the freed id to the next row
+    assert add_shopping(home, 'Bread') == first
+    home.client.post(f"/trash/{entry_id(home, 'Milk')}/restore", data={'user': 'Priya'})
+    with home.ctx():
+        items = {i.item: i.id for i in ShoppingItem.query.all()}
+    assert items['Bread'] == first and items['Milk'] != first
+
+
+def test_short_undo_stashes_are_not_in_the_trash(home):
+    with home.ctx():
+        undo.stash_undo('chore_done', {'chore_id': 1})
+        assert trash.entries() == []
+        stash = UndoStash.query.one()
+        assert stash.expires_at - utcnow() < timedelta(minutes=1)
+
+
+def test_expired_entries_are_purged(home):
+    home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
+    with home.ctx():
+        UndoStash.query.update({UndoStash.expires_at: utcnow() - timedelta(seconds=1)})
+        db.session.commit()
+    assert 'Nothing here' in home.client.get('/trash').get_data(as_text=True)
+    with home.ctx():
+        assert UndoStash.query.count() == 0
+
+
+def test_long_labels_are_cut(home):
+    with home.ctx():
+        assert undo.trash_label('word ' * 40) == ('word ' * 16).strip()[:79].rstrip() + '…'
+        assert undo.trash_label('<p>Hi &amp; <b>bye</b></p>') == 'Hi & bye'
+
+
+# --- Expenses ---
+
+def add_expense(home, title='Groceries', amount='120', user='Priya', day=None):
+    home.client.post('/expenses', data={'date': (day or TODAY).isoformat(), 'title': title, 'amount': amount,
+                                        'payer': user, 'user': user, 'category': ''})
+    with home.ctx():
+        return ExpenseEntry.query.filter_by(title=title).order_by(ExpenseEntry.id.desc()).first().id
+
+
+def make_rule(home, user='Priya', start=None):
+    """A daily milk rule with its days generated up to today; returns its id."""
+    start = start or TODAY - timedelta(days=3)
+    with home.ctx():
+        rule = RecurringExpense(title='Milk', unit_price=30.0, default_quantity=2.0, frequency='daily',
+                                monthly_mode='day_of_month', start_date=start, effective_from=start, creator=user)
+        db.session.add(rule)
+        db.session.commit()
+        rid = rule.id
+    home.client.get('/expenses/recurring')
+    return rid
+
+
+def test_expense_entry_goes_to_the_trash(home):
+    eid = add_expense(home)
+    flashes(home)
+    home.client.post(f'/expenses/delete/{eid}', data={'user': 'Priya'})
+    assert undo_offer(home)['message'] == 'Groceries moved to the trash.'
+    assert trash_rows(home) == [('expenses', f'Groceries ({TODAY.isoformat()})', 'Priya', 'Priya')]
+    home.client.post(f"/trash/{entry_id(home, f'Groceries ({TODAY.isoformat()})')}/restore", data={'user': 'Priya'})
+    with home.ctx():
+        entry = db.session.get(ExpenseEntry, eid)
+        assert (entry.title, entry.amount) == ('Groceries', 120.0)
+
+
+def test_bulk_delete_offers_one_undo_and_lists_each(home):
+    ids = [add_expense(home, f'Item {i}') for i in range(3)]
+    flashes(home)
+    home.client.post('/expenses/bulk-delete', data={'user': 'Priya', 'ids': [str(i) for i in ids]})
+    offer = undo_offer(home)
+    assert offer['message'] == '3 expenses moved to the trash.'
+    assert len(trash_rows(home)) == 3 and count(home, ExpenseEntry) == 0
+    assert home.client.post(f"/undo/{offer['token']}").get_json() == {'ok': True}
+    assert count(home, ExpenseEntry) == 3 and trash_rows(home) == []
+
+
+def test_recurring_rule_goes_to_the_trash(home):
+    rid = make_rule(home)
+    with home.ctx():
+        days = ExpenseEntry.query.filter_by(recurring_id=rid).count()
+    assert days >= 3
+    flashes(home)
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
+    assert undo_offer(home)['message'] == 'Recurring rule moved to the trash with its generated entries.'
+    assert count(home, RecurringExpense) == 0 and count(home, ExpenseEntry) == 0
+    assert trash_rows(home) == [('expenses', 'Milk', 'Priya', 'Priya')]
+    home.client.post(f"/trash/{entry_id(home, 'Milk')}/restore", data={'user': 'Priya'})
+    with home.ctx():
+        assert ExpenseEntry.query.filter_by(recurring_id=rid).count() == days
+
+
+def _delete_day(home, rid, day):
+    with home.ctx():
+        entry = ExpenseEntry.query.filter_by(recurring_id=rid, date=day).one()
+        eid = entry.id
+    home.client.post(f'/expenses/delete/{eid}', data={'user': 'Priya'})
+    return f'Milk ({day.isoformat()})'
+
+
+def test_day_whose_rule_is_in_the_trash_brings_the_rule_back(home):
+    rid = make_rule(home)
+    day = TODAY - timedelta(days=2)
+    label = _delete_day(home, rid, day)
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
+    resp = home.client.post(f'/trash/{entry_id(home, label)}/restore', data={'user': 'Priya'}, follow_redirects=True)
+    assert 'Its recurring rule Milk was restored too.' in resp.get_data(as_text=True)
+    with home.ctx():
+        rule = RecurringExpense.query.one()
+        assert ExpenseEntry.query.filter_by(recurring_id=rule.id, date=day).count() == 1
+    assert trash_rows(home) == []
+
+
+def test_day_whose_rule_is_gone_for_good_comes_back_as_a_one_off(home):
+    rid = make_rule(home)
+    day = TODAY - timedelta(days=2)
+    label = _delete_day(home, rid, day)
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
+    home.client.post(f"/trash/{entry_id(home, 'Milk')}/delete", data={'user': 'Priya'})
+    resp = home.client.post(f'/trash/{entry_id(home, label)}/restore', data={'user': 'Priya'}, follow_redirects=True)
+    assert 'no longer exists, so it was restored as a one-off expense' in resp.get_data(as_text=True)
+    with home.ctx():
+        entry = ExpenseEntry.query.one()
+        assert (entry.date, entry.recurring_id) == (day, None)
+
+
+def test_day_added_back_since_is_a_conflict(home):
+    rid = make_rule(home)
+    day = TODAY - timedelta(days=2)
+    label = _delete_day(home, rid, day)
+    home.client.post(f'/expenses/recurring/{rid}/restore', data={'user': 'Priya', 'date': day.isoformat()})
+    resp = home.client.post(f'/trash/{entry_id(home, label)}/restore', data={'user': 'Priya'}, follow_redirects=True)
+    assert 'was added back since it was deleted' in resp.get_data(as_text=True)
+    with home.ctx():
+        assert ExpenseEntry.query.filter_by(recurring_id=rid, date=day).count() == 1
+    assert len(trash_rows(home)) == 1
+
+
+# --- flask trash ---
+
+def test_cli_list_and_restore(home):
+    runner = home.app.test_cli_runner()
+    assert 'The trash is empty.' in runner.invoke(args=['trash', 'list']).output
+    home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
+    eid = entry_id(home, 'Milk')
+    output = runner.invoke(args=['trash', 'list']).output
+    assert re.search(rf'^{eid}  \[shopping\]  Milk  - deleted by Priya on .* UTC; 7 days left$', output, re.M)
+    assert 'Milk' not in runner.invoke(args=['trash', 'list', '--module', 'notes']).output
+    result = runner.invoke(args=['trash', 'restore', str(eid)])
+    assert result.exit_code == 0 and 'Restored Milk (shopping).' in result.output
+    assert count(home, ShoppingItem) == 1
+    assert runner.invoke(args=['trash', 'restore', str(eid)]).exit_code != 0
+
+
+# --- Startup ---
+
+def test_old_undo_table_gets_the_trash_columns(tmp_path):
+    path = str(tmp_path / 'app.db')
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE TABLE undo_stash (id INTEGER PRIMARY KEY, token VARCHAR(32) NOT NULL UNIQUE, kind VARCHAR(32) NOT NULL, "
+                 "payload TEXT NOT NULL, expires_at DATETIME NOT NULL)")
+    conn.execute("INSERT INTO undo_stash (token, kind, payload, expires_at) VALUES ('a', 'x', '{}', '2000-01-01 00:00:00.000000')")
+    conn.execute("INSERT INTO undo_stash (token, kind, payload, expires_at) VALUES ('b', 'x', '{}', '2999-01-01 00:00:00.000000')")
+    conn.commit()
+    conn.close()
+    migrations.run(path)
+    conn = sqlite3.connect(path)
+    cols = {row[1] for row in conn.execute('PRAGMA table_info(undo_stash)')}
+    assert {'module', 'label', 'owner', 'deleted_by', 'deleted_at'} <= cols
+    # Expired stashes are purged at startup
+    assert [r[0] for r in conn.execute('SELECT token FROM undo_stash')] == ['b']
+    conn.close()
+
+
+def test_purge_expired_stashes(tmp_path):
+    conn = sqlite3.connect(str(tmp_path / 'x.db'))
+    conn.execute("CREATE TABLE undo_stash (id INTEGER PRIMARY KEY, token TEXT, kind TEXT, payload TEXT, expires_at DATETIME)")
+    conn.execute("INSERT INTO undo_stash (token, expires_at) VALUES ('old', '2026-10-01 10:00:00.000000')")
+    conn.execute("INSERT INTO undo_stash (token, expires_at) VALUES ('new', '2026-10-09 10:00:00.000000')")
+    assert migrations.purge_expired_stashes(conn.cursor(), now=datetime(2026, 10, 5)) == 1
+    assert [r[0] for r in conn.execute('SELECT token FROM undo_stash')] == ['new']

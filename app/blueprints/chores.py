@@ -6,7 +6,7 @@ from ..blueprints import main_bp, json_error_response
 from ..admin import is_admin, can_modify
 from ..security import sanitize_text, sanitize_tags
 from ..recurrence import next_occurrence as _next_occurrence, first_on_or_after as _next_due_on_or_after, serialized
-from ..undo import offer_undo, restore_row, restorer, row_to_dict, same_record, stamp
+from ..undo import offer_undo, restore_row, restorer, row_restorer, row_to_dict, same_record, stamp, stash_undo, trash_info, trash_row
 import json
 
 
@@ -352,12 +352,27 @@ def delete_recurring_chore(rule_id):
     if not can_modify(user, rule.creator or ''):
         flash(_('Not allowed to delete recurring rule.'), 'error')
         return redirect(url_for('main.chores'))
+    trash_chore_rule(rule, user, _('Recurring chore %(chore)s moved to the trash.', chore=rule.description))
+    return redirect(url_for('main.chores'))
+
+
+def trash_chore_rule(rule: RecurringChore, deleted_by: str, message: str | None = None) -> str:
+    """Move a recurring chore and the chores it made to the trash (restorable for 7 days). Commits."""
     snapshot = _chore_rule_snapshot(rule)
+    trash = trash_info('chores', rule.description, rule.creator, deleted_by)
     Chore.query.filter_by(recurring_id=rule.id).delete()
     db.session.delete(rule)
-    db.session.commit()
-    offer_undo('chore_rule', snapshot, _('Recurring chore rule deleted.'))
-    return redirect(url_for('main.chores'))
+    if message is not None:
+        return offer_undo('chore_rule', snapshot, message, trash=trash)
+    return stash_undo('chore_rule', snapshot, trash)
+
+
+def trash_chore(chore: Chore, deleted_by: str, message: str | None = None) -> str:
+    """Move a one-off chore to the trash (restorable for 7 days). Commits."""
+    return trash_row('chore', chore, trash_info('chores', chore.description, chore.creator, deleted_by), message)
+
+
+row_restorer('chore', Chore)
 
 
 def _chore_rule_snapshot(rule: RecurringChore) -> dict:
@@ -520,21 +535,14 @@ def delete_chore(chore_id):
         rule_creator = (rule.creator if rule else chore.creator) or ''
         if can_modify(user, rule_creator):
             if rule:
-                snapshot = _chore_rule_snapshot(rule)
-                Chore.query.filter_by(recurring_id=rule.id).delete()
-                db.session.delete(rule)
-                db.session.commit()
-                offer_undo('chore_rule', snapshot, _('Recurring chore rule deleted.'))
+                trash_chore_rule(rule, user, _('Recurring chore %(chore)s moved to the trash.', chore=rule.description))
             else:
-                db.session.delete(chore)
-                db.session.commit()
+                trash_chore(chore, user, _('%(chore)s moved to the trash.', chore=chore.description))
         else:
             flash(_('Not allowed to delete recurring rule.'), 'error')
         return redirect(url_for('main.chores'))
     if can_modify(user, chore.creator):
-        db.session.delete(chore)
-        db.session.commit()
-        flash(_('Chore deleted.'), 'success')
+        trash_chore(chore, user, _('%(chore)s moved to the trash.', chore=chore.description))
     else:
         flash(_('Not allowed to delete chore.'), 'error')
     return redirect(url_for('main.chores'))

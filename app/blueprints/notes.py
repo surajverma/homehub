@@ -4,6 +4,7 @@ from ..models import db, Note
 from ..blueprints import main_bp
 from ..admin import can_modify
 from ..security import sanitize_text, sanitize_html
+from ..undo import row_restorer, trash_info, trash_row
 
 
 @main_bp.route('/notes', methods=['GET', 'POST'])
@@ -36,9 +37,15 @@ def delete_note(note_id):
     note = db.get_or_404(Note, note_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, note.creator):
-        db.session.delete(note)
-        db.session.commit()
-        flash(_('Note deleted.'), 'success')
+        trash_note(note, user, _('Note moved to the trash.'))
     else:
         flash(_('Not allowed to delete note.'), 'error')
     return redirect(url_for('main.notes'))
+
+
+def trash_note(note: Note, deleted_by: str, message: str | None = None) -> str:
+    """Move a note to the trash (restorable for 7 days). Commits."""
+    return trash_row('note', note, trash_info('notes', note.content, note.creator, deleted_by), message)
+
+
+row_restorer('note', Note)

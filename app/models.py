@@ -268,12 +268,22 @@ class ExpenseBudget(db.Model):
 
 
 class UndoStash(db.Model):
-    """What a change replaced, kept for a few seconds so it can be undone (see app/undo.py)."""
+    """What a change replaced, kept so it can be undone (see app/undo.py).
+
+    A change is kept for a few seconds. A delete is kept for 7 days and is the trash: those rows
+    have a module, a label, the owner whose records they were and who deleted them.
+    """
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(32), unique=True, nullable=False)
     kind = db.Column(db.String(32), nullable=False)
     payload = db.Column(db.Text, nullable=False)  # JSON
     expires_at = db.Column(db.DateTime, nullable=False)
+    # Set only on trash entries
+    module = db.Column(db.String(32))
+    label = db.Column(db.String(256))
+    owner = db.Column(db.String(64))
+    deleted_by = db.Column(db.String(128))
+    deleted_at = db.Column(db.DateTime)
 
 
 class ApiToken(db.Model):

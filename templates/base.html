@@ -170,6 +170,7 @@
                 ('/pdfs', 'fa-file-pdf', _('PDF Compressor'), ft.get('pdf_compressor')),
                 ('/qr', 'fa-qrcode', _('QR Generator'), ft.get('qr_generator')),
                 ('/expenses', 'fa-wallet', _('Expense Tracker'), ft.get('expense_tracker', true)),
+                ('/trash', 'fa-trash-can', _('Trash'), true),
             ] %}
             <nav class="flex-1 p-3 overflow-y-auto" id="sidebarNav">
                 {% for href, icon, label, enabled in nav_links if enabled %}

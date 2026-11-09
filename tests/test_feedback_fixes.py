@@ -23,9 +23,13 @@ def client():
 
 
 def flashes(client):
-    """Messages waiting to be shown as toasts, oldest first; reading them clears them."""
+    """Messages waiting to be shown as toasts, oldest first; reading them clears them.
+
+    A message offered with an Undo button (moved to the trash) is stored as JSON; this returns its text.
+    """
     with client.session_transaction() as sess:
-        return [message for _category, message in sess.pop('_flashes', [])]
+        return [json.loads(message)['message'] if category == 'undo' else message
+                for category, message in sess.pop('_flashes', [])]
 
 
 # --- A toast after every add / edit / delete ---------------------------------------------------
@@ -46,14 +50,14 @@ def test_notes_say_what_happened(client):
     client.post(f'/notes/delete/{note}', data={'user': 'Dad'})
     assert flashes(client) == ['Not allowed to delete note.']
     client.post(f'/notes/delete/{note}', data={'user': 'Mom'})
-    assert flashes(client) == ['Note deleted.']
+    assert flashes(client) == ['Note moved to the trash.']
 
 
 @pytest.mark.parametrize('add_url, add_data, table, delete_url, added, deleted, refused', [
     ('/shopping', {'item': 'Eggs', 'tags': '[]'}, 'shopping_item', '/shopping/delete/{id}',
-     'Item added.', 'Item deleted.', 'Not allowed to delete item.'),
+     'Item added.', 'Eggs moved to the trash.', 'Not allowed to delete item.'),
     ('/expiry', {'name': 'Milk', 'expiry_date': '2030-01-01'}, 'expiry_item', '/expiry/delete/{id}',
-     'Item added.', 'Item deleted.', 'Not allowed to delete item.'),
+     'Item added.', 'Milk moved to the trash.', 'Not allowed to delete item.'),
     ('/shorten', {'original_url': 'https://example.com'}, 'short_url', '/shorten/delete/{id}',
      'Short link created.', 'Short link deleted.', 'Not allowed to delete short link.'),
     ('/qr', {'qrtext': 'hello'}, 'qr_code', '/qr/delete/{id}',
