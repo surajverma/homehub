@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 13:43+0530\n"
+"POT-Creation-Date: 2026-11-09 13:47+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -2263,7 +2263,8 @@ msgstr "Buraya yazın..."
 msgid "Edit Item"
 msgstr "Öğeyi Düzenle"
 
-#: static/js/pages/shopping.js templates/shopping.html
+#: static/js/pages/shopping.js templates/api_activity.html
+#: templates/shopping.html
 msgid "Item"
 msgstr "Öğe"
 
@@ -2540,7 +2541,7 @@ msgid "No access"
 msgstr ""
 
 #: templates/api_access.html templates/api_access_locked.html
-#: templates/base.html templates/index.html
+#: templates/api_activity.html templates/base.html templates/index.html
 msgid "API access"
 msgstr ""
 
@@ -2726,6 +2727,10 @@ msgid "Delete %(name)s? Its activity history is deleted too."
 msgstr ""
 
 #: templates/api_access.html
+msgid "Deleting it also deletes its activity history. To keep a copy, download it as CSV first."
+msgstr ""
+
+#: templates/api_access.html
 #, python-format
 msgid "Revoke %(name)s? Anything that uses this token stops working at once."
 msgstr ""
@@ -2739,6 +2744,15 @@ msgid "Recent activity"
 msgstr ""
 
 #: templates/api_access.html
+#, python-format
+msgid "View all (%(num)s)"
+msgstr ""
+
+#: templates/api_access.html templates/api_activity.html
+msgid "Download CSV"
+msgstr ""
+
+#: templates/api_access.html templates/api_activity.html
 msgid "No changes made with this token yet."
 msgstr ""
 
@@ -2768,6 +2782,34 @@ msgstr ""
 
 #: templates/api_access_locked.html
 msgid "Until then, you can manage tokens on the server instead, for example:"
+msgstr ""
+
+#: templates/api_activity.html
+#, python-format
+msgid "Activity of %(name)s"
+msgstr ""
+
+#: templates/api_activity.html
+#, python-format
+msgid "Every change made with this token, newest first. HomeHub keeps the latest %(num)s."
+msgstr ""
+
+#: templates/api_activity.html
+#, python-format
+msgid "%(num)s change"
+msgid_plural "%(num)s changes"
+msgstr[0] ""
+
+#: templates/api_activity.html
+msgid "Time"
+msgstr ""
+
+#: templates/api_activity.html
+msgid "Acting as"
+msgstr ""
+
+#: templates/api_activity.html
+msgid "Action"
 msgstr ""
 
 #: templates/backup_restore.html

@@ -161,7 +161,7 @@ def create_app(test_config: dict | None = None):
     # Pages that read ?user= on the server; the ?user=Name link (base.html) leaves it in their address
     user_param_endpoints = {
         'main.backups_page', 'main.restore_preview', 'main.restore_upload_preview',
-        'main.edit_chore', 'main.edit_recipe', 'main.api_access_page',
+        'main.edit_chore', 'main.edit_recipe', 'main.api_access_page', 'main.api_access_activity',
     }
 
     @app.context_processor

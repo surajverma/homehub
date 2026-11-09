@@ -41,7 +41,7 @@ The list below shows each token's access, when it was last used and its recent c
 
 Records a token added keep the name it had then. After a rename, the token can't edit those older records any more: in HomeHub, who may change something always follows the name it was added under.
 
-HomeHub keeps the newest 200 changes of each token. Deleting a token deletes them too.
+Each token's **Recent activity** shows its latest 20 changes. **View all** opens a page with every stored change (HomeHub keeps the newest 200 of each token), and **Download CSV** saves them as a spreadsheet file. Deleting a token deletes its changes too, so download them first if you want to keep a copy.
 
 If a family member added to `config.yml` later has the same name as a token, the token's changes would look like that person's. The list then flags the token, and changes made as the token itself (without `by`) are refused with `409` until you rename it.
 
@@ -73,7 +73,11 @@ docker exec -it homehub flask api-token regenerate "Home Assistant"
 docker exec -it homehub flask api-token revoke "Home Assistant"
 ```
 
-`create` and `regenerate` print the token once. Tools for `--tool`: `presence`, `statuses`, `notice`, `reminders`, `shopping`, `chores`, `notes`, `recipes`, `expiry`, `expenses`, each `=read` or `=write`. Add `--allow-delete` to let the token move reminders to the trash.
+```bash
+docker exec -it homehub flask api-token activity "Home Assistant" --csv > activity.csv
+```
+
+`create` and `regenerate` print the token once. Tools for `--tool`: `presence`, `statuses`, `notice`, `reminders`, `shopping`, `chores`, `notes`, `recipes`, `expiry`, `expenses`, each `=read` or `=write`. Add `--allow-delete` to let the token move reminders to the trash. `activity` lists the token's stored changes, newest first; add `--csv` for a CSV file.
 
 ### Tools and features
 

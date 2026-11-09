@@ -330,3 +330,21 @@ def test_cli_delete(home):
     assert 'Its activity history is deleted too.' in result.output
     assert run(home, 'create', 'Hermes', '--tool', 'notice=read').exit_code == 0
     assert run(home, 'delete', 'Nobody', '--yes').exit_code != 0
+
+
+def test_cli_activity(home):
+    home.token('Hermes', notes='write')
+    assert 'No changes made with Hermes yet.' in run(home, 'activity', 'hermes').output
+    with home.ctx():
+        token = tokens.find_by_name('Hermes')
+        tokens.log_activity(token, 'Priya', 'notes_add', 'first')
+        tokens.log_activity(token, 'Dad', 'notes_add', 'second')
+    result = run(home, 'activity', 'Hermes')
+    assert result.exit_code == 0
+    lines = result.output.splitlines()
+    assert lines[0].endswith('UTC  Dad  notes_add  second') and lines[1].endswith('UTC  Priya  notes_add  first')
+    assert lines[2] == '2 changes made with Hermes.'
+    result = run(home, 'activity', 'Hermes', '--csv')
+    assert result.output.splitlines()[0] == 'time_utc,token,acting_as,action,target'
+    assert result.output.splitlines()[1].endswith(',Hermes,Dad,notes_add,second')
+    assert run(home, 'activity', 'Nobody').exit_code != 0

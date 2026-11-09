@@ -358,3 +358,39 @@ def log_activity(token: ApiToken, acting_as: str, action: str, target: str) -> N
 def recent_activity(token: ApiToken, limit: int = 20) -> list:
     return (ApiActivity.query.filter_by(token_id=token.id)
             .order_by(ApiActivity.id.desc()).limit(limit).all())
+
+
+def activity_count(token: ApiToken) -> int:
+    return ApiActivity.query.filter_by(token_id=token.id).count()
+
+
+def all_activity(token: ApiToken) -> list:
+    """Every stored change made with the token, newest first (at most ACTIVITY_KEEP)."""
+    return recent_activity(token, ACTIVITY_KEEP)
+
+
+ACTIVITY_CSV_COLUMNS = ('time_utc', 'token', 'acting_as', 'action', 'target')
+
+
+def activity_csv(token: ApiToken) -> str:
+    """The token's activity as CSV text, newest first, with a BOM so spreadsheets read it as UTF-8."""
+    import csv
+    import io
+    from ..blueprints.expenses import _csv_text
+    out = io.StringIO()
+    out.write('\ufeff')
+    writer = csv.writer(out)
+    writer.writerow(ACTIVITY_CSV_COLUMNS)
+    for a in all_activity(token):
+        writer.writerow([
+            a.created_at.strftime('%Y-%m-%dT%H:%M:%SZ') if a.created_at else '',
+            _csv_text(a.token_name), _csv_text(a.acting_as), _csv_text(a.action), _csv_text(a.target),
+        ])
+    return out.getvalue()
+
+
+def activity_filename(token: ApiToken) -> str:
+    """A file name for the token's CSV: letters, digits and dashes only."""
+    import re
+    slug = re.sub(r'[^A-Za-z0-9]+', '-', token.name).strip('-').lower() or f'token-{token.id}'
+    return f'homehub-api-activity-{slug}.csv'

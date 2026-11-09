@@ -147,3 +147,26 @@ def delete_command(name, yes):
     deleted = token.name
     tokens.delete_token(token)
     click.echo(f'Token {deleted} deleted.')
+
+
+@api_token_cli.command('activity')
+@click.argument('name')
+@click.option('--csv', 'as_csv', is_flag=True, help='Print it as CSV (time_utc, token, acting_as, action, target).')
+def activity_command(name, as_csv):
+    """Show every stored change made with token NAME, newest first (the latest 200 are kept)."""
+    _fresh_config()
+    token = tokens.find_by_name(name)
+    if token is None:
+        raise click.ClickException(f'No token called {name}.')
+    if as_csv:
+        # Without the byte order mark: it is for spreadsheets opening a file, not for a terminal or a pipe
+        click.echo(tokens.activity_csv(token).lstrip('\ufeff'), nl=False)
+        return
+    rows = tokens.all_activity(token)
+    if not rows:
+        click.echo(f'No changes made with {token.name} yet.')
+        return
+    for a in rows:
+        when = f'{a.created_at:%Y-%m-%d %H:%M} UTC' if a.created_at else '-'
+        click.echo(f'{when}  {a.acting_as}  {a.action}  {a.target}')
+    click.echo(f'{len(rows)} change{"" if len(rows) == 1 else "s"} made with {token.name}.')

@@ -360,3 +360,84 @@ def test_admin_links_still_refuse_others(bare):
         for page in ('/admin/api', '/admin/backups'):
             resp = bare.client.get(f'{page}?user={user}')
             assert resp.status_code == 302 and resp.headers['Location'].endswith('/'), (page, user)
+
+
+# --- Full activity per token ---
+
+def _log(home, name, count):
+    with home.ctx():
+        token = tokens.find_by_name(name)
+        for i in range(count):
+            tokens.log_activity(token, 'Priya', 'notes_add', f'note {i}')
+        return token.id
+
+
+def test_page_lists_20_and_links_to_all(home):
+    create(home, name='Hermes', notes='write')
+    token_id = _log(home, 'Hermes', 25)
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert 'Recent activity (25)' in body
+    assert 'note 24' in body and 'note 5' in body and 'note 4<' not in body
+    assert f'/admin/api/{token_id}/activity?user=Administrator' in body and 'View all (25)' in body
+    assert f'/admin/api/{token_id}/activity.csv?user=Administrator' in body
+
+
+def test_activity_page_lists_everything_stored(home):
+    create(home, name='Hermes', notes='write')
+    token_id = _log(home, 'Hermes', 25)
+    resp = home.client.get(f'/admin/api/{token_id}/activity?user=Administrator')
+    assert resp.status_code == 200 and resp.headers['Cache-Control'] == 'no-store'
+    body = resp.get_data(as_text=True)
+    assert 'Activity of Hermes' in body and '25 changes' in body
+    assert body.count('<code>notes_add</code>') == 25
+    assert body.index('note 24') < body.index('note 0<')
+
+
+def test_activity_csv(home):
+    create(home, name='Home Assistant', notes='write')
+    with home.ctx():
+        token = tokens.find_by_name('Home Assistant')
+        tokens.log_activity(token, 'Priya', 'notes_add', '=SUM(A1)')
+        tokens.log_activity(token, 'Dad', 'shopping_add', 'Milk')
+        token_id = token.id
+    resp = home.client.get(f'/admin/api/{token_id}/activity.csv?user=Administrator')
+    assert resp.status_code == 200 and resp.headers['Cache-Control'] == 'no-store'
+    assert resp.headers['Content-Type'].startswith('text/csv')
+    assert 'filename="homehub-api-activity-home-assistant.csv"' in resp.headers['Content-Disposition']
+    text = resp.get_data().decode('utf-8')
+    lines = text.lstrip('\ufeff').splitlines()
+    assert lines[0] == 'time_utc,token,acting_as,action,target'
+    assert lines[1].endswith(',Home Assistant,Dad,shopping_add,Milk')
+    # Text a spreadsheet would run as a formula is quoted
+    assert lines[2].endswith(",Home Assistant,Priya,notes_add,'=SUM(A1)")
+
+
+def test_activity_pages_need_the_unlocked_admin(bare):
+    with bare.ctx():
+        admin.set_admin_password(PASSWORD)
+        row, _secret = tokens.create_token('Hermes', {'notice': 'read'})
+        token_id = row.id
+    for path in (f'/admin/api/{token_id}/activity', f'/admin/api/{token_id}/activity.csv'):
+        for user in (ADMIN, 'Priya'):
+            resp = bare.client.get(f'{path}?user={user}')
+            assert resp.status_code == 302 and 'text/csv' not in resp.headers['Content-Type']
+
+
+def test_activity_of_a_missing_token(home):
+    resp = home.client.get('/admin/api/999/activity?user=Administrator', follow_redirects=True)
+    assert 'That token was not found.' in resp.get_data(as_text=True)
+
+
+def test_delete_hint_suggests_the_csv(home):
+    create(home, name='Hermes', notes='write')
+    token_id = _log(home, 'Hermes', 1)
+    home.client.post(f'/admin/api/{token_id}/revoke', data={'user': ADMIN})
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert 'Deleting it also deletes its activity history. To keep a copy, download it as CSV first.' in body
+
+
+def test_activity_page_keeps_the_user_in_its_address(home):
+    create(home, name='Hermes', notes='write')
+    token_id = _log(home, 'Hermes', 1)
+    body = home.client.get(f'/admin/api/{token_id}/activity?user=Administrator').get_data(as_text=True)
+    assert 'keepUserParam: true' in body

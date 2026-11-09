@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6" id="apiActivityPage">
+  <div>
+    <p class="text-sm mb-1"><a href="{{ url_for('main.api_access_page', user=user) }}" class="hover:underline" style="color: var(--primary-text);"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> {{ _('API access') }}</a></p>
+    <h1 class="page-title">{{ _('Activity of %(name)s', name=token.name) }}</h1>
+    <p class="page-subtitle">{{ _('Every change made with this token, newest first. HomeHub keeps the latest %(num)s.', num=keep) }}</p>
+  </div>
+
+  <div class="card p-4 space-y-3">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <p class="text-sm text-gray-500" id="activityCount">{{ ngettext('%(num)s change', '%(num)s changes', activity|length) }}</p>
+      {% if activity %}
+      <a href="{{ url_for('main.api_access_activity_csv', token_id=token.id, user=user) }}" class="btn btn-secondary btn-sm" download><i class="fa-solid fa-file-csv" aria-hidden="true"></i>{{ _('Download CSV') }}</a>
+      {% endif %}
+    </div>
+    {% if activity %}
+    <div class="border rounded-lg overflow-x-auto">
+      <table class="w-full text-sm" id="activityTable">
+        <caption class="sr-only">{{ _('Activity of %(name)s', name=token.name) }}</caption>
+        <thead>
+          <tr class="text-left text-xs text-gray-500">
+            <th scope="col" class="p-2 font-medium whitespace-nowrap">{{ _('Time') }}</th>
+            <th scope="col" class="p-2 font-medium">{{ _('Acting as') }}</th>
+            <th scope="col" class="p-2 font-medium">{{ _('Action') }}</th>
+            <th scope="col" class="p-2 font-medium">{{ _('Item') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in activity %}
+          <tr class="border-t align-top">
+            <td class="p-2 text-gray-500 tabular-nums whitespace-nowrap">{{ a.created_at|localtime }}</td>
+            <td class="p-2 break-words">{{ a.acting_as }}</td>
+            <td class="p-2"><code>{{ a.action }}</code></td>
+            <td class="p-2 break-words">{{ a.target }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-500">{{ _('No changes made with this token yet.') }}</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

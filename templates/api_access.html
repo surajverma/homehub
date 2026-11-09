@@ -166,6 +166,9 @@
               <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash-can" aria-hidden="true"></i>{{ _('Delete') }}</button>
             </form>
             {% endif %}
+            {% if t.revoked_at and item.activity_total %}
+            <p class="text-xs text-gray-500 w-full token-delete-hint">{{ _('Deleting it also deletes its activity history. To keep a copy, download it as CSV first.') }}</p>
+            {% endif %}
             {% if not t.revoked_at %}
             <form method="POST" action="{{ url_for('main.api_access_revoke', token_id=t.id) }}"
                   data-confirm="{{ _('Revoke %(name)s? Anything that uses this token stops working at once.', name=t.name) }}"
@@ -177,13 +180,17 @@
           </div>
         </div>
         <details class="text-xs">
-          <summary class="cursor-pointer text-gray-500">{{ _('Recent activity') }} ({{ item.activity|length }})</summary>
+          <summary class="cursor-pointer text-gray-500">{{ _('Recent activity') }} ({{ item.activity_total }})</summary>
           {% if item.activity %}
           <ul class="mt-2 space-y-1">
             {% for a in item.activity %}
             <li><span class="text-gray-500 tabular-nums">{{ a.created_at|localtime }}</span> · {{ a.acting_as }} · <code>{{ a.action }}</code> · {{ a.target }}</li>
             {% endfor %}
           </ul>
+          <p class="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+            <a href="{{ url_for('main.api_access_activity', token_id=t.id, user=user) }}" class="hover:underline token-activity-all" style="color: var(--primary-text);">{{ _('View all (%(num)s)', num=item.activity_total) }}</a>
+            <a href="{{ url_for('main.api_access_activity_csv', token_id=t.id, user=user) }}" class="hover:underline" style="color: var(--primary-text);" download><i class="fa-solid fa-file-csv" aria-hidden="true"></i> {{ _('Download CSV') }}</a>
+          </p>
           {% else %}
           <p class="mt-2 text-gray-500">{{ _('No changes made with this token yet.') }}</p>
           {% endif %}
