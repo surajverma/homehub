@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 14:17+0530\n"
+"POT-Creation-Date: 2026-11-09 14:29+0530\n"
 "PO-Revision-Date: 2026-10-11 13:20+0800\n"
 "Last-Translator: ump45nose\n"
 "Language: zh\n"
@@ -279,7 +279,7 @@ msgstr ""
 
 #: app/api/home.py
 #, python-format
-msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
 msgstr ""
 
 #: app/api/home.py
@@ -920,10 +920,6 @@ msgid "No ids provided"
 msgstr "未提供 ID"
 
 #: app/blueprints/dashboard.py
-msgid "Reminder is not in trash"
-msgstr "提醒不在回收站中"
-
-#: app/blueprints/dashboard.py
 msgid "Date and title are required for reminders."
 msgstr "提醒必须填写日期和标题。"
 
@@ -935,9 +931,11 @@ msgstr "日期无效。"
 msgid "Reminder added."
 msgstr "提醒已添加。"
 
-#: app/blueprints/dashboard.py
-msgid "Reminder moved to trash."
-msgstr "提醒已移入回收站。"
+#: app/blueprints/dashboard.py app/blueprints/expenses.py
+#: app/blueprints/recipes.py
+#, python-format
+msgid "%(title)s moved to the trash."
+msgstr ""
 
 #: app/blueprints/dashboard.py
 msgid "Not allowed to delete this reminder."
@@ -1247,11 +1245,6 @@ msgstr ""
 msgid "Not allowed to delete entry."
 msgstr "无权删除条目。"
 
-#: app/blueprints/expenses.py app/blueprints/recipes.py
-#, python-format
-msgid "%(title)s moved to the trash."
-msgstr ""
-
 #: app/blueprints/expenses.py
 msgid "Not allowed to edit entry."
 msgstr "无权编辑条目。"
@@ -1465,6 +1458,10 @@ msgstr "共享笔记"
 #: app/trash.py templates/base.html templates/shopping.html
 msgid "Shopping List"
 msgstr "购物清单"
+
+#: app/trash.py templates/base.html
+msgid "Calendar"
+msgstr "日历"
 
 #: app/trash.py templates/base.html
 msgid "To-Do/Chores"
@@ -1946,8 +1943,8 @@ msgstr "分摊："
 msgid "Skip day"
 msgstr "跳过该日"
 
-#: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/backup_restore.html templates/backups.html templates/trash.html
+#: static/js/pages/expenses.js templates/backup_restore.html
+#: templates/backups.html templates/trash.html
 msgid "Restore"
 msgstr "恢复"
 
@@ -2105,12 +2102,22 @@ msgid "(No category)"
 msgstr "（无分类）"
 
 #: static/js/pages/home/reminders.js
+msgid "Moved to the trash."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
 msgid "Deleted"
 msgstr "已删除"
 
 #: static/js/pages/home/reminders.js
 msgid "Delete failed"
 msgstr "删除失败"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "{count} reminder moved to the trash."
+msgid_plural "{count} reminders moved to the trash."
+msgstr[0] ""
 
 #: static/js/pages/home/reminders.js
 #, python-brace-format
@@ -2378,42 +2385,10 @@ msgid "All: {count}"
 msgstr "全部：{count}"
 
 #: static/js/pages/home/reminders.js
-msgid "Deleted (undo available)"
-msgstr "已删除（可撤销）"
-
-#: static/js/pages/home/reminders.js
-msgid "Undo delete"
-msgstr "撤销删除"
-
-#: static/js/pages/home/reminders.js
 #, python-brace-format
 msgid "Move {count} selected reminder to the trash?"
 msgid_plural "Move {count} selected reminders to the trash?"
 msgstr[0] "将选中的 {count} 个提醒移入回收站？"
-
-#: static/js/pages/home/reminders.js
-msgid "Loading trash…"
-msgstr "回收站加载中…"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed to load trash."
-msgstr "回收站加载失败。"
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle bin is empty. Items auto-purge after 7 days."
-msgstr "回收站为空。项目会在 7 天后自动清除。"
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle Bin — items auto-purge after 7 days"
-msgstr "回收站 — 项目 7 天后自动清除"
-
-#: static/js/pages/home/reminders.js
-msgid "Restored"
-msgstr "已恢复"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed"
-msgstr "失败"
 
 #: static/js/pages/home/reminders.js
 msgid "Upcoming (next 7 days)"
@@ -3118,10 +3093,6 @@ msgstr "欢迎"
 #: templates/base.html templates/upload.html
 msgid "Shared Cloud"
 msgstr "共享云盘"
-
-#: templates/base.html
-msgid "Calendar"
-msgstr "日历"
 
 #: templates/base.html templates/shorten.html
 msgid "URL Shortener"
@@ -4046,8 +4017,8 @@ msgid "Search reminders by title or description"
 msgstr "按标题或描述搜索提醒"
 
 #: templates/index.html
-msgid "Recycle Bin"
-msgstr "回收站"
+msgid "Deleted reminders, restorable for 7 days"
+msgstr ""
 
 #: templates/index.html
 msgid "Drag reminder cards onto a date to reschedule."
@@ -4464,6 +4435,11 @@ msgstr ""
 
 #: templates/trash.html
 #, python-format
+msgid "Deleted at %(time)s"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
 msgid "Delete %(name)s for good? This cannot be undone."
 msgstr ""
 
@@ -4581,4 +4557,40 @@ msgstr "删除此文件？它将从服务器上移除。"
 
 #~ msgid "Recipe deleted."
 #~ msgstr "菜谱已删除。"
+
+#~ msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+#~ msgstr ""
+
+#~ msgid "Reminder is not in trash"
+#~ msgstr "提醒不在回收站中"
+
+#~ msgid "Reminder moved to trash."
+#~ msgstr "提醒已移入回收站。"
+
+#~ msgid "Deleted (undo available)"
+#~ msgstr "已删除（可撤销）"
+
+#~ msgid "Undo delete"
+#~ msgstr "撤销删除"
+
+#~ msgid "Loading trash…"
+#~ msgstr "回收站加载中…"
+
+#~ msgid "Failed to load trash."
+#~ msgstr "回收站加载失败。"
+
+#~ msgid "Recycle bin is empty. Items auto-purge after 7 days."
+#~ msgstr "回收站为空。项目会在 7 天后自动清除。"
+
+#~ msgid "Recycle Bin — items auto-purge after 7 days"
+#~ msgstr "回收站 — 项目 7 天后自动清除"
+
+#~ msgid "Restored"
+#~ msgstr "已恢复"
+
+#~ msgid "Failed"
+#~ msgstr "失败"
+
+#~ msgid "Recycle Bin"
+#~ msgstr "回收站"
 

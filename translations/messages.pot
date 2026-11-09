@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-11-09 14:17+0530\n"
+"POT-Creation-Date: 2026-11-09 14:29+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -277,7 +277,7 @@ msgstr ""
 
 #: app/api/home.py
 #, python-format
-msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
 msgstr ""
 
 #: app/api/home.py
@@ -919,10 +919,6 @@ msgid "No ids provided"
 msgstr ""
 
 #: app/blueprints/dashboard.py
-msgid "Reminder is not in trash"
-msgstr ""
-
-#: app/blueprints/dashboard.py
 msgid "Date and title are required for reminders."
 msgstr ""
 
@@ -934,8 +930,10 @@ msgstr ""
 msgid "Reminder added."
 msgstr ""
 
-#: app/blueprints/dashboard.py
-msgid "Reminder moved to trash."
+#: app/blueprints/dashboard.py app/blueprints/expenses.py
+#: app/blueprints/recipes.py
+#, python-format
+msgid "%(title)s moved to the trash."
 msgstr ""
 
 #: app/blueprints/dashboard.py
@@ -1258,11 +1256,6 @@ msgstr ""
 msgid "Not allowed to delete entry."
 msgstr ""
 
-#: app/blueprints/expenses.py app/blueprints/recipes.py
-#, python-format
-msgid "%(title)s moved to the trash."
-msgstr ""
-
 #: app/blueprints/expenses.py
 msgid "Not allowed to edit entry."
 msgstr ""
@@ -1477,6 +1470,10 @@ msgstr ""
 
 #: app/trash.py templates/base.html templates/shopping.html
 msgid "Shopping List"
+msgstr ""
+
+#: app/trash.py templates/base.html
+msgid "Calendar"
 msgstr ""
 
 #: app/trash.py templates/base.html
@@ -1962,8 +1959,8 @@ msgstr ""
 msgid "Skip day"
 msgstr ""
 
-#: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/backup_restore.html templates/backups.html templates/trash.html
+#: static/js/pages/expenses.js templates/backup_restore.html
+#: templates/backups.html templates/trash.html
 msgid "Restore"
 msgstr ""
 
@@ -2122,12 +2119,23 @@ msgid "(No category)"
 msgstr ""
 
 #: static/js/pages/home/reminders.js
+msgid "Moved to the trash."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
 msgid "Deleted"
 msgstr ""
 
 #: static/js/pages/home/reminders.js
 msgid "Delete failed"
 msgstr ""
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "{count} reminder moved to the trash."
+msgid_plural "{count} reminders moved to the trash."
+msgstr[0] ""
+msgstr[1] ""
 
 #: static/js/pages/home/reminders.js
 #, python-brace-format
@@ -2403,43 +2411,11 @@ msgid "All: {count}"
 msgstr ""
 
 #: static/js/pages/home/reminders.js
-msgid "Deleted (undo available)"
-msgstr ""
-
-#: static/js/pages/home/reminders.js
-msgid "Undo delete"
-msgstr ""
-
-#: static/js/pages/home/reminders.js
 #, python-brace-format
 msgid "Move {count} selected reminder to the trash?"
 msgid_plural "Move {count} selected reminders to the trash?"
 msgstr[0] ""
 msgstr[1] ""
-
-#: static/js/pages/home/reminders.js
-msgid "Loading trash…"
-msgstr ""
-
-#: static/js/pages/home/reminders.js
-msgid "Failed to load trash."
-msgstr ""
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle bin is empty. Items auto-purge after 7 days."
-msgstr ""
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle Bin — items auto-purge after 7 days"
-msgstr ""
-
-#: static/js/pages/home/reminders.js
-msgid "Restored"
-msgstr ""
-
-#: static/js/pages/home/reminders.js
-msgid "Failed"
-msgstr ""
 
 #: static/js/pages/home/reminders.js
 msgid "Upcoming (next 7 days)"
@@ -3148,10 +3124,6 @@ msgstr ""
 
 #: templates/base.html templates/upload.html
 msgid "Shared Cloud"
-msgstr ""
-
-#: templates/base.html
-msgid "Calendar"
 msgstr ""
 
 #: templates/base.html templates/shorten.html
@@ -4083,7 +4055,7 @@ msgid "Search reminders by title or description"
 msgstr ""
 
 #: templates/index.html
-msgid "Recycle Bin"
+msgid "Deleted reminders, restorable for 7 days"
 msgstr ""
 
 #: templates/index.html
@@ -4497,6 +4469,11 @@ msgstr ""
 #: templates/trash.html
 #, python-format
 msgid "Deleted by %(name)s at %(time)s"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Deleted at %(time)s"
 msgstr ""
 
 #: templates/trash.html

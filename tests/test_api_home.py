@@ -173,7 +173,8 @@ def test_reminders_match_the_calendar(home, agent):
     add_reminder(home, 'Tomorrow', today + timedelta(days=1))
     trashed = add_reminder(home, 'Trashed', today)
     with home.ctx():
-        db.session.get(Reminder, trashed).deleted_at = datetime.now()
+        from app.blueprints import dashboard
+        dashboard.trash_reminder(db.session.get(Reminder, trashed), 'Mom')
         db.session.add(RecurringReminder(title='Daily pills', creator='Mom', interval=1, unit='day', start_date=today - timedelta(days=3)))
         db.session.commit()
     assert api(home, agent, '') == web(home, 'day', today)
@@ -259,11 +260,17 @@ def test_trash_needs_allow_delete(home, agent):
     assert home.delete(f'/reminders/{rid}', deleter, json={'by': 'Dad'}).status_code == 403
     resp = home.delete(f'/reminders/{rid}', deleter, json={'by': 'Priya'})
     assert resp.status_code == 200 and resp.get_json()['trashed'] is True
-    # In the calendar's trash, where it can be restored
-    trash = home.client.get('/api/reminders/trash').get_json()['reminders']
-    assert [r['id'] for r in trash] == [rid]
+    assert 'restored from the Trash page' in resp.get_json()['summary']
+    # In the shared trash, where it can be restored, with who deleted it through which client
+    from app import trash
+    with home.ctx():
+        entry = trash.entries('reminders')[0]
+        assert (entry.owner, entry.deleted_by, entry.label.startswith('Dentist')) == ('Priya', 'Priya (via Deleter)', True)
+        entry_id = entry.id
     assert home.delete(f'/reminders/{rid}', deleter, json={'by': 'Priya'}).status_code == 404
     assert home.put(f'/reminders/{rid}/done', deleter, json={'done': True, 'by': 'Priya'}).status_code == 404
+    home.client.post(f'/trash/{entry_id}/restore', data={'user': 'Priya'})
+    assert home.put(f'/reminders/{rid}/done', deleter, json={'done': True, 'by': 'Priya'}).status_code == 200
 
 
 def test_only_reminders_can_be_deleted(home):

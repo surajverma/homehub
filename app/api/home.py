@@ -179,7 +179,7 @@ def _reminder_window(args) -> tuple:
            title='Reminders',
            description=('Reminders for today (the default), this week (Monday to Sunday, as the calendar shows it), '
                         'or a range of at most 62 days. Dates of recurring reminders are included (they have a '
-                        'negative id and a recurring_id); reminders in the trash are not.'),
+                        'negative id and a recurring_id).'),
            properties={
                'scope': {'type': 'string', 'in': 'query', 'enum': ['today', 'week'], 'x-casefold': True,
                          'description': 'today or week. Leave out when sending from and to.'},
@@ -227,7 +227,7 @@ def _stored_reminder(ctx, reminder_id: int) -> Reminder:
     if reminder_id < 0:
         raise ApiError(400, 'bad_request', _('This is a date of a recurring reminder. Recurring reminders are changed in HomeHub.'))
     r = db.session.get(Reminder, reminder_id)
-    if r is None or r.deleted_at is not None:
+    if r is None:
         raise ApiError(404, 'not_found', _('That reminder was not found.'))
     if not admin.can_modify(ctx.user, r.creator or ''):
         raise ApiError(403, 'forbidden', _('%(name)s cannot change this reminder.', name=ctx.user))
@@ -259,17 +259,17 @@ def reminders_set_done(ctx, args):
 
 @operation('reminders_trash', tool='reminders', level='write', method='DELETE', path='/reminders/<int(signed=True):reminder_id>',
            title='Move a reminder to the trash',
-           description=('Move a reminder to the calendar\'s trash, where it can be restored for 7 days. Needs a token '
-                        'with Allow deleting. Only whoever added the reminder may do this.'),
+           description=('Move a reminder to the trash, where it can be restored from the Trash page for 7 days. Needs a '
+                        'token with Allow deleting. Only whoever added the reminder may do this.'),
            properties={'reminder_id': ID_PROPERTY},
            required=('reminder_id',), idempotent=True, destructive=True)
 def reminders_trash(ctx, args):
     r = _stored_reminder(ctx, args['reminder_id'])
-    r.deleted_at = utcnow()
-    db.session.commit()
-    ctx.target = f'#{r.id} {r.title}'
-    return {'id': r.id, 'title': r.title, 'trashed': True,
-            'summary': _('%(title)s moved to the trash. It can be restored from the calendar for 7 days.', title=r.title)}
+    reminder_id, title = r.id, r.title
+    dashboard.trash_reminder(r, ctx.deleted_by)
+    ctx.target = f'#{reminder_id} {title}'
+    return {'id': reminder_id, 'title': title, 'trashed': True,
+            'summary': _('%(title)s moved to the trash. It can be restored from the Trash page for 7 days.', title=title)}
 
 
 
@@ -299,7 +299,7 @@ def reminders_edit(ctx, args):
     if not any(k in args for k in editable):
         raise nothing_to_change()
     r = db.session.get(Reminder, args['reminder_id'])
-    if r is None or r.deleted_at is not None:
+    if r is None:
         raise ApiError(404, 'not_found', _('That reminder was not found.'))
     if r.recurring_id:
         raise ApiError(409, 'conflict', _('This reminder belongs to a recurring reminder. Recurring reminders are changed in HomeHub.'))

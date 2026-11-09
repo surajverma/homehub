@@ -510,7 +510,7 @@
       "get": {
         "operationId": "reminders_list",
         "summary": "Reminders",
-        "description": "Reminders for today (the default), this week (Monday to Sunday, as the calendar shows it), or a range of at most 62 days. Dates of recurring reminders are included (they have a negative id and a recurring_id); reminders in the trash are not.",
+        "description": "Reminders for today (the default), this week (Monday to Sunday, as the calendar shows it), or a range of at most 62 days. Dates of recurring reminders are included (they have a negative id and a recurring_id).",
         "tags": [
           "Reminders"
         ],
@@ -819,7 +819,7 @@
       "delete": {
         "operationId": "reminders_trash",
         "summary": "Move a reminder to the trash",
-        "description": "Move a reminder to the calendar's trash, where it can be restored for 7 days. Needs a token with Allow deleting. Only whoever added the reminder may do this.",
+        "description": "Move a reminder to the trash, where it can be restored from the Trash page for 7 days. Needs a token with Allow deleting. Only whoever added the reminder may do this.",
         "tags": [
           "Reminders"
         ],

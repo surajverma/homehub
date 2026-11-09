@@ -13,6 +13,7 @@ window.remindersApi = (function(){
     const r = await fetch('/api/reminders/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
     return r.json();
   }
+  // Moves them to the trash; the answer has an undo_token for window.undoToast
   async function removeMany(ids, creator){
     const r = await fetch('/api/reminders', {method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ids, creator})});
     return r.json();
@@ -39,17 +40,5 @@ window.remindersApi = (function(){
     const r = await fetch('/api/reminders/'+id+'/snooze', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
     return r.json();
   }
-  async function trash(){
-    const r = await fetch('/api/reminders/trash');
-    return r.json();
-  }
-  async function restore(id, creator){
-    const r = await fetch('/api/reminders/'+id+'/restore', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({creator})});
-    return r.json();
-  }
-  async function purge(id, creator){
-    const r = await fetch('/api/reminders/'+id+'/purge', {method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({creator})});
-    return r.json();
-  }
-  return {list, create, update, removeMany, updateRule, deleteRule, markDone, undoDone, snooze, trash, restore, purge};
+  return {list, create, update, removeMany, updateRule, deleteRule, markDone, undoDone, snooze};
 })();

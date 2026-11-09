@@ -80,7 +80,8 @@
 						// If this id was selected, uncheck and update bulk bar
 						const selCb = listWrap.querySelector(`.reminderChk[value="${id}"]`);
 						if(selCb){ selCb.checked = false; }
-						toast(t('Deleted'),'success');
+						if(resp.undo_token) window.undoToast(t('Moved to the trash.'), resp.undo_token);
+						else toast(t('Deleted'),'success');
 						renderList();
 						renderCalendar();
 						updateBulkUI();
@@ -111,7 +112,8 @@
 					if(!resp || !resp.ok){ toast(t('Delete failed'),'error'); return; }
 					highlightedReminderRange = null;
 					Object.values(monthCache).forEach(mc=>{ mc.reminders = (mc.reminders||[]).filter(r=>!ids.includes(r.id)); });
-					toast(t('Deleted {count}', { count: ids.length }),'success');
+					if(resp.undo_token) window.undoToast(tn('{count} reminder moved to the trash.', '{count} reminders moved to the trash.', resp.deleted || ids.length), resp.undo_token);
+					else toast(t('Deleted {count}', { count: ids.length }),'success');
 					// Clear any selections and hide the bulk bar
 					listWrap.querySelectorAll('.reminderChk').forEach(c=>{ c.checked=false; });
 					updateBulkUI();
@@ -825,8 +827,8 @@
 	}
 	function paintItems(list){ const currentUser=localStorage.getItem('username')||''; const adminName=window.HomeHubAdmin.names[0]; const isAdmin = [adminName,'Administrator','admin'].includes(currentUser); const selections=new Set(); listWrap.innerHTML=''; bulkBar.classList.add('hidden'); bulkCount.textContent='0'; if(!list.length){ listWrap.innerHTML='<div class="text-gray-500">'+th('No reminders')+'</div>'; return;} list.sort((a,b)=> (a.date.localeCompare(b.date)) || ((a.time||'~').localeCompare(b.time||'~')) || (a.id-b.id));
 	function fmtTime(val){ if(!val) return ''; if(window.REMINDERS_TIME_FORMAT==='24h') return val; const [h,m]=val.split(':'); let hh=parseInt(h,10); const ap=hh>=12?'PM':'AM'; hh = (hh%12)||12; return hh+':'+m+' '+ap; }
-	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"${th('Select reminder')}\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"${th('Edit')}\"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"${th('Delete')}\"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; const snapshot=JSON.parse(JSON.stringify(r)); window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); toast(t('Deleted (undo available)'),'success'); const host=document.getElementById('toastHost'); if(host){ const undo=document.createElement('div'); undo.className='pointer-events-auto px-3 py-2 rounded shadow text-sm bg-blue-600 text-white cursor-pointer'; undo.textContent=t('Undo delete'); undo.onclick=()=>{ const d=new Date(snapshot.date); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!monthCache[key]) monthCache[key]={reminders:[],counts:{},categories_counts:{}}; monthCache[key].reminders.push(snapshot); renderList(); updateCalendarBadges(); undo.remove(); }; host.appendChild(undo); setTimeout(()=>undo.remove(),6000);} renderList(); updateCalendarBadges(); } else toast(t('Delete failed'),'error');}); }); }
-	listWrap.appendChild(row); }); function updateBulk(){ bulkCount.textContent=selections.size; bulkIds.value=Array.from(selections).join(','); bulkBar.classList.toggle('hidden', !selections.size); } listWrap.querySelectorAll('.reminderChk').forEach(cb=>cb.addEventListener('change',()=>{ const id=parseInt(cb.value); if(cb.checked) selections.add(id); else selections.delete(id); updateBulk(); })); document.getElementById('bulkClearSel').onclick=()=>{ selections.clear(); listWrap.querySelectorAll('.reminderChk').forEach(c=>c.checked=false); updateBulk(); }; const bulkForm=document.getElementById('bulkDeleteForm'); if(bulkForm && !bulkForm.dataset.ajax){ bulkForm.dataset.ajax='1'; bulkForm.addEventListener('submit', async e=>{ e.preventDefault(); const ids=Array.from(selections); if(!ids.length) return; if(!(await confirmDialog({ message: tn('Move {count} selected reminder to the trash?', 'Move {count} selected reminders to the trash?', ids.length), confirmText: t('Move to Trash'), danger: true }))) return; const creator=localStorage.getItem('username')||''; window.remindersApi.removeMany(ids,creator).then(resp=>{ if(!resp.ok){ toast(t('Delete failed'),'error'); return;} Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(r=>!ids.includes(r.id)); }); toast(t('Deleted {count}', { count: ids.length }),'success'); selections.clear(); bulkCount.textContent='0'; bulkBar.classList.add('hidden'); renderList(); updateCalendarBadges(); }); }); }
+	list.forEach(r=>{ const canEdit = isAdmin || (r.creator && r.creator===currentUser); const row=document.createElement('div'); row.className='group flex items-start gap-2 p-2 rounded border hover:bg-gray-50 dark:hover:bg-slate-700'; const catClass = r.category?('rem-cat-dot-'+r.category):''; const dot = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1 flex-shrink-0 ${catClass||'bg-gray-400'}"></span>`; const timeFrag = r.time?` <span class=\"ml-1 text-[10px] text-blue-600 dark:text-blue-300\">${fmtTime(r.time)}</span>`:''; const meta = `${r.date}${timeFrag} · ${escapeHtml(r.creator||'')}${r.category?' · '+escapeHtml(r.category):''}`; row.innerHTML=`${canEdit?`<label class=\"mt-1\"><input type=\"checkbox\" class=\"reminderChk\" value=\"${r.id}\" aria-label=\"${th('Select reminder')}\"></label>`:''}<div class=\"flex-1 ${canEdit?'cursor-pointer':''}\" data-edit><div class=\"font-semibold flex items-center\">${dot}${escapeHtml(r.title)}${canEdit?`<button type=\"button\" class=\"ml-2 text-[11px] px-1 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-600 editBtn hidden group-hover:inline\" aria-label=\"${th('Edit')}\"><i class='fa-solid fa-pen' aria-hidden='true'></i></button>`:''}</div><div class=\"text-xs text-gray-500 dark:text-gray-400\">${meta}</div>${r.description?`<div class=\"text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap mt-1\">${escapeHtml(r.description)}</div>`:''}</div>${canEdit?`<button type=\"button\" class=\"opacity-0 group-hover:opacity-100 transition text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 deleteOne\" aria-label=\"${th('Delete')}\"><i class='fa-solid fa-trash-can' aria-hidden='true'></i></button>`:''}`; if(canEdit){ const editTarget=row.querySelector('[data-edit]'); editTarget.addEventListener('dblclick',()=> openForm('edit', r.date, r)); row.querySelector('.editBtn').addEventListener('click',()=> openForm('edit', r.date, r)); row.querySelector('.deleteOne').addEventListener('click',()=>{ const creator=currentUser; window.remindersApi.removeMany([r.id],creator).then(resp=>{ if(resp.ok){ Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(x=>x.id!==r.id); }); if(resp.undo_token) window.undoToast(t('Moved to the trash.'), resp.undo_token); else toast(t('Deleted'),'success'); renderList(); updateCalendarBadges(); } else toast(t('Delete failed'),'error');}); }); }
+	listWrap.appendChild(row); }); function updateBulk(){ bulkCount.textContent=selections.size; bulkIds.value=Array.from(selections).join(','); bulkBar.classList.toggle('hidden', !selections.size); } listWrap.querySelectorAll('.reminderChk').forEach(cb=>cb.addEventListener('change',()=>{ const id=parseInt(cb.value); if(cb.checked) selections.add(id); else selections.delete(id); updateBulk(); })); document.getElementById('bulkClearSel').onclick=()=>{ selections.clear(); listWrap.querySelectorAll('.reminderChk').forEach(c=>c.checked=false); updateBulk(); }; const bulkForm=document.getElementById('bulkDeleteForm'); if(bulkForm && !bulkForm.dataset.ajax){ bulkForm.dataset.ajax='1'; bulkForm.addEventListener('submit', async e=>{ e.preventDefault(); const ids=Array.from(selections); if(!ids.length) return; if(!(await confirmDialog({ message: tn('Move {count} selected reminder to the trash?', 'Move {count} selected reminders to the trash?', ids.length), confirmText: t('Move to Trash'), danger: true }))) return; const creator=localStorage.getItem('username')||''; window.remindersApi.removeMany(ids,creator).then(resp=>{ if(!resp.ok){ toast(t('Delete failed'),'error'); return;} Object.values(monthCache).forEach(mc=>{ mc.reminders=mc.reminders.filter(r=>!ids.includes(r.id)); }); if(resp.undo_token) window.undoToast(tn('{count} reminder moved to the trash.', '{count} reminders moved to the trash.', resp.deleted || ids.length), resp.undo_token); else toast(t('Deleted {count}', { count: ids.length }),'success'); selections.clear(); bulkCount.textContent='0'; bulkBar.classList.add('hidden'); renderList(); updateCalendarBadges(); }); }); }
 	}
 
 	// Add edit handling for recurring rule cards
@@ -910,44 +912,6 @@
 				currentSearchTerm = (searchInput.value || '').trim();
 				renderList();
 			}, 200);
-		});
-	}
-	// Trash panel
-	const trashToggleBtn = document.getElementById('trashToggleBtn');
-	const trashPanel = document.getElementById('trashPanel');
-	let trashVisible = false;
-	async function renderTrashPanel(){
-		if(!trashPanel) return;
-		trashPanel.innerHTML = '<div class="text-xs text-gray-400 p-2">'+th('Loading trash…')+'</div>';
-		trashPanel.classList.remove('hidden');
-		const res = await window.remindersApi.trash();
-		if(!res || !res.ok){ trashPanel.innerHTML='<div class="text-xs text-red-500 p-2">'+th('Failed to load trash.')+'</div>'; return; }
-		const items = res.reminders || [];
-		if(!items.length){ trashPanel.innerHTML='<div class="text-xs text-gray-400 p-2">'+th('Recycle bin is empty. Items auto-purge after 7 days.')+'</div>'; return; }
-		const creator = localStorage.getItem('username')||'';
-		trashPanel.innerHTML = `<div class="text-xs font-semibold text-gray-500 mb-2">${th('Recycle Bin — items auto-purge after 7 days')}</div>`;
-		items.forEach(r=>{
-			const row = document.createElement('div');
-			row.className = 'flex items-center gap-2 p-1.5 border rounded mb-1 text-sm bg-gray-50 dark:bg-slate-700/50';
-			row.innerHTML = `<div class="flex-1 line-through text-gray-400">${escapeHtml(r.title||'')} <span class="text-[10px] no-underline opacity-70">${r.date||''}</span></div>
-				<button type="button" data-restore="${r.id}" class="text-[11px] px-2 py-0.5 rounded border bg-white dark:bg-slate-800 hover:bg-green-50">${th('Restore')}</button>`;
-			trashPanel.appendChild(row);
-		});
-		trashPanel.querySelectorAll('[data-restore]').forEach(btn=>{
-			btn.addEventListener('click', async ()=>{
-				const id = parseInt(btn.getAttribute('data-restore'));
-				const res2 = await window.remindersApi.restore(id, creator);
-				if(res2 && res2.ok){ toast(t('Restored'),'success'); dropMonthCache(); renderTrashPanel(); buildAndEnsure(); renderList(); }
-				else toast((res2&&res2.error)|| t('Failed'),'error');
-			});
-		});
-	}
-	if(trashToggleBtn && !trashToggleBtn.dataset.bound){
-		trashToggleBtn.dataset.bound = '1';
-		trashToggleBtn.addEventListener('click', ()=>{
-			trashVisible = !trashVisible;
-			if(trashVisible){ renderTrashPanel(); trashToggleBtn.classList.add('bg-red-50','border-red-300'); }
-			else { trashPanel && trashPanel.classList.add('hidden'); trashToggleBtn.classList.remove('bg-red-50','border-red-300'); }
 		});
 	}
 	if(window.CALENDAR_ONLY && !listWrap.dataset.dragBound){

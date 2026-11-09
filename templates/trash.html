@@ -31,7 +31,7 @@
                     <div class="font-medium break-words">{{ e.label }}</div>
                     <div class="meta mt-0.5">
                         {% if row.module and not module %}<span class="whitespace-nowrap">{{ row.module.label }}</span> · {% endif %}
-                        {{ _('Deleted by %(name)s at %(time)s', name=e.deleted_by or '?', time=e.deleted_at|localtime) }} ·
+                        {% if e.deleted_by %}{{ _('Deleted by %(name)s at %(time)s', name=e.deleted_by, time=e.deleted_at|localtime) }}{% else %}{{ _('Deleted at %(time)s', time=e.deleted_at|localtime) }}{% endif %} ·
                         <span class="whitespace-nowrap {{ 'text-amber-700' if row.days_left <= 1 else '' }}">{{ ngettext('%(num)s day left', '%(num)s days left', row.days_left) }}</span>
                     </div>
                 </div>

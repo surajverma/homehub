@@ -44,6 +44,7 @@ class Module:
 MODULES = (
     Module('notes', N_('Shared Notes'), 'fa-note-sticky', 'notes', False, 'main.notes'),
     Module('shopping', N_('Shopping List'), 'fa-cart-shopping', 'shopping_list', False, 'main.shopping'),
+    Module('reminders', N_('Calendar'), 'fa-calendar-days', 'calendar', True, 'main.calendar_page'),
     Module('chores', N_('To-Do/Chores'), 'fa-list-check', 'chores', False, 'main.chores'),
     Module('recipes', N_('Recipe Book'), 'fa-utensils', 'recipes', False, 'main.recipes'),
     Module('expiry', N_('Expiry Tracker'), 'fa-hourglass-half', 'expiry_tracker', False, 'main.expiry'),

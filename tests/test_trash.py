@@ -389,3 +389,116 @@ def test_purge_expired_stashes(tmp_path):
     conn.execute("INSERT INTO undo_stash (token, expires_at) VALUES ('new', '2026-10-09 10:00:00.000000')")
     assert migrations.purge_expired_stashes(conn.cursor(), now=datetime(2026, 10, 5)) == 1
     assert [r[0] for r in conn.execute('SELECT token FROM undo_stash')] == ['new']
+
+
+# --- Reminders ---
+
+def add_reminder(home, title='Dentist', creator='Priya', day=None):
+    day = (day or TODAY).isoformat()
+    resp = home.client.post('/api/reminders', json={'title': title, 'creator': creator, 'start_date': day, 'date': day})
+    return resp.get_json()['reminder']['id']
+
+
+def calendar_titles(home):
+    data = home.client.get(f'/api/reminders?scope=month&date={TODAY.isoformat()}').get_json()
+    return sorted(r['title'] for r in data['reminders'])
+
+
+def test_calendar_delete_goes_to_the_trash(home):
+    from app.models import Reminder
+    rid = add_reminder(home)
+    flashes(home)
+    home.client.post(f'/calendar/delete/{rid}', data={'user': 'Priya'})
+    assert undo_offer(home)['message'] == 'Dentist moved to the trash.'
+    assert count(home, Reminder) == 0
+    assert trash_rows(home) == [('reminders', f'Dentist ({TODAY.isoformat()})', 'Priya', 'Priya')]
+    home.client.post(f"/trash/{entry_id(home, f'Dentist ({TODAY.isoformat()})')}/restore", data={'user': 'Priya'})
+    assert calendar_titles(home) == ['Dentist']
+
+
+def test_calendar_list_delete_offers_the_servers_undo(home):
+    one = add_reminder(home, 'One')
+    two = add_reminder(home, 'Two')
+    three = add_reminder(home, 'Three', creator='Dad')
+    data = home.client.delete('/api/reminders', json={'ids': [one], 'creator': 'Priya'}).get_json()
+    assert data['ok'] and data['deleted'] == 1 and data['undo_token']
+    assert home.client.post(f"/undo/{data['undo_token']}").get_json() == {'ok': True}
+    assert calendar_titles(home) == ['One', 'Three', 'Two']
+    # Several at once: one Undo for all; someone else's reminder is left alone
+    data = home.client.delete('/api/reminders', json={'ids': [one, two, three], 'creator': 'Priya'}).get_json()
+    assert data['deleted'] == 2 and calendar_titles(home) == ['Three']
+    assert len(trash_rows(home)) == 2
+    assert home.client.post(f"/undo/{data['undo_token']}").get_json() == {'ok': True}
+    assert calendar_titles(home) == ['One', 'Three', 'Two'] and trash_rows(home) == []
+
+
+def test_bulk_form_delete(home):
+    ids = [add_reminder(home, f'R{i}') for i in range(2)]
+    flashes(home)
+    home.client.post('/calendar/delete_bulk', data={'ids': ','.join(map(str, ids)), 'user': 'Priya'})
+    assert undo_offer(home)['message'] == 'Moved 2 reminders to trash.'
+    assert len(trash_rows(home)) == 2
+
+
+def test_whole_series_goes_to_the_trash_but_ending_it_does_not(home):
+    from app.models import RecurringReminder
+    future = (TODAY + timedelta(days=3)).isoformat()
+    rule = home.client.post('/api/reminders', json={'title': 'Pills', 'creator': 'Mom', 'start_date': future, 'date': future,
+                                                    'recurring': {'interval': 1, 'unit': 'day'}}).get_json()['recurring_id']
+    data = home.client.delete(f'/api/recurring_rules/{rule}', json={'creator': 'Mom'}).get_json()
+    assert data['ok'] and data['ended'] is False
+    assert count(home, RecurringReminder) == 0
+    assert trash_rows(home) == [('reminders', 'Pills', 'Mom', 'Mom')]
+    home.client.post(f"/trash/{entry_id(home, 'Pills')}/restore", data={'user': 'Mom'})
+    assert count(home, RecurringReminder) == 1
+    # A series that has started is only ended from today: nothing is removed, so nothing goes to the trash
+    with home.ctx():
+        r = RecurringReminder.query.one()
+        r.start_date = TODAY - timedelta(days=5)
+        db.session.commit()
+        rule = r.id
+    data = home.client.delete(f'/api/recurring_rules/{rule}', json={'creator': 'Mom'}).get_json()
+    assert data['ended'] is True and trash_rows(home) == []
+    assert data['undo_token']
+
+
+def test_calendar_trash_button_opens_the_trash_page(home):
+    body = home.client.get('/calendar').get_data(as_text=True)
+    assert 'href="/trash?module=reminders"' in body and 'trashPanel' not in body
+    body = home.client.get('/trash?module=reminders').get_data(as_text=True)
+    assert 'Back to Calendar' in body
+
+
+def test_reminders_trashed_before_the_upgrade_can_be_restored(tmp_path, monkeypatch):
+    """The upgrade moves the calendar's old trash into the shared one; the Trash page restores from it."""
+    from app import create_app
+    from app.models import Reminder
+    path = tmp_path / 'app.db'
+    uri = 'sqlite:///' + path.as_posix()
+    home = Home(tmp_path, monkeypatch)
+    app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': uri, 'SECRET_KEY': 'test'})
+    with app.app_context():
+        db.create_all()
+        app.config['HOMEHUB_CONFIG'] = home.app.config['HOMEHUB_CONFIG']
+        deleted = utcnow() - timedelta(days=2)
+        db.session.add(Reminder(date=TODAY, start_date=TODAY, start_time='09:30', time='09:30', title='Vet', creator='Dad',
+                                category='health', deleted_at=deleted))
+        db.session.add(Reminder(date=TODAY, start_date=TODAY, title='Kept', creator='Dad'))
+        db.session.commit()
+        rid = Reminder.query.filter_by(title='Vet').one().id
+        db.engine.dispose()
+    assert migrations.run(str(path)) is True
+    client = app.test_client()
+    with app.app_context():
+        assert [r.title for r in Reminder.query.all()] == ['Kept']
+        entry = trash.entries('reminders')[0]
+        assert (entry.label, entry.owner, entry.deleted_by) == (f'Vet ({TODAY.isoformat()})', 'Dad', '')
+        assert abs((entry.deleted_at - deleted).total_seconds()) < 1
+        assert abs((entry.expires_at - (deleted + timedelta(days=7))).total_seconds()) < 1
+        entry_id = entry.id
+    body = client.get('/trash').get_data(as_text=True)
+    assert 'Deleted at ' in body and '5 days left' in body
+    client.post(f'/trash/{entry_id}/restore', data={'user': 'Dad'})
+    with app.app_context():
+        r = db.session.get(Reminder, rid)
+        assert (r.title, r.start_time, r.category, r.creator, r.deleted_at) == ('Vet', '09:30', 'health', 'Dad', None)

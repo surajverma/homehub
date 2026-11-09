@@ -140,6 +140,13 @@ class Context:
         self.acting_given = acting_given
         self.target = None
 
+    @property
+    def deleted_by(self) -> str:
+        """Who the Trash page says deleted something: "Priya (via Hermes)", or the token's name alone."""
+        if self.acting_given:
+            return f'{self.user} (via {self.token.name})'
+        return self.token.name
+
     def require_member(self, message: str | None = None) -> str:
         """The family member this call acts for; "by" is needed for changes that belong to a person."""
         if not self.acting_given:

@@ -272,12 +272,16 @@ def test_cross_site_write_check_unaffected(app, client, configure):
 
 # --- Content ---------------------------------------------------------------------------
 
-def add_reminder_direct(app, title, d, **fields):
+def add_reminder_direct(app, title, d, trashed=False, **fields):
     with app.app_context():
         r = Reminder(date=d, start_date=d, title=title, **fields)
         db.session.add(r)
         db.session.commit()
-        return r.id
+        rid = r.id
+        if trashed:
+            from app.blueprints import dashboard
+            dashboard.trash_reminder(r, 'Mom')
+        return rid
 
 
 def test_trashed_excluded_completed_included(app, client, configure):
@@ -286,7 +290,7 @@ def test_trashed_excluded_completed_included(app, client, configure):
     today = TODAY
     add_reminder_direct(app, 'Kept', today)
     add_reminder_direct(app, 'Done', today, completed_at=utcnow())
-    add_reminder_direct(app, 'Trashed', today, deleted_at=utcnow())
+    add_reminder_direct(app, 'Trashed', today, trashed=True)
     body = feed(client)
     assert by_summary(body, 'Kept')
     assert by_summary(body, 'Done')
@@ -518,7 +522,7 @@ def test_trashed_stored_occurrence_falls_back_to_rule_like_api(app, client, conf
     today = TODAY
     rule_id = add_reminder(client, title='Daily', start_date=today.strftime('%Y-%m-%d'),
                            recurring={'interval': 1, 'unit': 'day'})['recurring_id']
-    add_reminder_direct(app, 'Daily', today, recurring_id=rule_id, deleted_at=utcnow())
+    add_reminder_direct(app, 'Daily', today, recurring_id=rule_id, trashed=True)
     todays = [e for e in by_summary(feed(client), 'Daily') if today.strftime('%Y%m%d') in e['DTSTART;VALUE=DATE']]
     api = [r for r in client.get(f'/api/reminders?date={today.isoformat()}').get_json()['reminders'] if r['title'] == 'Daily']
     assert len(todays) == len(api) == 1

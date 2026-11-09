@@ -1,3 +1,4 @@
+import json
 import logging
 import sqlite3
 from datetime import datetime
@@ -79,18 +80,34 @@ def test_current_schema_needs_no_changes(tmp_path):
     assert migrations.run(path) is True
 
 
-def test_purge_removes_only_old_trash(tmp_path):
+def test_trashed_reminders_move_to_the_shared_trash(tmp_path):
     path = str(tmp_path / 'app.db')
     make_old_db(path)
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE TABLE undo_stash (id INTEGER PRIMARY KEY, token VARCHAR(32) NOT NULL UNIQUE, kind VARCHAR(32) NOT NULL, "
+                 "payload TEXT NOT NULL, expires_at DATETIME NOT NULL)")
+    conn.commit()
+    conn.close()
     migrations.run(path)
     conn = sqlite3.connect(path)
-    conn.execute("INSERT INTO reminder (id, date, title, deleted_at) VALUES (2, '2026-01-01', 'old', '2026-09-01 10:00:00.000000')")
-    conn.execute("INSERT INTO reminder (id, date, title, deleted_at) VALUES (3, '2026-01-01', 'recent', '2026-10-01 10:00:00.000000')")
+    conn.execute("INSERT INTO reminder (id, date, title, creator, deleted_at) VALUES (2, '2026-01-01', 'old', 'Mom', '2026-09-01 10:00:00.000000')")
+    conn.execute("INSERT INTO reminder (id, date, start_date, title, creator, timestamp, deleted_at) "
+                 "VALUES (3, '2026-01-02', '2026-01-02', 'recent', 'Mom', '2025-12-30 08:00:00.000000', '2026-10-01 10:00:00.000000')")
     conn.commit()
-    removed = migrations.purge_reminder_trash(conn.cursor(), now=datetime(2026, 10, 4, 12, 0, 0))
+    moved = migrations.move_reminder_trash(conn.cursor(), now=datetime(2026, 10, 4, 12, 0, 0))
     conn.commit()
-    assert removed == 1
-    assert {r[0] for r in conn.execute("SELECT id FROM reminder")} == {1, 3}
+    assert moved == 1
+    # Both leave the reminder table: the old one was past its 7 days, the recent one is in the shared trash
+    assert {r[0] for r in conn.execute("SELECT id FROM reminder")} == {1}
+    rows = conn.execute("SELECT kind, module, label, owner, deleted_by, deleted_at, expires_at, payload FROM undo_stash").fetchall()
+    assert len(rows) == 1
+    kind, module, label, owner, deleted_by, deleted_at, expires_at, payload = rows[0]
+    assert (kind, module, label, owner, deleted_by) == ('reminder', 'reminders', 'recent (2026-01-02)', 'Mom', '')
+    assert deleted_at.startswith('2026-10-01 10:00:00') and expires_at.startswith('2026-10-08 10:00:00')
+    row = json.loads(payload)['row']
+    assert (row['id'], row['title'], row['date'], row['deleted_at'], row['timestamp']) == (3, 'recent', '2026-01-02', None, '2025-12-30T08:00:00.000000')
+    # Running again finds nothing more to move
+    assert migrations.move_reminder_trash(conn.cursor(), now=datetime(2026, 10, 4, 12, 0, 0)) == 0
     conn.close()
 
 

@@ -99,7 +99,7 @@ A tool whose feature is switched off in `config.yml` (under `feature_toggles`) d
 
 Edits follow the web app: only shopping items, one-off chores, one-off reminders and recipes can be edited, and only by whoever added them. Notes and the expiry tracker can't be edited in HomeHub either, so the API only adds them.
 
-Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, backups, settings, budgets, changes to recurring rules (and to chores and reminders made by them), and bulk actions. The only delete is moving a reminder to the trash, because it can be restored from the calendar's Trash for 7 days.
+Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, backups, settings, budgets, changes to recurring rules (and to chores and reminders made by them), and bulk actions. The only delete is moving a reminder to the trash, because it can be restored from HomeHub's Trash page for 7 days.
 
 ## Making requests
 
@@ -276,7 +276,7 @@ curl -H "$HH" "http://homehub.local:5000/api/v1/reminders?scope=week"
 curl -H "$HH" "http://homehub.local:5000/api/v1/reminders?from=2026-11-01&to=2026-11-30"
 ```
 
-`scope` is `today` (the default) or `week` (Monday to Sunday, as the calendar shows it). A range can be at most 62 days. The dates are exactly the ones HomeHub's calendar shows, including dates of recurring reminders (with a negative `id` and a `recurring_id`) and month-end dates such as the 31st becoming the 30th. Reminders in the trash are left out.
+`scope` is `today` (the default) or `week` (Monday to Sunday, as the calendar shows it). A range can be at most 62 days. The dates are exactly the ones HomeHub's calendar shows, including dates of recurring reminders (with a negative `id` and a `recurring_id`) and month-end dates such as the 31st becoming the 30th. Reminders in the trash aren't reminders any more, so they're left out.
 
 ```bash
 curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"title": "Dentist", "date": "2026-11-12", "time": "09:30", "category": "health", "by": "Priya"}' http://homehub.local:5000/api/v1/reminders
@@ -298,7 +298,7 @@ Edit a reminder: send only what changes. `"time": null` makes it all-day.
 curl -X PATCH -H "$HH" -H "Content-Type: application/json" -d '{"date": "2026-11-13", "time": "10:15", "by": "Priya"}' http://homehub.local:5000/api/v1/reminders/42
 ```
 
-Only whoever added a reminder can edit it, mark it or move it to the trash. Moving to the trash needs a token with Allow deleting; the reminder can be restored from the calendar's Trash for 7 days. Recurring reminders and their dates can't be changed through the API (`409`): change them in HomeHub.
+Only whoever added a reminder can edit it, mark it or move it to the trash. Moving to the trash needs a token with Allow deleting; the reminder can be restored from the Trash page (in HomeHub's menu) for 7 days, where it shows who deleted it, for example *Priya (via Hermes)*. Recurring reminders and their dates can't be changed through the API (`409`): change them in HomeHub.
 
 ### Shopping list
 

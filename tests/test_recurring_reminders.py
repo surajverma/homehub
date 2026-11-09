@@ -238,32 +238,13 @@ def test_patch_invalid_date_time_values_preserve_existing_values(client):
     assert reminder['end_time'] == '18:00'
 
 
-def test_restore_rejects_non_trashed_reminder(client):
-    create_resp = client.post('/api/reminders', json={
-        'title': 'Restore Guard',
-        'creator': 'Alice',
-        'start_date': '2026-08-01',
-    })
-    assert create_resp.status_code == 200
+def test_the_calendars_own_trash_endpoints_are_gone(client):
+    # Deleted reminders are on the shared Trash page now
+    create_resp = client.post('/api/reminders', json={'title': 'Old trash', 'creator': 'Alice', 'start_date': '2026-08-01'})
     rid = create_resp.get_json()['reminder']['id']
-
-    restore_resp = client.post(f'/api/reminders/{rid}/restore', json={'creator': 'Alice'})
-    assert restore_resp.status_code == 400
-    assert restore_resp.get_json()['ok'] is False
-
-
-def test_purge_rejects_non_trashed_reminder(client):
-    create_resp = client.post('/api/reminders', json={
-        'title': 'Purge Guard',
-        'creator': 'Alice',
-        'start_date': '2026-08-01',
-    })
-    assert create_resp.status_code == 200
-    rid = create_resp.get_json()['reminder']['id']
-
-    purge_resp = client.delete(f'/api/reminders/{rid}/purge', json={'creator': 'Alice'})
-    assert purge_resp.status_code == 400
-    assert purge_resp.get_json()['ok'] is False
+    assert client.get('/api/reminders/trash').status_code in (404, 405)
+    assert client.post(f'/api/reminders/{rid}/restore', json={'creator': 'Alice'}).status_code in (404, 405)
+    assert client.delete(f'/api/reminders/{rid}/purge', json={'creator': 'Alice'}).status_code in (404, 405)
 
 
 def test_calendar_module_page_is_available(client):

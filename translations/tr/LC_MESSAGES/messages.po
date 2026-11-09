@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 14:17+0530\n"
+"POT-Creation-Date: 2026-11-09 14:29+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -279,7 +279,7 @@ msgstr ""
 
 #: app/api/home.py
 #, python-format
-msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
 msgstr ""
 
 #: app/api/home.py
@@ -920,10 +920,6 @@ msgid "No ids provided"
 msgstr "Kimlik verilmedi"
 
 #: app/blueprints/dashboard.py
-msgid "Reminder is not in trash"
-msgstr "Hatırlatıcı çöp kutusunda değil"
-
-#: app/blueprints/dashboard.py
 msgid "Date and title are required for reminders."
 msgstr "Hatırlatıcılar için tarih ve başlık zorunludur."
 
@@ -935,9 +931,11 @@ msgstr "Geçersiz tarih."
 msgid "Reminder added."
 msgstr "Hatırlatıcı eklendi."
 
-#: app/blueprints/dashboard.py
-msgid "Reminder moved to trash."
-msgstr "Hatırlatıcı çöp kutusuna taşındı."
+#: app/blueprints/dashboard.py app/blueprints/expenses.py
+#: app/blueprints/recipes.py
+#, python-format
+msgid "%(title)s moved to the trash."
+msgstr ""
 
 #: app/blueprints/dashboard.py
 msgid "Not allowed to delete this reminder."
@@ -1247,11 +1245,6 @@ msgstr ""
 msgid "Not allowed to delete entry."
 msgstr "Kaydı silme izniniz yok."
 
-#: app/blueprints/expenses.py app/blueprints/recipes.py
-#, python-format
-msgid "%(title)s moved to the trash."
-msgstr ""
-
 #: app/blueprints/expenses.py
 msgid "Not allowed to edit entry."
 msgstr "Kaydı düzenleme izniniz yok."
@@ -1465,6 +1458,10 @@ msgstr "Paylaşılan Notlar"
 #: app/trash.py templates/base.html templates/shopping.html
 msgid "Shopping List"
 msgstr "Alışveriş Listesi"
+
+#: app/trash.py templates/base.html
+msgid "Calendar"
+msgstr "Takvim"
 
 #: app/trash.py templates/base.html
 msgid "To-Do/Chores"
@@ -1946,8 +1943,8 @@ msgstr "Paylaşım:"
 msgid "Skip day"
 msgstr "Günü atla"
 
-#: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/backup_restore.html templates/backups.html templates/trash.html
+#: static/js/pages/expenses.js templates/backup_restore.html
+#: templates/backups.html templates/trash.html
 msgid "Restore"
 msgstr "Geri getir"
 
@@ -2105,12 +2102,22 @@ msgid "(No category)"
 msgstr "(Kategori yok)"
 
 #: static/js/pages/home/reminders.js
+msgid "Moved to the trash."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
 msgid "Deleted"
 msgstr "Silindi"
 
 #: static/js/pages/home/reminders.js
 msgid "Delete failed"
 msgstr "Silme başarısız"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "{count} reminder moved to the trash."
+msgid_plural "{count} reminders moved to the trash."
+msgstr[0] ""
 
 #: static/js/pages/home/reminders.js
 #, python-brace-format
@@ -2378,42 +2385,10 @@ msgid "All: {count}"
 msgstr "Tümü: {count}"
 
 #: static/js/pages/home/reminders.js
-msgid "Deleted (undo available)"
-msgstr "Silindi (geri alınabilir)"
-
-#: static/js/pages/home/reminders.js
-msgid "Undo delete"
-msgstr "Silmeyi geri al"
-
-#: static/js/pages/home/reminders.js
 #, python-brace-format
 msgid "Move {count} selected reminder to the trash?"
 msgid_plural "Move {count} selected reminders to the trash?"
 msgstr[0] "Seçili {count} hatırlatıcı çöp kutusuna taşınsın mı?"
-
-#: static/js/pages/home/reminders.js
-msgid "Loading trash…"
-msgstr "Çöp kutusu yükleniyor…"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed to load trash."
-msgstr "Çöp kutusu yüklenemedi."
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle bin is empty. Items auto-purge after 7 days."
-msgstr "Geri dönüşüm kutusu boş. Öğeler 7 gün sonra kendiliğinden silinir."
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle Bin — items auto-purge after 7 days"
-msgstr "Geri Dönüşüm Kutusu — öğeler 7 gün sonra kendiliğinden silinir"
-
-#: static/js/pages/home/reminders.js
-msgid "Restored"
-msgstr "Geri getirildi"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed"
-msgstr "Başarısız"
 
 #: static/js/pages/home/reminders.js
 msgid "Upcoming (next 7 days)"
@@ -3118,10 +3093,6 @@ msgstr "Hoş Geldiniz"
 #: templates/base.html templates/upload.html
 msgid "Shared Cloud"
 msgstr "Paylaşılan Bulut"
-
-#: templates/base.html
-msgid "Calendar"
-msgstr "Takvim"
 
 #: templates/base.html templates/shorten.html
 msgid "URL Shortener"
@@ -4046,8 +4017,8 @@ msgid "Search reminders by title or description"
 msgstr "Hatırlatıcıları başlığa ya da açıklamaya göre ara"
 
 #: templates/index.html
-msgid "Recycle Bin"
-msgstr "Geri Dönüşüm Kutusu"
+msgid "Deleted reminders, restorable for 7 days"
+msgstr ""
 
 #: templates/index.html
 msgid "Drag reminder cards onto a date to reschedule."
@@ -4464,6 +4435,11 @@ msgstr ""
 
 #: templates/trash.html
 #, python-format
+msgid "Deleted at %(time)s"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
 msgid "Delete %(name)s for good? This cannot be undone."
 msgstr ""
 
@@ -4581,4 +4557,40 @@ msgstr "Bu dosya silinsin mi? Sunucudan kaldırılır."
 
 #~ msgid "Recipe deleted."
 #~ msgstr "Tarif silindi."
+
+#~ msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+#~ msgstr ""
+
+#~ msgid "Reminder is not in trash"
+#~ msgstr "Hatırlatıcı çöp kutusunda değil"
+
+#~ msgid "Reminder moved to trash."
+#~ msgstr "Hatırlatıcı çöp kutusuna taşındı."
+
+#~ msgid "Deleted (undo available)"
+#~ msgstr "Silindi (geri alınabilir)"
+
+#~ msgid "Undo delete"
+#~ msgstr "Silmeyi geri al"
+
+#~ msgid "Loading trash…"
+#~ msgstr "Çöp kutusu yükleniyor…"
+
+#~ msgid "Failed to load trash."
+#~ msgstr "Çöp kutusu yüklenemedi."
+
+#~ msgid "Recycle bin is empty. Items auto-purge after 7 days."
+#~ msgstr "Geri dönüşüm kutusu boş. Öğeler 7 gün sonra kendiliğinden silinir."
+
+#~ msgid "Recycle Bin — items auto-purge after 7 days"
+#~ msgstr "Geri Dönüşüm Kutusu — öğeler 7 gün sonra kendiliğinden silinir"
+
+#~ msgid "Restored"
+#~ msgstr "Geri getirildi"
+
+#~ msgid "Failed"
+#~ msgstr "Başarısız"
+
+#~ msgid "Recycle Bin"
+#~ msgstr "Geri Dönüşüm Kutusu"
 

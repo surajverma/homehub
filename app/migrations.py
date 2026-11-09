@@ -5,8 +5,10 @@ module adds columns and tables that older ``data/app.db`` files lack. Every
 step is additive and safe to run on every start. A step that fails is logged
 and skipped so the rest still run.
 """
+import json
 import logging
 import os
+import secrets
 import sqlite3
 from datetime import datetime, timedelta, timezone
 
@@ -33,6 +35,8 @@ COLUMNS = [
     ('reminder', 'end_time', 'TEXT', None),
     ('reminder', 'all_day', 'INTEGER DEFAULT 0', None),
     ('reminder', 'completed_at', 'TIMESTAMP', None),
+    # No longer used: trashed reminders moved to the shared trash (move_reminder_trash). The column
+    # stays because dropping one is a table rebuild in SQLite.
     ('reminder', 'deleted_at', 'TIMESTAMP', None),
     ('file', 'stored_name', 'TEXT', None),
 ]
@@ -162,12 +166,54 @@ def ensure_column(cur, table: str, column: str, type_spec: str, default=None) ->
         cur.execute(f"UPDATE {table} SET {column}=? WHERE {column} IS NULL", (default,))
 
 
-def purge_reminder_trash(cur, now: datetime | None = None) -> int:
-    """Delete reminders that have sat in the trash longer than the retention period."""
+def _stored_time(value):
+    """A date or time as SQLite holds it, as the shared trash's copies hold it (ISO, "T" between date and time)."""
+    if isinstance(value, str) and len(value) > 10 and value[10] == ' ':
+        return value[:10] + 'T' + value[11:]
+    return value
+
+
+def _parse_time(value: str) -> datetime:
+    return datetime.fromisoformat(str(value).replace(' ', 'T', 1))
+
+
+def move_reminder_trash(cur, now: datetime | None = None) -> int:
+    """Move reminders in the calendar's old trash (deleted_at set) into the shared trash, then off the calendar.
+
+    Each keeps the time it was deleted and leaves the trash 7 days after it, as before. Ones already older
+    than that are deleted, as the old trash would have done. Nobody recorded who deleted them.
+    """
     now = now or datetime.now(timezone.utc).replace(tzinfo=None)
-    cutoff = (now - timedelta(days=TRASH_RETENTION_DAYS)).strftime('%Y-%m-%d %H:%M:%S')
-    cur.execute("DELETE FROM reminder WHERE deleted_at IS NOT NULL AND deleted_at < ?", (cutoff,))
-    return cur.rowcount
+    cur.execute("PRAGMA table_info(reminder)")
+    names = [row[1] for row in cur.fetchall()]
+    if 'deleted_at' not in names:
+        return 0
+    cur.execute(f"SELECT {', '.join(names)} FROM reminder WHERE deleted_at IS NOT NULL")
+    moved = 0
+    for values in cur.fetchall():
+        row = dict(zip(names, values))
+        try:
+            deleted_at = _parse_time(row['deleted_at'])
+        except ValueError:
+            deleted_at = now
+        expires_at = deleted_at + timedelta(days=TRASH_RETENTION_DAYS)
+        if expires_at > now:
+            data = {name: _stored_time(value) for name, value in row.items()}
+            data['deleted_at'] = None
+            for flag in ('all_day',):
+                if flag in data and data[flag] is not None:
+                    data[flag] = bool(data[flag])
+            day = str(row.get('start_date') or row.get('date') or '')[:10]
+            title = str(row.get('title') or '')
+            label = f'{title} ({day})' if day else title
+            cur.execute(
+                "INSERT INTO undo_stash (token, kind, payload, expires_at, module, label, owner, deleted_by, deleted_at) "
+                "VALUES (?, 'reminder', ?, ?, 'reminders', ?, ?, '', ?)",
+                (secrets.token_hex(16), json.dumps({'row': data}), expires_at.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                 label[:256], str(row.get('creator') or '')[:64], deleted_at.strftime('%Y-%m-%d %H:%M:%S.%f')))
+            moved += 1
+        cur.execute("DELETE FROM reminder WHERE id=?", (row['id'],))
+    return moved
 
 
 def purge_expired_stashes(cur, now: datetime | None = None) -> int:
@@ -232,7 +278,6 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
         cur = conn.cursor()
         for table, column, type_spec, default in COLUMNS:
             ok &= _step(conn, f'add {table}.{column}', ensure_column, cur, table, column, type_spec, default)
-        ok &= _step(conn, 'purge old reminder trash', purge_reminder_trash, cur)
         ok &= _step(conn, 'mark interrupted downloads as failed', fail_interrupted_downloads, cur)
         ok &= _step(conn, 'backfill reminder start_date', cur.execute,
                     "UPDATE reminder SET start_date=date WHERE start_date IS NULL AND date IS NOT NULL")
@@ -250,6 +295,7 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
         # Anything else is scheduled monthly by the app's legacy fallback, so store that
         ok &= _step(conn, 'default recurring_reminder unit', cur.execute,
                     "UPDATE recurring_reminder SET unit='month' WHERE unit IS NULL OR unit=''")
+        ok &= _step(conn, 'move trashed reminders to the shared trash', move_reminder_trash, cur)
         ok &= _step(conn, 'purge expired trash', purge_expired_stashes, cur)
         if pdf_dir and os.path.isdir(pdf_dir):
             ok &= _step(conn, 'remove leftover PDF originals', remove_leftover_pdf_originals, cur, pdf_dir)

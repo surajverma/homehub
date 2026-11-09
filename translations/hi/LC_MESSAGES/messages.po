@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 14:17+0530\n"
+"POT-Creation-Date: 2026-11-09 14:29+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -279,8 +279,8 @@ msgstr "%(title)s अभी बाकी है।"
 
 #: app/api/home.py
 #, python-format
-msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
-msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक कैलेंडर से वापस लाया जा सकता है।"
+msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
+msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक ट्रैश पेज से वापस लाया जा सकता है।"
 
 #: app/api/home.py
 msgid "Send at least one field to change."
@@ -921,10 +921,6 @@ msgid "No ids provided"
 msgstr "कोई आईडी नहीं दी गई"
 
 #: app/blueprints/dashboard.py
-msgid "Reminder is not in trash"
-msgstr "रिमाइंडर ट्रैश में नहीं है"
-
-#: app/blueprints/dashboard.py
 msgid "Date and title are required for reminders."
 msgstr "रिमाइंडर के लिए तारीख और शीर्षक ज़रूरी हैं।"
 
@@ -936,9 +932,11 @@ msgstr "तारीख सही नहीं है।"
 msgid "Reminder added."
 msgstr "रिमाइंडर जोड़ दिया गया।"
 
-#: app/blueprints/dashboard.py
-msgid "Reminder moved to trash."
-msgstr "रिमाइंडर ट्रैश में भेज दिया गया।"
+#: app/blueprints/dashboard.py app/blueprints/expenses.py
+#: app/blueprints/recipes.py
+#, python-format
+msgid "%(title)s moved to the trash."
+msgstr "%(title)s ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/dashboard.py
 msgid "Not allowed to delete this reminder."
@@ -1260,11 +1258,6 @@ msgstr "बजट सेव हो गए।"
 msgid "Not allowed to delete entry."
 msgstr "आपको यह एंट्री हटाने की अनुमति नहीं है।"
 
-#: app/blueprints/expenses.py app/blueprints/recipes.py
-#, python-format
-msgid "%(title)s moved to the trash."
-msgstr "%(title)s ट्रैश में भेज दिया गया।"
-
 #: app/blueprints/expenses.py
 msgid "Not allowed to edit entry."
 msgstr "आपको यह एंट्री संपादित करने की अनुमति नहीं है।"
@@ -1480,6 +1473,10 @@ msgstr "साझा नोट्स"
 #: app/trash.py templates/base.html templates/shopping.html
 msgid "Shopping List"
 msgstr "शॉपिंग लिस्ट"
+
+#: app/trash.py templates/base.html
+msgid "Calendar"
+msgstr "कैलेंडर"
 
 #: app/trash.py templates/base.html
 msgid "To-Do/Chores"
@@ -1964,8 +1961,8 @@ msgstr "बंटवारा:"
 msgid "Skip day"
 msgstr "यह दिन छोड़ें"
 
-#: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/backup_restore.html templates/backups.html templates/trash.html
+#: static/js/pages/expenses.js templates/backup_restore.html
+#: templates/backups.html templates/trash.html
 msgid "Restore"
 msgstr "वापस लाएं"
 
@@ -2124,12 +2121,23 @@ msgid "(No category)"
 msgstr "(कोई श्रेणी नहीं)"
 
 #: static/js/pages/home/reminders.js
+msgid "Moved to the trash."
+msgstr "ट्रैश में भेज दिया गया।"
+
+#: static/js/pages/home/reminders.js
 msgid "Deleted"
 msgstr "हटा दिया गया"
 
 #: static/js/pages/home/reminders.js
 msgid "Delete failed"
 msgstr "हटाया नहीं जा सका"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "{count} reminder moved to the trash."
+msgid_plural "{count} reminders moved to the trash."
+msgstr[0] "{count} रिमाइंडर ट्रैश में भेजा गया।"
+msgstr[1] "{count} रिमाइंडर ट्रैश में भेजे गए।"
 
 #: static/js/pages/home/reminders.js
 #, python-brace-format
@@ -2405,43 +2413,11 @@ msgid "All: {count}"
 msgstr "सभी: {count}"
 
 #: static/js/pages/home/reminders.js
-msgid "Deleted (undo available)"
-msgstr "हटा दिया गया (वापस लिया जा सकता है)"
-
-#: static/js/pages/home/reminders.js
-msgid "Undo delete"
-msgstr "हटाना वापस लें"
-
-#: static/js/pages/home/reminders.js
 #, python-brace-format
 msgid "Move {count} selected reminder to the trash?"
 msgid_plural "Move {count} selected reminders to the trash?"
 msgstr[0] "क्या चुना गया {count} रिमाइंडर ट्रैश में भेज दें?"
 msgstr[1] "क्या चुने गए {count} रिमाइंडर ट्रैश में भेज दें?"
-
-#: static/js/pages/home/reminders.js
-msgid "Loading trash…"
-msgstr "ट्रैश लोड हो रहा है…"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed to load trash."
-msgstr "ट्रैश लोड नहीं हो सका।"
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle bin is empty. Items auto-purge after 7 days."
-msgstr "रीसायकल बिन खाली है। आइटम 7 दिन बाद अपने आप हट जाते हैं।"
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle Bin — items auto-purge after 7 days"
-msgstr "रीसायकल बिन — आइटम 7 दिन बाद अपने आप हट जाते हैं"
-
-#: static/js/pages/home/reminders.js
-msgid "Restored"
-msgstr "वापस लाया गया"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed"
-msgstr "नहीं हो सका"
 
 #: static/js/pages/home/reminders.js
 msgid "Upcoming (next 7 days)"
@@ -3151,10 +3127,6 @@ msgstr "होम"
 #: templates/base.html templates/upload.html
 msgid "Shared Cloud"
 msgstr "साझा क्लाउड"
-
-#: templates/base.html
-msgid "Calendar"
-msgstr "कैलेंडर"
 
 #: templates/base.html templates/shorten.html
 msgid "URL Shortener"
@@ -4085,8 +4057,8 @@ msgid "Search reminders by title or description"
 msgstr "शीर्षक या विवरण से रिमाइंडर खोजें"
 
 #: templates/index.html
-msgid "Recycle Bin"
-msgstr "रीसायकल बिन"
+msgid "Deleted reminders, restorable for 7 days"
+msgstr "हटाए गए रिमाइंडर, 7 दिन तक वापस लाए जा सकते हैं"
 
 #: templates/index.html
 msgid "Drag reminder cards onto a date to reschedule."
@@ -4503,6 +4475,11 @@ msgstr "%(name)s ने %(time)s पर हटाया"
 
 #: templates/trash.html
 #, python-format
+msgid "Deleted at %(time)s"
+msgstr "%(time)s पर हटाया गया"
+
+#: templates/trash.html
+#, python-format
 msgid "Delete %(name)s for good? This cannot be undone."
 msgstr "%(name)s हमेशा के लिए हटाएं? यह वापस नहीं लिया जा सकता।"
 
@@ -4633,4 +4610,40 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "Recipe deleted."
 #~ msgstr "व्यंजन हटा दिया गया।"
+
+#~ msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+#~ msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक कैलेंडर से वापस लाया जा सकता है।"
+
+#~ msgid "Reminder is not in trash"
+#~ msgstr "रिमाइंडर ट्रैश में नहीं है"
+
+#~ msgid "Reminder moved to trash."
+#~ msgstr "रिमाइंडर ट्रैश में भेज दिया गया।"
+
+#~ msgid "Deleted (undo available)"
+#~ msgstr "हटा दिया गया (वापस लिया जा सकता है)"
+
+#~ msgid "Undo delete"
+#~ msgstr "हटाना वापस लें"
+
+#~ msgid "Loading trash…"
+#~ msgstr "ट्रैश लोड हो रहा है…"
+
+#~ msgid "Failed to load trash."
+#~ msgstr "ट्रैश लोड नहीं हो सका।"
+
+#~ msgid "Recycle bin is empty. Items auto-purge after 7 days."
+#~ msgstr "रीसायकल बिन खाली है। आइटम 7 दिन बाद अपने आप हट जाते हैं।"
+
+#~ msgid "Recycle Bin — items auto-purge after 7 days"
+#~ msgstr "रीसायकल बिन — आइटम 7 दिन बाद अपने आप हट जाते हैं"
+
+#~ msgid "Restored"
+#~ msgstr "वापस लाया गया"
+
+#~ msgid "Failed"
+#~ msgstr "नहीं हो सका"
+
+#~ msgid "Recycle Bin"
+#~ msgstr "रीसायकल बिन"
 
