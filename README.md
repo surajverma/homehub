@@ -232,7 +232,7 @@ Logins and admin unlocks survive a restart: if `SECRET_KEY` is not set, HomeHub 
 
 Deleting something in HomeHub moves it to the **Trash** (in the menu) instead of removing it at once: reminders and recurring reminders, shopping items, chores and recurring chores, notes, recipes, expiry items, expenses and recurring expenses. (Deleting a recurring reminder that has already started only ends it from today, keeping its earlier dates; that has a short Undo instead.) Right after a delete, the **Undo** button in the message brings it back; after that, the Trash page lists everything deleted in the last 7 days, newest first, with who deleted it and how many days are left. Each module page has a **Trash** link that shows only its own items (on the Calendar it's the **Trash** button). Reminders that were in the calendar's old trash when you upgrade are moved to the Trash page, keeping the day they were deleted.
 
-Whoever added an item (or the admin) can **Restore** it or **Delete forever**. After 7 days items are deleted for good automatically. On the server:
+Whoever added an item (or the admin) can **Restore** it or **Delete forever**. Things deleted through the [API](docs/api.md) land here too, marked with the app that deleted them, for example *Priya (via Hermes)*. After 7 days items are deleted for good automatically. On the server:
 
 ```bash
 docker exec -it homehub flask trash list

@@ -48,20 +48,22 @@ def _print_token(secret: str):
               help='Give access to a tool: read or write. Repeat for each tool. Tools: '
                    + ', '.join(t.key for t in tokens.TOOLS) + '.')
 @click.option('--act-as-members', is_flag=True, help='Let the token act as family members (the "by" field). Never the admin.')
-@click.option('--allow-delete', is_flag=True, help='Let the token move reminders to the trash (needs reminders=write).')
+@click.option('--allow-delete', is_flag=True,
+              help='Let the token move items to the trash, restorable for 7 days (needs write on a tool such as reminders or shopping).')
 def create_command(name, tool_values, act_as_members, allow_delete):
     """Create a token called NAME and print it once."""
     _fresh_config()
     try:
         permissions = _parse_tools(tool_values)
         if allow_delete and not tokens.can_delete(tokens.clean_permissions(permissions, act_as_members)):
-            raise tokens.TokenError('--allow-delete needs --tool reminders=write: it only moves reminders to the trash.')
+            raise tokens.TokenError('--allow-delete needs write on a tool whose items can go to the trash: '
+                                    + ', '.join(tokens.DELETABLE) + '.')
         token, secret = tokens.create_token(name, permissions, act_as_members, allow_delete)
     except tokens.TokenError as exc:
         raise click.ClickException(str(exc))
     click.echo(f'Token {token.name} created: {_summary(token)}'
                + ('; acts as family members' if token.act_as_members else '')
-               + ('; can move reminders to the trash' if token.allow_delete else '') + '.')
+               + ('; can move items to the trash' if token.allow_delete else '') + '.')
     disabled = [k for k in token.permission_map if not tokens.tool_enabled(k)]
     if disabled:
         click.echo('Switched off in config.yml, so unreachable until turned on: ' + ', '.join(disabled) + '.')
@@ -79,7 +81,8 @@ def list_command():
     for token in rows:
         state = f'revoked {token.revoked_at:%Y-%m-%d %H:%M}' if token.revoked_at else 'active'
         used = f'{token.last_used_at:%Y-%m-%d %H:%M} UTC' if token.last_used_at else 'not used yet'
-        flags = [f for f, on in (('act as family members', token.act_as_members), ('allow deleting', token.allow_delete)) if on]
+        flags = [f for f, on in (('act as family members', token.act_as_members),
+                                 ('can move items to the trash', token.allow_delete)) if on]
         if tokens.name_taken_by_person(token.name):
             flags.append('same name as a person: writes blocked until renamed')
         click.echo(f'{token.name} ({token.prefix}…, {state}): {_summary(token)}'

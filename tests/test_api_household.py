@@ -116,9 +116,10 @@ def test_notes(home, agent):
     assert data['creator'] == 'Dad' and data['summary'] == 'Note added.'
     assert [n['id'] for n in home.get('/notes', agent).get_json()['notes']] == [data['id']]
     assert home.post('/notes', agent, json={'content': '   '}).status_code == 400
-    # No edits or deletes through the API
+    # No edits through the API; a delete needs Allow deleting (see test_api_deletes.py)
     assert home.put(f"/notes/{data['id']}", agent, json={'content': 'x'}).status_code in (404, 405)
-    assert home.delete(f"/notes/{data['id']}", agent).status_code in (404, 405)
+    resp = home.delete(f"/notes/{data['id']}", agent)
+    assert resp.status_code == 403 and resp.get_json()['message'] == 'This token is not allowed to delete.'
 
 
 # --- Recipes ---

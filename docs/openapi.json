@@ -2163,6 +2163,108 @@
             }
           }
         }
+      },
+      "delete": {
+        "operationId": "shopping_delete",
+        "summary": "Move a shopping item to the trash",
+        "description": "Move a shopping item to the trash, where it can be restored from the Trash page in HomeHub for 7 days. Needs a token with Allow deleting. Only whoever added it may do this.",
+        "tags": [
+          "Shopping list"
+        ],
+        "x-homehub-tool": "shopping",
+        "x-homehub-level": "write",
+        "x-homehub-needs-allow-delete": true,
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "description": "The item id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/chores/{chore_id}": {
@@ -2270,6 +2372,108 @@
           },
           "404": {
             "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "chores_delete",
+        "summary": "Move a chore to the trash",
+        "description": "Move a one-off chore to the trash, where it can be restored from the Trash page in HomeHub for 7 days. Needs a token with Allow deleting. Only whoever added it may do this. Recurring chores are deleted in HomeHub.",
+        "tags": [
+          "Chores"
+        ],
+        "x-homehub-tool": "chores",
+        "x-homehub-level": "write",
+        "x-homehub-needs-allow-delete": true,
+        "parameters": [
+          {
+            "name": "chore_id",
+            "in": "path",
+            "required": true,
+            "description": "The chore id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2393,6 +2597,316 @@
           },
           "404": {
             "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "recipes_delete",
+        "summary": "Move a recipe to the trash",
+        "description": "Move a recipe to the trash, where it can be restored from the Trash page in HomeHub for 7 days. Needs a token with Allow deleting. Only whoever added it may do this.",
+        "tags": [
+          "Recipes"
+        ],
+        "x-homehub-tool": "recipes",
+        "x-homehub-level": "write",
+        "x-homehub-needs-allow-delete": true,
+        "parameters": [
+          {
+            "name": "recipe_id",
+            "in": "path",
+            "required": true,
+            "description": "The recipe id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notes/{note_id}": {
+      "delete": {
+        "operationId": "notes_delete",
+        "summary": "Move a note to the trash",
+        "description": "Move a note to the trash, where it can be restored from the Trash page in HomeHub for 7 days. Needs a token with Allow deleting. Only whoever added it may do this.",
+        "tags": [
+          "Notes"
+        ],
+        "x-homehub-tool": "notes",
+        "x-homehub-level": "write",
+        "x-homehub-needs-allow-delete": true,
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "description": "The note id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expiry/{item_id}": {
+      "delete": {
+        "operationId": "expiry_delete",
+        "summary": "Move an expiry tracker item to the trash",
+        "description": "Move an item of the expiry tracker to the trash, where it can be restored from the Trash page in HomeHub for 7 days. Needs a token with Allow deleting. Only whoever added it may do this.",
+        "tags": [
+          "Expiry tracker"
+        ],
+        "x-homehub-tool": "expiry",
+        "x-homehub-level": "write",
+        "x-homehub-needs-allow-delete": true,
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "description": "The item id from the list.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2950,6 +3464,110 @@
                 "required": [
                   "quantity"
                 ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expenses/{entry_id}": {
+      "delete": {
+        "operationId": "expenses_delete",
+        "summary": "Move an expense to the trash",
+        "description": "Move an expense entry (a one-off expense or a settlement) to the trash, where it can be restored from the Trash page in HomeHub for 7 days. Needs a token with Allow deleting. Only whoever added it may do this. A day of a recurring expense is skipped instead (PUT .../skipped).",
+        "tags": [
+          "Expenses"
+        ],
+        "x-homehub-tool": "expenses",
+        "x-homehub-level": "write",
+        "x-homehub-needs-allow-delete": true,
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "description": "The entry id from GET /expenses.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
               }
             }
           }

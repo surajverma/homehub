@@ -97,7 +97,7 @@
           <label class="flex items-start gap-2 text-sm">
             <input type="checkbox" name="allow_delete" value="1" id="allowDelete" class="mt-1" {% if form.allow_delete %}checked{% endif %} aria-describedby="allowDeleteHelp">
             <span><span class="font-medium">{{ _('Allow deleting') }}</span>
-              <span class="block text-xs text-gray-500" id="allowDeleteHelp">{{ _('Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things.') }}</span></span>
+              <span class="block text-xs text-gray-500" id="allowDeleteHelp">{{ _('Lets the token move items to the trash, where they can be restored for 7 days: reminders, shopping items, one-off chores, notes, recipes, expiry items and expenses, in the tools it has with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things.') }}</span></span>
           </label>
         </div>
       </div>
@@ -131,7 +131,7 @@
             <div class="text-xs text-gray-500 mt-0.5">
               {% if t.act_as_members %}<span class="whitespace-nowrap"><i class="fa-solid fa-users" aria-hidden="true"></i> {{ _('Acts as family members') }}</span>{% endif %}
               {% if t.act_as_members and item.can_delete %} · {% endif %}
-              {% if item.can_delete %}<span class="whitespace-nowrap"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> {{ _('Can move reminders to the trash') }}</span>{% endif %}
+              {% if item.can_delete %}<span class="whitespace-nowrap"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> {{ _('Can move items to the trash') }}</span>{% endif %}
             </div>
             {% endif %}
             {% if item.name_clash %}

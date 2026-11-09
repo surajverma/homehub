@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 14:29+0530\n"
+"POT-Creation-Date: 2026-11-09 14:37+0530\n"
 "PO-Revision-Date: 2026-10-11 13:20+0800\n"
 "Last-Translator: ump45nose\n"
 "Language: zh\n"
@@ -196,6 +196,19 @@ msgstr ""
 msgid "Send either amount, or unit_price and quantity."
 msgstr ""
 
+#: app/api/expenses.py
+msgid "That expense was not found."
+msgstr ""
+
+#: app/api/expenses.py
+msgid "This is a day of a recurring expense. Skip it instead, or delete it in HomeHub."
+msgstr ""
+
+#: app/api/expenses.py app/api/home.py app/api/household.py
+#, python-format
+msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
+msgstr ""
+
 #: app/api/home.py
 msgid "This needs a token that can act as family members."
 msgstr ""
@@ -275,11 +288,6 @@ msgstr ""
 #: app/api/home.py
 #, python-format
 msgid "%(title)s is not done."
-msgstr ""
-
-#: app/api/home.py
-#, python-format
-msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
 msgstr ""
 
 #: app/api/home.py
@@ -435,6 +443,15 @@ msgstr ""
 #: app/api/household.py
 #, python-format
 msgid "Recipe updated: %(title)s."
+msgstr ""
+
+#: app/api/household.py
+msgid "That note was not found."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this note."
 msgstr ""
 
 #: app/api/mcp.py
@@ -2735,7 +2752,7 @@ msgid "Allow deleting"
 msgstr ""
 
 #: templates/api_access.html
-msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+msgid "Lets the token move items to the trash, where they can be restored for 7 days: reminders, shopping items, one-off chores, notes, recipes, expiry items and expenses, in the tools it has with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
 msgstr ""
 
 #: templates/api_access.html
@@ -2772,7 +2789,7 @@ msgid "Acts as family members"
 msgstr ""
 
 #: templates/api_access.html
-msgid "Can move reminders to the trash"
+msgid "Can move items to the trash"
 msgstr ""
 
 #: templates/api_access.html
@@ -4593,4 +4610,10 @@ msgstr "删除此文件？它将从服务器上移除。"
 
 #~ msgid "Recycle Bin"
 #~ msgstr "回收站"
+
+#~ msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+#~ msgstr ""
+
+#~ msgid "Can move reminders to the trash"
+#~ msgstr ""
 

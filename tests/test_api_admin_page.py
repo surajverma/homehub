@@ -162,14 +162,15 @@ def test_write_on_presence_needs_act_as(home):
     assert resp.status_code == 400 and 'Act as family members' in resp.get_data(as_text=True)
 
 
-def test_allow_delete_needs_reminders_write(home):
+def test_allow_delete_needs_write_on_a_tool_with_a_trash(home):
     create(home, name='A', reminders='read', allow_delete=True)
-    create(home, name='B', reminders='write', allow_delete=True)
+    create(home, name='B', notes='write', allow_delete=True)
     with home.ctx():
         assert tokens.find_by_name('A').allow_delete is False
         assert tokens.find_by_name('B').allow_delete is True
     body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
-    assert body.count('Can move reminders to the trash') == 1
+    assert body.count('Can move items to the trash') == 1
+    assert 'reminders, shopping items, one-off chores, notes, recipes, expiry items and expenses' in body
 
 
 # --- What the page lists ---

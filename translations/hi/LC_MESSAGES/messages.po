@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 14:29+0530\n"
+"POT-Creation-Date: 2026-11-09 14:37+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -196,6 +196,19 @@ msgstr "%(field)s खाली नहीं हो सकता।"
 msgid "Send either amount, or unit_price and quantity."
 msgstr "या तो amount भेजें, या unit_price और quantity।"
 
+#: app/api/expenses.py
+msgid "That expense was not found."
+msgstr "यह खर्च नहीं मिला।"
+
+#: app/api/expenses.py
+msgid "This is a day of a recurring expense. Skip it instead, or delete it in HomeHub."
+msgstr "यह दोहराए जाने वाले खर्च का एक दिन है। इसके बजाय इसे छोड़ें, या HomeHub में हटाएं।"
+
+#: app/api/expenses.py app/api/home.py app/api/household.py
+#, python-format
+msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
+msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक ट्रैश पेज से वापस लाया जा सकता है।"
+
 #: app/api/home.py
 msgid "This needs a token that can act as family members."
 msgstr "इसके लिए ऐसा टोकन चाहिए जो परिवार के सदस्यों की ओर से काम कर सके।"
@@ -276,11 +289,6 @@ msgstr "%(title)s पूरा हुआ।"
 #, python-format
 msgid "%(title)s is not done."
 msgstr "%(title)s अभी बाकी है।"
-
-#: app/api/home.py
-#, python-format
-msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
-msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक ट्रैश पेज से वापस लाया जा सकता है।"
 
 #: app/api/home.py
 msgid "Send at least one field to change."
@@ -436,6 +444,15 @@ msgstr "%(name)s यह व्यंजन नहीं बदल सकते�
 #, python-format
 msgid "Recipe updated: %(title)s."
 msgstr "व्यंजन बदल दिया गया: %(title)s।"
+
+#: app/api/household.py
+msgid "That note was not found."
+msgstr "यह नोट नहीं मिला।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this note."
+msgstr "%(name)s यह नोट नहीं बदल सकते।"
 
 #: app/api/mcp.py
 msgid "The MCP endpoint only accepts POST."
@@ -2766,8 +2783,8 @@ msgid "Allow deleting"
 msgstr "हटाने की अनुमति दें"
 
 #: templates/api_access.html
-msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
-msgstr "सिर्फ़ रिमाइंडर को ट्रैश में भेजता है, जहां से उन्हें वापस लाया जा सकता है। इसके लिए रिमाइंडर में पढ़ना और बदलना ज़रूरी है। AI एजेंट के लिए इसे बंद रखें: वे जो टेक्स्ट पढ़ते हैं, वह उन्हें चीज़ें हटाने के लिए बहका सकता है।"
+msgid "Lets the token move items to the trash, where they can be restored for 7 days: reminders, shopping items, one-off chores, notes, recipes, expiry items and expenses, in the tools it has with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+msgstr "टोकन को चीज़ें ट्रैश में भेजने देता है, जहां से उन्हें 7 दिन तक वापस लाया जा सकता है: रिमाइंडर, शॉपिंग आइटम, एक बार के काम, नोट, व्यंजन, एक्सपायरी आइटम और खर्च, उन टूल में जिनमें इसे पढ़ने और बदलने की अनुमति है। AI एजेंट के लिए इसे बंद रखें: वे जो टेक्स्ट पढ़ते हैं, वह उन्हें चीज़ें हटाने के लिए बहका सकता है।"
 
 #: templates/api_access.html
 msgid "Whatever a token can read can leave your home if the client passes it on. AI agents usually send what they read to their provider."
@@ -2803,8 +2820,8 @@ msgid "Acts as family members"
 msgstr "परिवार के सदस्यों की ओर से काम करता है"
 
 #: templates/api_access.html
-msgid "Can move reminders to the trash"
-msgstr "रिमाइंडर ट्रैश में भेज सकता है"
+msgid "Can move items to the trash"
+msgstr "चीज़ें ट्रैश में भेज सकता है"
 
 #: templates/api_access.html
 msgid "This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed."
@@ -4646,4 +4663,10 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "Recycle Bin"
 #~ msgstr "रीसायकल बिन"
+
+#~ msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+#~ msgstr "सिर्फ़ रिमाइंडर को ट्रैश में भेजता है, जहां से उन्हें वापस लाया जा सकता है। इसके लिए रिमाइंडर में पढ़ना और बदलना ज़रूरी है। AI एजेंट के लिए इसे बंद रखें: वे जो टेक्स्ट पढ़ते हैं, वह उन्हें चीज़ें हटाने के लिए बहका सकता है।"
+
+#~ msgid "Can move reminders to the trash"
+#~ msgstr "रिमाइंडर ट्रैश में भेज सकता है"
 

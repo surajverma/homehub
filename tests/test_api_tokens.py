@@ -60,12 +60,16 @@ def test_permission_rules(home):
         assert row.permission_map == {'presence': 'write'}
 
 
-def test_allow_delete_needs_reminders_write(home):
+def test_allow_delete_needs_write_on_a_tool_with_a_trash(home):
     with home.ctx():
-        row, _ = tokens.create_token('A', {'reminders': 'read'}, allow_delete=True)
+        row, _ = tokens.create_token('A', {'reminders': 'read', 'shopping': 'read'}, allow_delete=True)
         assert row.allow_delete is False
-        row, _ = tokens.create_token('B', {'reminders': 'write'}, allow_delete=True)
-        assert row.allow_delete is True
+        # Who is home has Read & write but nothing that goes to the trash
+        row, _ = tokens.create_token('A2', {'presence': 'write', 'notice': 'read'}, act_as_members=True, allow_delete=True)
+        assert row.allow_delete is False
+        for i, tool in enumerate(tokens.DELETABLE):
+            row, _ = tokens.create_token(f'B{i}', {tool: 'write'}, allow_delete=True)
+            assert row.allow_delete is True, tool
 
 
 def test_regenerate_and_revoke(home):
@@ -202,8 +206,10 @@ def test_cli_rejects_bad_input(home):
     assert 'TOOL=LEVEL' in run(home, 'create', 'X', '--tool', 'presence').output
     result = run(home, 'create', 'Priya', '--tool', 'notice=read')
     assert result.exit_code != 0 and 'family member' in result.output
-    result = run(home, 'create', 'X', '--tool', 'reminders=read', '--allow-delete')
-    assert result.exit_code != 0 and 'reminders=write' in result.output
+    result = run(home, 'create', 'X', '--tool', 'reminders=read', '--tool', 'presence=read', '--allow-delete')
+    assert result.exit_code != 0 and 'needs write on a tool' in result.output and 'shopping' in result.output
+    result = run(home, 'create', 'Y', '--tool', 'shopping=write', '--allow-delete')
+    assert result.exit_code == 0 and 'can move items to the trash' in result.output
     assert run(home, 'revoke', 'Nobody').exit_code != 0
 
 

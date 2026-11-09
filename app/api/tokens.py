@@ -101,6 +101,8 @@ TOOLS = (
 TOOLS_BY_KEY = {t.key: t for t in TOOLS}
 # Tools whose writes change a person, so they only make sense when the token can act as family members
 NEEDS_ACT_AS = ('presence', 'statuses')
+# Tools whose items the API can move to the trash (with Allow deleting and Read & write on the tool)
+DELETABLE = ('reminders', 'shopping', 'chores', 'notes', 'recipes', 'expiry', 'expenses')
 
 
 class TokenError(ValueError):
@@ -204,8 +206,8 @@ def clean_permissions(raw: dict, act_as_members: bool) -> dict:
 
 
 def can_delete(permissions: dict) -> bool:
-    """Allow deleting only covers moving reminders to the trash, so it needs Reminders Read & write."""
-    return permissions.get('reminders') == 'write'
+    """Allow deleting moves items to the trash, so it needs Read & write on at least one tool that has one."""
+    return any(permissions.get(key) == 'write' for key in DELETABLE)
 
 
 def create_token(name, permissions: dict, act_as_members: bool = False, allow_delete: bool = False):

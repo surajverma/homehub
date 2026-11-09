@@ -8,10 +8,12 @@ from .. import admin
 
 from ..blueprints import chores as chores_web
 from ..blueprints import expiry as expiry_web
+from ..blueprints import notes as notes_web
 from ..blueprints import recipes as recipes_web
 from ..blueprints import shopping as shopping_web
 from ..models import Chore, ExpiryItem, Note, Recipe, RecurringChore, ShoppingItem, db
 from ..security import sanitize_html, sanitize_tags, sanitize_text
+from ..undo import trash_label
 from .core import ApiError
 from .home import day_label, nothing_to_change
 from .registry import iso, operation, tags_property
@@ -376,3 +378,84 @@ def recipes_edit(ctx, args):
     db.session.commit()
     ctx.target = f'#{recipe.id} {title}'
     return {**_recipe(recipe), 'summary': _('Recipe updated: %(title)s.', title=title)}
+
+
+# --- Moving things to the trash (needs Allow deleting) ---
+
+def _trashed(ctx, item_id: int, name: str) -> dict:
+    """The answer to a delete: what went, and where it can be restored."""
+    ctx.target = f'#{item_id} {name}'
+    return {'id': item_id, 'name': name, 'trashed': True,
+            'summary': _('%(title)s moved to the trash. It can be restored from the Trash page for 7 days.', title=name)}
+
+
+def _trash_description(what: str, extra: str = '') -> str:
+    return (f'Move {what} to the trash, where it can be restored from the Trash page in HomeHub for 7 days. '
+            f'Needs a token with Allow deleting. Only whoever added it may do this.{extra}')
+
+
+@operation('shopping_delete', tool='shopping', level='write', method='DELETE', path='/shopping/<int:item_id>',
+           title='Move a shopping item to the trash',
+           description=_trash_description('a shopping item'),
+           properties={'item_id': {'type': 'integer', 'in': 'path', 'description': 'The item id from the list.'}},
+           required=('item_id',), idempotent=True, destructive=True)
+def shopping_delete(ctx, args):
+    row = _get(ShoppingItem, args['item_id'], _('That item was not found.'))
+    _owned(ctx, row.creator, _('%(name)s cannot change this item.', name=ctx.user))
+    item_id, name = row.id, row.item
+    shopping_web.trash_shopping_item(row, ctx.deleted_by)
+    return _trashed(ctx, item_id, name)
+
+
+@operation('chores_delete', tool='chores', level='write', method='DELETE', path='/chores/<int:chore_id>',
+           title='Move a chore to the trash',
+           description=_trash_description('a one-off chore', ' Recurring chores are deleted in HomeHub.'),
+           properties={'chore_id': {'type': 'integer', 'in': 'path', 'description': 'The chore id from the list.'}},
+           required=('chore_id',), idempotent=True, destructive=True)
+def chores_delete(ctx, args):
+    chore = _get(Chore, args['chore_id'], _('That chore was not found.'))
+    if chore.recurring_id:
+        raise ApiError(409, 'conflict', _('This chore belongs to a recurring chore. Recurring chores are changed in HomeHub.'))
+    _owned(ctx, chore.creator, _('%(name)s cannot change this chore.', name=ctx.user))
+    chore_id, name = chore.id, chore.description
+    chores_web.trash_chore(chore, ctx.deleted_by)
+    return _trashed(ctx, chore_id, name)
+
+
+@operation('notes_delete', tool='notes', level='write', method='DELETE', path='/notes/<int:note_id>',
+           title='Move a note to the trash',
+           description=_trash_description('a note'),
+           properties={'note_id': {'type': 'integer', 'in': 'path', 'description': 'The note id from the list.'}},
+           required=('note_id',), idempotent=True, destructive=True)
+def notes_delete(ctx, args):
+    note = _get(Note, args['note_id'], _('That note was not found.'))
+    _owned(ctx, note.creator, _('%(name)s cannot change this note.', name=ctx.user))
+    note_id, name = note.id, trash_label(note.content, 40)
+    notes_web.trash_note(note, ctx.deleted_by)
+    return _trashed(ctx, note_id, name)
+
+
+@operation('recipes_delete', tool='recipes', level='write', method='DELETE', path='/recipes/<int:recipe_id>',
+           title='Move a recipe to the trash',
+           description=_trash_description('a recipe'),
+           properties={'recipe_id': {'type': 'integer', 'in': 'path', 'description': 'The recipe id from the list.'}},
+           required=('recipe_id',), idempotent=True, destructive=True)
+def recipes_delete(ctx, args):
+    recipe = _get(Recipe, args['recipe_id'], _('That recipe was not found.'))
+    _owned(ctx, recipe.creator, _('%(name)s cannot change this recipe.', name=ctx.user))
+    recipe_id, name = recipe.id, recipe.title
+    recipes_web.trash_recipe(recipe, ctx.deleted_by)
+    return _trashed(ctx, recipe_id, name)
+
+
+@operation('expiry_delete', tool='expiry', level='write', method='DELETE', path='/expiry/<int:item_id>',
+           title='Move an expiry tracker item to the trash',
+           description=_trash_description('an item of the expiry tracker'),
+           properties={'item_id': {'type': 'integer', 'in': 'path', 'description': 'The item id from the list.'}},
+           required=('item_id',), idempotent=True, destructive=True)
+def expiry_delete(ctx, args):
+    item = _get(ExpiryItem, args['item_id'], _('That item was not found.'))
+    _owned(ctx, item.creator, _('%(name)s cannot change this item.', name=ctx.user))
+    item_id, name = item.id, item.name
+    expiry_web.trash_expiry_item(item, ctx.deleted_by)
+    return _trashed(ctx, item_id, name)

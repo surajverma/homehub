@@ -273,8 +273,9 @@ def test_trash_needs_allow_delete(home, agent):
     assert home.put(f'/reminders/{rid}/done', deleter, json={'done': True, 'by': 'Priya'}).status_code == 200
 
 
-def test_only_reminders_can_be_deleted(home):
-    from app.api import registry
+def test_every_delete_goes_to_the_trash_and_needs_allow_deleting(home):
+    from app.api import registry, tokens
     destructive = [op.name for op in registry.OPERATIONS if op.destructive]
     deletes = [op.name for op in registry.OPERATIONS if op.method == 'DELETE']
-    assert destructive == deletes == ['reminders_trash']
+    assert destructive == deletes
+    assert sorted(op.tool for op in registry.OPERATIONS if op.destructive) == sorted(tokens.DELETABLE)
