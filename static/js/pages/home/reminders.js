@@ -403,13 +403,28 @@
 		}
 		if(res && res.ok){ touchedMonths.forEach(k=>recalcMonth(k)); updateCalendarBadges(); closeForm(); renderList(); let msg=t('Saved'); if(res.rule) msg=(res.split ? t('Recurring reminder updated from today. Earlier dates are unchanged.') : t('Recurring rule updated')); else if(data.id) msg=t('Reminder updated'); else if(res.recurring_id) msg=t('Recurring rule saved'); else msg=t('Reminder added'); if(res.undo_token){ window.undoToast(msg, res.undo_token); if(live) live.textContent=msg; } else toast(msg,'success'); } else { toast((res&&res.error)|| t('Save failed'),'error'); }
 	});
-	// Forget every loaded month, e.g. after a recurring rule changes dates across many of them
-	function dropMonthCache(){ Object.keys(monthCache).forEach(k=>delete monthCache[k]); }
-	// A month already being loaded is not asked for again: the page asks for the same months from several places at once
+	// Months already being loaded, shared with whoever asks next (the page asks for the same months from
+	// several places at once). Clearing the cache also forgets them, and every load is numbered: only the
+	// newest load of a month, started after the last clear, may store its answer. So data read before a
+	// change never lands in the cache after it, whichever answer arrives first.
 	const monthLoading = {};
+	const monthNewest = {};
+	let monthLoads = 0;
+	let monthCleared = 0;
+	// Forget every loaded month, e.g. after a recurring rule changes dates across many of them
+	function dropMonthCache(){ Object.keys(monthCache).forEach(k=>delete monthCache[k]); Object.keys(monthLoading).forEach(k=>delete monthLoading[k]); monthCleared = ++monthLoads; }
 	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; if(!force && monthLoading[key]) return monthLoading[key];
-		const loading = (async ()=>{ let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast(t('Network error'),'error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{},recurring_rules:[]}; })();
-		if(!force){ monthLoading[key]=loading; loading.finally(()=>{ if(monthLoading[key]===loading) delete monthLoading[key]; }); }
+		const empty = {reminders:[],counts:{},categories_counts:{},recurring_rules:[]};
+		const load = ++monthLoads; monthNewest[key] = load;
+		const loading = (async ()=>{
+			let res; try{ res=await window.remindersApi.list('month', key+'-01'); }catch(e){ toast(t('Network error'),'error'); }
+			const current = monthNewest[key]===load && load > monthCleared;
+			if(current){ if(res && res.ok) monthCache[key]=res; return monthCache[key]||empty; }
+			// Overtaken by a newer load or a clear: hand back the newer data, never store this answer
+			if(monthLoading[key] && monthLoading[key]!==loading) return monthLoading[key];
+			return monthCache[key] || empty;
+		})();
+		monthLoading[key]=loading; loading.finally(()=>{ if(monthLoading[key]===loading) delete monthLoading[key]; });
 		return loading; }
 	function buildWeekdayHeader(){
 		const row=document.getElementById('reminderWeekdayRow'); if(!row) return;
