@@ -148,7 +148,7 @@ LATE_COLUMNS = [
     # The shared trash keeps deleted records in the undo store (app/undo.py)
     ('undo_stash', 'module', 'VARCHAR(32)', None),
     ('undo_stash', 'label', 'VARCHAR(256)', None),
-    ('undo_stash', 'owner', 'VARCHAR(64)', None),
+    ('undo_stash', 'owner', 'TEXT', None),
     ('undo_stash', 'deleted_by', 'VARCHAR(128)', None),
     ('undo_stash', 'deleted_at', 'TIMESTAMP', None),
     ('undo_stash', 'record_id', 'INTEGER', None),
@@ -222,7 +222,7 @@ def move_reminder_trash(cur, now: datetime | None = None) -> int:
                 "INSERT INTO undo_stash (token, kind, payload, expires_at, module, label, owner, deleted_by, deleted_at, record_id) "
                 "VALUES (?, 'reminder', ?, ?, 'reminders', ?, ?, '', ?, ?)",
                 (secrets.token_hex(16), json.dumps({'row': data}), expires_at.strftime('%Y-%m-%d %H:%M:%S.%f'),
-                 label[:256], str(row.get('creator') or '')[:64], deleted_at.strftime('%Y-%m-%d %H:%M:%S.%f'), row['id']))
+                 label[:256], str(row.get('creator') or ''), deleted_at.strftime('%Y-%m-%d %H:%M:%S.%f'), row['id']))
             moved += 1
         cur.execute("DELETE FROM reminder WHERE id=?", (row['id'],))
     return moved

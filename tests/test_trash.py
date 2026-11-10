@@ -659,3 +659,19 @@ def test_a_failing_restore_shows_a_generic_message(home, monkeypatch):
     resp = home.client.post(f'/undo/{token}')
     assert resp.status_code == 409 and resp.get_json()['error'] == 'Milk was added back since it was deleted.'
     assert count(home, ShoppingItem) == 0 and len(trash_rows(home)) == 1
+
+
+def test_long_owner_names_are_kept_whole(home):
+    """Who may restore depends on the owner's name, so it must not be shortened: a 64-character prefix
+    would lock the owner out and let a member whose name is that prefix in."""
+    long_name = 'Priya ' + 'x' * 70
+    prefix = long_name[:64]
+    item = add_shopping(home, 'Milk', creator=long_name)
+    home.client.post(f'/shopping/delete/{item}', data={'user': long_name})
+    with home.ctx():
+        assert trash.entries()[0].owner == long_name
+    eid = entry_id(home, 'Milk')
+    assert 'Not allowed to restore Milk.' in trash_action(home.client, eid, 'restore', {'user': prefix},
+                                                          follow_redirects=True).get_data(as_text=True)
+    trash_action(home.client, eid, 'restore', {'user': long_name})
+    assert count(home, ShoppingItem) == 1

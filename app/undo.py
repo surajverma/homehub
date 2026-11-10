@@ -127,7 +127,7 @@ def stash_undo(kind: str, payload: dict, trash: dict | None = None) -> str:
         stash.expires_at = now + timedelta(days=TRASH_DAYS)
         stash.module = trash['module']
         stash.label = (trash.get('label') or '')[:256]
-        stash.owner = (trash.get('owner') or '')[:64]
+        stash.owner = trash.get('owner') or ''
         stash.deleted_by = (trash.get('deleted_by') or '')[:128]
         stash.deleted_at = now
         record = payload.get('row') or payload.get('rule') or {}

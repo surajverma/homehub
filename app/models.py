@@ -281,7 +281,8 @@ class UndoStash(db.Model):
     # Set only on trash entries
     module = db.Column(db.String(32))
     label = db.Column(db.String(256))
-    owner = db.Column(db.String(64))
+    # The record's owner exactly as stored with it (never shortened: who may restore depends on it)
+    owner = db.Column(db.Text)
     deleted_by = db.Column(db.String(128))
     deleted_at = db.Column(db.DateTime)
     # Id of the record in its own table, kept from new rows while it is in the trash (app/undo.py)
