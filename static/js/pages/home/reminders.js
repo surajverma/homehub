@@ -405,7 +405,12 @@
 	});
 	// Forget every loaded month, e.g. after a recurring rule changes dates across many of them
 	function dropMonthCache(){ Object.keys(monthCache).forEach(k=>delete monthCache[k]); }
-	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast(t('Network error'),'error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{},recurring_rules:[]}; }
+	// A month already being loaded is not asked for again: the page asks for the same months from several places at once
+	const monthLoading = {};
+	async function fetchMonth(dateStr, force=false){ const d=new Date(dateStr+'T00:00:00'); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(monthCache[key] && !force) return monthCache[key]; if(!force && monthLoading[key]) return monthLoading[key];
+		const loading = (async ()=>{ let res; try{ res=await window.remindersApi.list('month', key+'-01'); if(res.ok) monthCache[key]=res; }catch(e){ toast(t('Network error'),'error'); } return monthCache[key]||{reminders:[],counts:{},categories_counts:{},recurring_rules:[]}; })();
+		if(!force){ monthLoading[key]=loading; loading.finally(()=>{ if(monthLoading[key]===loading) delete monthLoading[key]; }); }
+		return loading; }
 	function buildWeekdayHeader(){
 		const row=document.getElementById('reminderWeekdayRow'); if(!row) return;
 		// Short weekday names in the active language (1 Jan 2023 was a Sunday)
