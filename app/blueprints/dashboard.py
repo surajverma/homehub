@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import abort, render_template, request, redirect, url_for, flash, jsonify, current_app
 from datetime import datetime, date, timedelta
 from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringReminder, Chore
 from ..blueprints import main_bp
@@ -260,13 +260,29 @@ def week_bounds(base_date: date) -> tuple:
     return start, start + timedelta(days=6)
 
 
+def live_reminders():
+    """Reminders, without any still in the calendar's old trash.
+
+    The upgrade moves those to the shared Trash (app/migrations.py move_reminder_trash). If that step has
+    not run yet, for example because it failed and is retried at the next start, they must stay hidden.
+    """
+    return Reminder.query.filter(Reminder.deleted_at.is_(None))
+
+
+def live_reminder_or_404(reminder_id: int) -> Reminder:
+    r = db.session.get(Reminder, reminder_id)
+    if r is None or r.deleted_at is not None:
+        abort(404)
+    return r
+
+
 def reminders_in_window(window_start: date, window_end: date):
     """Reminders dated in the window plus the dates recurring rules add there.
 
     Returns (stored rows, generated rows, rules, {rule id: [dates]}, everything sorted). Generated
     rows are unsaved Reminder objects with a negative id, as /api/reminders has always shown them.
     """
-    q = Reminder.query.filter(Reminder.date >= window_start, Reminder.date <= window_end)
+    q = live_reminders().filter(Reminder.date >= window_start, Reminder.date <= window_end)
     try:
         from sqlalchemy import case
         rows = q.order_by(
@@ -401,7 +417,10 @@ def trash_reminder_rule(rr: RecurringReminder, deleted_by: str) -> str:
     return _stash_reminder_rule(snapshot, trash=trash)
 
 
-row_restorer('reminder', Reminder)
+@restorer('reminder')
+def _restore_reminder(payload: dict) -> None:
+    # A reminder deleted while still in the calendar's old trash comes back as a live reminder
+    restore_row(Reminder, payload['row'], deleted_at=None)
 
 
 @restorer('reminder_rule')
@@ -683,7 +702,7 @@ def apply_reminder_changes(r: Reminder, payload: dict) -> str | None:
 
 @main_bp.route('/api/reminders/<int:rid>', methods=['PATCH'])
 def api_reminders_update(rid):
-    r = db.get_or_404(Reminder, rid)
+    r = live_reminder_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -697,7 +716,7 @@ def api_reminders_update(rid):
 
 @main_bp.route('/api/reminders/<int:rid>/done', methods=['POST'])
 def api_reminder_mark_done(rid):
-    r = db.get_or_404(Reminder, rid)
+    r = live_reminder_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -709,7 +728,7 @@ def api_reminder_mark_done(rid):
 
 @main_bp.route('/api/reminders/<int:rid>/undo', methods=['POST'])
 def api_reminder_mark_undo(rid):
-    r = db.get_or_404(Reminder, rid)
+    r = live_reminder_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -721,7 +740,7 @@ def api_reminder_mark_undo(rid):
 
 @main_bp.route('/api/reminders/<int:rid>/snooze', methods=['POST'])
 def api_reminder_snooze(rid):
-    r = db.get_or_404(Reminder, rid)
+    r = live_reminder_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):

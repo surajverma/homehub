@@ -341,7 +341,8 @@ def collect_events(today: date, cfg) -> list[dict]:
     labels = _category_labels(cfg)
     events = []
 
-    rows = Reminder.query.filter(Reminder.date <= window_end).all()
+    # Rows still in the calendar's old trash (until the upgrade moves them) are left out
+    rows = Reminder.query.filter(Reminder.deleted_at.is_(None), Reminder.date <= window_end).all()
     kept = []
     for r in rows:
         start_d = r.start_date or r.date

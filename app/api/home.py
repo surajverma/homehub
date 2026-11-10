@@ -227,7 +227,8 @@ def _stored_reminder(ctx, reminder_id: int) -> Reminder:
     if reminder_id < 0:
         raise ApiError(400, 'bad_request', _('This is a date of a recurring reminder. Recurring reminders are changed in HomeHub.'))
     r = db.session.get(Reminder, reminder_id)
-    if r is None:
+    # deleted_at: still in the calendar's old trash, until the upgrade moves it to the shared Trash
+    if r is None or r.deleted_at is not None:
         raise ApiError(404, 'not_found', _('That reminder was not found.'))
     if not admin.can_modify(ctx.user, r.creator or ''):
         raise ApiError(403, 'forbidden', _('%(name)s cannot change this reminder.', name=ctx.user))
@@ -300,7 +301,7 @@ def reminders_edit(ctx, args):
     if not any(k in args for k in editable):
         raise nothing_to_change()
     r = db.session.get(Reminder, args['reminder_id'])
-    if r is None:
+    if r is None or r.deleted_at is not None:
         raise ApiError(404, 'not_found', _('That reminder was not found.'))
     if r.recurring_id:
         raise ApiError(409, 'conflict', _('This reminder belongs to a recurring reminder. Recurring reminders are changed in HomeHub.'))

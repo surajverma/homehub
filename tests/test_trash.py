@@ -952,3 +952,55 @@ def test_bulk_delete_skips_ids_that_only_look_like_numbers(home):
     one = add_reminder(home, 'One')
     resp = home.client.post('/calendar/delete_bulk', data={'ids': f'{one},²,{"9" * 5000}', 'user': 'Priya'})
     assert resp.status_code == 302 and calendar_titles(home) == []
+
+
+def test_old_trashed_reminders_stay_hidden_if_the_upgrade_has_not_moved_them(tmp_path, monkeypatch):
+    """If switching the reminder table fails, the old trash is left in place until the next start. Those
+    reminders were deleted: the calendar, the API and the feed must not show them meanwhile, and a later
+    successful upgrade still moves them and never hands their ids out again."""
+    from app import create_app
+    from app.models import Reminder
+    path = tmp_path / 'app.db'
+    home = Home(tmp_path, monkeypatch)
+    app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': 'sqlite:///' + path.as_posix(), 'SECRET_KEY': 'test'})
+    with app.app_context():
+        db.create_all()
+        app.config['HOMEHUB_CONFIG'] = home.app.config['HOMEHUB_CONFIG']
+        db.session.add(Reminder(date=TODAY, start_date=TODAY, title='Kept', creator='Priya'))
+        db.session.add(Reminder(id=7, date=TODAY, start_date=TODAY, title='Deleted long ago', creator='Priya',
+                                deleted_at=utcnow() - timedelta(days=1)))
+        db.session.commit()
+        db.engine.dispose()
+    # As a database from before: no AUTOINCREMENT on reminders
+    conn = sqlite3.connect(str(path))
+    sql = conn.execute("SELECT sql FROM sqlite_master WHERE name='reminder'").fetchone()[0].replace('AUTOINCREMENT', '')
+    conn.executescript(f"ALTER TABLE reminder RENAME TO reminder_old; {sql}; INSERT INTO reminder SELECT * FROM reminder_old; "
+                       "DROP TABLE reminder_old; DELETE FROM sqlite_sequence WHERE name='reminder';")
+    conn.close()
+    real = migrations.use_autoincrement
+
+    def fails_on_reminders(conn, table, held_id=0):
+        if table == 'reminder':
+            raise sqlite3.OperationalError('database is locked')
+        return real(conn, table, held_id)
+    monkeypatch.setattr(migrations, 'use_autoincrement', fails_on_reminders)
+    assert migrations.run(str(path)) is False
+    client = app.test_client()
+    titles = [r['title'] for r in client.get(f'/api/reminders?scope=month&date={TODAY.isoformat()}').get_json()['reminders']]
+    assert titles == ['Kept']
+    assert client.post('/api/reminders/7/done', json={'creator': 'Priya'}).status_code == 404
+    with app.app_context():
+        from app.api import tokens
+        _row, secret = tokens.create_token('Hermes', {'reminders': 'write'}, act_as_members=True)
+    headers = {'Authorization': f'Bearer {secret}'}
+    listed = client.get('/api/v1/reminders', headers=headers).get_json()['reminders']
+    assert [r['title'] for r in listed] == ['Kept']
+    assert client.put('/api/v1/reminders/7/done', json={'done': True, 'by': 'Priya'}, headers=headers).status_code == 404
+    # The next start succeeds: the reminder moves to the Trash, and its id stays retired
+    monkeypatch.setattr(migrations, 'use_autoincrement', real)
+    assert migrations.run(str(path)) is True
+    with app.app_context():
+        assert [e.label for e in trash.entries('reminders')] == [f'Deleted long ago ({TODAY.isoformat()})']
+        db.session.add(Reminder(date=TODAY, start_date=TODAY, title='New', creator='Priya'))
+        db.session.commit()
+        assert Reminder.query.filter_by(title='New').one().id > 7
