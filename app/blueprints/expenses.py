@@ -144,6 +144,21 @@ def trash_expense_entry(entry: ExpenseEntry, deleted_by: str, message: str | Non
     return trash_row('expense_entry', entry, trash_info('expenses', label, entry_owner(entry), deleted_by), message, extra)
 
 
+def _rule_by_identity(ref: dict) -> RecurringExpense | None:
+    """The rule ``ref`` names, wherever it is now. A rule restored after another took its id gets a new id,
+    but keeps its creation time, which together with its title tells it apart."""
+    rule = db.session.get(RecurringExpense, ref['id'])
+    if rule is not None and stamp(rule) == ref.get('timestamp'):
+        return rule
+    if not ref.get('timestamp'):
+        return None
+    created = datetime.fromisoformat(ref['timestamp'])
+    for rule in RecurringExpense.query.filter_by(timestamp=created).order_by(RecurringExpense.id.desc()).all():
+        if not ref.get('title') or rule.title == ref['title']:
+            return rule
+    return None
+
+
 def _rule_from_trash(ref: dict) -> RecurringExpense | None:
     """Restore the deleted recurring rule ``ref`` points at, if it is in the trash; returns the restored rule."""
     for stash in UndoStash.query.filter(UndoStash.kind == 'expense_rule', UndoStash.module == 'expenses').all():
@@ -151,9 +166,7 @@ def _rule_from_trash(ref: dict) -> RecurringExpense | None:
         if rule_data.get('id') == ref.get('id') and rule_data.get('timestamp') == ref.get('timestamp'):
             restore_stash(stash)
             db.session.flush()
-            when = datetime.fromisoformat(ref['timestamp']) if ref.get('timestamp') else None
-            return (RecurringExpense.query.filter_by(timestamp=when).order_by(RecurringExpense.id.desc()).first()
-                    if when else None)
+            return _rule_by_identity(ref)
     return None
 
 
@@ -166,8 +179,8 @@ def _restore_expense_entry(payload: dict):
         restore_row(ExpenseEntry, data)
         return None
     note = None
-    rule = db.session.get(RecurringExpense, ref['id'])
-    if rule is None or stamp(rule) != ref.get('timestamp'):
+    rule = _rule_by_identity(ref)
+    if rule is None:
         # The rule was deleted after this day: bring it back from the trash as well, when it is there
         rule = _rule_from_trash(ref)
         if rule is None:

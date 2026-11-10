@@ -612,3 +612,26 @@ def test_restoring_a_rule_keeps_later_edits_to_its_history(home):
         assert second not in linked and db.session.get(ExpenseEntry, days[second]) is None
         assert all(d in linked for d in rest)
         assert ExpenseEntry.query.filter(ExpenseEntry.recurring_id.is_(None)).count() == 0
+
+
+def test_day_finds_its_rule_after_the_rule_came_back_under_a_new_id(home):
+    """The rule is restored first but another rule had taken its id (possible for entries made before ids
+    were kept), so it comes back with a new id. Its deleted day must still join it, not become a one-off."""
+    rid = make_rule(home)
+    day = TODAY - timedelta(days=2)
+    label = _delete_day(home, rid, day)
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
+    with home.ctx():
+        UndoStash.query.update({UndoStash.record_id: None})
+        db.session.add(RecurringExpense(id=rid, title='Paper', unit_price=7.0, default_quantity=1.0, frequency='daily',
+                                        start_date=TODAY, effective_from=TODAY, creator='Dad'))
+        db.session.commit()
+    trash_action(home.client, entry_id(home, 'Milk'), 'restore', {'user': 'Priya'})
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Priya'}, follow_redirects=True)
+    assert 'one-off' not in resp.get_data(as_text=True)
+    with home.ctx():
+        milk = RecurringExpense.query.filter_by(title='Milk').one()
+        assert milk.id != rid
+        restored = ExpenseEntry.query.filter_by(date=day, title='Milk').one()
+        assert restored.recurring_id == milk.id
+        assert ExpenseEntry.query.filter_by(recurring_id=rid).count() == 0  # nothing joined Paper
