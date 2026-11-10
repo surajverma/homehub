@@ -575,6 +575,10 @@ def test_a_page_left_open_never_acts_on_a_newer_entry(home):
     with home.ctx():
         old_stamp = trash.entry_stamp(db.session.get(UndoStash, old))
     trash_action(home.client, old, 'restore', {'user': 'Priya'})
+    # The trash no longer hands out an id twice; rewind its counter, as in a database whose upgrade failed
+    with home.ctx():
+        db.session.execute(db.text("UPDATE sqlite_sequence SET seq = :seq WHERE name = 'undo_stash'"), {'seq': old - 1})
+        db.session.commit()
     home.client.post(f'/shopping/delete/{add_shopping(home, "Bread")}', data={'user': 'Priya'})
     assert entry_id(home, 'Bread') == old  # SQLite gave the free id to the new entry
     for action in ('delete', 'restore'):
@@ -841,3 +845,39 @@ def test_bulk_delete_with_an_impossible_id_still_deletes_all_and_offers_undo(hom
     assert resp.status_code == 302
     assert undo_offer(home)['message'] == '2 expenses moved to the trash.'
     assert count(home, ExpenseEntry) == 0
+
+
+def test_flask_trash_restore_never_reaches_a_later_entry(home):
+    """An id from an old flask trash list must not restore a different entry made since (as the admin)."""
+    runner = home.app.test_cli_runner()
+    home.client.post(f'/shopping/delete/{add_shopping(home, "Milk")}', data={'user': 'Priya'})
+    listed = entry_id(home, 'Milk')
+    trash_action(home.client, listed, 'delete', {'user': 'Priya'})
+    home.client.post(f'/shopping/delete/{add_shopping(home, "Bread", creator="Dad")}', data={'user': 'Dad'})
+    assert entry_id(home, 'Bread') != listed
+    result = runner.invoke(args=['trash', 'restore', str(listed)])
+    assert result.exit_code != 0 and 'Nothing in the trash has ID' in result.output
+    assert [r[1] for r in trash_rows(home)] == ['Bread']
+
+
+def test_undo_restores_a_rule_for_an_owner_with_a_long_name(home):
+    """The quick Undo restores for whoever deleted; with their name cut short, they were refused their own rule."""
+    name = 'Priya ' + 'x' * 140
+    rid = make_rule(home, user=name)
+    day = TODAY - timedelta(days=2)
+    with home.ctx():
+        entry = ExpenseEntry.query.filter_by(recurring_id=rid, date=day).one()
+        entry.created_by = name
+        db.session.commit()
+        eid = entry.id
+    flashes(home)
+    home.client.post(f'/expenses/delete/{eid}', data={'user': name})
+    token = undo_offer(home)['token']
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': name, 'delete_entries': '1'})
+    with home.ctx():
+        assert UndoStash.query.filter_by(token=token).one().deleted_by == name
+    assert home.client.post(f'/undo/{token}').get_json() == {'ok': True}
+    with home.ctx():
+        assert RecurringExpense.query.one().creator == name
+        assert db.session.get(ExpenseEntry, eid).recurring_id == RecurringExpense.query.one().id
+

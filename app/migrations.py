@@ -150,7 +150,7 @@ LATE_COLUMNS = [
     ('undo_stash', 'module', 'VARCHAR(32)', None),
     ('undo_stash', 'label', 'VARCHAR(256)', None),
     ('undo_stash', 'owner', 'TEXT', None),
-    ('undo_stash', 'deleted_by', 'VARCHAR(128)', None),
+    ('undo_stash', 'deleted_by', 'TEXT', None),
     ('undo_stash', 'deleted_at', 'TIMESTAMP', None),
     ('undo_stash', 'record_id', 'INTEGER', None),
 ]
@@ -257,6 +257,8 @@ AUTOINCREMENT_TABLES = {
     'recurring_reminder': ('reminder_rule',),
     'expense_entry': ('expense_entry',),
     'recurring_expense': ('expense_rule',),
+    # The trash itself: an entry's id, as listed by flask trash list, never names a later entry
+    'undo_stash': (),
 }
 # Rows a trash entry holds besides its main record: (kind, payload key) -> table
 _TRASHED_CHILDREN = {('chore_rule', 'chores'): 'chore', ('expense_rule', 'entries'): 'expense_entry'}

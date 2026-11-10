@@ -295,6 +295,8 @@ class UndoStash(db.Model):
     A change is kept for a few seconds. A delete is kept for 7 days and is the trash: those rows
     have a module, a label, the owner whose records they were and who deleted them.
     """
+    # Its id names an entry for good (the Trash page and flask trash restore use it)
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(32), unique=True, nullable=False)
     kind = db.Column(db.String(32), nullable=False)
@@ -305,7 +307,8 @@ class UndoStash(db.Model):
     label = db.Column(db.String(256))
     # The record's owner exactly as stored with it (never shortened: who may restore depends on it)
     owner = db.Column(db.Text)
-    deleted_by = db.Column(db.String(128))
+    # Whole, never shortened: an Undo restores for this person, so it decides what they may bring back
+    deleted_by = db.Column(db.Text)
     deleted_at = db.Column(db.DateTime)
     # Id of the record in its own table, kept from new rows while it is in the trash (app/undo.py)
     record_id = db.Column(db.Integer)

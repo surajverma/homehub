@@ -1,6 +1,8 @@
 import json
 import logging
 import sqlite3
+
+import pytest
 from datetime import datetime
 
 from sqlalchemy import create_engine
@@ -241,6 +243,11 @@ def test_tables_with_a_trash_are_rebuilt_with_autoincrement(tmp_path):
     assert [(fk[2], fk[3], fk[4]) for fk in fks] == [('recurring_expense', 'recurring_id', 'id')]
     assert conn.execute("SELECT id, title, amount, recurring_id FROM expense_entry").fetchall() == [(3, 'Milk', 30.0, 1)]
     assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+    conn.close()
+    # The trash keeps its unique token through the rebuild
+    conn = sqlite3.connect(path)
+    with pytest.raises(sqlite3.IntegrityError):
+        conn.execute("INSERT INTO undo_stash (token, kind, payload, expires_at) VALUES ('t', 'x', '{}', '2999-01-01')")
     conn.close()
     # Running again changes nothing
     assert migrations.run(path) is True
