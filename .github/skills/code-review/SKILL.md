@@ -19,7 +19,7 @@ HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja te
 
 - Family members pick their name from a switcher; there are no per-member accounts. The acting user arrives as a `user` form or query field and should go through `sanitize_text`.
 - **Admin checks go through the single `is_admin(user)` helper in `app/admin.py`.** Flag code that compares a name to `admin_name`, `'Administrator'` or `'admin'` directly, or reads `admin_name` from config to decide permissions. A direct comparison bypasses whatever protection the helper adds.
-- The usual permission shape is `is_admin(user) or user == <owner field>` (for example `creator` or `payer`). Flag a route that edits or deletes someone's data without an owner/admin check.
+- Ownership checks go through `can_modify(user, <owner field>)` in `app/admin.py` (for example with `creator` or `payer`). Flag a route that edits or deletes someone's data without it, including a hand-written `is_admin(user) or user == owner`, which lets a locked session reach an admin-owned record by naming the admin.
 - Secrets (passwords, hashes, `SECRET_KEY`) must never be logged, flashed, rendered or returned in JSON. Password checks must fail closed.
 - The site password in `config.yml` is a separate gate and must keep working.
 - There are no CSRF tokens, on purpose. Don't ask for CSRF tokens on individual forms; do flag state changes made through GET requests.
