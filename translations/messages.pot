@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-11-10 18:37+0530\n"
+"POT-Creation-Date: 2026-11-10 19:35+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -870,6 +870,16 @@ msgid "Not allowed to delete recurring rule."
 msgstr ""
 
 #: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s is now a one-off chore. Its recurring schedule went to the trash."
+msgstr ""
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "Recurring chore %(chore)s moved to the trash."
+msgstr ""
+
+#: app/blueprints/chores.py
 msgid "Not allowed to update chore."
 msgstr ""
 
@@ -891,11 +901,6 @@ msgstr ""
 
 #: app/blueprints/chores.py
 msgid "Chore settings updated."
-msgstr ""
-
-#: app/blueprints/chores.py
-#, python-format
-msgid "Recurring chore %(chore)s moved to the trash."
 msgstr ""
 
 #: app/blueprints/chores.py

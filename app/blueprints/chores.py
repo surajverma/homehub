@@ -269,13 +269,20 @@ def chores():
                 flash(_('Recurring chore added.'), 'success')
         else:
             if recurring_rule_id:
+                # "Recurring" was unticked: the chore stays as a one-off, its schedule goes to the trash
                 rule = db.get_or_404(RecurringChore, int(recurring_rule_id))
                 if not can_modify(user, rule.creator or ''):
                     flash(_('Not allowed to delete recurring rule.'), 'error')
                     return redirect(url_for('main.chores'))
-                Chore.query.filter_by(recurring_id=rule.id).delete()
-                db.session.delete(rule)
-                db.session.commit()
+                kept = db.session.get(Chore, int(chore_id)) if chore_id else None
+                if kept is not None and kept.recurring_id == rule.id:
+                    kept.description = description
+                    kept.tags = json.dumps(tags_list)
+                    trash_chore_rule(rule, user, _('%(chore)s is now a one-off chore. Its recurring schedule went to the trash.',
+                                                   chore=description), kept=kept)
+                    return redirect(url_for('main.chores'))
+                trash_chore_rule(rule, user, _('Recurring chore %(chore)s moved to the trash.', chore=rule.description))
+                chore_id = None
             if chore_id:
                 chore = db.get_or_404(Chore, int(chore_id))
                 if not can_modify(user, chore.creator or ''):
@@ -358,12 +365,19 @@ def delete_recurring_chore(rule_id):
 
 
 @serialized
-def trash_chore_rule(rule: RecurringChore, deleted_by: str, message: str | None = None) -> str:
+def trash_chore_rule(rule: RecurringChore, deleted_by: str, message: str | None = None, kept: Chore | None = None) -> str:
     """Move a recurring chore and the chores it made to the trash (restorable for 7 days). Commits.
 
-    Holds the generation lock from the snapshot to the commit, so no chore made in between is lost.
+    ``kept``: one of its chores that stays, as a one-off (the edit form's "recurring" unticked). A restore
+    links it back to the rule. Holds the generation lock from the snapshot to the commit, so no chore
+    made in between is lost.
     """
+    if kept is not None:
+        kept.recurring_id = None
+        db.session.flush()
     snapshot = _chore_rule_snapshot(rule)
+    if kept is not None:
+        snapshot['kept_chore'] = {'id': kept.id, 'timestamp': stamp(kept)}
     trash = trash_info('chores', rule.description, rule.creator, deleted_by)
     if not delete_exactly(rule):
         db.session.rollback()
@@ -403,6 +417,12 @@ def _restore_chore_rule(payload: dict) -> None:
     rule = restore_row(RecurringChore, rule_data)
     for data in payload['chores']:
         restore_row(Chore, data, recurring_id=rule.id)
+    # The chore kept as a one-off when "recurring" was unticked goes back to its schedule
+    kept = payload.get('kept_chore')
+    if kept:
+        chore = db.session.get(Chore, kept['id'])
+        if chore is not None and chore.recurring_id is None and stamp(chore) == kept.get('timestamp'):
+            chore.recurring_id = rule.id
 
 
 @restorer('chore_done')

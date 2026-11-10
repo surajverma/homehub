@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-10 18:37+0530\n"
+"POT-Creation-Date: 2026-11-10 19:35+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -871,6 +871,16 @@ msgid "Not allowed to delete recurring rule."
 msgstr "Yinelenme kuralını silme izniniz yok."
 
 #: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s is now a one-off chore. Its recurring schedule went to the trash."
+msgstr ""
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "Recurring chore %(chore)s moved to the trash."
+msgstr ""
+
+#: app/blueprints/chores.py
 msgid "Not allowed to update chore."
 msgstr "Görevi güncelleme izniniz yok."
 
@@ -893,11 +903,6 @@ msgstr "Görev ayarlarını yalnızca yönetici güncelleyebilir."
 #: app/blueprints/chores.py
 msgid "Chore settings updated."
 msgstr "Görev ayarları güncellendi."
-
-#: app/blueprints/chores.py
-#, python-format
-msgid "Recurring chore %(chore)s moved to the trash."
-msgstr ""
 
 #: app/blueprints/chores.py
 #, python-format

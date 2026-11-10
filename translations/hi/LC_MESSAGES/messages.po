@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-10 18:37+0530\n"
+"POT-Creation-Date: 2026-11-10 19:35+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -872,6 +872,16 @@ msgid "Not allowed to delete recurring rule."
 msgstr "आपको दोहराने का नियम हटाने की अनुमति नहीं है।"
 
 #: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s is now a one-off chore. Its recurring schedule went to the trash."
+msgstr "%(chore)s अब एक बार का काम है। इसका दोहराने का शेड्यूल ट्रैश में भेज दिया गया।"
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "Recurring chore %(chore)s moved to the trash."
+msgstr "दोहराया जाने वाला काम %(chore)s ट्रैश में भेज दिया गया।"
+
+#: app/blueprints/chores.py
 msgid "Not allowed to update chore."
 msgstr "आपको यह काम अपडेट करने की अनुमति नहीं है।"
 
@@ -894,11 +904,6 @@ msgstr "कामों की सेटिंग सिर्फ़ एडम�
 #: app/blueprints/chores.py
 msgid "Chore settings updated."
 msgstr "कामों की सेटिंग अपडेट हो गई।"
-
-#: app/blueprints/chores.py
-#, python-format
-msgid "Recurring chore %(chore)s moved to the trash."
-msgstr "दोहराया जाने वाला काम %(chore)s ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/chores.py
 #, python-format

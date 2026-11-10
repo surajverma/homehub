@@ -1060,3 +1060,40 @@ def test_cli_references_never_read_as_numbers_and_never_pick_one_of_two(home, mo
     assert result.exit_code != 0 and 'More than one entry' in result.output
     assert count(home, ShoppingItem) == 0
 
+
+
+def test_unticking_recurring_keeps_the_chore_and_trashes_the_schedule(home):
+    """Editing a recurring chore with "recurring" unticked used to delete the chore and answer Not Found."""
+    home.client.post('/chores', data={'description': 'Bins', 'creator': 'Dad', 'is_recurring': '1', 'rec_interval': '1',
+                                      'rec_unit': 'week', 'rec_start_date': TODAY.isoformat()})
+    with home.ctx():
+        rule = RecurringChore.query.one()
+        chore = Chore.query.one()
+        rid, cid = rule.id, chore.id
+    flashes(home)
+    resp = home.client.post('/chores', data={'description': 'Bins, front and back', 'creator': 'Dad', 'user': 'Dad',
+                                             'recurring_rule_id': str(rid), 'chore_id': str(cid), 'tags': '[]'})
+    assert resp.status_code == 302
+    assert undo_offer(home)['message'] == 'Bins, front and back is now a one-off chore. Its recurring schedule went to the trash.'
+    with home.ctx():
+        assert RecurringChore.query.count() == 0
+        kept = db.session.get(Chore, cid)
+        assert (kept.description, kept.recurring_id) == ('Bins, front and back', None)
+    assert trash_rows(home) == [('chores', 'Bins', 'Dad', 'Dad')]
+    # Restoring the schedule takes the chore back into it, without a second copy
+    trash_action(home.client, entry_id(home, 'Bins'), 'restore', {'user': 'Dad'})
+    home.client.get('/chores')
+    with home.ctx():
+        assert [(c.id, c.recurring_id) for c in Chore.query.all()] == [(cid, rid)]
+
+
+def test_someone_else_cannot_untick_recurring(home):
+    home.client.post('/chores', data={'description': 'Bins', 'creator': 'Dad', 'is_recurring': '1', 'rec_interval': '1',
+                                      'rec_unit': 'week', 'rec_start_date': TODAY.isoformat()})
+    with home.ctx():
+        rid, cid = RecurringChore.query.one().id, Chore.query.one().id
+    home.client.post('/chores', data={'description': 'Bins', 'creator': 'Mom', 'user': 'Mom',
+                                      'recurring_rule_id': str(rid), 'chore_id': str(cid), 'tags': '[]'})
+    with home.ctx():
+        assert RecurringChore.query.count() == 1 and Chore.query.count() == 1
+    assert trash_rows(home) == []
