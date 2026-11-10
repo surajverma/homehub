@@ -635,3 +635,27 @@ def test_day_finds_its_rule_after_the_rule_came_back_under_a_new_id(home):
         restored = ExpenseEntry.query.filter_by(date=day, title='Milk').one()
         assert restored.recurring_id == milk.id
         assert ExpenseEntry.query.filter_by(recurring_id=rid).count() == 0  # nothing joined Paper
+
+
+def test_a_failing_restore_shows_a_generic_message(home, monkeypatch):
+    """What went wrong inside a restore is logged, never sent to the browser (code scanning)."""
+    item = add_shopping(home)
+    flashes(home)
+    home.client.post(f'/shopping/delete/{item}', data={'user': 'Priya'})
+    token = undo_offer(home)['token']
+
+    def broken(payload):
+        raise RuntimeError('database file /app/data/app.db is locked')
+    monkeypatch.setitem(undo._restorers, 'shopping_item', broken)
+    resp = home.client.post(f'/undo/{token}')
+    assert resp.status_code == 500 and resp.get_json() == {'ok': False, 'error': 'Could not undo that change.'}
+    body = trash_action(home.client, entry_id(home, 'Milk'), 'restore', {'user': 'Priya'},
+                        follow_redirects=True).get_data(as_text=True)
+    assert 'Could not restore Milk.' in body and 'app.db is locked' not in body
+    # A conflict shows only the message written for people
+    def conflict(payload):
+        raise undo.RestoreConflict('Milk was added back since it was deleted.')
+    monkeypatch.setitem(undo._restorers, 'shopping_item', conflict)
+    resp = home.client.post(f'/undo/{token}')
+    assert resp.status_code == 409 and resp.get_json()['error'] == 'Milk was added back since it was deleted.'
+    assert count(home, ShoppingItem) == 0 and len(trash_rows(home)) == 1

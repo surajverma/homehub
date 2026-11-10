@@ -160,7 +160,7 @@ def trash_restore(entry_id):
     try:
         note = restore(entry)
     except RestoreConflict as exc:
-        flash(str(exc), 'error')
+        flash(exc.user_message, 'error')
         return _back(module)
     except Exception:
         current_app.logger.exception('Restoring trash entry %s failed', entry_id)
@@ -220,7 +220,7 @@ def restore_command(entry_id):
     try:
         note = restore(entry)
     except RestoreConflict as exc:
-        raise click.ClickException(str(exc))
+        raise click.ClickException(exc.user_message)
     click.echo(f'Restored {label} ({module}).' + (f' {note}' if note else ''))
 
 

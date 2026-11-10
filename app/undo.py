@@ -178,7 +178,12 @@ def row_restorer(kind: str, model):
 
 
 class RestoreConflict(Exception):
-    """A restore that cannot be done; the message tells the person why (and what to do instead)."""
+    """A restore that cannot be done. user_message tells the person why (and what to do instead);
+    it is the only part of the exception shown to them (as FormError in expenses)."""
+
+    def __init__(self, user_message: str):
+        super().__init__(user_message)
+        self.user_message = user_message
 
 
 def restore_stash(stash: UndoStash) -> str | None:
@@ -223,7 +228,7 @@ def undo_change(token):
         db.session.commit()
     except RestoreConflict as exc:
         db.session.rollback()
-        return jsonify({'ok': False, 'error': str(exc)}), 409
+        return jsonify({'ok': False, 'error': exc.user_message}), 409
     except Exception:
         db.session.rollback()
         current_app.logger.exception('Undo failed for %s', kind)
