@@ -96,20 +96,27 @@ def entry_ref(entry: UndoStash) -> str:
     Made from the entry's own token, which is never given to another entry (unlike an id from before the
     trash used AUTOINCREMENT), and without showing the token itself, which is the Undo secret.
     """
-    return hashlib.sha256(entry.token.encode('utf-8')).hexdigest()[:REF_LENGTH]
+    # The "t-" prefix keeps it from ever reading as a numeric id from an older listing
+    return REF_PREFIX + hashlib.sha256(entry.token.encode('utf-8')).hexdigest()[:REF_LENGTH]
 
 
+REF_PREFIX = 't-'
 REF_LENGTH = 10
 
 
+class AmbiguousRef(Exception):
+    """Two entries share a reference (a 1 in a trillion chance); restoring either could be the wrong one."""
+
+
 def entry_by_ref(ref: str) -> UndoStash | None:
+    """The one entry with this reference; None for anything else, such as a plain number. AmbiguousRef if two match."""
     ref = (ref or '').strip().lower()
-    if len(ref) != REF_LENGTH:
+    if not ref.startswith(REF_PREFIX) or len(ref) != len(REF_PREFIX) + REF_LENGTH:
         return None
-    for entry in entries():
-        if entry_ref(entry) == ref:
-            return entry
-    return None
+    found = [entry for entry in entries() if entry_ref(entry) == ref]
+    if len(found) > 1:
+        raise AmbiguousRef(ref)
+    return found[0] if found else None
 
 
 def get_entry(entry_id: int, stamp: str | None = None) -> UndoStash | None:
@@ -243,7 +250,10 @@ def list_command(module):
 @click.argument('ref')
 def restore_command(ref):
     """Restore the trash entry with reference REF (the first column of flask trash list), whoever deleted it."""
-    entry = entry_by_ref(ref)
+    try:
+        entry = entry_by_ref(ref)
+    except AmbiguousRef:
+        raise click.ClickException(f'More than one entry has the reference {ref}. Restore it on the Trash page instead.')
     if entry is None:
         raise click.ClickException(f'Nothing in the trash has the reference {ref}. See: flask trash list')
     label, module = entry.label, entry.module

@@ -240,10 +240,10 @@ docker exec -it homehub flask trash list
 ```
 
 ```bash
-docker exec -it homehub flask trash restore 3f9c2a7d1e
+docker exec -it homehub flask trash restore t-3f9c2a7d1e
 ```
 
-The restore takes the reference in the first column of `flask trash list`. It names one entry for good, so a restore typed from an older listing never brings back a different item.
+The restore takes the reference in the first column of `flask trash list` (it starts with `t-`). It names one entry for good, so a restore typed from an older listing never brings back a different item.
 
 ## Backup and restore
 

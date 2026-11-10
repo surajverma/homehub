@@ -387,7 +387,7 @@ def test_cli_list_and_restore(home):
     home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
     with home.ctx():
         ref = trash.entry_ref(trash.entries()[0])
-    assert len(ref) == 10
+    assert len(ref) == 12 and ref.startswith('t-')
     output = runner.invoke(args=['trash', 'list']).output
     assert re.search(rf'^{ref}  \[shopping\]  Milk  - deleted by Priya on .* UTC; 7 days left$', output, re.M)
     assert 'Milk' not in runner.invoke(args=['trash', 'list', '--module', 'notes']).output
@@ -1042,4 +1042,21 @@ def test_a_day_moved_past_its_rules_end_by_hand_can_be_restored(home):
     assert 'Milk (' in resp.get_data(as_text=True) and 'cannot be restored' not in resp.get_data(as_text=True)
     with home.ctx():
         assert db.session.get(ExpenseEntry, eid).date == TODAY
+
+
+def test_cli_references_never_read_as_numbers_and_never_pick_one_of_two(home, monkeypatch):
+    runner = home.app.test_cli_runner()
+    home.client.post(f'/shopping/delete/{add_shopping(home, "Milk")}', data={'user': 'Priya'})
+    home.client.post(f'/shopping/delete/{add_shopping(home, "Bread")}', data={'user': 'Priya'})
+    with home.ctx():
+        ref = trash.entry_ref(trash.entries()[0])
+    # An all-digit reference without its prefix, or an old numeric id, is refused
+    for wrong in (ref[2:], '2123925048', '1'):
+        result = runner.invoke(args=['trash', 'restore', wrong])
+        assert result.exit_code != 0 and 'Nothing in the trash has the reference' in result.output
+    # Two entries with the same reference: neither is restored
+    monkeypatch.setattr(trash, 'entry_ref', lambda entry: 't-0000000000')
+    result = runner.invoke(args=['trash', 'restore', 't-0000000000'])
+    assert result.exit_code != 0 and 'More than one entry' in result.output
+    assert count(home, ShoppingItem) == 0
 
