@@ -40,10 +40,12 @@ def add_expense_rule(client, title, creator, price):
 
 
 def forget_trash_ids(client):
-    """Let new rows take ids held in the trash again, as they could before the trash kept them
-    (and as entries from before that still can): these tests are about an id that was taken."""
+    """Let SQLite hand out a freed id again, as it did before these tables used AUTOINCREMENT
+    (an old database whose upgrade failed still can): these tests are about an id that was taken."""
     with client.application.app_context():
-        UndoStash.query.update({UndoStash.record_id: None})
+        for (name,) in db.session.execute(db.text('SELECT name FROM sqlite_sequence')).fetchall():
+            db.session.execute(db.text(f'UPDATE sqlite_sequence SET seq = (SELECT COALESCE(MAX(id), 0) FROM "{name}") '
+                                       'WHERE name = :name'), {'name': name})
         db.session.commit()
 
 
@@ -149,6 +151,7 @@ def test_undo_of_a_chore_tick_ignores_a_chore_that_took_its_id(client):
     client.post(f'/chores/toggle/{chore_id}')
     token = last_token(client)
     client.post(f'/chores/recurring/delete/{plants}', data={'user': 'Mom'})
+    forget_trash_ids(client)
     add_recurring_chore(client, 'Take out bins', 'Dad')
     with client.application.app_context():
         other = Chore.query.one()

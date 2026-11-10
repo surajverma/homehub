@@ -726,3 +726,28 @@ def test_delete_forever_removes_only_the_entry_that_was_checked(home):
         with pytest.raises(undo.RestoreConflict):
             trash.restore(checked)
         assert [e.label for e in trash.entries()] == ['Bread']
+
+
+def test_ids_stay_retired_after_delete_forever(home):
+    """The review's case: a reminder trashed through the API, deleted for good, then a new reminder by the
+    same owner. A retried DELETE of the old id must not reach the new reminder."""
+    from app.models import Reminder
+    deleter = home.token('Deleter', act_as=True, allow_delete=True, reminders='write')
+    old = home.post('/reminders', deleter, json={'title': 'Dentist', 'date': TODAY.isoformat(), 'by': 'Priya'}).get_json()['id']
+    assert home.delete(f'/reminders/{old}', deleter, json={'by': 'Priya'}).status_code == 200
+    trash_action(home.client, entry_id(home, f'Dentist ({TODAY.isoformat()})'), 'delete', {'user': 'Priya'})
+    assert trash_rows(home) == []
+    new = home.post('/reminders', deleter, json={'title': 'Vet', 'date': TODAY.isoformat(), 'by': 'Priya'}).get_json()['id']
+    assert new > old
+    assert home.delete(f'/reminders/{old}', deleter, json={'by': 'Priya'}).status_code == 404
+    with home.ctx():
+        assert [r.title for r in Reminder.query.all()] == ['Vet']
+
+
+def test_tables_with_a_trash_never_reuse_ids(home):
+    """AUTOINCREMENT: SQLite hands out each id once, atomically, whatever is deleted later."""
+    from app.migrations import AUTOINCREMENT_TABLES
+    with home.ctx():
+        for table in AUTOINCREMENT_TABLES:
+            sql = db.session.execute(db.text("SELECT sql FROM sqlite_master WHERE name = :t"), {'t': table}).scalar()
+            assert 'AUTOINCREMENT' in sql.upper(), table

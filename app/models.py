@@ -33,7 +33,13 @@ def parse_split(raw):
         return mode, weights
     return 'equal', {}
 
+# Tables with a trash: SQLite never hands out an id twice (AUTOINCREMENT), so an id seen by a client or
+# held by a trash entry can never come to mean another record, even after the entry is deleted for good
+TRASHABLE = {'sqlite_autoincrement': True}
+
+
 class Note(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     creator = db.Column(db.String(64), nullable=False)
@@ -69,6 +75,7 @@ class PDF(db.Model):
     compressed_path = db.Column(db.String(512))
 
 class ShoppingItem(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     item = db.Column(db.String(256), nullable=False)
     checked = db.Column(db.Boolean, default=False)
@@ -89,6 +96,7 @@ class HomeStatus(db.Model):
     status = db.Column(db.String(16), default='Away')
 
 class Chore(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text, nullable=False)
     creator = db.Column(db.String(64))
@@ -101,6 +109,7 @@ class Chore(db.Model):
 
 
 class RecurringChore(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text, nullable=False)
     creator = db.Column(db.String(64))
@@ -113,6 +122,7 @@ class RecurringChore(db.Model):
     timestamp = db.Column(db.DateTime, default=utcnow)
 
 class Recipe(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(256), nullable=False)
     link = db.Column(db.String(512))
@@ -124,6 +134,7 @@ class Recipe(db.Model):
     tags = db.Column(db.Text, default='[]')
 
 class ExpiryItem(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
     expiry_date = db.Column(db.Date)
@@ -152,6 +163,7 @@ class Notice(db.Model):
     updated_at = db.Column(db.DateTime, default=utcnow)
 
 class Reminder(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.String(5))  # HH:MM (optional)
@@ -185,6 +197,7 @@ def new_uid() -> str:
 
 
 class RecurringExpense(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     # Names this rule for good: its id can change when it is restored from the trash, its title when edited
     uid = db.Column(db.String(32), default=new_uid)
@@ -216,6 +229,7 @@ class RecurringExpense(db.Model):
         return parse_split(self.split_with)[1]
 
 class RecurringReminder(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(256), nullable=False)
     description = db.Column(db.Text)
@@ -239,6 +253,7 @@ class RecurringReminder(db.Model):
     timestamp = db.Column(db.DateTime, default=utcnow)
 
 class ExpenseEntry(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
     title = db.Column(db.String(256), nullable=False)

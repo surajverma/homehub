@@ -187,3 +187,61 @@ def test_api_tables_from_an_earlier_layout_get_missing_columns(tmp_path):
     engine = create_engine('sqlite:///' + path)
     with engine.connect() as c:
         assert c.execute(db.select(models.ApiToken.__table__)).fetchall()
+
+
+def test_tables_with_a_trash_are_rebuilt_with_autoincrement(tmp_path):
+    path = str(tmp_path / 'app.db')
+    make_old_db(path)
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE INDEX ix_shopping_item_item ON shopping_item (item)")
+    # As SQLAlchemy made it: with a foreign key to its rule
+    conn.execute("CREATE TABLE expense_entry (id INTEGER NOT NULL, date DATE NOT NULL, title VARCHAR(256) NOT NULL, "
+                 "amount FLOAT NOT NULL, recurring_id INTEGER, PRIMARY KEY (id), "
+                 "FOREIGN KEY(recurring_id) REFERENCES recurring_expense (id))")
+    conn.execute("INSERT INTO expense_entry (id, date, title, amount, recurring_id) VALUES (3, '2026-01-01', 'Milk', 30, 1)")
+    for i, item in ((1, 'Milk'), (2, 'Eggs'), (5, 'Rice')):
+        conn.execute("INSERT INTO shopping_item (id, item, creator) VALUES (?, ?, 'Mom')", (i, item))
+    conn.commit()
+    conn.close()
+    assert migrations.run(path) is True
+    conn = sqlite3.connect(path)
+    # A trashed item with a higher id than any row: new ids must start past it
+    conn.execute("INSERT INTO undo_stash (token, kind, payload, expires_at, module, record_id) "
+                 "VALUES ('t', 'shopping_item', '{\"row\": {\"id\": 9}}', '2999-01-01 00:00:00', 'shopping', 9)")
+    conn.commit()
+    conn.close()
+    # Undo the rebuild of shopping_item to see the trash counted (as on a first upgrade with things in the trash)
+    conn = sqlite3.connect(path)
+    conn.executescript("""
+        CREATE TABLE old_shopping (id INTEGER PRIMARY KEY, item TEXT, creator TEXT, timestamp TIMESTAMP, checked INTEGER, tags TEXT DEFAULT '[]');
+        INSERT INTO old_shopping (id, item, creator) SELECT id, item, creator FROM shopping_item;
+        DROP TABLE shopping_item;
+        ALTER TABLE old_shopping RENAME TO shopping_item;
+        CREATE INDEX ix_shopping_item_item ON shopping_item (item);
+        DELETE FROM sqlite_sequence WHERE name = 'shopping_item';
+    """)
+    conn.close()
+    assert migrations.run(path) is True
+    conn = sqlite3.connect(path)
+    # (Tables the old file never had are made by the app with AUTOINCREMENT already)
+    present = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+    rebuilt = [t for t in migrations.AUTOINCREMENT_TABLES if t in present]
+    assert {'shopping_item', 'chore', 'reminder', 'recipe', 'expense_entry', 'recurring_expense'} <= set(rebuilt)
+    for table in rebuilt:
+        sql = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone()[0]
+        assert 'AUTOINCREMENT' in sql.upper(), table
+    assert conn.execute("SELECT id, item, creator, tags FROM shopping_item ORDER BY id").fetchall() == [
+        (1, 'Milk', 'Mom', '[]'), (2, 'Eggs', 'Mom', '[]'), (5, 'Rice', 'Mom', '[]')]
+    assert conn.execute("SELECT seq FROM sqlite_sequence WHERE name='shopping_item'").fetchone()[0] == 9
+    assert conn.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='ix_shopping_item_item'").fetchone()
+    conn.execute("INSERT INTO shopping_item (item, creator) VALUES ('Tea', 'Dad')")
+    assert conn.execute("SELECT id FROM shopping_item WHERE item='Tea'").fetchone()[0] == 10
+    # The foreign key from expense entries to their rule survives the rebuild
+    fks = conn.execute("PRAGMA foreign_key_list(expense_entry)").fetchall()
+    assert [(fk[2], fk[3], fk[4]) for fk in fks] == [('recurring_expense', 'recurring_id', 'id')]
+    assert conn.execute("SELECT id, title, amount, recurring_id FROM expense_entry").fetchall() == [(3, 'Milk', 30.0, 1)]
+    assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+    conn.close()
+    # Running again changes nothing
+    assert migrations.run(path) is True
+

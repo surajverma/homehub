@@ -245,6 +245,141 @@ def fill_trash_record_ids(cur) -> int:
     return filled
 
 
+# Tables with a trash, and the trash kinds whose entries hold their ids (see app/models.py TRASHABLE)
+AUTOINCREMENT_TABLES = {
+    'shopping_item': ('shopping_item',),
+    'note': ('note',),
+    'recipe': ('recipe',),
+    'expiry_item': ('expiry_item',),
+    'chore': ('chore',),
+    'recurring_chore': ('chore_rule',),
+    'reminder': ('reminder',),
+    'recurring_reminder': ('reminder_rule',),
+    'expense_entry': ('expense_entry',),
+    'recurring_expense': ('expense_rule',),
+}
+# Rows a trash entry holds besides its main record: (kind, payload key) -> table
+_TRASHED_CHILDREN = {('chore_rule', 'chores'): 'chore', ('expense_rule', 'entries'): 'expense_entry'}
+
+
+def _ids_held_in_trash(cur) -> dict:
+    """{table: highest id held by a trash entry}, so a rebuilt table never hands those ids out again."""
+    held: dict = {}
+    if not has_column(cur, 'undo_stash', 'module'):
+        return held
+    kind_tables = {kind: table for table, kinds in AUTOINCREMENT_TABLES.items() for kind in kinds}
+    cur.execute("SELECT kind, payload FROM undo_stash WHERE module IS NOT NULL")
+    for kind, payload in cur.fetchall():
+        try:
+            data = json.loads(payload or '{}')
+        except ValueError:
+            continue
+        found = []
+        main = data.get('row') or data.get('rule')
+        if kind in kind_tables and isinstance(main, dict):
+            found.append((kind_tables[kind], main.get('id')))
+        for (child_kind, key), table in _TRASHED_CHILDREN.items():
+            if kind == child_kind:
+                found.extend((table, child.get('id')) for child in data.get(key) or [] if isinstance(child, dict))
+        for table, record_id in found:
+            if isinstance(record_id, int):
+                held[table] = max(held.get(table, 0), record_id)
+    return held
+
+
+def has_autoincrement(cur, table: str) -> bool:
+    cur.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,))
+    row = cur.fetchone()
+    return bool(row and row[0] and 'AUTOINCREMENT' in row[0].upper())
+
+
+def _quote(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
+
+
+def use_autoincrement(conn, table: str, held_id: int = 0) -> bool:
+    """Rebuild ``table`` with "id INTEGER PRIMARY KEY AUTOINCREMENT", keeping every column, value, default,
+    foreign key, unique constraint and index (SQLite's documented way to change a table's definition).
+
+    The id counter starts past the highest id in the table and ``held_id`` (an id in the trash). Does
+    nothing for a missing table or one that already has AUTOINCREMENT. All or nothing: one transaction.
+    Returns True when the table was rebuilt.
+    """
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,))
+    if cur.fetchone() is None or has_autoincrement(cur, table):
+        return False
+    cur.execute(f"PRAGMA table_info({_quote(table)})")
+    columns = cur.fetchall()
+    keys = [c for c in columns if c[5]]
+    if len(keys) != 1 or keys[0][1] != 'id' or 'INT' not in (keys[0][2] or '').upper():
+        log.warning('Not rebuilding %s with AUTOINCREMENT: its primary key is not a single integer id', table)
+        return False
+    definitions = []
+    for _cid, name, type_, notnull, default, pk in columns:
+        if pk:
+            definitions.append(f'{_quote(name)} INTEGER PRIMARY KEY AUTOINCREMENT')
+            continue
+        column = f'{_quote(name)} {type_ or ""}'.rstrip()
+        if notnull:
+            column += ' NOT NULL'
+        if default is not None:
+            column += f' DEFAULT {default}'
+        definitions.append(column)
+    cur.execute(f"PRAGMA index_list({_quote(table)})")
+    for _seq, index_name, unique, origin, _partial in cur.fetchall():
+        if unique and origin == 'u':
+            cur.execute(f"PRAGMA index_info({_quote(index_name)})")
+            names = ', '.join(_quote(r[2]) for r in sorted(cur.fetchall()))
+            definitions.append(f'UNIQUE ({names})')
+    cur.execute(f"PRAGMA foreign_key_list({_quote(table)})")
+    foreign: dict = {}
+    for fk_id, _seq, ref_table, from_col, to_col, on_update, on_delete, _match in cur.fetchall():
+        entry = foreign.setdefault(fk_id, {'table': ref_table, 'from': [], 'to': [], 'update': on_update, 'delete': on_delete})
+        entry['from'].append(from_col)
+        entry['to'].append(to_col)
+    for fk in foreign.values():
+        clause = (f"FOREIGN KEY ({', '.join(_quote(c) for c in fk['from'])}) REFERENCES {_quote(fk['table'])}"
+                  + (f" ({', '.join(_quote(c) for c in fk['to'] if c)})" if any(fk['to']) else ''))
+        if fk['update'] and fk['update'] != 'NO ACTION':
+            clause += f" ON UPDATE {fk['update']}"
+        if fk['delete'] and fk['delete'] != 'NO ACTION':
+            clause += f" ON DELETE {fk['delete']}"
+        definitions.append(clause)
+    cur.execute("SELECT sql FROM sqlite_master WHERE type='index' AND tbl_name=? AND sql IS NOT NULL", (table,))
+    indexes = [r[0] for r in cur.fetchall()]
+    names = ', '.join(_quote(c[1]) for c in columns)
+    new = _quote(table + '__autoincrement')
+    conn.commit()
+    cur.execute('PRAGMA foreign_keys')
+    foreign_keys_on = bool(cur.fetchone()[0])
+    if foreign_keys_on:
+        cur.execute('PRAGMA foreign_keys=OFF')
+    try:
+        cur.execute('BEGIN IMMEDIATE')
+        cur.execute(f"CREATE TABLE {new} ({', '.join(definitions)})")
+        cur.execute(f"INSERT INTO {new} ({names}) SELECT {names} FROM {_quote(table)}")
+        cur.execute(f"DROP TABLE {_quote(table)}")
+        cur.execute(f"ALTER TABLE {new} RENAME TO {_quote(table)}")
+        for sql in indexes:
+            cur.execute(sql)
+        cur.execute(f"SELECT COALESCE(MAX(id), 0) FROM {_quote(table)}")
+        start = max(cur.fetchone()[0], held_id or 0)
+        cur.execute("DELETE FROM sqlite_sequence WHERE name=?", (table,))
+        cur.execute("INSERT INTO sqlite_sequence (name, seq) VALUES (?, ?)", (table, start))
+        cur.execute(f"PRAGMA foreign_key_check({_quote(table)})")
+        if cur.fetchall():
+            raise sqlite3.IntegrityError(f'foreign key check failed after rebuilding {table}')
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        if foreign_keys_on:
+            cur.execute('PRAGMA foreign_keys=ON')
+    return True
+
+
 def purge_expired_stashes(cur, now: datetime | None = None) -> int:
     """Delete undo stashes and trash entries whose time is up."""
     now = now or datetime.now(timezone.utc).replace(tzinfo=None)
@@ -328,6 +463,17 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
                     "UPDATE recurring_expense SET uid=lower(hex(randomblob(16))) WHERE uid IS NULL OR uid=''")
         ok &= _step(conn, 'move trashed reminders to the shared trash', move_reminder_trash, cur)
         ok &= _step(conn, 'note which record each trash entry holds', fill_trash_record_ids, cur)
+        held = {}
+        try:
+            held = _ids_held_in_trash(cur)
+        except Exception:
+            log.exception('Could not read which ids the trash holds')
+        for table in AUTOINCREMENT_TABLES:
+            try:
+                use_autoincrement(conn, table, held.get(table, 0))
+            except Exception:
+                ok = False
+                log.exception('Database upgrade step failed: AUTOINCREMENT for %s', table)
         ok &= _step(conn, 'purge expired trash', purge_expired_stashes, cur)
         if pdf_dir and os.path.isdir(pdf_dir):
             ok &= _step(conn, 'remove leftover PDF originals', remove_leftover_pdf_originals, cur, pdf_dir)
