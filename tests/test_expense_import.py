@@ -311,13 +311,15 @@ def test_preview_that_fails_drops_the_file_instead_of_an_error_page(client, monk
     def broken(*_args, **_kwargs):
         raise RuntimeError('boom')
 
+    working = expense_import.build_rows
     monkeypatch.setattr(expense_import, 'build_rows', broken)
     resp = client.get('/expenses/import')
     assert resp.status_code == 200
     page = resp.get_data(as_text=True)
     assert 'could not be read' in page and 'name="file"' in page
-    # The stored file is gone, so the next visit starts over
-    monkeypatch.undo()
+    # The stored file is gone, so the next visit starts over. Put back only build_rows:
+    # monkeypatch.undo() would also drop conftest's test config and read the developer's own config.yml
+    monkeypatch.setattr(expense_import, 'build_rows', working)
     assert 'name="file"' in client.get('/expenses/import').get_data(as_text=True)
 
 
