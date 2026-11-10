@@ -245,3 +245,27 @@ def test_tables_with_a_trash_are_rebuilt_with_autoincrement(tmp_path):
     # Running again changes nothing
     assert migrations.run(path) is True
 
+
+def test_upgrade_keeps_the_id_of_an_expired_trashed_reminder(tmp_path):
+    """The newest reminder sat in the old trash for over 7 days, so the upgrade deletes it. Its id must
+    still never be given to a new reminder: a client may retry a DELETE with it."""
+    path = str(tmp_path / 'app.db')
+    make_old_db(path)
+    assert migrations.run(path) is True
+    conn = sqlite3.connect(path)
+    # Back to the old layout, as on a first upgrade
+    conn.executescript("""
+        CREATE TABLE old_reminder (id INTEGER PRIMARY KEY, date DATE, title TEXT, deleted_at TIMESTAMP);
+        INSERT INTO old_reminder (id, date, title) SELECT id, date, title FROM reminder;
+        DROP TABLE reminder;
+        ALTER TABLE old_reminder RENAME TO reminder;
+        DELETE FROM sqlite_sequence WHERE name = 'reminder';
+        INSERT INTO reminder (id, date, title, deleted_at) VALUES (7, '2026-01-01', 'Old', '2000-01-01 00:00:00.000000');
+    """)
+    conn.close()
+    assert migrations.run(path) is True
+    conn = sqlite3.connect(path)
+    assert [r[0] for r in conn.execute("SELECT id FROM reminder")] == [1]
+    conn.execute("INSERT INTO reminder (date, title) VALUES ('2026-02-01', 'New')")
+    assert conn.execute("SELECT id FROM reminder WHERE title='New'").fetchone()[0] == 8
+

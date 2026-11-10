@@ -461,11 +461,23 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
                     "UPDATE recurring_reminder SET unit='month' WHERE unit IS NULL OR unit=''")
         ok &= _step(conn, 'give recurring expenses a uid', cur.execute,
                     "UPDATE recurring_expense SET uid=lower(hex(randomblob(16))) WHERE uid IS NULL OR uid=''")
+        # Highest ids before anything below removes rows (old trashed reminders past their 7 days):
+        # a client may still hold such an id, so the AUTOINCREMENT counter must start past it
+        highest = {}
+        for table in AUTOINCREMENT_TABLES:
+            try:
+                cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,))
+                if cur.fetchone():
+                    cur.execute(f"SELECT COALESCE(MAX(id), 0) FROM {_quote(table)}")
+                    highest[table] = cur.fetchone()[0]
+            except Exception:
+                log.exception('Could not read the highest id of %s', table)
         ok &= _step(conn, 'move trashed reminders to the shared trash', move_reminder_trash, cur)
         ok &= _step(conn, 'note which record each trash entry holds', fill_trash_record_ids, cur)
-        held = {}
+        held = dict(highest)
         try:
-            held = _ids_held_in_trash(cur)
+            for table, record_id in _ids_held_in_trash(cur).items():
+                held[table] = max(held.get(table, 0), record_id)
         except Exception:
             log.exception('Could not read which ids the trash holds')
         for table in AUTOINCREMENT_TABLES:
