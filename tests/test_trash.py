@@ -701,3 +701,28 @@ def test_day_finds_its_rule_after_a_rename_and_a_new_id(home):
         rule = RecurringExpense.query.filter_by(uid=uid).one()
         assert (rule.title, rule.id != rid) == ('Cow milk', True)
         assert ExpenseEntry.query.filter_by(date=day, title='Milk').one().recurring_id == rule.id
+
+
+def test_delete_forever_removes_only_the_entry_that_was_checked(home):
+    """Between checking an entry and deleting it, another request can restore it and a new entry can take
+    its id. The delete must then remove nothing, not the newer entry (possibly another member's)."""
+    home.client.post(f'/shopping/delete/{add_shopping(home, "Milk")}', data={'user': 'Priya'})
+    with home.ctx():
+        checked = trash.get_entry(entry_id(home, 'Milk'))
+        checked_id = checked.id
+        db.session.expunge(checked)
+        # Meanwhile: Milk is restored, and Dad's Bread lands in the trash under the same id
+        db.session.execute(db.text('DELETE FROM undo_stash WHERE id = :id'), {'id': checked_id})
+        db.session.commit()
+        db.session.add(ShoppingItem(item='Bread', creator='Dad'))
+        db.session.commit()
+        bread = ShoppingItem.query.filter_by(item='Bread').one()
+        undo.trash_row('shopping_item', bread, undo.trash_info('shopping', 'Bread', 'Dad', 'Dad'))
+        replacement = trash.entries()[0]
+        db.session.execute(db.text('UPDATE undo_stash SET id = :id WHERE id = :old'), {'id': checked_id, 'old': replacement.id})
+        db.session.commit()
+        db.session.expire_all()
+        assert trash.delete_for_good(checked) is False
+        with pytest.raises(undo.RestoreConflict):
+            trash.restore(checked)
+        assert [e.label for e in trash.entries()] == ['Bread']

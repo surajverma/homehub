@@ -186,6 +186,17 @@ class RestoreConflict(Exception):
         self.user_message = user_message
 
 
+def claim_stash(stash: UndoStash) -> bool:
+    """Remove exactly this stash in one statement (its id and its own token, which is never reused).
+
+    False when it is no longer there: restored, deleted or replaced by another request since it was read.
+    Does not commit; the caller's transaction keeps the claim and what follows together.
+    """
+    taken = (UndoStash.query.filter(UndoStash.id == stash.id, UndoStash.token == stash.token)
+             .delete(synchronize_session=False))
+    return taken == 1
+
+
 def restore_stash(stash: UndoStash) -> str | None:
     """Put back what ``stash`` holds and delete it. Returns a note for the person, if the restorer has one.
 
@@ -194,8 +205,11 @@ def restore_stash(stash: UndoStash) -> str | None:
     restore = _restorers.get(stash.kind)
     if restore is None:
         raise RestoreConflict(_('It is too late to undo that.'))
-    note = restore(json.loads(stash.payload))
-    db.session.delete(stash)
+    kind, payload = stash.kind, stash.payload
+    if not claim_stash(stash):
+        raise RestoreConflict(_('That is no longer in the trash.'))
+    db.session.expunge(stash)
+    note = restore(json.loads(payload))
     return note if isinstance(note, str) else None
 
 

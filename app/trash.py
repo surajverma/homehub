@@ -17,7 +17,7 @@ from .blueprints import main_bp
 from .clock import utcnow
 from .models import UndoStash, db
 from .security import sanitize_text
-from .undo import RestoreConflict, purge_expired, restore_stash
+from .undo import RestoreConflict, claim_stash, purge_expired, restore_stash
 
 
 def N_(text):
@@ -110,9 +110,13 @@ def restore(entry: UndoStash) -> str | None:
     return note
 
 
-def delete_for_good(entry: UndoStash) -> None:
-    db.session.delete(entry)
+def delete_for_good(entry: UndoStash) -> bool:
+    """Delete the entry the caller checked, and only that one. False when it changed in the meantime."""
+    if not claim_stash(entry):
+        db.session.rollback()
+        return False
     db.session.commit()
+    return True
 
 
 # --- Page ---
@@ -182,7 +186,9 @@ def trash_delete(entry_id):
         flash(_('Not allowed to delete %(name)s.', name=entry.label), 'error')
         return _back(module)
     label = entry.label
-    delete_for_good(entry)
+    if not delete_for_good(entry):
+        flash(_('That is no longer in the trash.'), 'error')
+        return _back(module)
     flash(_('%(name)s deleted for good.', name=label), 'success')
     return _back(module)
 
