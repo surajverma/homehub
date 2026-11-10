@@ -210,6 +210,8 @@ docker compose up -d
 ```
 That's it! Open your browser and head to [http://localhost:5000](http://localhost:5000)
 
+`docker logs homehub` shows errors and HomeHub's own messages. To also log every request, add `- GUNICORN_CMD_ARGS=--access-logfile -` under `environment:` in `compose.yml` and run `docker compose up -d`.
+
 ## Admin password (optional)
 
 By default anyone can pick the admin user from the user switcher. To protect it, the server owner can set an admin password from the host:
