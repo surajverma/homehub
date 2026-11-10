@@ -66,7 +66,7 @@ HomeHub is meant for a trusted network, but a page on another website, a crafted
 - **User content.** Plain text goes through `sanitize_text` and rich text through `sanitize_html` before it is stored. Jinja autoescaping is on; do not add `|safe` unless the value was cleaned with `sanitize_html`. In page scripts, use `th()` or escape values before putting them into HTML strings.
 - **Links.** A link a user enters must be http(s) (`is_http_url`). Refuse `javascript:` and other schemes when saving, and do not render old stored values that fail the check as clickable links.
 - **Uploads.** Filenames go through `secure_filename` and files are served with `send_from_directory`, so a name cannot escape its folder.
-- **Permissions.** Admin checks go through `is_admin(user)` in `app/admin.py`; never compare a name to `admin_name` or `'Administrator'` directly. Editing or deleting someone's item needs `is_admin(user) or user == <owner field>`. API tokens only open `/api/v1` and only what their scopes allow.
+- **Permissions.** Admin checks go through `is_admin(user)` in `app/admin.py`; never compare a name to `admin_name` or `'Administrator'` directly. Editing or deleting someone's item goes through `can_modify(user, <owner field>)` in the same file, not a hand-written `is_admin(user) or user == owner`: the helper refuses a locked session that names the admin to reach an admin-owned record. API tokens only open `/api/v1` and only what their scopes allow.
 - **Secrets.** Passwords, hashes, API tokens and `SECRET_KEY` are never logged, flashed, rendered or returned in JSON, and password checks fail closed. The one exception is a new or regenerated API token: the admin page shows it once, in the response that creates it, so it can be copied, because HomeHub keeps only a fingerprint. That response must not be cached (`Cache-Control: no-store`), and the token must never appear again after it.
 
 To report a vulnerability, see [SECURITY.md](SECURITY.md).
@@ -86,7 +86,7 @@ To report a vulnerability, see [SECURITY.md](SECURITY.md).
 The full checklist is in `.github/skills/code-review/SKILL.md`. In short, look for:
 
 - a new column without a migration entry, or a migration that is not additive;
-- a route that changes someone's data without an owner or admin check, or an admin check that bypasses `is_admin`;
+- a route that changes someone's data without `can_modify`, or an admin check that bypasses `is_admin`;
 - unsanitised input, a new `|safe`, an unchecked outbound fetch or an unchecked link;
 - money split with plain float division instead of the existing split helper in `app/blueprints/expenses.py`, so the parts no longer add up to the total;
 - edits to recurring items that rewrite past occurrences by accident;
