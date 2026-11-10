@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-10 17:03+0530\n"
+"POT-Creation-Date: 2026-11-10 17:55+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -1100,6 +1100,11 @@ msgstr "इसका दोहराने का नियम %(title)s अब 
 #, python-format
 msgid "Its recurring rule %(title)s was restored too."
 msgstr "इसका दोहराने का नियम %(title)s भी वापस लाया गया।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s is no longer part of its recurring rule, which was changed after the day was deleted. Delete it for good, or add the day on the Expenses page if it is still needed."
+msgstr "%(date)s का %(title)s अब अपने दोहराने के नियम का हिस्सा नहीं है, क्योंकि दिन हटाए जाने के बाद नियम बदला गया था। इसे हमेशा के लिए हटा दें, या ज़रूरत हो तो खर्च पेज पर यह दिन फिर से जोड़ें।"
 
 #: app/blueprints/expenses.py
 #, python-format

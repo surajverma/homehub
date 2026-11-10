@@ -201,6 +201,11 @@ def _restore_expense_entry(payload: dict):
             return _('Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense.', title=ref.get('title') or '')
         note = _('Its recurring rule %(title)s was restored too.', title=rule.title)
     day = date.fromisoformat(data['date'])
+    if rule.end_date and day > rule.end_date:
+        # The rule now ends before this day (split or ended since): a newer rule may have generated a
+        # replacement, and restoring this one too would count the expense twice
+        raise RestoreConflict(_('%(title)s for %(date)s is no longer part of its recurring rule, which was changed after the day was deleted. Delete it for good, or add the day on the Expenses page if it is still needed.',
+                                title=data.get('title') or '', date=day))
     twin = ExpenseEntry.query.filter_by(recurring_id=rule.id, date=day).first()
     if twin is not None and not same_record(twin, data):
         raise RestoreConflict(_('%(title)s for %(date)s was added back since it was deleted, so this copy cannot be restored. Delete it for good instead.',

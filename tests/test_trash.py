@@ -908,3 +908,25 @@ def test_deleting_a_recurring_rule_holds_the_generation_lock(home, monkeypatch, 
         rid = make_rule(home)
         home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
     assert seen == [True] and len(trash_rows(home)) == 1
+
+
+def test_a_day_is_not_restored_beside_its_replacement_after_a_split(home):
+    """The rule was split after the day was deleted: the new rule generated a replacement for that day.
+    Restoring the old day as well would count the expense twice."""
+    rid = make_rule(home)
+    day = TODAY - timedelta(days=1)
+    label = _delete_day(home, rid, day)
+    home.client.post(f'/expenses/recurring/edit/{rid}', data={
+        'user': 'Priya', 'title': 'Milk', 'category': '', 'unit_price': '32', 'default_quantity': '2', 'frequency': 'daily',
+        'monthly_mode': 'day_of_month', 'start_date': (TODAY - timedelta(days=3)).isoformat(), 'end_date': '',
+        'edit_strategy': 'split_rule', 'effective_from': (TODAY - timedelta(days=2)).isoformat()})
+    home.client.get('/expenses/recurring')
+    with home.ctx():
+        assert RecurringExpense.query.count() == 2
+        on_day = ExpenseEntry.query.filter_by(date=day).all()
+        assert len(on_day) == 1 and on_day[0].recurring_id != rid  # the replacement
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Priya'}, follow_redirects=True)
+    assert 'no longer part of its recurring rule' in resp.get_data(as_text=True)
+    with home.ctx():
+        assert ExpenseEntry.query.filter_by(date=day).count() == 1
+    assert len(trash_rows(home)) == 1
