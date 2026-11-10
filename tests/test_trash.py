@@ -1097,3 +1097,27 @@ def test_someone_else_cannot_untick_recurring(home):
     with home.ctx():
         assert RecurringChore.query.count() == 1 and Chore.query.count() == 1
     assert trash_rows(home) == []
+
+
+@pytest.mark.parametrize('path, model, fields', [
+    ('/shopping/delete/{id}', ShoppingItem, {'item': 'Old'}),
+    ('/notes/delete/{id}', Note, {'content': 'Old'}),
+    ('/recipes/delete/{id}', Recipe, {'title': 'Old'}),
+    ('/expiry/delete/{id}', ExpiryItem, {'name': 'Old'}),
+    ('/chores/delete/{id}', Chore, {'description': 'Old'}),
+])
+def test_a_blank_user_never_owns_an_item_without_a_creator(home, path, model, fields):
+    """can_modify('', '') used to be True, so a request without a user could delete an item that has no creator."""
+    from app import admin
+    with home.ctx():
+        row = model(creator='', **fields)
+        db.session.add(row)
+        db.session.commit()
+        row_id = row.id
+        assert admin.can_modify('', '') is False and admin.can_modify('  ', '') is False and admin.can_modify(None, None) is False
+    for form in ({'user': ''}, {'user': '   '}):
+        home.client.post(path.format(id=row_id), data=form)
+    assert count(home, model) == 1 and trash_rows(home) == []
+    # The admin still can
+    home.client.post(path.format(id=row_id), data={'user': 'Administrator'})
+    assert count(home, model) == 0
