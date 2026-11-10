@@ -51,7 +51,7 @@ HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja te
 
 - Tests are pytest files in `tests/`. Each file builds its own app with `create_app(test_config)` and an in-memory SQLite database (`'sqlite://'`). New tests should follow that pattern, not use a real database.
 - Changes to permissions, money calculations or startup migrations should come with tests.
-- The suite needs a `config.yml` in the repo root to start (copy `config-example.yml`).
+- The suite does not need a `config.yml`: `tests/conftest.py` runs every test against a temporary copy of `config-example.yml`.
 - A few tests already fail on `main`. Judge a PR by whether it adds failures compared with its base branch, not by whether the whole suite is green.
 
 ## How to write comments
