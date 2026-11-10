@@ -167,10 +167,16 @@ def ensure_column(cur, table: str, column: str, type_spec: str, default=None) ->
 
 
 def _stored_time(value):
-    """A date or time as SQLite holds it, as the shared trash's copies hold it (ISO, "T" between date and time)."""
+    """A timestamp as SQLite holds it, as the shared trash's copies hold it (ISO, "T" between date and time)."""
     if isinstance(value, str) and len(value) > 10 and value[10] == ' ':
         return value[:10] + 'T' + value[11:]
     return value
+
+
+def _is_timestamp(declared_type: str) -> bool:
+    """True for a column declared as a date and time (DATETIME from SQLAlchemy, TIMESTAMP from these upgrades)."""
+    declared = (declared_type or '').upper()
+    return 'DATETIME' in declared or 'TIMESTAMP' in declared
 
 
 def _parse_time(value: str) -> datetime:
@@ -185,7 +191,9 @@ def move_reminder_trash(cur, now: datetime | None = None) -> int:
     """
     now = now or datetime.now(timezone.utc).replace(tzinfo=None)
     cur.execute("PRAGMA table_info(reminder)")
-    names = [row[1] for row in cur.fetchall()]
+    columns = cur.fetchall()
+    names = [row[1] for row in columns]
+    timestamps = {row[1] for row in columns if _is_timestamp(row[2])}
     if 'deleted_at' not in names:
         return 0
     cur.execute(f"SELECT {', '.join(names)} FROM reminder WHERE deleted_at IS NOT NULL")
@@ -198,7 +206,8 @@ def move_reminder_trash(cur, now: datetime | None = None) -> int:
             deleted_at = now
         expires_at = deleted_at + timedelta(days=TRASH_RETENTION_DAYS)
         if expires_at > now:
-            data = {name: _stored_time(value) for name, value in row.items()}
+            # Only timestamps change form; text such as a title or a name is copied exactly
+            data = {name: _stored_time(value) if name in timestamps else value for name, value in row.items()}
             data['deleted_at'] = None
             for flag in ('all_day',):
                 if flag in data and data[flag] is not None:

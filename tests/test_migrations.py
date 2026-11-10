@@ -93,14 +93,23 @@ def test_trashed_reminders_move_to_the_shared_trash(tmp_path):
     conn.execute("INSERT INTO reminder (id, date, title, creator, deleted_at) VALUES (2, '2026-01-01', 'old', 'Mom', '2026-09-01 10:00:00.000000')")
     conn.execute("INSERT INTO reminder (id, date, start_date, title, creator, timestamp, deleted_at) "
                  "VALUES (3, '2026-01-02', '2026-01-02', 'recent', 'Mom', '2025-12-30 08:00:00.000000', '2026-10-01 10:00:00.000000')")
+    # Text whose 11th character is a space must come through unchanged (only timestamps are rewritten)
+    conn.execute("INSERT INTO reminder (id, date, start_date, title, creator, description, timestamp, deleted_at) "
+                 "VALUES (4, '2026-01-03', '2026-01-03', 'Dentist at home', 'Abigail Jo Smith', 'Bring the x-ray', "
+                 "'2025-12-30 09:00:00.000000', '2026-10-02 10:00:00.000000')")
     conn.commit()
     moved = migrations.move_reminder_trash(conn.cursor(), now=datetime(2026, 10, 4, 12, 0, 0))
     conn.commit()
-    assert moved == 1
-    # Both leave the reminder table: the old one was past its 7 days, the recent one is in the shared trash
+    assert moved == 2
+    # All leave the reminder table: the old one was past its 7 days, the recent ones are in the shared trash
     assert {r[0] for r in conn.execute("SELECT id FROM reminder")} == {1}
-    rows = conn.execute("SELECT kind, module, label, owner, deleted_by, deleted_at, expires_at, payload FROM undo_stash").fetchall()
-    assert len(rows) == 1
+    rows = conn.execute("SELECT kind, module, label, owner, deleted_by, deleted_at, expires_at, payload FROM undo_stash "
+                        "ORDER BY deleted_at").fetchall()
+    assert len(rows) == 2
+    spaced = json.loads(rows[1][7])['row']
+    assert (spaced['title'], spaced['creator'], rows[1][3]) == ('Dentist at home', 'Abigail Jo Smith', 'Abigail Jo Smith')
+    assert spaced['timestamp'] == '2025-12-30T09:00:00.000000'
+    rows = rows[:1]
     kind, module, label, owner, deleted_by, deleted_at, expires_at, payload = rows[0]
     assert (kind, module, label, owner, deleted_by) == ('reminder', 'reminders', 'recent (2026-01-02)', 'Mom', '')
     assert deleted_at.startswith('2026-10-01 10:00:00') and expires_at.startswith('2026-10-08 10:00:00')
