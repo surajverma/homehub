@@ -4,6 +4,7 @@ Deleting moves a copy of the record into the undo store (app/undo.py) as a trash
 the record from its table. The Undo toast and this page both restore from that copy. Who may restore
 or delete an entry for good follows the module's own rule (admin.can_modify against the record's owner).
 """
+import hashlib
 import math
 from dataclasses import dataclass
 
@@ -87,6 +88,28 @@ def entry_stamp(entry: UndoStash) -> str:
     (The entry's own token is not used: it is the Undo secret, which needs no owner check.)
     """
     return entry.deleted_at.isoformat() if entry.deleted_at else ''
+
+
+def entry_ref(entry: UndoStash) -> str:
+    """A short reference for one entry, for flask trash list and restore.
+
+    Made from the entry's own token, which is never given to another entry (unlike an id from before the
+    trash used AUTOINCREMENT), and without showing the token itself, which is the Undo secret.
+    """
+    return hashlib.sha256(entry.token.encode('utf-8')).hexdigest()[:REF_LENGTH]
+
+
+REF_LENGTH = 10
+
+
+def entry_by_ref(ref: str) -> UndoStash | None:
+    ref = (ref or '').strip().lower()
+    if len(ref) != REF_LENGTH:
+        return None
+    for entry in entries():
+        if entry_ref(entry) == ref:
+            return entry
+    return None
 
 
 def get_entry(entry_id: int, stamp: str | None = None) -> UndoStash | None:
@@ -202,7 +225,7 @@ trash_cli = AppGroup('trash', help='List and restore what was deleted in the las
 @trash_cli.command('list')
 @click.option('--module', type=click.Choice([m.key for m in MODULES]), help='Only this module.')
 def list_command(module):
-    """Everything in the trash, newest first, with the ID to restore it by."""
+    """Everything in the trash, newest first, with the reference to restore it by."""
     purge_expired()
     db.session.commit()
     rows = entries(module)
@@ -212,17 +235,17 @@ def list_command(module):
     now = utcnow()
     for e in rows:
         left = days_left(e, now)
-        click.echo(f'{e.id}  [{e.module}]  {e.label}  - deleted by {e.deleted_by or "?"} on '
+        click.echo(f'{entry_ref(e)}  [{e.module}]  {e.label}  - deleted by {e.deleted_by or "?"} on '
                    f'{e.deleted_at:%Y-%m-%d %H:%M} UTC; {left} day{"" if left == 1 else "s"} left')
 
 
 @trash_cli.command('restore')
-@click.argument('entry_id', type=int)
-def restore_command(entry_id):
-    """Restore trash entry ENTRY_ID (from flask trash list), whoever deleted it."""
-    entry = get_entry(entry_id)
+@click.argument('ref')
+def restore_command(ref):
+    """Restore the trash entry with reference REF (the first column of flask trash list), whoever deleted it."""
+    entry = entry_by_ref(ref)
     if entry is None:
-        raise click.ClickException(f'Nothing in the trash has ID {entry_id}. See: flask trash list')
+        raise click.ClickException(f'Nothing in the trash has the reference {ref}. See: flask trash list')
     label, module = entry.label, entry.module
     try:
         note = restore(entry)

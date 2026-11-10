@@ -385,14 +385,16 @@ def test_cli_list_and_restore(home):
     runner = home.app.test_cli_runner()
     assert 'The trash is empty.' in runner.invoke(args=['trash', 'list']).output
     home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
-    eid = entry_id(home, 'Milk')
+    with home.ctx():
+        ref = trash.entry_ref(trash.entries()[0])
+    assert len(ref) == 10
     output = runner.invoke(args=['trash', 'list']).output
-    assert re.search(rf'^{eid}  \[shopping\]  Milk  - deleted by Priya on .* UTC; 7 days left$', output, re.M)
+    assert re.search(rf'^{ref}  \[shopping\]  Milk  - deleted by Priya on .* UTC; 7 days left$', output, re.M)
     assert 'Milk' not in runner.invoke(args=['trash', 'list', '--module', 'notes']).output
-    result = runner.invoke(args=['trash', 'restore', str(eid)])
+    result = runner.invoke(args=['trash', 'restore', ref.upper()])
     assert result.exit_code == 0 and 'Restored Milk (shopping).' in result.output
     assert count(home, ShoppingItem) == 1
-    assert runner.invoke(args=['trash', 'restore', str(eid)]).exit_code != 0
+    assert runner.invoke(args=['trash', 'restore', ref]).exit_code != 0
 
 
 # --- Startup ---
@@ -848,15 +850,22 @@ def test_bulk_delete_with_an_impossible_id_still_deletes_all_and_offers_undo(hom
 
 
 def test_flask_trash_restore_never_reaches_a_later_entry(home):
-    """An id from an old flask trash list must not restore a different entry made since (as the admin)."""
+    """A reference from an old flask trash list must not restore a different entry made since (as the admin),
+    even if that entry got the same numeric id (an upgrade from before the trash used AUTOINCREMENT)."""
     runner = home.app.test_cli_runner()
     home.client.post(f'/shopping/delete/{add_shopping(home, "Milk")}', data={'user': 'Priya'})
-    listed = entry_id(home, 'Milk')
-    trash_action(home.client, listed, 'delete', {'user': 'Priya'})
+    with home.ctx():
+        listed = trash.entries()[0]
+        ref, listed_id = trash.entry_ref(listed), listed.id
+    trash_action(home.client, listed_id, 'delete', {'user': 'Priya'})
+    with home.ctx():
+        db.session.execute(db.text("UPDATE sqlite_sequence SET seq = :seq WHERE name = 'undo_stash'"), {'seq': listed_id - 1})
+        db.session.commit()
     home.client.post(f'/shopping/delete/{add_shopping(home, "Bread", creator="Dad")}', data={'user': 'Dad'})
-    assert entry_id(home, 'Bread') != listed
-    result = runner.invoke(args=['trash', 'restore', str(listed)])
-    assert result.exit_code != 0 and 'Nothing in the trash has ID' in result.output
+    assert entry_id(home, 'Bread') == listed_id  # the same number...
+    result = runner.invoke(args=['trash', 'restore', ref])
+    assert result.exit_code != 0 and 'Nothing in the trash has the reference' in result.output  # ...not the same entry
+    assert runner.invoke(args=['trash', 'restore', str(listed_id)]).exit_code != 0
     assert [r[1] for r in trash_rows(home)] == ['Bread']
 
 
