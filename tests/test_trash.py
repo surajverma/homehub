@@ -542,3 +542,30 @@ def test_a_page_left_open_never_acts_on_a_newer_entry(home):
     body = home.client.get('/trash').get_data(as_text=True)
     with home.ctx():
         assert f'name="stamp" value="{trash.entry_stamp(db.session.get(UndoStash, old))}"' in body
+
+
+def test_restoring_a_rule_keeps_later_edits_to_its_history(home):
+    """Kept as history, the entries stay editable: a restore must relink them as they are now,
+    not bring back the copies from the time of the delete."""
+    rid = make_rule(home)
+    with home.ctx():
+        days = {e.date: e.id for e in ExpenseEntry.query.filter_by(recurring_id=rid).all()}
+    assert len(days) >= 3
+    first, second, *rest = sorted(days)
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya'})
+    with home.ctx():
+        assert ExpenseEntry.query.filter(ExpenseEntry.recurring_id.isnot(None)).count() == 0
+        # Edited afterwards...
+        db.session.get(ExpenseEntry, days[first]).amount = 99.0
+        db.session.commit()
+    # ...and one deleted for good
+    home.client.post(f'/expenses/delete/{days[second]}', data={'user': 'Priya'})
+    trash_action(home.client, entry_id(home, f'Milk ({second.isoformat()})'), 'delete', {'user': 'Priya'})
+    trash_action(home.client, entry_id(home, 'Milk'), 'restore', {'user': 'Priya'})
+    with home.ctx():
+        rule = RecurringExpense.query.one()
+        linked = {e.date: e for e in ExpenseEntry.query.filter_by(recurring_id=rule.id).all()}
+        assert linked[first].amount == 99.0
+        assert second not in linked and db.session.get(ExpenseEntry, days[second]) is None
+        assert all(d in linked for d in rest)
+        assert ExpenseEntry.query.filter(ExpenseEntry.recurring_id.is_(None)).count() == 0

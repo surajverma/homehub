@@ -835,6 +835,12 @@ def _restore_rule_snapshot(payload: dict) -> None:
     rule = restore_row(RecurringExpense, rule_data)
     for data in payload['entries']:
         restore_row(ExpenseEntry, data, recurring_id=rule.id)
+    # Entries kept as history when the rule was deleted: link back the ones that are still there,
+    # as they are now. One deleted since stays deleted; one edited since keeps its edit.
+    for ref in payload.get('kept') or []:
+        entry = db.session.get(ExpenseEntry, ref['id'])
+        if entry is not None and entry.recurring_id is None and stamp(entry) == ref.get('timestamp'):
+            entry.recurring_id = rule.id
 
 
 def _rule_edit_from_request(rid):
@@ -1032,7 +1038,10 @@ def delete_recurring_expense(rid):
             pass
     else:
         # Kept as plain history: left pointing at this id, they would attach themselves to
-        # whichever rule SQLite gives the id to next
+        # whichever rule SQLite gives the id to next. They stay editable, so the trash keeps only
+        # which rows they are: a restore relinks the ones still there and keeps their later edits.
+        snapshot['kept'] = [{'id': e['id'], 'timestamp': e.get('timestamp')} for e in snapshot['entries']]
+        snapshot['entries'] = []
         ExpenseEntry.query.filter_by(recurring_id=r.id).update({ExpenseEntry.recurring_id: None})
     db.session.delete(r)
     if delete_entries:
