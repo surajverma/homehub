@@ -74,6 +74,21 @@ def _sw_cache_version():
     return _sw_version_cache[0]
 
 
+# Static files the service worker keeps for offline use, as asset_url() names them
+PRECACHED_ASSETS = ('output.css', 'js/reminders_api.js')
+
+
+def _assets_version() -> str:
+    """The newest modification time of the precached files: it changes whenever a new build changes them."""
+    stamps = []
+    for name in PRECACHED_ASSETS:
+        try:
+            stamps.append(int(os.path.getmtime(os.path.join(current_app.static_folder, name))))
+        except OSError:
+            continue
+    return str(max(stamps)) if stamps else '0'
+
+
 @main_bp.route('/sw.js')
 def service_worker():
     try:
@@ -86,13 +101,14 @@ def service_worker():
             f"<p>{escape(_('This page is not available offline.'))}</p>"
         )
 
+        # Precache the same versioned URLs the pages load (asset_url adds ?v=<mtime>), and name the cache
+        # after those versions too: a new build then gets a fresh cache and the old one is dropped
+        asset_url = current_app.jinja_env.globals['asset_url']
+        precache = ['/'] + [asset_url(name) for name in PRECACHED_ASSETS]
+        assets_version = _assets_version()
         sw_js = r"""
-        const CACHE_NAME = 'homehub-v__VERSION__-__LANGUAGE__';
-        const PRECACHE = [
-          '/',
-          '/static/output.css',
-          '/static/js/reminders_api.js'
-        ];
+        const CACHE_NAME = 'homehub-v__VERSION__-__LANGUAGE__-__ASSETS__';
+        const PRECACHE = __PRECACHE__;
 
         self.addEventListener('install', (event) => {
           event.waitUntil(
@@ -146,7 +162,8 @@ def service_worker():
             );
           }
         });
-        """.replace('__VERSION__', version).replace('__LANGUAGE__', language)
+        """.replace('__VERSION__', version).replace('__LANGUAGE__', language).replace('__ASSETS__', assets_version)
+        sw_js = sw_js.replace('__PRECACHE__', json.dumps(precache))
         sw_js = sw_js.replace('__OFFLINE_HTML__', json.dumps(offline_html))
 
         resp = Response(sw_js, mimetype='application/javascript')
