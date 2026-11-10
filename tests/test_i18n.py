@@ -93,6 +93,26 @@ def test_service_worker_cache_name_follows_language(tmp_path, monkeypatch):
     assert 'You are offline' in english
 
 
+def test_service_worker_precaches_the_urls_pages_load(tmp_path, monkeypatch):
+    """Pages load output.css?v=<mtime>; precaching the bare URL kept a copy no page asked for. The cache
+    name follows only the app version: a rebuild of the same version keeps what the browser stored."""
+    import os
+    monkeypatch.setenv('SW_CACHE_VERSION', '9')
+    from app import blueprints
+    monkeypatch.setattr(blueprints, '_sw_version_cache', [])
+    client = make_client(tmp_path, monkeypatch, 'en', password='')
+    monkeypatch.setattr(os.path, 'getmtime', lambda path: 1000)
+    sw = client.get('/sw.js').get_data(as_text=True)
+    page = client.get('/').get_data(as_text=True)
+    assert '"/static/output.css?v=1000"' in sw and '"/static/js/reminders_api.js?v=1000"' in sw
+    assert '/static/output.css?v=1000' in page
+    assert "const CACHE_NAME = 'homehub-v9-en';" in sw
+    # A rebuild with new files but the same version: new URLs to precache, same cache
+    monkeypatch.setattr(os.path, 'getmtime', lambda path: 2000)
+    rebuilt = client.get('/sw.js').get_data(as_text=True)
+    assert '"/static/output.css?v=2000"' in rebuilt and "const CACHE_NAME = 'homehub-v9-en';" in rebuilt
+
+
 def test_hindi_catalog_is_valid():
     """Every Hindi translation that exists is usable. Empty ones are fine (they show in English): the
     maintainer fills them before a release, so a contributor adding text is not asked to write Hindi."""

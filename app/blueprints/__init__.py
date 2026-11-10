@@ -74,6 +74,10 @@ def _sw_cache_version():
     return _sw_version_cache[0]
 
 
+# Static files the service worker keeps for offline use, as asset_url() names them
+PRECACHED_ASSETS = ('output.css', 'js/reminders_api.js')
+
+
 @main_bp.route('/sw.js')
 def service_worker():
     try:
@@ -86,13 +90,14 @@ def service_worker():
             f"<p>{escape(_('This page is not available offline.'))}</p>"
         )
 
+        # Precache the same versioned URLs the pages load (asset_url adds ?v=<mtime>). The cache name
+        # follows the app version only: a rebuild of the same version keeps the cache, with the scripts
+        # the browser stored along the way (sidebar, clock...), so the offline homepage stays complete
+        asset_url = current_app.jinja_env.globals['asset_url']
+        precache = ['/'] + [asset_url(name) for name in PRECACHED_ASSETS]
         sw_js = r"""
         const CACHE_NAME = 'homehub-v__VERSION__-__LANGUAGE__';
-        const PRECACHE = [
-          '/',
-          '/static/output.css',
-          '/static/js/reminders_api.js'
-        ];
+        const PRECACHE = __PRECACHE__;
 
         self.addEventListener('install', (event) => {
           event.waitUntil(
@@ -147,6 +152,7 @@ def service_worker():
           }
         });
         """.replace('__VERSION__', version).replace('__LANGUAGE__', language)
+        sw_js = sw_js.replace('__PRECACHE__', json.dumps(precache))
         sw_js = sw_js.replace('__OFFLINE_HTML__', json.dumps(offline_html))
 
         resp = Response(sw_js, mimetype='application/javascript')

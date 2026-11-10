@@ -98,6 +98,7 @@
 [data-theme="dark"] .text-gray-500 { color: var(--muted-text) !important; }
 [data-theme="dark"] .text-gray-400 { color: var(--subtle-text) !important; }
 [data-theme="dark"] .bg-gray-100 { background-color: #1f2937 !important; }
+[data-theme="dark"] .bg-gray-200 { background-color: #374151 !important; }
 [data-theme="dark"] .border { border-color: var(--border-color) !important; }
 [data-theme="dark"] .hover\:bg-gray-100:hover { background-color: #1f2937 !important; }
 [data-theme="dark"] .bg-white { background-color: var(--card-background-color) !important; }

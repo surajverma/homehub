@@ -61,4 +61,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 # One process (SQLite, in-process download threads) with threads so a slow upload or PDF job does not block everyone.
 # Keep -w 1: the lock that stops two requests generating the same recurring item (app/recurrence.py) only works
 # inside one process.
-CMD ["gunicorn", "wsgi:app", "-w", "1", "-k", "gthread", "--threads", "4", "-b", "0.0.0.0:5000", "--access-logfile", "-", "--error-logfile", "-"]
+# Errors and HomeHub's own messages go to the log; one line per request is off (every page loads many files).
+# To see requests too, set GUNICORN_CMD_ARGS=--access-logfile - in compose.yml (gunicorn reads it at start).
+CMD ["gunicorn", "wsgi:app", "-w", "1", "-k", "gthread", "--threads", "4", "-b", "0.0.0.0:5000", "--error-logfile", "-"]

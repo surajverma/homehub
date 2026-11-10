@@ -103,5 +103,5 @@ The feed asks apps to check for changes about every hour. Each app decides for i
 ## Keeping the link private
 
 - Anyone who has the link can read your reminders, including their descriptions and who added them. Share it only with the devices that need it.
-- The full link, token included, appears in HomeHub's access log (`docker logs homehub`) and in the logs of any proxy in front of HomeHub.
+- The full link, token included, appears in the logs of any proxy in front of HomeHub, and in HomeHub's own log (`docker logs homehub`) if you turned request logging on with `GUNICORN_CMD_ARGS=--access-logfile -`.
 - If the link leaks, change the token in `config.yml`. Old links stop working straight away, and each device needs the new link.
