@@ -12,6 +12,7 @@ from datetime import date, datetime, timedelta
 
 import bleach
 from flask import current_app, flash, jsonify
+from sqlalchemy import event, func, select
 from flask_babel import gettext as _
 
 from . import db
@@ -129,6 +130,8 @@ def stash_undo(kind: str, payload: dict, trash: dict | None = None) -> str:
         stash.owner = (trash.get('owner') or '')[:64]
         stash.deleted_by = (trash.get('deleted_by') or '')[:128]
         stash.deleted_at = now
+        record = payload.get('row') or payload.get('rule') or {}
+        stash.record_id = record.get('id') if isinstance(record, dict) else None
     else:
         stash.expires_at = now + timedelta(seconds=UNDO_SECONDS + _GRACE_SECONDS)
     db.session.add(stash)
@@ -227,3 +230,46 @@ def undo_change(token):
         return jsonify({'ok': False, 'error': _('Could not undo that change.')}), 500
     flash(_('Change undone.') + (' ' + note if note else ''), 'success')
     return jsonify({'ok': True})
+
+
+# --- Ids of records in the trash stay theirs ---
+#
+# SQLite gives a new row the highest id plus one, so deleting the newest row frees its id for the
+# next one. With the record in the trash that id must stay its own: a client retrying a delete, or
+# a restore, must never meet a different record under it. New rows of these tables are numbered
+# past every id held in the trash. (After 7 days the entry is gone and the id is free again.)
+
+def _reserve_trashed_ids(model, *kinds):
+    table = model.__table__
+
+    @event.listens_for(model, 'before_insert')
+    def skip_trashed_ids(_mapper, connection, target):
+        if target.id is not None:
+            return
+        held = connection.execute(
+            select(func.max(UndoStash.record_id))
+            .where(UndoStash.kind.in_(kinds), UndoStash.module.isnot(None))
+        ).scalar()
+        if held is None:
+            return
+        highest = connection.execute(select(func.max(table.c.id))).scalar() or 0
+        # Rows added in the same flush are not in the table yet; count the ids given to them here
+        given = connection.info.setdefault('homehub_reserved_ids', {})
+        last = given.get(table.name, 0)
+        if held < highest and last <= highest:
+            return
+        target.id = max(held, highest, last) + 1
+        given[table.name] = target.id
+
+
+def _reserve_all():
+    from .models import (Chore, ExpenseEntry, ExpiryItem, Note, Recipe, RecurringChore, RecurringExpense,
+                         RecurringReminder, Reminder, ShoppingItem)
+    for model, kind in ((ShoppingItem, 'shopping_item'), (Note, 'note'), (Recipe, 'recipe'),
+                        (ExpiryItem, 'expiry_item'), (Chore, 'chore'), (RecurringChore, 'chore_rule'),
+                        (Reminder, 'reminder'), (RecurringReminder, 'reminder_rule'),
+                        (ExpenseEntry, 'expense_entry'), (RecurringExpense, 'expense_rule')):
+        _reserve_trashed_ids(model, kind)
+
+
+_reserve_all()

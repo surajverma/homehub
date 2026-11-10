@@ -149,6 +149,7 @@ LATE_COLUMNS = [
     ('undo_stash', 'owner', 'VARCHAR(64)', None),
     ('undo_stash', 'deleted_by', 'VARCHAR(128)', None),
     ('undo_stash', 'deleted_at', 'TIMESTAMP', None),
+    ('undo_stash', 'record_id', 'INTEGER', None),
 ]
 
 
@@ -216,13 +217,29 @@ def move_reminder_trash(cur, now: datetime | None = None) -> int:
             title = str(row.get('title') or '')
             label = f'{title} ({day})' if day else title
             cur.execute(
-                "INSERT INTO undo_stash (token, kind, payload, expires_at, module, label, owner, deleted_by, deleted_at) "
-                "VALUES (?, 'reminder', ?, ?, 'reminders', ?, ?, '', ?)",
+                "INSERT INTO undo_stash (token, kind, payload, expires_at, module, label, owner, deleted_by, deleted_at, record_id) "
+                "VALUES (?, 'reminder', ?, ?, 'reminders', ?, ?, '', ?, ?)",
                 (secrets.token_hex(16), json.dumps({'row': data}), expires_at.strftime('%Y-%m-%d %H:%M:%S.%f'),
-                 label[:256], str(row.get('creator') or '')[:64], deleted_at.strftime('%Y-%m-%d %H:%M:%S.%f')))
+                 label[:256], str(row.get('creator') or '')[:64], deleted_at.strftime('%Y-%m-%d %H:%M:%S.%f'), row['id']))
             moved += 1
         cur.execute("DELETE FROM reminder WHERE id=?", (row['id'],))
     return moved
+
+
+def fill_trash_record_ids(cur) -> int:
+    """Note which record each trash entry holds, for entries made before record_id existed."""
+    cur.execute("SELECT id, payload FROM undo_stash WHERE module IS NOT NULL AND record_id IS NULL")
+    filled = 0
+    for stash_id, payload in cur.fetchall():
+        try:
+            data = json.loads(payload or '{}')
+        except ValueError:
+            continue
+        record = data.get('row') or data.get('rule') or {}
+        if isinstance(record, dict) and isinstance(record.get('id'), int):
+            cur.execute("UPDATE undo_stash SET record_id=? WHERE id=?", (record['id'], stash_id))
+            filled += 1
+    return filled
 
 
 def purge_expired_stashes(cur, now: datetime | None = None) -> int:
@@ -305,6 +322,7 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
         ok &= _step(conn, 'default recurring_reminder unit', cur.execute,
                     "UPDATE recurring_reminder SET unit='month' WHERE unit IS NULL OR unit=''")
         ok &= _step(conn, 'move trashed reminders to the shared trash', move_reminder_trash, cur)
+        ok &= _step(conn, 'note which record each trash entry holds', fill_trash_record_ids, cur)
         ok &= _step(conn, 'purge expired trash', purge_expired_stashes, cur)
         if pdf_dir and os.path.isdir(pdf_dir):
             ok &= _step(conn, 'remove leftover PDF originals', remove_leftover_pdf_originals, cur, pdf_dir)

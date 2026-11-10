@@ -284,6 +284,8 @@ class UndoStash(db.Model):
     owner = db.Column(db.String(64))
     deleted_by = db.Column(db.String(128))
     deleted_at = db.Column(db.DateTime)
+    # Id of the record in its own table, kept from new rows while it is in the trash (app/undo.py)
+    record_id = db.Column(db.Integer)
 
 
 class ApiToken(db.Model):

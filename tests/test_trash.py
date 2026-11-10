@@ -205,15 +205,48 @@ def test_restore_from_another_site_is_blocked(home):
     assert resp.status_code == 403 and count(home, ShoppingItem) == 0
 
 
-def test_restore_after_the_id_was_reused(home):
+def test_ids_in_the_trash_are_not_given_to_new_rows(home):
     first = add_shopping(home, 'Milk')
     home.client.post(f'/shopping/delete/{first}', data={'user': 'Priya'})
-    # SQLite hands the freed id to the next row
-    assert add_shopping(home, 'Bread') == first
+    # SQLite would hand the freed id to the next row; it stays Milk's while Milk is in the trash
+    bread = add_shopping(home, 'Bread')
+    assert bread == first + 1
+    with home.ctx():
+        # Several new rows in one go each get their own id
+        db.session.add_all([ShoppingItem(item='Tea', creator='Priya'), ShoppingItem(item='Rice', creator='Priya')])
+        db.session.commit()
+        assert sorted(i.id for i in ShoppingItem.query.all()) == [bread, bread + 1, bread + 2]
+    trash_action(home.client, entry_id(home, 'Milk'), 'restore', {'user': 'Priya'})
+    with home.ctx():
+        assert db.session.get(ShoppingItem, first).item == 'Milk'
+
+
+def test_restore_when_the_id_was_taken_anyway(home):
+    """An id can still be taken (an entry made before ids were kept, or a row added with its id): the restore
+    then gives the record a new id instead of overwriting the other one."""
+    first = add_shopping(home, 'Milk')
+    home.client.post(f'/shopping/delete/{first}', data={'user': 'Priya'})
+    with home.ctx():
+        db.session.add(ShoppingItem(id=first, item='Bread', creator='Priya'))
+        db.session.commit()
     trash_action(home.client, entry_id(home, 'Milk'), 'restore', {'user': 'Priya'})
     with home.ctx():
         items = {i.item: i.id for i in ShoppingItem.query.all()}
     assert items['Bread'] == first and items['Milk'] != first
+
+
+def test_retrying_an_api_delete_never_trashes_a_newer_reminder(home):
+    """The review's case: a reminder trashed through the API, a new one by the same owner, then the client
+    retries the delete. Before, the new reminder could have the old id and be trashed by the retry."""
+    from app.models import Reminder
+    deleter = home.token('Deleter', act_as=True, allow_delete=True, reminders='write')
+    old = home.post('/reminders', deleter, json={'title': 'Dentist', 'date': TODAY.isoformat(), 'by': 'Priya'}).get_json()['id']
+    assert home.delete(f'/reminders/{old}', deleter, json={'by': 'Priya'}).status_code == 200
+    new = home.post('/reminders', deleter, json={'title': 'Vet', 'date': TODAY.isoformat(), 'by': 'Priya'}).get_json()['id']
+    assert new != old
+    assert home.delete(f'/reminders/{old}', deleter, json={'by': 'Priya'}).status_code == 404
+    with home.ctx():
+        assert [r.title for r in Reminder.query.all()] == ['Vet']
 
 
 def test_short_undo_stashes_are_not_in_the_trash(home):
@@ -380,6 +413,16 @@ def test_old_undo_table_gets_the_trash_columns(tmp_path):
     # Expired stashes are purged at startup
     assert [r[0] for r in conn.execute('SELECT token FROM undo_stash')] == ['b']
     conn.close()
+
+
+def test_trash_entries_from_before_record_ids_get_them(tmp_path):
+    conn = sqlite3.connect(str(tmp_path / 'x.db'))
+    conn.execute("CREATE TABLE undo_stash (id INTEGER PRIMARY KEY, kind TEXT, payload TEXT, module TEXT, record_id INTEGER)")
+    conn.execute("""INSERT INTO undo_stash (kind, payload, module) VALUES ('note', '{"row": {"id": 7}}', 'notes')""")
+    conn.execute("""INSERT INTO undo_stash (kind, payload, module) VALUES ('chore_rule', '{"rule": {"id": 3}, "chores": []}', 'chores')""")
+    conn.execute("""INSERT INTO undo_stash (kind, payload, module) VALUES ('chore_done', '{"chore_id": 9}', NULL)""")
+    assert migrations.fill_trash_record_ids(conn.cursor()) == 2
+    assert [r[0] for r in conn.execute('SELECT record_id FROM undo_stash ORDER BY id')] == [7, 3, None]
 
 
 def test_purge_expired_stashes(tmp_path):
