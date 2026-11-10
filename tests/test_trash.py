@@ -939,3 +939,16 @@ def test_a_day_is_not_restored_beside_its_replacement_after_a_split(home):
     with home.ctx():
         assert ExpenseEntry.query.filter_by(date=day).count() == 1
     assert len(trash_rows(home)) == 1
+
+
+def test_bulk_delete_skips_ids_that_only_look_like_numbers(home):
+    """isdigit() accepts "²", which int() refuses, and int() refuses very long digit strings: either used
+    to answer 500 for a batch that also held valid ids."""
+    assert undo.valid_ids(['1', '²', '٣', '9' * 5000, '9' * 20, ' 2 ', 3, 3, '0', -4, True, None, 2 ** 63]) == [1, 2, 3]
+    ids = [add_expense(home, f'Item {i}') for i in range(2)]
+    flashes(home)
+    resp = home.client.post('/expenses/bulk-delete', data={'user': 'Priya', 'ids': [str(ids[0]), '²', '9' * 5000, str(ids[1])]})
+    assert resp.status_code == 302 and undo_offer(home)['message'] == '2 expenses moved to the trash.'
+    one = add_reminder(home, 'One')
+    resp = home.client.post('/calendar/delete_bulk', data={'ids': f'{one},²,{"9" * 5000}', 'user': 'Priya'})
+    assert resp.status_code == 302 and calendar_titles(home) == []

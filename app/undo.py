@@ -182,7 +182,9 @@ def valid_ids(values) -> list:
             continue
         if isinstance(value, str):
             value = value.strip()
-            if not value.isdigit():
+            # Plain ASCII digits only ("²" counts as a digit to isdigit but not to int), and short enough
+            # that int() never refuses it (it does past 4300 digits); 19 digits hold every SQLite id
+            if not (value.isascii() and value.isdigit()) or len(value) > len(str(SQLITE_MAX_ID)):
                 continue
             value = int(value)
         if isinstance(value, int) and 0 < value <= SQLITE_MAX_ID and value not in ids:
