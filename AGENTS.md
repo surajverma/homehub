@@ -14,9 +14,10 @@ HomeHub is a self-hosted family app: Flask, SQLAlchemy on SQLite, Jinja template
 
 ## Running it
 
-- Copy `config-example.yml` to `config.yml` first. The app and the tests both need it, and it is gitignored.
+- To customise a local instance, copy `config-example.yml` to `config.yml` (it is gitignored). Without it the app runs on the defaults from `config-example.yml`, and the tests write their own temporary config.
 - With Docker: `docker compose up -d`. To try local code changes, build the image from the checkout (for example `docker compose build` with `build: .` switched on for your run), but never commit that change to `compose.yml` (see below).
 - Without Docker: `pip install -r requirements-dev.txt`, `npm install`, `npm run build:css`, then `python run.py`. Set `FLASK_DEBUG=1` for auto-reload.
+- The Docker image compiles the translations itself. Outside Docker, run `flask translations compile` before testing a language other than English, or the pages stay in English.
 
 ## Tests
 
@@ -60,13 +61,13 @@ These follow the rules in issue #81:
 
 HomeHub is meant for a trusted network, but a page on another website, a crafted link or one household member can still reach it. Keep these in place:
 
-- **Outbound fetches.** Any server-side request to a URL a user supplied goes through `is_url_safe_for_fetch` in `app/security.py`, which refuses anything that is not http(s) or that resolves to a private, loopback or link-local address. Do not add a fetch that skips it.
+- **Outbound fetches.** Any server-side request to a URL a user supplied goes through `is_url_safe_for_fetch` in `app/security.py`, which refuses anything that is not http(s) or that resolves to a private, loopback or link-local address. It checks only the URL it is given, so a client that follows redirects on its own could still be sent to an internal address. Turn automatic redirects off, or check each new destination with `is_url_safe_for_fetch` before following it. Do not add a fetch that skips these checks.
 - **Cross-site requests.** There are no per-form CSRF tokens. Instead, the before-request hook in `app/blueprints/auth.py` refuses any POST, PUT, PATCH or DELETE that the browser says came from another site (`Sec-Fetch-Site`, or `Origin` on older browsers). Keep that check ahead of everything else, and never change data from a GET request. `tests/test_cross_site.py` covers it.
 - **User content.** Plain text goes through `sanitize_text` and rich text through `sanitize_html` before it is stored. Jinja autoescaping is on; do not add `|safe` unless the value was cleaned with `sanitize_html`. In page scripts, use `th()` or escape values before putting them into HTML strings.
 - **Links.** A link a user enters must be http(s) (`is_http_url`). Refuse `javascript:` and other schemes when saving, and do not render old stored values that fail the check as clickable links.
 - **Uploads.** Filenames go through `secure_filename` and files are served with `send_from_directory`, so a name cannot escape its folder.
 - **Permissions.** Admin checks go through `is_admin(user)` in `app/admin.py`; never compare a name to `admin_name` or `'Administrator'` directly. Editing or deleting someone's item needs `is_admin(user) or user == <owner field>`. API tokens only open `/api/v1` and only what their scopes allow.
-- **Secrets.** Passwords, hashes, API tokens and `SECRET_KEY` are never logged, flashed, rendered or returned in JSON, and password checks fail closed.
+- **Secrets.** Passwords, hashes, API tokens and `SECRET_KEY` are never logged, flashed, rendered or returned in JSON, and password checks fail closed. The one exception is a new or regenerated API token: the admin page shows it once, in the response that creates it, so it can be copied, because HomeHub keeps only a fingerprint. That response must not be cached (`Cache-Control: no-store`), and the token must never appear again after it.
 
 To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
