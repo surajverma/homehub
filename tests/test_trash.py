@@ -751,3 +751,37 @@ def test_tables_with_a_trash_never_reuse_ids(home):
         for table in AUTOINCREMENT_TABLES:
             sql = db.session.execute(db.text("SELECT sql FROM sqlite_master WHERE name = :t"), {'t': table}).scalar()
             assert 'AUTOINCREMENT' in sql.upper(), table
+
+
+def test_restoring_a_day_never_brings_back_someone_elses_rule(home):
+    """A legacy expense day belongs to its payer (no created_by) while its rule is Priya's. Dad may restore
+    the day, but not the rule with it: that would restart Priya's recurring charges without her."""
+    rid = make_rule(home, user='Priya')
+    day = TODAY - timedelta(days=2)
+    with home.ctx():
+        entry = ExpenseEntry.query.filter_by(recurring_id=rid, date=day).one()
+        entry.created_by, entry.payer = None, 'Dad'
+        db.session.commit()
+        eid = entry.id
+    home.client.post(f'/expenses/delete/{eid}', data={'user': 'Dad'})
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
+    label = f'Milk ({day.isoformat()})'
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Dad'}, follow_redirects=True)
+    assert 'Its recurring rule Milk is in the trash too, and only Priya or the admin can restore it.' in resp.get_data(as_text=True)
+    with home.ctx():
+        assert RecurringExpense.query.count() == 0 and ExpenseEntry.query.count() == 0
+    assert sorted(r[1] for r in trash_rows(home)) == sorted([label, 'Milk'])
+    # Once Priya has restored her rule, Dad's day joins it
+    trash_action(home.client, entry_id(home, 'Milk'), 'restore', {'user': 'Priya'})
+    trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Dad'})
+    with home.ctx():
+        assert db.session.get(ExpenseEntry, eid).recurring_id == RecurringExpense.query.one().id
+
+
+def test_the_admin_may_restore_a_day_with_its_rule(home):
+    rid = make_rule(home, user='Priya')
+    day = TODAY - timedelta(days=2)
+    label = _delete_day(home, rid, day)
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Administrator'}, follow_redirects=True)
+    assert 'Its recurring rule Milk was restored too.' in resp.get_data(as_text=True)

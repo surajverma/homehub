@@ -17,7 +17,7 @@ from .blueprints import main_bp
 from .clock import utcnow
 from .models import UndoStash, db
 from .security import sanitize_text
-from .undo import RestoreConflict, claim_stash, purge_expired, restore_stash
+from .undo import UNRESTRICTED, RestoreConflict, claim_stash, purge_expired, restore_stash
 
 
 def N_(text):
@@ -99,10 +99,11 @@ def get_entry(entry_id: int, stamp: str | None = None) -> UndoStash | None:
     return entry
 
 
-def restore(entry: UndoStash) -> str | None:
-    """Put the entry's record back and remove it from the trash. Commits; raises RestoreConflict."""
+def restore(entry: UndoStash, user=UNRESTRICTED) -> str | None:
+    """Put the entry's record back and remove it from the trash, for ``user`` (the command line acts as the
+    admin). Commits; raises RestoreConflict."""
     try:
-        note = restore_stash(entry)
+        note = restore_stash(entry, as_user=user)
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -162,7 +163,7 @@ def trash_restore(entry_id):
         return _back(module)
     label = entry.label
     try:
-        note = restore(entry)
+        note = restore(entry, user)
     except RestoreConflict as exc:
         flash(exc.user_message, 'error')
         return _back(module)

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-10 15:08+0530\n"
+"POT-Creation-Date: 2026-11-10 16:08+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -1088,6 +1088,11 @@ msgstr[1] "%(num)s खर्च इंपोर्ट हुए।"
 
 #: app/blueprints/expenses.py
 #, python-format
+msgid "Its recurring rule %(title)s is in the trash too, and only %(name)s or the admin can restore it. Ask them to restore the rule first; then this day can be restored."
+msgstr "इसका दोहराने का नियम %(title)s भी ट्रैश में है, और उसे सिर्फ़ %(name)s या एडमिन वापस ला सकते हैं। उनसे पहले नियम वापस लाने को कहें; फिर यह दिन वापस लाया जा सकता है।"
+
+#: app/blueprints/expenses.py
+#, python-format
 msgid "Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense."
 msgstr "इसका दोहराने का नियम %(title)s अब मौजूद नहीं है, इसलिए इसे एक बार के खर्च के रूप में वापस लाया गया।"
 
@@ -1515,7 +1520,7 @@ msgstr "एक्सपायरी ट्रैकर"
 msgid "Expense Tracker"
 msgstr "खर्च ट्रैकर"
 
-#: app/trash.py
+#: app/trash.py app/undo.py
 msgid "That is no longer in the trash."
 msgstr "यह अब ट्रैश में नहीं है।"
 

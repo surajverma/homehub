@@ -10,11 +10,14 @@ import json
 import secrets
 from datetime import date, datetime, timedelta
 
+from contextvars import ContextVar
+
 import bleach
 from flask import current_app, flash, jsonify
 from flask_babel import gettext as _
 
 from . import db
+from .admin import can_modify
 from .blueprints import main_bp
 from .clock import utcnow
 from .models import UndoStash
@@ -196,11 +199,35 @@ def claim_stash(stash: UndoStash) -> bool:
     return taken == 1
 
 
-def restore_stash(stash: UndoStash) -> str | None:
+# Who a restore is done for, so a restorer that would bring back another trash entry with it (an
+# expense day and its recurring rule) can check that person may restore that one too.
+# UNRESTRICTED: the server's own command line (flask trash restore), which acts as the admin.
+UNRESTRICTED = object()
+_INHERIT = object()
+_restoring_for = ContextVar('homehub_restoring_for', default=UNRESTRICTED)
+
+
+def may_restore(owner) -> bool:
+    """True when the person this restore is for may change records owned by ``owner`` (owner or admin)."""
+    user = _restoring_for.get()
+    if user is UNRESTRICTED:
+        return True
+    user = (user or '').strip()
+    return bool(user) and can_modify(user, owner or '')
+
+
+def restore_stash(stash: UndoStash, as_user=_INHERIT) -> str | None:
     """Put back what ``stash`` holds and delete it. Returns a note for the person, if the restorer has one.
 
+    ``as_user`` is who the restore is for (see may_restore); a restore inside another one keeps its person.
     Raises RestoreConflict when it cannot be done. Does not commit.
     """
+    if as_user is not _INHERIT:
+        reset = _restoring_for.set(as_user)
+        try:
+            return restore_stash(stash)
+        finally:
+            _restoring_for.reset(reset)
     restore = _restorers.get(stash.kind)
     if restore is None:
         raise RestoreConflict(_('It is too late to undo that.'))
@@ -220,7 +247,8 @@ def _restore_batch(payload: dict):
         # Already restored or deleted for good from the Trash page
         if stash is None or stash.expires_at < utcnow():
             continue
-        note = restore_stash(stash)
+        # Each was deleted by whoever holds this Undo, so it is restored for them
+        note = restore_stash(stash, as_user=stash.deleted_by)
         if note:
             notes.append(note)
     return ' '.join(notes) or None
@@ -235,8 +263,10 @@ def undo_change(token):
         db.session.commit()
         return jsonify({'ok': False, 'error': _('It is too late to undo that.')}), 410
     kind = stash.kind
+    # The Undo button only reaches whoever made the change; a deleted record is restored for that person
+    as_user = stash.deleted_by if stash.module else UNRESTRICTED
     try:
-        note = restore_stash(stash)
+        note = restore_stash(stash, as_user=as_user)
         purge_expired()
         db.session.commit()
     except RestoreConflict as exc:

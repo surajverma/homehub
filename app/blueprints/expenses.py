@@ -11,7 +11,7 @@ from ..security import sanitize_text
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..recurrence import serialized
-from ..undo import (RestoreConflict, offer_batch_undo, offer_undo, restore_row, restore_stash, restorer, row_to_dict,
+from ..undo import (RestoreConflict, may_restore, offer_batch_undo, offer_undo, restore_row, restore_stash, restorer, row_to_dict,
                     same_record, stamp, stash_undo, trash_info, trash_row)
 import bleach
 from flask_babel import gettext as _, ngettext
@@ -171,6 +171,10 @@ def _rule_from_trash(ref: dict) -> RecurringExpense | None:
     for stash in UndoStash.query.filter(UndoStash.kind == 'expense_rule', UndoStash.module == 'expenses').all():
         rule_data = json.loads(stash.payload).get('rule') or {}
         if _same_rule(rule_data, ref):
+            # Bringing the rule back restarts its charges, so it takes the right to restore the rule itself
+            if not may_restore(stash.owner):
+                raise RestoreConflict(_('Its recurring rule %(title)s is in the trash too, and only %(name)s or the admin can restore it. Ask them to restore the rule first; then this day can be restored.',
+                                        title=rule_data.get('title') or ref.get('title') or '', name=stash.owner or '?'))
             restore_stash(stash)
             db.session.flush()
             return _rule_by_identity(ref)

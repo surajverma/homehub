@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-11-10 15:08+0530\n"
+"POT-Creation-Date: 2026-11-10 16:08+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -1086,6 +1086,11 @@ msgstr[1] ""
 
 #: app/blueprints/expenses.py
 #, python-format
+msgid "Its recurring rule %(title)s is in the trash too, and only %(name)s or the admin can restore it. Ask them to restore the rule first; then this day can be restored."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
 msgid "Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense."
 msgstr ""
 
@@ -1513,7 +1518,7 @@ msgstr ""
 msgid "Expense Tracker"
 msgstr ""
 
-#: app/trash.py
+#: app/trash.py app/undo.py
 msgid "That is no longer in the trash."
 msgstr ""
 
