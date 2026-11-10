@@ -5,61 +5,27 @@ description: Review pull requests to HomeHub, a self-hosted Flask + SQLAlchemy +
 
 # HomeHub code review
 
-HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja templates, Tailwind 3, Docker). It runs on a home network for one household, and people upgrade it by pulling a new image over their existing data. Review for real bugs and for breaks in the conventions below. Skip style nits where the surrounding code already does the same thing.
+HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja templates, Tailwind 3, Docker). It runs on a home network for one household, and people upgrade it by pulling a new image over their existing data.
 
-## Upgrades must not break existing installs
+**The rules are in [AGENTS.md](../../../AGENTS.md).** Read it first and review against it; this file only adds how to review. Do not keep a second copy of the rules here.
 
-- There is no Alembic. Existing databases are upgraded at startup by `app/migrations.py`, which `create_app` calls. New columns go in its `COLUMNS` or `LATE_COLUMNS` lists.
-- **A new column on an existing table needs both the model field and an entry in `COLUMNS` or `LATE_COLUMNS` in `app/migrations.py`**. Without it, existing installs crash with "no such column". Check that the default makes sense for old rows.
-- A new table needs a `CREATE TABLE IF NOT EXISTS` in `TABLES` there, or must be safe to create through `db.create_all()`.
-- Startup migrations must be idempotent and additive. Flag column renames, drops or type changes, since they break existing `data/app.db` files. The one allowed exception is a table rebuild for what SQLite cannot `ALTER` (such as `AUTOINCREMENT`), done through `use_autoincrement`-style code and tested on an old database (see AGENTS.md).
-- Upgrading must need nothing but pulling the image: flag anything that asks people to run a command, and any step whose failure would stop the app instead of being retried at the next start.
-- Deleting user content must go through the shared trash (`app/undo.py`); flag a hard delete of user content, or an API/MCP operation that deletes for good.
-- New `config.yml` keys must have a default in code, and should be added to `config-example.yml`. An existing `config.yml` without the key must keep working.
+## What to look at first
 
-## Permissions
+Most real problems in HomeHub pull requests come from these, in this order:
 
-- Family members pick their name from a switcher; there are no per-member accounts. The acting user arrives as a `user` form or query field and should go through `sanitize_text`.
-- **Admin checks go through the single `is_admin(user)` helper in `app/admin.py`.** Flag code that compares a name to `admin_name`, `'Administrator'` or `'admin'` directly, or reads `admin_name` from config to decide permissions. A direct comparison bypasses whatever protection the helper adds.
-- Ownership checks go through `can_modify(user, <owner field>)` in `app/admin.py` (for example with `creator` or `payer`). Flag an owner-only edit or delete without it, including a hand-written `is_admin(user) or user == owner`, which lets a locked session reach an admin-owned record by naming the admin. Shared actions such as ticking a shopping item or marking a chore done are open to everyone on purpose; don't ask for an owner check there. Flag code that lets an empty user count as an owner, and any upgrade that widens what an existing API token can do.
-- Secrets (passwords, hashes, `SECRET_KEY`) must never be logged, flashed, rendered or returned in JSON. Password checks must fail closed.
-- The site password in `config.yml` is a separate gate and must keep working.
-- There are no CSRF tokens, on purpose. Don't ask for CSRF tokens on individual forms; do flag state changes a person chose that are made through GET requests (time-based housekeeping on a GET, such as generating due recurring items or purging expired trash, is fine).
-- Undo tokens are secrets: flag one shown anywhere but to the client that made the change.
+1. **Existing installs.** A new column without an entry in `app/migrations.py`, a migration that is not additive or not safe to run twice (beyond the table-rebuild exception in AGENTS.md), anything that would make people run a command to upgrade, or a migration tested only through `create_app` (which skips migrations in tests).
+2. **Permissions.** An owner-only edit or delete without `can_modify`, an admin check that does not go through `is_admin`, an empty user that could count as an owner, an upgrade that widens an existing API token.
+3. **Deletes.** User content deleted for good instead of going through the shared trash, or an API/MCP operation that deletes for good.
+4. **Input and output.** Unsanitised input, a new `|safe`, an unchecked outbound fetch or link, exception text or a secret (including an Undo token) reaching a page or a JSON answer.
+5. **Money and recurring items.** An amount split with plain float division instead of the split helper, or an edit that rewrites past occurrences by accident.
+6. **Text and docs.** User-facing text not wrapped for translation; an `/api/v1` change without a regenerated `docs/openapi.json` or an updated `docs/api.md`.
+7. **Files.** `compose.yml` edits, `config.yml`, `data/`, `static/output.css` or other local files in the diff.
 
-## Input and output safety
-
-- User text goes through `sanitize_text`, and rich text through `sanitize_html` (`app/security.py`), before it is stored.
-- Server-side fetches of user-supplied URLs must go through `is_url_safe_for_fetch`.
-- Jinja autoescaping is on. Flag new `|safe` unless the value was cleaned with `sanitize_html`.
-- Uploaded filenames go through `secure_filename`, and files are served with `send_from_directory`, so a name can't escape its folder.
-
-## Data and money
-
-- Prefer `db.session.get(Model, id)` over the legacy `Model.query.get(id)` in new code.
-- Money must add up exactly after rounding. Flag code that splits an amount with plain float division and rounds each part on its own; reuse the existing split helper in `app/blueprints/expenses.py` instead.
-- Changes to recurring items (expenses, reminders, chores) must not rewrite past occurrences unless that is the stated intent.
-
-## Front end
-
-- Tailwind 3, with dark mode switched on by `data-theme="dark"` on `<html>` (`darkMode: ['selector', '[data-theme="dark"]']`), not a `dark` class. New UI should include `dark:` variants matching the neighbouring markup, and should work at phone width.
-- `static/output.css` is built with `npm run build:css` and is gitignored. Flag a PR that commits it.
-
-## Files that must not be committed
-
-- `compose.yml` is the published config and points at `ghcr.io/surajverma/homehub:latest`. Flag any change that switches it to a local build (for example uncommenting `build: .`).
-- `config.yml`, `.env`, `data/app.db`, `uploads/`, `media/` and `pdfs/` are local data. Flag any of them in a diff.
-
-## Tests
-
-- Tests are pytest files in `tests/`. Each file builds its own app with `create_app(test_config)`, with `'TESTING': True` and an in-memory SQLite database (`'sqlite://'`). Flag a test that leaves out `TESTING`: `create_app` would then run startup migrations on the real `data/app.db`.
-- That setup skips startup migrations, so migration changes need tests in the style of `tests/test_migrations.py`, which build an old database file and call `migrations.run()` directly.
-- Changes to permissions, money calculations or startup migrations should come with tests.
-- The suite does not need a `config.yml`: `tests/conftest.py` runs every test against a temporary copy of `config-example.yml`.
-- A few tests already fail on `main`. Judge a PR by whether it adds failures compared with its base branch, not by whether the whole suite is green.
+Judge a pull request by whether it adds test failures compared with its base branch.
 
 ## How to write comments
 
 - Lead with the concrete failure: what input or state goes wrong, and what happens.
 - One comment per issue, on the line that causes it.
 - Mark optional suggestions clearly as optional.
+- Skip style nits where the surrounding code already does the same thing.

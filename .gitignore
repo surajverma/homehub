@@ -24,6 +24,9 @@ htmlcov/
 .env
 config.yml
 
+# Local Docker settings, such as building the image from this checkout (see AGENTS.md)
+compose.override.yml
+
 # Node.js dependencies and build artifacts
 node_modules/
 package-lock.json
