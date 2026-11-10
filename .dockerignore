@@ -22,3 +22,8 @@ docs/
 .github/
 .vscode/
 *.md
+# Local configuration and household files: keep them out of images built from a checkout
+config.yml
+uploads/
+media/
+pdfs/

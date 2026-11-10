@@ -14,15 +14,17 @@ HomeHub is a self-hosted family app: Flask, SQLAlchemy on SQLite, Jinja template
 
 ## Running it
 
-- To customise a local instance, copy `config-example.yml` to `config.yml` (it is gitignored). Without it the app runs on the defaults from `config-example.yml`, and the tests write their own temporary config.
-- With Docker: `docker compose up -d`. To try local code changes, build the image from the checkout (for example `docker compose build` with `build: .` switched on for your run), but never commit that change to `compose.yml` (see below).
-- Without Docker: `pip install -r requirements-dev.txt`, `npm install`, `npm run build:css`, then `python run.py`. Set `FLASK_DEBUG=1` for auto-reload.
+- `config.yml` is gitignored. Without it, `python run.py` runs on the defaults from `config-example.yml`, and the tests always use their own temporary copy of `config-example.yml`. Copy `config-example.yml` to `config.yml` when you want to customise a local instance.
+- With Docker: copy `config-example.yml` to `config.yml` **before** the first `docker compose up -d`. Compose mounts that path, and if the file is missing Docker creates a folder named `config.yml` in its place. If that happened, stop the container, delete the folder, copy the file and start again.
+- To try local code changes in Docker, build the image from the checkout (for example `docker compose build` with `build: .` switched on for your run), but never commit that change to `compose.yml` (see below). `.dockerignore` keeps `config.yml`, `data/`, `uploads/`, `media/` and `pdfs/` out of the image; keep it that way, so a local build never carries the site password or household files.
+- Without Docker: `pip install -r requirements-dev.txt`, `npm install`, `npm run build:css`, then `python run.py`. Set `FLASK_DEBUG=1` for auto-reload. Media downloads need FFmpeg and PDF compression needs Ghostscript (`gs`) on your PATH; the Docker image has both. Without Ghostscript, PDF compression quietly keeps an unchanged copy of the file.
 - The Docker image compiles the translations itself. Outside Docker, run `flask translations compile` before testing a language other than English, or the pages stay in English.
 
 ## Tests
 
 - Run them with `python -m pytest`. CI runs the same command on every pull request (`.github/workflows/tests.yml`).
-- Each test file builds its own app with `create_app({...})` and an in-memory database (`'SQLALCHEMY_DATABASE_URI': 'sqlite://'`). Follow that pattern; never point a test at a real `data/app.db`.
+- Each test file builds its own app with `create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': 'sqlite://', 'SECRET_KEY': 'test'})`, as `tests/api_support.py` does. Set both `TESTING` and the in-memory database: without `TESTING`, `create_app` runs the startup migrations against the real `data/app.db` in your checkout, which deletes old reminder trash and marks pending downloads as failed.
+- That setup creates the current schema and skips the startup migrations, so it cannot test an upgrade. To test a migration, follow `tests/test_migrations.py`: build an old-style database file under `tmp_path` with `sqlite3`, call `migrations.run(path)` on it, and check the result. Also check that running it twice is harmless.
 - Changes to permissions, money calculations, startup migrations or anything security related should come with tests.
 - If a test already fails on `main`, it is not yours to fix in an unrelated PR. Make sure your change adds no new failures.
 
@@ -50,7 +52,7 @@ These follow the rules in issue #81:
 - The PR changes only `translations/<code>/LC_MESSAGES/messages.po`, adds that language's row to the Supported languages table in the README, and, only for a script that is not Latin, Cyrillic or Greek, adds one line to `LANGUAGE_FONTS` in `app/i18n.py`.
 - Do not edit `config-example.yml` or the config sample in the README.
 - Write "Part of #81" in the description, not "Closes #81".
-- Keep placeholders such as `%(name)s` and `{count}` exactly as they are, and add no links or HTML. `tests/test_i18n.py` checks both.
+- Keep placeholders such as `%(name)s` and `{count}` exactly as they are, and add no links or HTML. `tests/test_i18n.py` checks both. One exception: a plural form may leave out the number (`%(num)s`, `%(num)d` or `{count}`) when the wording already says it, as in "one day left". Every other placeholder must stay.
 - Partial translations are welcome. Right-to-left languages are not supported yet.
 
 ## API documentation
@@ -66,14 +68,14 @@ HomeHub is meant for a trusted network, but a page on another website, a crafted
 - **User content.** Plain text goes through `sanitize_text` and rich text through `sanitize_html` before it is stored. Jinja autoescaping is on; do not add `|safe` unless the value was cleaned with `sanitize_html`. In page scripts, use `th()` or escape values before putting them into HTML strings.
 - **Links.** A standalone URL field (such as a recipe or media link) must hold an http(s) URL (`is_http_url`). Refuse `javascript:` and other schemes when saving, and do not render old stored values that fail the check as clickable links. Links inside rich text are handled by `sanitize_html`, which also keeps `mailto:` and `tel:` links.
 - **Uploads.** Filenames go through `secure_filename` and files are served with `send_from_directory`, so a name cannot escape its folder.
-- **Permissions.** Admin checks go through `is_admin(user)` in `app/admin.py`; never compare a name to `admin_name` or `'Administrator'` directly. Editing or deleting someone's item goes through `can_modify(user, <owner field>)` in the same file, not a hand-written `is_admin(user) or user == owner`: the helper refuses a locked session that names the admin to reach an admin-owned record. API tokens only open `/api/v1` and only what their scopes allow.
+- **Permissions.** Admin checks go through `is_admin(user)` in `app/admin.py`; never compare a name to `admin_name` or `'Administrator'` directly. Editing or deleting an item that belongs to its creator goes through `can_modify(user, <owner field>)` in the same file, not a hand-written `is_admin(user) or user == owner`: the helper refuses a locked session that names the admin to reach an admin-owned record. Some actions are shared on purpose and have no owner check, such as ticking a shopping item or marking a chore done; keep them open to everyone, and do not add `can_modify` to them. API tokens only open `/api/v1` and only what their scopes allow.
 - **Secrets.** Passwords, hashes, API tokens and `SECRET_KEY` are never logged, flashed, rendered or returned in JSON, and password checks fail closed. The one exception is a new or regenerated API token: the admin page shows it once, in the response that creates it, so it can be copied, because HomeHub keeps only a fingerprint. That response must not be cached (`Cache-Control: no-store`), and the token must never appear again after it.
 
 To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
 ## Front end
 
-- Tailwind 3 with `darkMode: 'class'`. New UI needs `dark:` variants matching the markup around it and must work at phone width.
+- Tailwind 3. Dark mode is switched on by `data-theme="dark"` on `<html>` (`darkMode: ['selector', '[data-theme="dark"]']` in `tailwind.config.js`), not by a `dark` class. New UI needs `dark:` variants matching the markup around it and must work at phone width.
 - `static/output.css` is built by `npm run build:css` and is not committed.
 
 ## Files that must not be committed
@@ -85,8 +87,8 @@ To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
 The full checklist is in `.github/skills/code-review/SKILL.md`. In short, look for:
 
-- a new column without a migration entry, or a migration that is not additive;
-- a route that changes someone's data without `can_modify`, or an admin check that bypasses `is_admin`;
+- a new column without a migration entry, a migration that is not additive, or a migration change tested only through `create_app` (which skips migrations in tests);
+- an owner-only edit or delete without `can_modify`, or an admin check that bypasses `is_admin`;
 - unsanitised input, a new `|safe`, an unchecked outbound fetch or an unchecked link;
 - money split with plain float division instead of the existing split helper in `app/blueprints/expenses.py`, so the parts no longer add up to the total;
 - edits to recurring items that rewrite past occurrences by accident;

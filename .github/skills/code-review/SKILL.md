@@ -19,7 +19,7 @@ HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja te
 
 - Family members pick their name from a switcher; there are no per-member accounts. The acting user arrives as a `user` form or query field and should go through `sanitize_text`.
 - **Admin checks go through the single `is_admin(user)` helper in `app/admin.py`.** Flag code that compares a name to `admin_name`, `'Administrator'` or `'admin'` directly, or reads `admin_name` from config to decide permissions. A direct comparison bypasses whatever protection the helper adds.
-- Ownership checks go through `can_modify(user, <owner field>)` in `app/admin.py` (for example with `creator` or `payer`). Flag a route that edits or deletes someone's data without it, including a hand-written `is_admin(user) or user == owner`, which lets a locked session reach an admin-owned record by naming the admin.
+- Ownership checks go through `can_modify(user, <owner field>)` in `app/admin.py` (for example with `creator` or `payer`). Flag an owner-only edit or delete without it, including a hand-written `is_admin(user) or user == owner`, which lets a locked session reach an admin-owned record by naming the admin. Shared actions such as ticking a shopping item or marking a chore done are open to everyone on purpose; don't ask for an owner check there.
 - Secrets (passwords, hashes, `SECRET_KEY`) must never be logged, flashed, rendered or returned in JSON. Password checks must fail closed.
 - The site password in `config.yml` is a separate gate and must keep working.
 - There are no CSRF tokens, on purpose. Don't ask for CSRF tokens on individual forms; do flag state changes made through GET requests.
@@ -39,7 +39,7 @@ HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja te
 
 ## Front end
 
-- Tailwind 3 with `darkMode: 'class'`. New UI should include `dark:` variants matching the neighbouring markup, and should work at phone width.
+- Tailwind 3, with dark mode switched on by `data-theme="dark"` on `<html>` (`darkMode: ['selector', '[data-theme="dark"]']`), not a `dark` class. New UI should include `dark:` variants matching the neighbouring markup, and should work at phone width.
 - `static/output.css` is built with `npm run build:css` and is gitignored. Flag a PR that commits it.
 
 ## Files that must not be committed
@@ -49,7 +49,8 @@ HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja te
 
 ## Tests
 
-- Tests are pytest files in `tests/`. Each file builds its own app with `create_app(test_config)` and an in-memory SQLite database (`'sqlite://'`). New tests should follow that pattern, not use a real database.
+- Tests are pytest files in `tests/`. Each file builds its own app with `create_app(test_config)`, with `'TESTING': True` and an in-memory SQLite database (`'sqlite://'`). Flag a test that leaves out `TESTING`: `create_app` would then run startup migrations on the real `data/app.db`.
+- That setup skips startup migrations, so migration changes need tests in the style of `tests/test_migrations.py`, which build an old database file and call `migrations.run()` directly.
 - Changes to permissions, money calculations or startup migrations should come with tests.
 - The suite does not need a `config.yml`: `tests/conftest.py` runs every test against a temporary copy of `config-example.yml`.
 - A few tests already fail on `main`. Judge a PR by whether it adds failures compared with its base branch, not by whether the whole suite is green.
