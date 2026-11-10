@@ -502,3 +502,24 @@ def test_reminders_trashed_before_the_upgrade_can_be_restored(tmp_path, monkeypa
     with app.app_context():
         r = db.session.get(Reminder, rid)
         assert (r.title, r.start_time, r.category, r.creator, r.deleted_at) == ('Vet', '09:30', 'health', 'Dad', None)
+
+
+def test_blank_user_cannot_restore_or_delete_an_ownerless_entry(home):
+    """An entry without an owner (an old record) and a form without a user must not count as a match."""
+    with home.ctx():
+        db.session.add(ShoppingItem(item='Old item', creator=''))
+        db.session.commit()
+        undo.trash_row('shopping_item', ShoppingItem.query.one(), undo.trash_info('shopping', 'Old item', '', 'Administrator'))
+    eid = entry_id(home, 'Old item')
+    for action in ('restore', 'delete'):
+        for form in ({}, {'user': ''}, {'user': '  '}):
+            resp = home.client.post(f'/trash/{eid}/{action}', data=form, follow_redirects=True)
+            assert 'Not allowed to' in resp.get_data(as_text=True)
+    assert len(trash_rows(home)) == 1 and count(home, ShoppingItem) == 0
+    # Owned entries need a user too
+    home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
+    assert 'Not allowed to restore Milk.' in home.client.post(
+        f"/trash/{entry_id(home, 'Milk')}/restore", data={}, follow_redirects=True).get_data(as_text=True)
+    # The admin may restore the ownerless one
+    home.client.post(f'/trash/{eid}/restore', data={'user': 'Administrator'})
+    assert count(home, ShoppingItem) == 1

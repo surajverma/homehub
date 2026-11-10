@@ -72,6 +72,14 @@ def days_left(entry: UndoStash, now=None) -> int:
     return max(1, math.ceil(seconds / 86400))
 
 
+def may_change(user: str, entry: UndoStash) -> bool:
+    """The module's rule (owner or admin), but never for a blank user: an entry without an owner is the admin's alone."""
+    user = (user or '').strip()
+    if not user:
+        return False
+    return can_modify(user, entry.owner or '')
+
+
 def get_entry(entry_id: int) -> UndoStash | None:
     entry = db.session.get(UndoStash, entry_id)
     if entry is None or entry.module is None or entry.expires_at < utcnow():
@@ -133,7 +141,7 @@ def trash_restore(entry_id):
     if entry is None:
         flash(_('That is no longer in the trash.'), 'error')
         return _back(module)
-    if not can_modify(user, entry.owner):
+    if not may_change(user, entry):
         flash(_('Not allowed to restore %(name)s.', name=entry.label), 'error')
         return _back(module)
     label = entry.label
@@ -158,7 +166,7 @@ def trash_delete(entry_id):
     if entry is None:
         flash(_('That is no longer in the trash.'), 'error')
         return _back(module)
-    if not can_modify(user, entry.owner):
+    if not may_change(user, entry):
         flash(_('Not allowed to delete %(name)s.', name=entry.label), 'error')
         return _back(module)
     label = entry.label
