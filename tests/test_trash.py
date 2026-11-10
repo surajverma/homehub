@@ -373,7 +373,7 @@ def test_day_added_back_since_is_a_conflict(home):
     label = _delete_day(home, rid, day)
     home.client.post(f'/expenses/recurring/{rid}/restore', data={'user': 'Priya', 'date': day.isoformat()})
     resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Priya'}, follow_redirects=True)
-    assert 'was added back since it was deleted' in resp.get_data(as_text=True)
+    assert 'is already there again (added back' in resp.get_data(as_text=True)
     with home.ctx():
         assert ExpenseEntry.query.filter_by(recurring_id=rid, date=day).count() == 1
     assert len(trash_rows(home)) == 1
@@ -935,10 +935,17 @@ def test_a_day_is_not_restored_beside_its_replacement_after_a_split(home):
         on_day = ExpenseEntry.query.filter_by(date=day).all()
         assert len(on_day) == 1 and on_day[0].recurring_id != rid  # the replacement
     resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Priya'}, follow_redirects=True)
-    assert 'no longer part of its recurring rule' in resp.get_data(as_text=True)
+    assert 'billed by the rule it was split into' in resp.get_data(as_text=True)
     with home.ctx():
         assert ExpenseEntry.query.filter_by(date=day).count() == 1
     assert len(trash_rows(home)) == 1
+    # Still refused once the original rule is deleted for good: the rule split from it billed the day
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
+    trash_action(home.client, entry_id(home, 'Milk'), 'delete', {'user': 'Priya'})
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Priya'}, follow_redirects=True)
+    assert 'billed by the rule it was split into' in resp.get_data(as_text=True)
+    with home.ctx():
+        assert ExpenseEntry.query.filter_by(date=day).count() == 1
 
 
 def test_bulk_delete_skips_ids_that_only_look_like_numbers(home):
@@ -1004,3 +1011,35 @@ def test_old_trashed_reminders_stay_hidden_if_the_upgrade_has_not_moved_them(tmp
         db.session.add(Reminder(date=TODAY, start_date=TODAY, title='New', creator='Priya'))
         db.session.commit()
         assert Reminder.query.filter_by(title='New').one().id > 7
+
+
+def test_a_day_moved_past_its_rules_end_by_hand_can_be_restored(home):
+    """The expense editor can move a generated day past its rule's end. Nothing else is billed on that
+    date, so Undo and the Trash must still bring it back."""
+    start = TODAY - timedelta(days=3)
+    with home.ctx():
+        rule = RecurringExpense(title='Milk', unit_price=30.0, default_quantity=1.0, frequency='daily', monthly_mode='day_of_month',
+                                start_date=start, end_date=TODAY - timedelta(days=1), effective_from=start, creator='Priya')
+        db.session.add(rule)
+        db.session.commit()
+        rid = rule.id
+    home.client.get('/expenses/recurring')
+    with home.ctx():
+        last = ExpenseEntry.query.filter_by(recurring_id=rid, date=TODAY - timedelta(days=1)).one()
+        eid = last.id
+    home.client.post(f'/expenses/edit/{eid}', data={'user': 'Priya', 'date': TODAY.isoformat(), 'title': 'Milk',
+                                                   'amount': '30', 'payer': 'Priya'})
+    with home.ctx():
+        moved = db.session.get(ExpenseEntry, eid)
+        assert (moved.date, moved.recurring_id) == (TODAY, rid)
+    flashes(home)
+    home.client.post(f'/expenses/delete/{eid}', data={'user': 'Priya'})
+    token = undo_offer(home)['token']
+    assert home.client.post(f'/undo/{token}').get_json() == {'ok': True}
+    home.client.post(f'/expenses/delete/{eid}', data={'user': 'Priya'})
+    resp = trash_action(home.client, entry_id(home, f'Milk ({TODAY.isoformat()})'), 'restore', {'user': 'Priya'},
+                        follow_redirects=True)
+    assert 'Milk (' in resp.get_data(as_text=True) and 'cannot be restored' not in resp.get_data(as_text=True)
+    with home.ctx():
+        assert db.session.get(ExpenseEntry, eid).date == TODAY
+

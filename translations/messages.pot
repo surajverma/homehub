@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-11-10 17:55+0530\n"
+"POT-Creation-Date: 2026-11-10 18:37+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -1083,6 +1083,11 @@ msgid "%(num)s expense imported."
 msgid_plural "%(num)s expenses imported."
 msgstr[0] ""
 msgstr[1] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s is already there again (added back, or billed by the rule it was split into), so this copy cannot be restored. Delete it for good instead."
+msgstr ""
 
 #: app/blueprints/expenses.py
 #, python-format

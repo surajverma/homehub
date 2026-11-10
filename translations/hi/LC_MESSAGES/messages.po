@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-10 17:55+0530\n"
+"POT-Creation-Date: 2026-11-10 18:37+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -1085,6 +1085,11 @@ msgid "%(num)s expense imported."
 msgid_plural "%(num)s expenses imported."
 msgstr[0] "%(num)s खर्च इंपोर्ट हुआ।"
 msgstr[1] "%(num)s खर्च इंपोर्ट हुए।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s is already there again (added back, or billed by the rule it was split into), so this copy cannot be restored. Delete it for good instead."
+msgstr "%(date)s का %(title)s फिर से मौजूद है (वापस जोड़ा गया, या उस नियम ने बिल किया जिसमें इसे बांटा गया), इसलिए यह कॉपी वापस नहीं लाई जा सकती। इसके बजाय इसे हमेशा के लिए हटा दें।"
 
 #: app/blueprints/expenses.py
 #, python-format

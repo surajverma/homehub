@@ -201,6 +201,8 @@ class RecurringExpense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # Names this rule for good: its id can change when it is restored from the trash, its title when edited
     uid = db.Column(db.String(32), default=new_uid)
+    # The uid of the rule this one continues after a split (Recurring rules > edit > split from a date)
+    previous_uid = db.Column(db.String(32))
     title = db.Column(db.String(256), nullable=False)
     unit_price = db.Column(db.Float, default=0.0)
     default_quantity = db.Column(db.Float, default=1.0)

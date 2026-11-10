@@ -168,6 +168,31 @@ def _same_rule(rule_data: dict, ref: dict) -> bool:
     return rule_data.get('id') == ref.get('id') and rule_data.get('timestamp') == ref.get('timestamp')
 
 
+def _rule_lineage(uid: str) -> list:
+    """Ids of the rule with ``uid`` and of every rule split from it since, however often."""
+    uids, frontier = {uid}, [uid]
+    while frontier:
+        found = {r.uid for r in RecurringExpense.query.filter(RecurringExpense.previous_uid.in_(frontier)).all()}
+        frontier = list(found - uids)
+        uids |= found
+    return [r.id for r in RecurringExpense.query.filter(RecurringExpense.uid.in_(uids)).all()]
+
+
+def _refuse_if_billed(uid: str, day: date, data: dict) -> None:
+    """RestoreConflict when the day's rule, or a rule split from it (even if the rule itself is gone for
+    good), already has this day: restoring the deleted copy as well would count the expense twice.
+
+    A day moved past its rule's end by hand, with nothing else on that date, is restored as usual.
+    """
+    rule_ids = _rule_lineage(uid)
+    if not rule_ids:
+        return
+    for entry in ExpenseEntry.query.filter(ExpenseEntry.recurring_id.in_(rule_ids), ExpenseEntry.date == day).all():
+        if not same_record(entry, data):
+            raise RestoreConflict(_('%(title)s for %(date)s is already there again (added back, or billed by the rule it was split into), so this copy cannot be restored. Delete it for good instead.',
+                                    title=data.get('title') or '', date=day))
+
+
 def _rule_from_trash(ref: dict) -> RecurringExpense | None:
     """Restore the deleted recurring rule ``ref`` points at, if it is in the trash; returns the restored rule."""
     for stash in UndoStash.query.filter(UndoStash.kind == 'expense_rule', UndoStash.module == 'expenses').all():
@@ -192,6 +217,9 @@ def _restore_expense_entry(payload: dict):
         restore_row(ExpenseEntry, data)
         return None
     note = None
+    day = date.fromisoformat(data['date'])
+    if ref.get('uid'):
+        _refuse_if_billed(ref['uid'], day, data)
     rule = _rule_by_identity(ref)
     if rule is None:
         # The rule was deleted after this day: bring it back from the trash as well, when it is there
@@ -200,10 +228,9 @@ def _restore_expense_entry(payload: dict):
             restore_row(ExpenseEntry, data, recurring_id=None)
             return _('Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense.', title=ref.get('title') or '')
         note = _('Its recurring rule %(title)s was restored too.', title=rule.title)
-    day = date.fromisoformat(data['date'])
-    if rule.end_date and day > rule.end_date:
-        # The rule now ends before this day (split or ended since): a newer rule may have generated a
-        # replacement, and restoring this one too would count the expense twice
+    if not ref.get('uid') and rule.end_date and day > rule.end_date:
+        # Trashed before rules had a uid, so the rules it was split into are unknown: a newer rule may have
+        # billed this day, and restoring this one too would count the expense twice
         raise RestoreConflict(_('%(title)s for %(date)s is no longer part of its recurring rule, which was changed after the day was deleted. Delete it for good, or add the day on the Expenses page if it is still needed.',
                                 title=data.get('title') or '', date=day))
     twin = ExpenseEntry.query.filter_by(recurring_id=rule.id, date=day).first()
@@ -966,6 +993,8 @@ def edit_recurring_expense(rid):
 
         new_rule = RecurringExpense(creator=r.creator, last_generated_date=None, effective_from=split_start, **values)
         new_rule.start_date = max(values['start_date'] or split_start, split_start)
+        # So a day deleted before the split knows the new rule may have billed it again
+        new_rule.previous_uid = r.uid
         db.session.add(new_rule)
         db.session.commit()
         snapshot['new_rule_id'] = new_rule.id

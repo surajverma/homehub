@@ -117,6 +117,7 @@ LATE_COLUMNS = [
     ('recurring_expense', 'effective_from', 'DATE', None),
     ('recurring_expense', 'split_with', 'TEXT', None),
     ('recurring_expense', 'uid', 'VARCHAR(32)', None),
+    ('recurring_expense', 'previous_uid', 'VARCHAR(32)', None),
     ('expense_entry', 'skipped', 'INTEGER DEFAULT 0', 0),
     ('expense_entry', 'split_with', 'TEXT', None),
     ('expense_entry', 'is_settlement', 'INTEGER DEFAULT 0', 0),
