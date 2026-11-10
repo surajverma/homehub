@@ -81,8 +81,10 @@ def list_command():
     for token in rows:
         state = f'revoked {token.revoked_at:%Y-%m-%d %H:%M}' if token.revoked_at else 'active'
         used = f'{token.last_used_at:%Y-%m-%d %H:%M} UTC' if token.last_used_at else 'not used yet'
-        flags = [f for f, on in (('act as family members', token.act_as_members),
-                                 ('can move items to the trash', token.allow_delete)) if on]
+        trash_flag = ('can move reminders to the trash (made before Allow deleting covered more; '
+                      'create a new token to widen it)'
+                      if tokens.delete_scope(token) == tokens.DELETE_SCOPE_REMINDERS else 'can move items to the trash')
+        flags = [f for f, on in (('act as family members', token.act_as_members), (trash_flag, token.allow_delete)) if on]
         if tokens.name_taken_by_person(token.name):
             flags.append('same name as a person: writes blocked until renamed')
         click.echo(f'{token.name} ({token.prefix}…, {state}): {_summary(token)}'

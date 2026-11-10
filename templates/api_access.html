@@ -131,8 +131,11 @@
             <div class="text-xs text-gray-500 mt-0.5">
               {% if t.act_as_members %}<span class="whitespace-nowrap"><i class="fa-solid fa-users" aria-hidden="true"></i> {{ _('Acts as family members') }}</span>{% endif %}
               {% if t.act_as_members and item.can_delete %} · {% endif %}
-              {% if item.can_delete %}<span class="whitespace-nowrap"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> {{ _('Can move items to the trash') }}</span>{% endif %}
+              {% if item.can_delete %}<span class="whitespace-nowrap"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> {% if item.delete_reminders_only %}{{ _('Can move reminders to the trash') }}{% else %}{{ _('Can move items to the trash') }}{% endif %}</span>{% endif %}
             </div>
+            {% endif %}
+            {% if item.delete_reminders_only %}
+            <div class="text-xs text-gray-500 mt-0.5 token-delete-scope">{{ _('Made when Allow deleting covered reminders only, so it still does. To let a client delete in other tools too, create a new token.') }}</div>
             {% endif %}
             {% if item.name_clash %}
             <div class="text-xs text-red-600 mt-0.5 token-name-clash" role="note">{{ _('This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed.') }}</div>

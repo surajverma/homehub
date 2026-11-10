@@ -34,7 +34,7 @@ On the page:
 1. Give the token a name, such as *Home Assistant* or *Hermes*. Things the token adds without acting as a family member show this name as who added them. It can't be the name of a family member, the admin or another token.
 2. Pick a preset or set each tool to **No access**, **Read** or **Read & write**. Only tools switched on in `config.yml` are listed.
 3. Tick **Act as family members** if the client should make changes for a person (see [the `by` field](#who-a-change-is-made-as-the-by-field)). It is needed to set who is home or a person's status.
-4. Leave **Allow deleting** off unless you need it. It lets the token move items to the trash (reminders, shopping items, one-off chores, notes, recipes, expiry items and one-off expenses) in the tools it has with Read & write. Nothing is deleted for good: the Trash page in HomeHub can restore it for 7 days.
+4. Leave **Allow deleting** off unless you need it. It lets the token move items to the trash (reminders, shopping items, one-off chores, notes, recipes, expiry items and one-off expenses) in the tools it has with Read & write. Nothing is deleted for good: the Trash page in HomeHub can restore it for 7 days. Tokens made before this version, when Allow deleting covered only reminders, keep it for reminders only (the list says so); create a new token to let a client delete in other tools.
 5. Select **Create token** and copy the token straight away. HomeHub keeps only a fingerprint of it and can't show it again.
 
 The list below shows each token's access, when it was last used and its recent changes. **Rename** changes a token's name (the token itself keeps working); **Regenerate** makes a new token (the old one stops working at once); **Revoke** switches a token off. Regenerating a revoked token brings it back with the same access, and **Delete** (only for revoked tokens) removes it from the list for good, with its activity history, so its name can be used again. Revoking keeps the history.
@@ -127,11 +127,14 @@ curl -H "Authorization: Bearer hh_..." http://homehub.local:5000/api/v1/
   "token": "Hermes",
   "act_as_members": true,
   "allow_delete": false,
+  "delete_tools": [],
   "tools": {"presence": "write", "reminders": "write", "shopping": "write"},
   "family_members": ["Priya", "Dad", "Mom"],
   "version": "1"
 }
 ```
+
+`delete_tools` lists the tools whose items the token may move to the trash right now.
 
 `GET /api/v1/openapi.json` returns an OpenAPI 3.1 description of what the token can use. A full copy is in [openapi.json](openapi.json).
 

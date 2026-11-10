@@ -164,6 +164,8 @@ def run_operation(op, token, args: dict, *, from_query=()):
     check_access(token, op.tool, op.level)
     if op.destructive and not token.allow_delete:
         raise ApiError(403, 'forbidden', _('This token is not allowed to delete.'))
+    if op.destructive and op.tool not in tokens.delete_tools(token):
+        raise ApiError(403, 'forbidden', _('This token may only move reminders to the trash: it was made when Allow deleting covered nothing else. Create a new token to delete in other tools.'))
     try:
         cleaned = registry.validate(op, args, from_query=from_query)
     except registry.ArgumentError as exc:

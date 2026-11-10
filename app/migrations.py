@@ -143,6 +143,8 @@ LATE_COLUMNS = [
     ('api_activity', 'action', 'VARCHAR(64)', None),
     ('api_activity', 'target', 'VARCHAR(200)', None),
     ('api_activity', 'created_at', 'TIMESTAMP', None),
+    # Tokens made before Allow deleting covered every tool keep it for reminders only
+    ('api_token', 'delete_scope', 'VARCHAR(16)', 'reminders'),
     # The shared trash keeps deleted records in the undo store (app/undo.py)
     ('undo_stash', 'module', 'VARCHAR(32)', None),
     ('undo_stash', 'label', 'VARCHAR(256)', None),

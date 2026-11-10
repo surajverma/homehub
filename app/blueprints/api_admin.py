@@ -71,7 +71,9 @@ def _summary(token: ApiToken, config) -> dict:
         'token': token,
         'access': access,
         'reaches_nothing': not reachable,
-        'can_delete': bool(token.allow_delete) and tokens.can_delete(stored),
+        'can_delete': bool(tokens.delete_tools(token)),
+        # Made when Allow deleting covered reminders only, and kept so
+        'delete_reminders_only': bool(token.allow_delete) and tokens.delete_scope(token) == tokens.DELETE_SCOPE_REMINDERS,
         # A family member or the admin now has this name, so writes made as the token are refused
         'name_clash': tokens.name_taken_by_person(token.name, config),
         'activity': tokens.recent_activity(token, RECENT_SHOWN),

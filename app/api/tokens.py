@@ -205,6 +205,27 @@ def clean_permissions(raw: dict, act_as_members: bool) -> dict:
     return {t.key: permissions[t.key] for t in TOOLS if t.key in permissions}
 
 
+DELETE_SCOPE_ALL = 'all'
+DELETE_SCOPE_REMINDERS = 'reminders'
+
+
+def delete_scope(token: ApiToken) -> str:
+    return DELETE_SCOPE_ALL if token.delete_scope == DELETE_SCOPE_ALL else DELETE_SCOPE_REMINDERS
+
+
+def delete_tools(token: ApiToken, permissions: dict | None = None) -> list:
+    """The tools whose items this token may move to the trash, in table order.
+
+    Allow deleting, Read & write on the tool, and the tool within what Allow deleting covered when the
+    token was made: a token from before it covered every tool keeps it for reminders only.
+    """
+    if not token.allow_delete:
+        return []
+    permissions = token.permission_map if permissions is None else permissions
+    covered = DELETABLE if delete_scope(token) == DELETE_SCOPE_ALL else (DELETE_SCOPE_REMINDERS,)
+    return [t.key for t in TOOLS if t.key in covered and permissions.get(t.key) == 'write']
+
+
 def can_delete(permissions: dict) -> bool:
     """Allow deleting moves items to the trash, so it needs Read & write on at least one tool that has one."""
     return any(permissions.get(key) == 'write' for key in DELETABLE)
@@ -223,6 +244,7 @@ def create_token(name, permissions: dict, act_as_members: bool = False, allow_de
         permissions=json.dumps(permissions),
         act_as_members=act_as_members,
         allow_delete=bool(allow_delete) and can_delete(permissions),
+        delete_scope=DELETE_SCOPE_ALL,
         created_at=utcnow(),
     )
     db.session.add(token)

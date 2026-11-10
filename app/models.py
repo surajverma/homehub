@@ -300,6 +300,9 @@ class ApiToken(db.Model):
     permissions = db.Column(db.Text, nullable=False, default='{}')
     act_as_members = db.Column(db.Boolean, nullable=False, default=False)
     allow_delete = db.Column(db.Boolean, nullable=False, default=False)
+    # What Allow deleting covers: 'all' (every tool with a trash) for tokens made since it did,
+    # 'reminders' for tokens made when it only covered reminders. Empty counts as 'reminders'.
+    delete_scope = db.Column(db.String(16))
     created_at = db.Column(db.DateTime, default=utcnow)
     last_used_at = db.Column(db.DateTime)
     revoked_at = db.Column(db.DateTime)

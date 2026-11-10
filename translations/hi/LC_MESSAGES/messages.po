@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 14:37+0530\n"
+"POT-Creation-Date: 2026-11-10 15:08+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -93,6 +93,10 @@ msgstr "\"by\" से बताएं कि यह परिवार के �
 #: app/api/core.py
 msgid "This token is not allowed to delete."
 msgstr "इस टोकन को हटाने की अनुमति नहीं है।"
+
+#: app/api/core.py
+msgid "This token may only move reminders to the trash: it was made when Allow deleting covered nothing else. Create a new token to delete in other tools."
+msgstr "यह टोकन सिर्फ़ रिमाइंडर ट्रैश में भेज सकता है: यह तब बना था जब हटाने की अनुमति में और कुछ शामिल नहीं था। दूसरे टूल में हटाने के लिए नया टोकन बनाएं।"
 
 #: app/api/core.py
 #, python-format
@@ -2820,8 +2824,16 @@ msgid "Acts as family members"
 msgstr "परिवार के सदस्यों की ओर से काम करता है"
 
 #: templates/api_access.html
+msgid "Can move reminders to the trash"
+msgstr "रिमाइंडर ट्रैश में भेज सकता है"
+
+#: templates/api_access.html
 msgid "Can move items to the trash"
 msgstr "चीज़ें ट्रैश में भेज सकता है"
+
+#: templates/api_access.html
+msgid "Made when Allow deleting covered reminders only, so it still does. To let a client delete in other tools too, create a new token."
+msgstr "यह तब बना था जब हटाने की अनुमति सिर्फ़ रिमाइंडर के लिए थी, इसलिए अब भी वैसा ही है। दूसरे टूल में भी हटाने देने के लिए नया टोकन बनाएं।"
 
 #: templates/api_access.html
 msgid "This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed."

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 14:37+0530\n"
+"POT-Creation-Date: 2026-11-10 15:08+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -92,6 +92,10 @@ msgstr ""
 
 #: app/api/core.py
 msgid "This token is not allowed to delete."
+msgstr ""
+
+#: app/api/core.py
+msgid "This token may only move reminders to the trash: it was made when Allow deleting covered nothing else. Create a new token to delete in other tools."
 msgstr ""
 
 #: app/api/core.py
@@ -2789,7 +2793,15 @@ msgid "Acts as family members"
 msgstr ""
 
 #: templates/api_access.html
+msgid "Can move reminders to the trash"
+msgstr ""
+
+#: templates/api_access.html
 msgid "Can move items to the trash"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Made when Allow deleting covered reminders only, so it still does. To let a client delete in other tools too, create a new token."
 msgstr ""
 
 #: templates/api_access.html

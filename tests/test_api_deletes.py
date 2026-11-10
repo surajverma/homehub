@@ -144,3 +144,52 @@ def test_openapi_marks_the_deletes(home, deleter):
     for path in ('/shopping/{item_id}', '/chores/{chore_id}', '/notes/{note_id}', '/recipes/{recipe_id}',
                  '/expiry/{item_id}', '/expenses/{entry_id}'):
         assert spec['paths'][path]['delete']['x-homehub-needs-allow-delete'] is True, path
+
+
+# --- Tokens from before Allow deleting covered every tool ---
+
+def legacy(home, name='Old agent', **perms):
+    """A token as the upgrade leaves one that had Allow deleting when it covered reminders only."""
+    from app.api import tokens
+    from app.models import ApiToken
+    secret = home.token(name, act_as=True, allow_delete=True, **perms)
+    with home.ctx():
+        row = ApiToken.query.filter_by(name=name).one()
+        row.delete_scope = None if name.endswith('null') else 'reminders'
+        db.session.commit()
+        assert tokens.delete_tools(row) == (['reminders'] if perms.get('reminders') == 'write' else [])
+    return secret
+
+
+@pytest.mark.parametrize('name', ['Old agent', 'Old agent null'])
+def test_existing_tokens_keep_deleting_reminders_only(home, name):
+    secret = legacy(home, name, reminders='write', shopping='write', notes='write')
+    item = home.post('/shopping', secret, json={'item': 'Milk', 'by': 'Priya'}).get_json()
+    resp = home.delete(f"/shopping/{item['id']}", secret, json={'by': 'Priya'})
+    assert resp.status_code == 403 and 'Create a new token' in resp.get_json()['message']
+    assert entries(home) == []
+    rid = home.post('/reminders', secret, json={'title': 'Dentist', 'date': TODAY.isoformat(), 'by': 'Priya'}).get_json()['id']
+    assert home.delete(f'/reminders/{rid}', secret, json={'by': 'Priya'}).status_code == 200
+    # The overview and MCP offer only what it may do
+    assert home.get('/', secret).get_json()['delete_tools'] == ['reminders']
+    headers = {'Accept': 'application/json, text/event-stream', 'MCP-Protocol-Version': '2025-06-18'}
+    tools = home.post('/mcp', secret, json={'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list'}, headers=headers).get_json()
+    names = [t['name'] for t in tools['result']['tools']]
+    assert 'reminders_trash' in names and 'shopping_delete' not in names and 'notes_delete' not in names
+
+
+def test_new_tokens_delete_in_every_tool_they_can_write(home, deleter):
+    data = home.get('/', deleter).get_json()
+    assert data['delete_tools'] == ['reminders', 'shopping', 'chores', 'notes', 'recipes', 'expiry', 'expenses']
+
+
+def test_page_and_cli_say_an_old_token_deletes_reminders_only(home):
+    from app import admin
+    legacy(home, reminders='write', shopping='write')
+    with home.ctx():
+        admin.set_admin_password('4321')
+    assert home.client.post('/admin/unlock', json={'password': '4321'}).get_json()['ok']
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert 'Can move reminders to the trash' in body and 'Made when Allow deleting covered reminders only' in body
+    output = home.app.test_cli_runner().invoke(args=['api-token', 'list']).output
+    assert 'can move reminders to the trash (made before Allow deleting covered more' in output

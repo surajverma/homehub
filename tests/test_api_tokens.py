@@ -110,7 +110,7 @@ def test_overview(home):
     assert resp.content_type.startswith('application/json')
     data = resp.get_json()
     assert data == {
-        'token': 'Hermes', 'act_as_members': True, 'allow_delete': False,
+        'token': 'Hermes', 'act_as_members': True, 'allow_delete': False, 'delete_tools': [],
         'tools': {'presence': 'write', 'notice': 'read', 'shopping': 'read'},
         'family_members': ['Priya', 'Dad', 'Mom'], 'version': '1',
     }
