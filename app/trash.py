@@ -80,9 +80,21 @@ def may_change(user: str, entry: UndoStash) -> bool:
     return can_modify(user, entry.owner or '')
 
 
-def get_entry(entry_id: int) -> UndoStash | None:
+def entry_stamp(entry: UndoStash) -> str:
+    """Names one trash entry for good: its id can be given to a later entry, but not its time of deletion as well.
+
+    The page sends it back with Restore and Delete forever, so a page left open never acts on a newer entry.
+    (The entry's own token is not used: it is the Undo secret, which needs no owner check.)
+    """
+    return entry.deleted_at.isoformat() if entry.deleted_at else ''
+
+
+def get_entry(entry_id: int, stamp: str | None = None) -> UndoStash | None:
+    """The trash entry, if it is still there; with ``stamp``, only if it is the same entry the page showed."""
     entry = db.session.get(UndoStash, entry_id)
     if entry is None or entry.module is None or entry.expires_at < utcnow():
+        return None
+    if stamp is not None and stamp != entry_stamp(entry):
         return None
     return entry
 
@@ -129,7 +141,7 @@ def trash_page():
         'days_left': days_left(e, now),
     } for e in entries(module)]
     shown = [m for m in MODULES if module_enabled(m, config) or m.key == module]
-    return render_template('trash.html', config=config, rows=rows, modules=shown, module=module,
+    return render_template('trash.html', config=config, rows=rows, modules=shown, module=module, stamp=entry_stamp,
                            current=MODULES_BY_KEY.get(module) if module else None)
 
 
@@ -137,7 +149,7 @@ def trash_page():
 def trash_restore(entry_id):
     user = sanitize_text(request.form.get('user', ''))
     module = _form_module()
-    entry = get_entry(entry_id)
+    entry = get_entry(entry_id, request.form.get('stamp', ''))
     if entry is None:
         flash(_('That is no longer in the trash.'), 'error')
         return _back(module)
@@ -162,7 +174,7 @@ def trash_restore(entry_id):
 def trash_delete(entry_id):
     user = sanitize_text(request.form.get('user', ''))
     module = _form_module()
-    entry = get_entry(entry_id)
+    entry = get_entry(entry_id, request.form.get('stamp', ''))
     if entry is None:
         flash(_('That is no longer in the trash.'), 'error')
         return _back(module)

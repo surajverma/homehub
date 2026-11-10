@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 import pytest
 
-from api_support import Home
+from api_support import Home, trash_action
 from app import db, trash
 from app.models import (ApiActivity, Chore, ExpenseEntry, ExpiryItem, Note, Recipe, RecurringChore, RecurringExpense,
                         ShoppingItem)
@@ -61,7 +61,7 @@ def test_delete_moves_to_the_trash_and_restores(home, deleter, tool):
     assert home.delete(f"{path}/{item['id']}", deleter, json={'by': 'Priya'}).status_code == 404
     with home.ctx():
         entry_id = trash.entries()[0].id
-    home.client.post(f'/trash/{entry_id}/restore', data={'user': 'Priya'})
+    trash_action(home.client, entry_id, 'restore', {'user': 'Priya'})
     with home.ctx():
         assert model.query.one().id == item['id']
 

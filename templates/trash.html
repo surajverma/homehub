@@ -39,12 +39,14 @@
             <div class="flex items-center gap-2 sm:flex-shrink-0 trash-actions" data-owner="{{ e.owner }}">
                 <form method="POST" action="{{ url_for('main.trash_restore', entry_id=e.id) }}">
                     <input type="hidden" name="user">
+                    <input type="hidden" name="stamp" value="{{ stamp(e) }}">
                     {% if module %}<input type="hidden" name="module" value="{{ module }}">{% endif %}
                     <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>{{ _('Restore') }}</button>
                 </form>
                 <form method="POST" action="{{ url_for('main.trash_delete', entry_id=e.id) }}"
                       data-confirm="{{ _('Delete %(name)s for good? This cannot be undone.', name=e.label) }}" data-confirm-action="{{ _('Delete forever') }}">
                     <input type="hidden" name="user">
+                    <input type="hidden" name="stamp" value="{{ stamp(e) }}">
                     {% if module %}<input type="hidden" name="module" value="{{ module }}">{% endif %}
                     <button type="submit" class="btn btn-ghost btn-sm btn-danger-text"><i class="fa-solid fa-trash-can" aria-hidden="true"></i>{{ _('Delete forever') }}</button>
                 </form>

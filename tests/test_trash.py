@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
-from api_support import Home
+from api_support import Home, trash_action
 from app import db, migrations, trash, undo
 from app.clock import utcnow
 from app.models import (Chore, ExpenseEntry, ExpiryItem, Note, Recipe, RecurringChore, RecurringExpense,
@@ -104,7 +104,7 @@ def test_each_module_moves_deletes_to_the_trash(home, path, form, model, delete,
     assert undo_offer(home)['message'] == message
     assert count(home, model) == 0
     assert trash_rows(home) == [(module, label, 'Mom', 'Mom')]
-    resp = home.client.post(f'/trash/{entry_id(home, label)}/restore', data={'user': 'Mom'}, follow_redirects=True)
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Mom'}, follow_redirects=True)
     assert f'{label} restored.' in resp.get_data(as_text=True)
     with home.ctx():
         assert undo.row_to_dict(model.query.one()) == before
@@ -123,7 +123,7 @@ def test_recurring_chore_goes_to_the_trash_with_its_chores(home):
     assert undo_offer(home)['message'] == 'Recurring chore Bins moved to the trash.'
     assert count(home, RecurringChore) == 0 and count(home, Chore) == 0
     assert trash_rows(home) == [('chores', 'Bins', 'Dad', 'Dad')]
-    home.client.post(f"/trash/{entry_id(home, 'Bins')}/restore", data={'user': 'Dad'})
+    trash_action(home.client, entry_id(home, 'Bins'), 'restore', {'user': 'Dad'})
     with home.ctx():
         assert RecurringChore.query.one().id == rule_id
         assert Chore.query.filter_by(recurring_id=rule_id).count() == 1
@@ -176,14 +176,14 @@ def test_each_module_page_links_to_its_trash(home, page, module):
 def test_only_the_owner_or_admin_may_restore_or_delete(home):
     home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
     eid = entry_id(home, 'Milk')
-    resp = home.client.post(f'/trash/{eid}/restore', data={'user': 'Dad'}, follow_redirects=True)
+    resp = trash_action(home.client, eid, 'restore', {'user': 'Dad'}, follow_redirects=True)
     assert 'Not allowed to restore Milk.' in resp.get_data(as_text=True)
-    resp = home.client.post(f'/trash/{eid}/delete', data={'user': 'Dad'}, follow_redirects=True)
+    resp = trash_action(home.client, eid, 'delete', {'user': 'Dad'}, follow_redirects=True)
     assert 'Not allowed to delete Milk.' in resp.get_data(as_text=True)
     assert len(trash_rows(home)) == 1 and count(home, ShoppingItem) == 0
     # The page tells whose it is; the script hides the buttons for others
     assert 'data-owner="Priya"' in home.client.get('/trash').get_data(as_text=True)
-    resp = home.client.post(f'/trash/{eid}/restore', data={'user': 'Administrator', 'module': 'shopping'})
+    resp = trash_action(home.client, eid, 'restore', {'user': 'Administrator', 'module': 'shopping'})
     assert resp.status_code == 302 and resp.headers['Location'].endswith('/trash?module=shopping')
     assert count(home, ShoppingItem) == 1
 
@@ -191,17 +191,17 @@ def test_only_the_owner_or_admin_may_restore_or_delete(home):
 def test_delete_forever(home):
     home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
     eid = entry_id(home, 'Milk')
-    resp = home.client.post(f'/trash/{eid}/delete', data={'user': 'Priya'}, follow_redirects=True)
+    resp = trash_action(home.client, eid, 'delete', {'user': 'Priya'}, follow_redirects=True)
     assert 'Milk deleted for good.' in resp.get_data(as_text=True)
     assert trash_rows(home) == [] and count(home, ShoppingItem) == 0
-    resp = home.client.post(f'/trash/{eid}/restore', data={'user': 'Priya'}, follow_redirects=True)
+    resp = trash_action(home.client, eid, 'restore', {'user': 'Priya'}, follow_redirects=True)
     assert 'That is no longer in the trash.' in resp.get_data(as_text=True)
 
 
 def test_restore_from_another_site_is_blocked(home):
     home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
     eid = entry_id(home, 'Milk')
-    resp = home.client.post(f'/trash/{eid}/restore', data={'user': 'Priya'}, headers={'Sec-Fetch-Site': 'cross-site'})
+    resp = trash_action(home.client, eid, 'restore', {'user': 'Priya'}, headers={'Sec-Fetch-Site': 'cross-site'})
     assert resp.status_code == 403 and count(home, ShoppingItem) == 0
 
 
@@ -210,7 +210,7 @@ def test_restore_after_the_id_was_reused(home):
     home.client.post(f'/shopping/delete/{first}', data={'user': 'Priya'})
     # SQLite hands the freed id to the next row
     assert add_shopping(home, 'Bread') == first
-    home.client.post(f"/trash/{entry_id(home, 'Milk')}/restore", data={'user': 'Priya'})
+    trash_action(home.client, entry_id(home, 'Milk'), 'restore', {'user': 'Priya'})
     with home.ctx():
         items = {i.item: i.id for i in ShoppingItem.query.all()}
     assert items['Bread'] == first and items['Milk'] != first
@@ -268,7 +268,7 @@ def test_expense_entry_goes_to_the_trash(home):
     home.client.post(f'/expenses/delete/{eid}', data={'user': 'Priya'})
     assert undo_offer(home)['message'] == 'Groceries moved to the trash.'
     assert trash_rows(home) == [('expenses', f'Groceries ({TODAY.isoformat()})', 'Priya', 'Priya')]
-    home.client.post(f"/trash/{entry_id(home, f'Groceries ({TODAY.isoformat()})')}/restore", data={'user': 'Priya'})
+    trash_action(home.client, entry_id(home, f'Groceries ({TODAY.isoformat()})'), 'restore', {'user': 'Priya'})
     with home.ctx():
         entry = db.session.get(ExpenseEntry, eid)
         assert (entry.title, entry.amount) == ('Groceries', 120.0)
@@ -295,7 +295,7 @@ def test_recurring_rule_goes_to_the_trash(home):
     assert undo_offer(home)['message'] == 'Recurring rule moved to the trash with its generated entries.'
     assert count(home, RecurringExpense) == 0 and count(home, ExpenseEntry) == 0
     assert trash_rows(home) == [('expenses', 'Milk', 'Priya', 'Priya')]
-    home.client.post(f"/trash/{entry_id(home, 'Milk')}/restore", data={'user': 'Priya'})
+    trash_action(home.client, entry_id(home, 'Milk'), 'restore', {'user': 'Priya'})
     with home.ctx():
         assert ExpenseEntry.query.filter_by(recurring_id=rid).count() == days
 
@@ -313,7 +313,7 @@ def test_day_whose_rule_is_in_the_trash_brings_the_rule_back(home):
     day = TODAY - timedelta(days=2)
     label = _delete_day(home, rid, day)
     home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
-    resp = home.client.post(f'/trash/{entry_id(home, label)}/restore', data={'user': 'Priya'}, follow_redirects=True)
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Priya'}, follow_redirects=True)
     assert 'Its recurring rule Milk was restored too.' in resp.get_data(as_text=True)
     with home.ctx():
         rule = RecurringExpense.query.one()
@@ -326,8 +326,8 @@ def test_day_whose_rule_is_gone_for_good_comes_back_as_a_one_off(home):
     day = TODAY - timedelta(days=2)
     label = _delete_day(home, rid, day)
     home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
-    home.client.post(f"/trash/{entry_id(home, 'Milk')}/delete", data={'user': 'Priya'})
-    resp = home.client.post(f'/trash/{entry_id(home, label)}/restore', data={'user': 'Priya'}, follow_redirects=True)
+    trash_action(home.client, entry_id(home, 'Milk'), 'delete', {'user': 'Priya'})
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Priya'}, follow_redirects=True)
     assert 'no longer exists, so it was restored as a one-off expense' in resp.get_data(as_text=True)
     with home.ctx():
         entry = ExpenseEntry.query.one()
@@ -339,7 +339,7 @@ def test_day_added_back_since_is_a_conflict(home):
     day = TODAY - timedelta(days=2)
     label = _delete_day(home, rid, day)
     home.client.post(f'/expenses/recurring/{rid}/restore', data={'user': 'Priya', 'date': day.isoformat()})
-    resp = home.client.post(f'/trash/{entry_id(home, label)}/restore', data={'user': 'Priya'}, follow_redirects=True)
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Priya'}, follow_redirects=True)
     assert 'was added back since it was deleted' in resp.get_data(as_text=True)
     with home.ctx():
         assert ExpenseEntry.query.filter_by(recurring_id=rid, date=day).count() == 1
@@ -412,7 +412,7 @@ def test_calendar_delete_goes_to_the_trash(home):
     assert undo_offer(home)['message'] == 'Dentist moved to the trash.'
     assert count(home, Reminder) == 0
     assert trash_rows(home) == [('reminders', f'Dentist ({TODAY.isoformat()})', 'Priya', 'Priya')]
-    home.client.post(f"/trash/{entry_id(home, f'Dentist ({TODAY.isoformat()})')}/restore", data={'user': 'Priya'})
+    trash_action(home.client, entry_id(home, f'Dentist ({TODAY.isoformat()})'), 'restore', {'user': 'Priya'})
     assert calendar_titles(home) == ['Dentist']
 
 
@@ -449,7 +449,7 @@ def test_whole_series_goes_to_the_trash_but_ending_it_does_not(home):
     assert data['ok'] and data['ended'] is False
     assert count(home, RecurringReminder) == 0
     assert trash_rows(home) == [('reminders', 'Pills', 'Mom', 'Mom')]
-    home.client.post(f"/trash/{entry_id(home, 'Pills')}/restore", data={'user': 'Mom'})
+    trash_action(home.client, entry_id(home, 'Pills'), 'restore', {'user': 'Mom'})
     assert count(home, RecurringReminder) == 1
     # A series that has started is only ended from today: nothing is removed, so nothing goes to the trash
     with home.ctx():
@@ -498,7 +498,7 @@ def test_reminders_trashed_before_the_upgrade_can_be_restored(tmp_path, monkeypa
         entry_id = entry.id
     body = client.get('/trash').get_data(as_text=True)
     assert 'Deleted at ' in body and '5 days left' in body
-    client.post(f'/trash/{entry_id}/restore', data={'user': 'Dad'})
+    trash_action(client, entry_id, 'restore', {'user': 'Dad'})
     with app.app_context():
         r = db.session.get(Reminder, rid)
         assert (r.title, r.start_time, r.category, r.creator, r.deleted_at) == ('Vet', '09:30', 'health', 'Dad', None)
@@ -513,13 +513,32 @@ def test_blank_user_cannot_restore_or_delete_an_ownerless_entry(home):
     eid = entry_id(home, 'Old item')
     for action in ('restore', 'delete'):
         for form in ({}, {'user': ''}, {'user': '  '}):
-            resp = home.client.post(f'/trash/{eid}/{action}', data=form, follow_redirects=True)
+            resp = trash_action(home.client, eid, action, form, follow_redirects=True)
             assert 'Not allowed to' in resp.get_data(as_text=True)
     assert len(trash_rows(home)) == 1 and count(home, ShoppingItem) == 0
     # Owned entries need a user too
     home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
-    assert 'Not allowed to restore Milk.' in home.client.post(
-        f"/trash/{entry_id(home, 'Milk')}/restore", data={}, follow_redirects=True).get_data(as_text=True)
+    assert 'Not allowed to restore Milk.' in trash_action(home.client, entry_id(home, 'Milk'), 'restore', {}, follow_redirects=True).get_data(as_text=True)
     # The admin may restore the ownerless one
-    home.client.post(f'/trash/{eid}/restore', data={'user': 'Administrator'})
+    trash_action(home.client, eid, 'restore', {'user': 'Administrator'})
     assert count(home, ShoppingItem) == 1
+
+
+def test_a_page_left_open_never_acts_on_a_newer_entry(home):
+    """Restore the only entry in one tab, trash something else: it can get the same entry id. The old tab's
+    Delete forever must not remove the new entry."""
+    home.client.post(f'/shopping/delete/{add_shopping(home, "Milk")}', data={'user': 'Priya'})
+    old = entry_id(home, 'Milk')
+    with home.ctx():
+        old_stamp = trash.entry_stamp(db.session.get(UndoStash, old))
+    trash_action(home.client, old, 'restore', {'user': 'Priya'})
+    home.client.post(f'/shopping/delete/{add_shopping(home, "Bread")}', data={'user': 'Priya'})
+    assert entry_id(home, 'Bread') == old  # SQLite gave the free id to the new entry
+    for action in ('delete', 'restore'):
+        resp = home.client.post(f'/trash/{old}/{action}', data={'user': 'Priya', 'stamp': old_stamp}, follow_redirects=True)
+        assert 'That is no longer in the trash.' in resp.get_data(as_text=True)
+    assert [r[1] for r in trash_rows(home)] == ['Bread']
+    # The page sends each entry's own stamp
+    body = home.client.get('/trash').get_data(as_text=True)
+    with home.ctx():
+        assert f'name="stamp" value="{trash.entry_stamp(db.session.get(UndoStash, old))}"' in body

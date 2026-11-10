@@ -85,3 +85,13 @@ class Home:
 
     def ctx(self):
         return self.app.app_context()
+
+
+def trash_action(client, entry_id, action, data=None, **kwargs):
+    """POST Restore or Delete forever for a trash entry, as the Trash page sends it (with the entry's stamp)."""
+    from app import trash
+    from app.models import UndoStash, db
+    with client.application.app_context():
+        entry = db.session.get(UndoStash, entry_id)
+        stamp = trash.entry_stamp(entry) if entry is not None else ''
+    return client.post(f'/trash/{entry_id}/{action}', data={'stamp': stamp, **(data or {})}, **kwargs)

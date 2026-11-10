@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
-from api_support import Home
+from api_support import Home, trash_action
 from app.models import ApiActivity, HomeStatus, MemberStatus, Notice, RecurringReminder, Reminder, db
 
 
@@ -269,7 +269,7 @@ def test_trash_needs_allow_delete(home, agent):
         entry_id = entry.id
     assert home.delete(f'/reminders/{rid}', deleter, json={'by': 'Priya'}).status_code == 404
     assert home.put(f'/reminders/{rid}/done', deleter, json={'done': True, 'by': 'Priya'}).status_code == 404
-    home.client.post(f'/trash/{entry_id}/restore', data={'user': 'Priya'})
+    trash_action(home.client, entry_id, 'restore', {'user': 'Priya'})
     assert home.put(f'/reminders/{rid}/done', deleter, json={'done': True, 'by': 'Priya'}).status_code == 200
 
 
