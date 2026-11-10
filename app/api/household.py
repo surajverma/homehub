@@ -403,7 +403,8 @@ def shopping_delete(ctx, args):
     row = _get(ShoppingItem, args['item_id'], _('That item was not found.'))
     _owned(ctx, row.creator, _('%(name)s cannot change this item.', name=ctx.user))
     item_id, name = row.id, row.item
-    shopping_web.trash_shopping_item(row, ctx.deleted_by)
+    if shopping_web.trash_shopping_item(row, ctx.deleted_by) is None:
+        raise ApiError(404, 'not_found', _('That was already deleted.'))
     return _trashed(ctx, item_id, name)
 
 
@@ -418,7 +419,8 @@ def chores_delete(ctx, args):
         raise ApiError(409, 'conflict', _('This chore belongs to a recurring chore. Recurring chores are changed in HomeHub.'))
     _owned(ctx, chore.creator, _('%(name)s cannot change this chore.', name=ctx.user))
     chore_id, name = chore.id, chore.description
-    chores_web.trash_chore(chore, ctx.deleted_by)
+    if chores_web.trash_chore(chore, ctx.deleted_by) is None:
+        raise ApiError(404, 'not_found', _('That was already deleted.'))
     return _trashed(ctx, chore_id, name)
 
 
@@ -431,7 +433,8 @@ def notes_delete(ctx, args):
     note = _get(Note, args['note_id'], _('That note was not found.'))
     _owned(ctx, note.creator, _('%(name)s cannot change this note.', name=ctx.user))
     note_id, name = note.id, trash_label(note.content, 40)
-    notes_web.trash_note(note, ctx.deleted_by)
+    if notes_web.trash_note(note, ctx.deleted_by) is None:
+        raise ApiError(404, 'not_found', _('That was already deleted.'))
     return _trashed(ctx, note_id, name)
 
 
@@ -444,7 +447,8 @@ def recipes_delete(ctx, args):
     recipe = _get(Recipe, args['recipe_id'], _('That recipe was not found.'))
     _owned(ctx, recipe.creator, _('%(name)s cannot change this recipe.', name=ctx.user))
     recipe_id, name = recipe.id, recipe.title
-    recipes_web.trash_recipe(recipe, ctx.deleted_by)
+    if recipes_web.trash_recipe(recipe, ctx.deleted_by) is None:
+        raise ApiError(404, 'not_found', _('That was already deleted.'))
     return _trashed(ctx, recipe_id, name)
 
 
@@ -457,5 +461,6 @@ def expiry_delete(ctx, args):
     item = _get(ExpiryItem, args['item_id'], _('That item was not found.'))
     _owned(ctx, item.creator, _('%(name)s cannot change this item.', name=ctx.user))
     item_id, name = item.id, item.name
-    expiry_web.trash_expiry_item(item, ctx.deleted_by)
+    if expiry_web.trash_expiry_item(item, ctx.deleted_by) is None:
+        raise ApiError(404, 'not_found', _('That was already deleted.'))
     return _trashed(ctx, item_id, name)

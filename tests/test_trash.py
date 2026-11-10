@@ -785,3 +785,59 @@ def test_the_admin_may_restore_a_day_with_its_rule(home):
     home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
     resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Administrator'}, follow_redirects=True)
     assert 'Its recurring rule Milk was restored too.' in resp.get_data(as_text=True)
+
+
+# --- Concurrency and transactions ---
+
+def test_restore_takes_the_generation_lock_before_writing(home, monkeypatch):
+    """Recurring generation takes its lock and then writes; a restore must take them in the same order
+    (lock first), or two overlapping requests each wait for the other until the database gives up."""
+    from app import recurrence
+    seen = []
+    real_claim = undo.claim_stash
+
+    def claim(stash):
+        seen.append(recurrence.generation_lock._is_owned())
+        return real_claim(stash)
+    monkeypatch.setattr(undo, 'claim_stash', claim)
+    home.client.post(f'/shopping/delete/{add_shopping(home)}', data={'user': 'Priya'})
+    trash_action(home.client, entry_id(home, 'Milk'), 'restore', {'user': 'Priya'})
+    assert seen == [True] and count(home, ShoppingItem) == 1
+
+
+def test_two_deletes_of_one_record_keep_one_copy(home):
+    """Two requests delete the same item at once: only the one that removed the row keeps a trash copy,
+    or the item could be restored twice (or survive Delete forever on one copy)."""
+    item_id = add_shopping(home)
+    with home.ctx():
+        item = db.session.get(ShoppingItem, item_id)
+        item.item  # this request has read the row...
+        # ...and another request deletes it first (in this transaction, as if committed just before)
+        db.session.execute(db.text('DELETE FROM shopping_item WHERE id = :id'), {'id': item_id})
+        assert undo.trash_row('shopping_item', item, undo.trash_info('shopping', 'Milk', 'Priya', 'Priya')) is None
+    assert trash_rows(home) == []
+    # The web page says so instead of offering an Undo
+    item_id = add_shopping(home, 'Bread')
+    with home.ctx():
+        db.session.execute(db.text('DELETE FROM shopping_item WHERE id = :id'), {'id': item_id})
+        db.session.commit()
+    assert home.client.post(f'/shopping/delete/{item_id}', data={'user': 'Priya'}).status_code == 404
+
+
+def test_bulk_delete_with_an_impossible_id_still_deletes_all_and_offers_undo(home):
+    """An id too big for SQLite used to stop the bulk delete half way: the first reminder was already
+    gone, and the answer was a 500 with no Undo."""
+    one, two = add_reminder(home, 'One'), add_reminder(home, 'Two')
+    resp = home.client.delete('/api/reminders', json={'ids': [one, 2 ** 70, two, True, -1], 'creator': 'Priya'})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data['deleted'] == 2 and data['undo_token']
+    assert home.client.post(f"/undo/{data['undo_token']}").get_json() == {'ok': True}
+    assert calendar_titles(home) == ['One', 'Two']
+    # The same for expenses
+    ids = [add_expense(home, f'Item {i}') for i in range(2)]
+    flashes(home)
+    resp = home.client.post('/expenses/bulk-delete', data={'user': 'Priya', 'ids': [str(ids[0]), '9' * 30, str(ids[1])]})
+    assert resp.status_code == 302
+    assert undo_offer(home)['message'] == '2 expenses moved to the trash.'
+    assert count(home, ExpenseEntry) == 0

@@ -134,6 +134,8 @@ def occurrences_between(rule, start: date, end: date):
 # worker with several threads, so a process-wide lock is enough to stop two requests
 # from both creating the same occurrence.
 _generation_lock = threading.RLock()
+# Taken first by anything that also writes rows (see undo.restore_stash)
+generation_lock = _generation_lock
 
 
 def serialized(fn):

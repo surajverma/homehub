@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: HomeHub\n"
-"POT-Creation-Date: 2026-11-10 16:08+0530\n"
+"POT-Creation-Date: 2026-11-10 17:03+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -1545,6 +1545,11 @@ msgstr ""
 #: app/trash.py
 #, python-format
 msgid "%(name)s deleted for good."
+msgstr ""
+
+#: app/api/expenses.py app/api/household.py app/blueprints/chores.py
+#: app/blueprints/expenses.py app/undo.py
+msgid "That was already deleted."
 msgstr ""
 
 #: app/undo.py

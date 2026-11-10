@@ -21,6 +21,7 @@ from .admin import can_modify
 from .blueprints import main_bp
 from .clock import utcnow
 from .models import UndoStash
+from .recurrence import generation_lock
 
 UNDO_SECONDS = 20
 # Deleted records stay in the trash this long (the Trash page, app/trash.py)
@@ -116,10 +117,11 @@ def trash_info(module: str, label, owner, deleted_by) -> dict:
     return {'module': module, 'label': trash_label(label), 'owner': owner or '', 'deleted_by': deleted_by or ''}
 
 
-def stash_undo(kind: str, payload: dict, trash: dict | None = None) -> str:
-    """Stash ``payload`` and return its token, for JSON endpoints whose page shows the Undo toast itself. Commits.
+def stash_undo(kind: str, payload: dict, trash: dict | None = None, commit: bool = True) -> str:
+    """Stash ``payload`` and return its token, for JSON endpoints whose page shows the Undo toast itself.
 
-    With ``trash`` (see trash_info) the stash is a trash entry, kept for TRASH_DAYS.
+    With ``trash`` (see trash_info) the stash is a trash entry, kept for TRASH_DAYS. Commits, unless
+    ``commit`` is False: then it joins the caller's transaction (a bulk delete commits once, at the end).
     """
     purge_expired()
     token = secrets.token_hex(16)
@@ -137,7 +139,10 @@ def stash_undo(kind: str, payload: dict, trash: dict | None = None) -> str:
     else:
         stash.expires_at = now + timedelta(seconds=UNDO_SECONDS + _GRACE_SECONDS)
     db.session.add(stash)
-    db.session.commit()
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
     return token
 
 
@@ -149,26 +154,69 @@ def offer_undo(kind: str, payload: dict, message: str, category: str = 'success'
 
 
 def offer_batch_undo(stash_tokens: list, message: str, category: str = 'success') -> str | None:
-    """One Undo for several records moved to the trash together (a bulk delete). Commits."""
+    """One Undo for several records moved to the trash together (a bulk delete). Commits the deletes
+    and their Undo together."""
     if not stash_tokens:
+        db.session.commit()
         flash(message, category)
         return None
     if len(stash_tokens) == 1:
+        db.session.commit()
         flash(json.dumps({'token': stash_tokens[0], 'message': message, 'type': category, 'seconds': UNDO_SECONDS}), 'undo')
         return stash_tokens[0]
     return offer_undo('trash_batch', {'tokens': list(stash_tokens)}, message, category)
 
 
-def trash_row(kind: str, row, trash: dict, message: str | None = None, extra: dict | None = None) -> str:
-    """Delete ``row`` and keep a copy in the trash as {'row': ..., **extra}. Commits.
+SQLITE_MAX_ID = 2 ** 63 - 1
+
+
+def valid_ids(values) -> list:
+    """The ids among ``values`` (numbers, or text of digits) that can be a row id, in order, without repeats.
+
+    Anything else, such as a number too big for SQLite, is left out before a bulk change starts, so it
+    can never stop one half way.
+    """
+    ids = []
+    for value in values or []:
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, str):
+            value = value.strip()
+            if not value.isdigit():
+                continue
+            value = int(value)
+        if isinstance(value, int) and 0 < value <= SQLITE_MAX_ID and value not in ids:
+            ids.append(value)
+    return ids
+
+
+def delete_exactly(row) -> bool:
+    """Delete ``row`` in one statement; False when another request deleted it first (nothing matched)."""
+    model = type(row)
+    taken = db.session.query(model).filter(model.id == row.id).delete(synchronize_session=False)
+    if row in db.session:
+        db.session.expunge(row)
+    return taken == 1
+
+
+def trash_row(kind: str, row, trash: dict, message: str | None = None, extra: dict | None = None,
+              commit: bool = True) -> str | None:
+    """Delete ``row`` and keep a copy in the trash as {'row': ..., **extra}. Commits unless ``commit`` is False.
 
     With ``message`` it is flashed with an Undo button (web pages); without, only the token is returned.
+    The copy is kept only when this delete removed the row: if another request got there first, there is
+    nothing to keep and None is returned (two copies of one record would let it be restored twice).
     """
     payload = {'row': row_to_dict(row), **(extra or {})}
-    db.session.delete(row)
+    if not delete_exactly(row):
+        if commit:
+            db.session.rollback()
+            if message is not None:
+                flash(_('That was already deleted.'), 'info')
+        return None
     if message is not None:
         return offer_undo(kind, payload, message, trash=trash)
-    return stash_undo(kind, payload, trash)
+    return stash_undo(kind, payload, trash, commit=commit)
 
 
 def row_restorer(kind: str, model):
@@ -232,10 +280,13 @@ def restore_stash(stash: UndoStash, as_user=_INHERIT) -> str | None:
     if restore is None:
         raise RestoreConflict(_('It is too late to undo that.'))
     kind, payload = stash.kind, stash.payload
-    if not claim_stash(stash):
-        raise RestoreConflict(_('That is no longer in the trash.'))
-    db.session.expunge(stash)
-    note = restore(json.loads(payload))
+    # Recurring generation takes this lock, then writes. A restore may generate (an expense rule) too, so it
+    # takes the lock before its first write (the claim), never the other way round, or each waits on the other.
+    with generation_lock:
+        if not claim_stash(stash):
+            raise RestoreConflict(_('That is no longer in the trash.'))
+        db.session.expunge(stash)
+        note = restore(json.loads(payload))
     return note if isinstance(note, str) else None
 
 

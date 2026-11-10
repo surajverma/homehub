@@ -7,7 +7,8 @@ from ..admin import is_admin, can_modify
 from ..security import sanitize_html, sanitize_text
 from ..recurrence import first_on_or_after, occurrences_between, rule_interval_unit
 from flask_babel import gettext as _, ngettext
-from ..undo import (offer_batch_undo, offer_undo, restore_row, restorer, row_restorer, row_to_dict, stamp, stash_undo,
+from ..undo import (delete_exactly, offer_batch_undo, offer_undo, restore_row, restorer, row_restorer, row_to_dict, stamp,
+                    stash_undo, valid_ids,
                     trash_info, trash_row)
 
 
@@ -382,18 +383,21 @@ def _stash_reminder_rule(snapshot: dict, successor: RecurringReminder | None = N
     }, trash)
 
 
-def trash_reminder(r: Reminder, deleted_by: str, message: str | None = None) -> str:
-    """Move a one-off reminder to the trash (restorable for 7 days). Commits."""
+def trash_reminder(r: Reminder, deleted_by: str, message: str | None = None, commit: bool = True) -> str | None:
+    """Move a one-off reminder to the trash (restorable for 7 days). Commits unless ``commit`` is False.
+    None when another request deleted it first."""
     day = r.start_date or r.date
     label = f'{r.title} ({day.isoformat()})' if day else r.title
-    return trash_row('reminder', r, trash_info('reminders', label, r.creator, deleted_by), message)
+    return trash_row('reminder', r, trash_info('reminders', label, r.creator, deleted_by), message, commit=commit)
 
 
 def trash_reminder_rule(rr: RecurringReminder, deleted_by: str) -> str:
     """Move a whole recurring reminder, every date of it, to the trash. Commits; returns the Undo token."""
     snapshot = row_to_dict(rr)
     trash = trash_info('reminders', rr.title, rr.creator, deleted_by)
-    db.session.delete(rr)
+    if not delete_exactly(rr):
+        db.session.rollback()
+        return None
     return _stash_reminder_rule(snapshot, trash=trash)
 
 
@@ -790,21 +794,24 @@ def api_reminders_delete_bulk():
         return jsonify({'ok': False, 'error': _('No ids provided')}), 400
     tokens = []
     dates = set()
-    for rid in ids:
-        if not isinstance(rid, int):
-            continue
+    # Every reminder and its Undo are committed together, after all ids are checked
+    for rid in valid_ids(ids):
         r = db.session.get(Reminder, rid)
         if not r:
             continue
         if can_modify(user, r.creator or ''):
-            if r.date:
-                dates.add(r.date.strftime('%Y-%m-%d'))
-            tokens.append(trash_reminder(r, user))
+            day = r.date.strftime('%Y-%m-%d') if r.date else None
+            token = trash_reminder(r, user, commit=False)
+            if token:
+                tokens.append(token)
+                if day:
+                    dates.add(day)
     undo_token = None
     if len(tokens) == 1:
         undo_token = tokens[0]
     elif tokens:
-        undo_token = stash_undo('trash_batch', {'tokens': tokens})
+        undo_token = stash_undo('trash_batch', {'tokens': tokens}, commit=False)
+    db.session.commit()
     return jsonify({'ok': True, 'deleted': len(tokens), 'dates': sorted(dates), 'undo_token': undo_token})
 
 
@@ -852,11 +859,7 @@ def delete_reminders_bulk():
     user = sanitize_text(request.form.get('user', ''))
     if not ids_raw:
         return redirect(url_for('main.index'))
-    id_list = []
-    for part in ids_raw.split(','):
-        part = part.strip()
-        if part.isdigit():
-            id_list.append(int(part))
+    id_list = valid_ids(part.strip() for part in ids_raw.split(','))
     if not id_list:
         return redirect(url_for('main.index'))
     kept_date = None
@@ -871,7 +874,9 @@ def delete_reminders_bulk():
             except Exception:
                 kept_date = None
         if can_modify(user, r.creator):
-            tokens.append(trash_reminder(r, user))
+            token = trash_reminder(r, user, commit=False)
+            if token:
+                tokens.append(token)
     if tokens:
         offer_batch_undo(tokens, ngettext('Moved %(num)s reminder to trash.', 'Moved %(num)s reminders to trash.', len(tokens)))
     else:

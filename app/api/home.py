@@ -266,7 +266,8 @@ def reminders_set_done(ctx, args):
 def reminders_trash(ctx, args):
     r = _stored_reminder(ctx, args['reminder_id'])
     reminder_id, title = r.id, r.title
-    dashboard.trash_reminder(r, ctx.deleted_by)
+    if dashboard.trash_reminder(r, ctx.deleted_by) is None:
+        raise ApiError(404, 'not_found', _('That reminder was not found.'))
     ctx.target = f'#{reminder_id} {title}'
     return {'id': reminder_id, 'title': title, 'trashed': True,
             'summary': _('%(title)s moved to the trash. It can be restored from the Trash page for 7 days.', title=title)}

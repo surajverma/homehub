@@ -267,7 +267,8 @@ def expenses_delete(ctx, args):
         raise ApiError(403, 'forbidden', _('%(name)s cannot change this entry.', name=ctx.user))
     entry_id, name = entry.id, entry.title
     when = entry.date
-    web.trash_expense_entry(entry, ctx.deleted_by)
+    if web.trash_expense_entry(entry, ctx.deleted_by) is None:
+        raise ApiError(404, 'not_found', _('That was already deleted.'))
     ctx.target = f'#{entry_id} {name}'
     return {'id': entry_id, 'title': name, 'date': iso(when), 'trashed': True,
             'summary': _('%(title)s moved to the trash. It can be restored from the Trash page for 7 days.', title=name)}

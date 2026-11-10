@@ -6,7 +6,8 @@ from ..blueprints import main_bp, json_error_response
 from ..admin import is_admin, can_modify
 from ..security import sanitize_text, sanitize_tags
 from ..recurrence import next_occurrence as _next_occurrence, first_on_or_after as _next_due_on_or_after, serialized
-from ..undo import offer_undo, restore_row, restorer, row_restorer, row_to_dict, same_record, stamp, stash_undo, trash_info, trash_row
+from ..undo import (delete_exactly, offer_undo, restore_row, restorer, row_restorer, row_to_dict, same_record, stamp,
+                    stash_undo, trash_info, trash_row)
 import json
 
 
@@ -360,8 +361,12 @@ def trash_chore_rule(rule: RecurringChore, deleted_by: str, message: str | None 
     """Move a recurring chore and the chores it made to the trash (restorable for 7 days). Commits."""
     snapshot = _chore_rule_snapshot(rule)
     trash = trash_info('chores', rule.description, rule.creator, deleted_by)
-    Chore.query.filter_by(recurring_id=rule.id).delete()
-    db.session.delete(rule)
+    if not delete_exactly(rule):
+        db.session.rollback()
+        if message is not None:
+            flash(_('That was already deleted.'), 'info')
+        return None
+    Chore.query.filter_by(recurring_id=snapshot['rule']['id']).delete()
     if message is not None:
         return offer_undo('chore_rule', snapshot, message, trash=trash)
     return stash_undo('chore_rule', snapshot, trash)

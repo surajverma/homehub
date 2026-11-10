@@ -11,7 +11,8 @@ from ..security import sanitize_text
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..recurrence import serialized
-from ..undo import (RestoreConflict, may_restore, offer_batch_undo, offer_undo, restore_row, restore_stash, restorer, row_to_dict,
+from ..undo import (RestoreConflict, delete_exactly, may_restore, offer_batch_undo, offer_undo, restore_row, restore_stash, restorer,
+                    row_to_dict, valid_ids,
                     same_record, stamp, stash_undo, trash_info, trash_row)
 import bleach
 from flask_babel import gettext as _, ngettext
@@ -133,7 +134,7 @@ def entry_owner(e: ExpenseEntry) -> str:
     return e.created_by or e.payer or ''
 
 
-def trash_expense_entry(entry: ExpenseEntry, deleted_by: str, message: str | None = None) -> str:
+def trash_expense_entry(entry: ExpenseEntry, deleted_by: str, message: str | None = None, commit: bool = True) -> str | None:
     """Move an entry to the trash (restorable for 7 days). Commits.
 
     A recurring day keeps which rule it came from, so a restore can tell whether that rule is still there.
@@ -141,7 +142,8 @@ def trash_expense_entry(entry: ExpenseEntry, deleted_by: str, message: str | Non
     rule = db.session.get(RecurringExpense, entry.recurring_id) if entry.recurring_id else None
     extra = {'rule': {'id': rule.id, 'uid': rule.uid, 'timestamp': stamp(rule), 'title': rule.title}} if rule else {}
     label = f"{entry.title} ({entry.date.isoformat()})" if entry.date else entry.title
-    return trash_row('expense_entry', entry, trash_info('expenses', label, entry_owner(entry), deleted_by), message, extra)
+    return trash_row('expense_entry', entry, trash_info('expenses', label, entry_owner(entry), deleted_by), message, extra,
+                     commit=commit)
 
 
 def _rule_by_identity(ref: dict) -> RecurringExpense | None:
@@ -1055,6 +1057,11 @@ def delete_recurring_expense(rid):
         return redirect(url_for('main.expenses'))
     delete_entries = request.form.get('delete_entries') in ('1', 'true', 'on', 'yes')
     snapshot = _rule_snapshot(r)
+    title, creator = r.title, r.creator
+    if not delete_exactly(r):
+        db.session.rollback()
+        flash(_('That was already deleted.'), 'info')
+        return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
     if delete_entries:
         try:
             ExpenseEntry.query.filter_by(recurring_id=r.id).delete()
@@ -1067,12 +1074,11 @@ def delete_recurring_expense(rid):
         snapshot['kept'] = [{'id': e['id'], 'timestamp': e.get('timestamp')} for e in snapshot['entries']]
         snapshot['entries'] = []
         ExpenseEntry.query.filter_by(recurring_id=r.id).update({ExpenseEntry.recurring_id: None})
-    db.session.delete(r)
     if delete_entries:
         message = _('Recurring rule moved to the trash with its generated entries.')
     else:
         message = _('Recurring rule moved to the trash. Its generated entries are kept as history.')
-    offer_undo('expense_rule', snapshot, message, trash=trash_info('expenses', r.title, r.creator, user))
+    offer_undo('expense_rule', snapshot, message, trash=trash_info('expenses', title, creator, user))
     return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
 
 
@@ -1291,13 +1297,13 @@ def bulk_delete_expenses():
         flash(_('No entries selected.'), 'warning')
         return redirect(url_for('main.expenses'))
     stashed = []
-    for entry_id in ids:
-        try:
-            entry = db.session.get(ExpenseEntry, int(entry_id))
-        except (TypeError, ValueError):
-            continue
+    # Every entry and its Undo are committed together, after all ids are checked
+    for entry_id in valid_ids(ids):
+        entry = db.session.get(ExpenseEntry, entry_id)
         if entry and can_modify(user, entry_owner(entry)):
-            stashed.append(trash_expense_entry(entry, user))
+            token = trash_expense_entry(entry, user, commit=False)
+            if token:
+                stashed.append(token)
     offer_batch_undo(stashed, ngettext('%(num)s expense moved to the trash.', '%(num)s expenses moved to the trash.', len(stashed)))
     # Preserve view
     today = date.today()
