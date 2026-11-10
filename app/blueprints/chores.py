@@ -357,8 +357,12 @@ def delete_recurring_chore(rule_id):
     return redirect(url_for('main.chores'))
 
 
+@serialized
 def trash_chore_rule(rule: RecurringChore, deleted_by: str, message: str | None = None) -> str:
-    """Move a recurring chore and the chores it made to the trash (restorable for 7 days). Commits."""
+    """Move a recurring chore and the chores it made to the trash (restorable for 7 days). Commits.
+
+    Holds the generation lock from the snapshot to the commit, so no chore made in between is lost.
+    """
     snapshot = _chore_rule_snapshot(rule)
     trash = trash_info('chores', rule.description, rule.creator, deleted_by)
     if not delete_exactly(rule):

@@ -881,3 +881,30 @@ def test_undo_restores_a_rule_for_an_owner_with_a_long_name(home):
         assert RecurringExpense.query.one().creator == name
         assert db.session.get(ExpenseEntry, eid).recurring_id == RecurringExpense.query.one().id
 
+
+
+@pytest.mark.parametrize('kind', ['chore', 'expense'])
+def test_deleting_a_recurring_rule_holds_the_generation_lock(home, monkeypatch, kind):
+    """The rule's snapshot and its delete happen under the generation lock: a day or chore generated in
+    between would otherwise be deleted without a copy in the trash."""
+    from app import recurrence
+    from app.blueprints import chores as chores_web
+    from app.blueprints import expenses as expenses_web
+    seen = []
+    module = chores_web if kind == 'chore' else expenses_web
+    real = module.delete_exactly
+
+    def watched(row):
+        seen.append(recurrence.generation_lock._is_owned())
+        return real(row)
+    monkeypatch.setattr(module, 'delete_exactly', watched)
+    if kind == 'chore':
+        home.client.post('/chores', data={'description': 'Bins', 'creator': 'Dad', 'is_recurring': '1', 'rec_interval': '1',
+                                          'rec_unit': 'week', 'rec_start_date': TODAY.isoformat()})
+        with home.ctx():
+            rid = RecurringChore.query.one().id
+        home.client.post(f'/chores/recurring/delete/{rid}', data={'user': 'Dad'})
+    else:
+        rid = make_rule(home)
+        home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
+    assert seen == [True] and len(trash_rows(home)) == 1

@@ -1056,12 +1056,22 @@ def delete_recurring_expense(rid):
         flash(_('Not allowed to delete rule.'), 'error')
         return redirect(url_for('main.expenses'))
     delete_entries = request.form.get('delete_entries') in ('1', 'true', 'on', 'yes')
+    _trash_expense_rule(r, delete_entries, user)
+    return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
+
+
+@serialized
+def _trash_expense_rule(r: RecurringExpense, delete_entries: bool, user: str) -> None:
+    """Move a recurring expense to the trash, with its entries or keeping them as history. Commits.
+
+    Holds the generation lock from the snapshot to the commit, so no day generated in between is lost.
+    """
     snapshot = _rule_snapshot(r)
     title, creator = r.title, r.creator
     if not delete_exactly(r):
         db.session.rollback()
         flash(_('That was already deleted.'), 'info')
-        return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
+        return
     if delete_entries:
         try:
             ExpenseEntry.query.filter_by(recurring_id=r.id).delete()
@@ -1079,7 +1089,6 @@ def delete_recurring_expense(rid):
     else:
         message = _('Recurring rule moved to the trash. Its generated entries are kept as history.')
     offer_undo('expense_rule', snapshot, message, trash=trash_info('expenses', title, creator, user))
-    return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
 
 
 
