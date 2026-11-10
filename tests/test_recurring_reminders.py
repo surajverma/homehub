@@ -254,40 +254,51 @@ def test_calendar_module_page_is_available(client):
 
 
 
-def _months_after(today, count):
-    y, m = today.year, today.month
-    for _ in range(count):
-        m += 1
-        if m > 12:
-            y, m = y + 1, 1
-        yield y, m
+class _FrozenDate(date):
+    """date with a fixed today(), for code that reads today through ``date.today()``."""
+    frozen = date(2026, 11, 10)
+
+    @classmethod
+    def today(cls):
+        return cls.frozen
+
+
+@pytest.fixture()
+def frozen_today(monkeypatch):
+    from app.blueprints import dashboard
+
+    def freeze(day):
+        _FrozenDate.frozen = day
+        monkeypatch.setattr(dashboard, 'date', _FrozenDate)
+    return freeze
 
 
 @pytest.mark.parametrize('change, title', [({'title': 'Pay rent'}, 'Pay rent'), ({'time': '09:00'}, 'Rent')])
-def test_edit_from_today_keeps_a_31st_monthly_reminder_on_the_31st(client, change, title):
-    """Issue #87: a monthly reminder that started on Jan 31 is edited "from today on". The new rule's first
-    date may be a shortened month end (Nov 30, Feb 28), but later months must go back to the 31st where
-    the month has one, not drift to the shorter day."""
-    import calendar
+def test_edit_from_today_keeps_a_31st_monthly_reminder_on_the_31st(client, frozen_today, change, title):
+    """Issue #87: a monthly reminder that started on Jan 31 is edited "from today on". Today is Nov 10, so the
+    new rule's first date is the shortened Nov 30; later months must go back to the 31st where the month has
+    one (Dec 31, Jan 31), and only shorten again where needed (Feb 28), not drift to the 30th."""
+    frozen_today(date(2026, 11, 10))
     payload = {'date': '2025-01-31', 'title': 'Rent', 'description': '', 'creator': 'Alice',
                'recurring': {'interval': 1, 'unit': 'month'}}
     rid = client.post('/api/reminders', json=payload).get_json()['recurring_id']
     resp = client.patch(f'/api/recurring_rules/{rid}', json={'creator': 'Alice', **change}).get_json()
     assert resp['ok'] and resp['split'] is True, resp
-    today = date.today()
-    for y, m in _months_after(today, 14):
-        expected = date(y, m, min(31, calendar.monthrange(y, m)[1])).isoformat()
+    assert resp['rule']['start_date'] == '2026-11-30'
+    for (y, m), expected in {(2026, 11): '2026-11-30', (2026, 12): '2026-12-31', (2027, 1): '2027-01-31',
+                             (2027, 2): '2027-02-28', (2027, 3): '2027-03-31', (2027, 4): '2027-04-30'}.items():
         assert_dates_for_title(list_month(client, y, m), title, [expected])
 
 
-def test_edit_from_today_keeps_a_leap_day_yearly_reminder_on_leap_days(client):
-    """The yearly twin of issue #87: a reminder that started on Feb 29 stays on Feb 29 in leap years after
-    an edit from today, and falls on Feb 28 in other years."""
-    import calendar
+def test_edit_from_today_keeps_a_leap_day_yearly_reminder_on_leap_days(client, frozen_today):
+    """The yearly twin of issue #87: a reminder that started on Feb 29, 2024, edited on Mar 1, 2025, continues
+    from the shortened Feb 28, 2026, and is back on Feb 29 in 2028."""
+    frozen_today(date(2025, 3, 1))
     payload = {'date': '2024-02-29', 'title': 'Leap', 'description': '', 'creator': 'Alice',
                'recurring': {'interval': 1, 'unit': 'year'}}
     rid = client.post('/api/reminders', json=payload).get_json()['recurring_id']
-    assert client.patch(f'/api/recurring_rules/{rid}', json={'creator': 'Alice', 'title': 'Leap day'}).get_json()['ok']
-    for year in range(date.today().year + 1, date.today().year + 6):
-        expected = date(year, 2, 29 if calendar.isleap(year) else 28).isoformat()
+    resp = client.patch(f'/api/recurring_rules/{rid}', json={'creator': 'Alice', 'title': 'Leap day'}).get_json()
+    assert resp['ok'] and resp['split'] is True, resp
+    assert resp['rule']['start_date'] == '2026-02-28'
+    for year, expected in {2026: '2026-02-28', 2027: '2027-02-28', 2028: '2028-02-29', 2029: '2029-02-28'}.items():
         assert_dates_for_title(list_month(client, year, 2), 'Leap day', [expected])
