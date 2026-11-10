@@ -183,6 +183,8 @@ class Reminder(db.Model):
     # Tie back to a recurring rule (if generated)
     recurring_id = db.Column(db.Integer)
     completed_at = db.Column(db.DateTime)
+    # The calendar's old trash, before the shared Trash. Only set on rows from older versions until the
+    # startup upgrade moves them (app/migrations.py move_reminder_trash); reminder queries skip such rows.
     deleted_at = db.Column(db.DateTime)
 
 class MemberStatus(db.Model):

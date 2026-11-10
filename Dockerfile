@@ -58,5 +58,7 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD wget -q -O /dev/null http://127.0.0.1:5000/healthz || exit 1
 
-# One process (SQLite, in-process download threads) with threads so a slow upload or PDF job does not block everyone
+# One process (SQLite, in-process download threads) with threads so a slow upload or PDF job does not block everyone.
+# Keep -w 1: the lock that stops two requests generating the same recurring item (app/recurrence.py) only works
+# inside one process.
 CMD ["gunicorn", "wsgi:app", "-w", "1", "-k", "gthread", "--threads", "4", "-b", "0.0.0.0:5000", "--access-logfile", "-", "--error-logfile", "-"]
