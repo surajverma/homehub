@@ -194,6 +194,10 @@ def move_reminder_trash(cur, now: datetime | None = None) -> int:
     than that are deleted, as the old trash would have done. Nobody recorded who deleted them.
     """
     now = now or datetime.now(timezone.utc).replace(tzinfo=None)
+    if not has_autoincrement(cur, 'reminder'):
+        # Removing rows first would free their ids; wait until the table has AUTOINCREMENT (next start)
+        log.warning('Old reminder trash left in place until the reminder table has AUTOINCREMENT')
+        return 0
     cur.execute("PRAGMA table_info(reminder)")
     columns = cur.fetchall()
     names = [row[1] for row in columns]
@@ -463,31 +467,22 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
                     "UPDATE recurring_reminder SET unit='month' WHERE unit IS NULL OR unit=''")
         ok &= _step(conn, 'give recurring expenses a uid', cur.execute,
                     "UPDATE recurring_expense SET uid=lower(hex(randomblob(16))) WHERE uid IS NULL OR uid=''")
-        # Highest ids before anything below removes rows (old trashed reminders past their 7 days):
-        # a client may still hold such an id, so the AUTOINCREMENT counter must start past it
-        highest = {}
-        for table in AUTOINCREMENT_TABLES:
-            try:
-                cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,))
-                if cur.fetchone():
-                    cur.execute(f"SELECT COALESCE(MAX(id), 0) FROM {_quote(table)}")
-                    highest[table] = cur.fetchone()[0]
-            except Exception:
-                log.exception('Could not read the highest id of %s', table)
-        ok &= _step(conn, 'move trashed reminders to the shared trash', move_reminder_trash, cur)
         ok &= _step(conn, 'note which record each trash entry holds', fill_trash_record_ids, cur)
-        held = dict(highest)
+        held = {}
         try:
-            for table, record_id in _ids_held_in_trash(cur).items():
-                held[table] = max(held.get(table, 0), record_id)
+            held = _ids_held_in_trash(cur)
         except Exception:
             log.exception('Could not read which ids the trash holds')
+        # AUTOINCREMENT first, while every row is still there: its counter is saved in the file at once,
+        # so ids of rows removed below (old trashed reminders past their 7 days) are never handed out
+        # again, even if the upgrade stops half way and runs again
         for table in AUTOINCREMENT_TABLES:
             try:
                 use_autoincrement(conn, table, held.get(table, 0))
             except Exception:
                 ok = False
                 log.exception('Database upgrade step failed: AUTOINCREMENT for %s', table)
+        ok &= _step(conn, 'move trashed reminders to the shared trash', move_reminder_trash, cur)
         ok &= _step(conn, 'purge expired trash', purge_expired_stashes, cur)
         if pdf_dir and os.path.isdir(pdf_dir):
             ok &= _step(conn, 'remove leftover PDF originals', remove_leftover_pdf_originals, cur, pdf_dir)

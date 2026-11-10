@@ -276,3 +276,32 @@ def test_upgrade_keeps_the_id_of_an_expired_trashed_reminder(tmp_path):
     conn.execute("INSERT INTO reminder (date, title) VALUES ('2026-02-01', 'New')")
     assert conn.execute("SELECT id FROM reminder WHERE title='New'").fetchone()[0] == 8
 
+
+def test_an_upgrade_that_stops_half_way_never_frees_a_reminder_id(tmp_path, monkeypatch):
+    """If switching the reminder table to AUTOINCREMENT fails, old trashed reminders must stay where they
+    are: removing them first would free the highest id for a new reminder on the next try."""
+    path = str(tmp_path / 'app.db')
+    make_old_db(path)
+    conn = sqlite3.connect(path)
+    conn.execute("ALTER TABLE reminder ADD COLUMN deleted_at TIMESTAMP")
+    conn.execute("INSERT INTO reminder (id, date, title, deleted_at) VALUES (7, '2026-01-01', 'Old', '2000-01-01 00:00:00.000000')")
+    conn.commit()
+    conn.close()
+    real = migrations.use_autoincrement
+
+    def stops_on_reminders(conn, table, held_id=0):
+        if table == 'reminder':
+            raise sqlite3.OperationalError('disk I/O error')
+        return real(conn, table, held_id)
+    monkeypatch.setattr(migrations, 'use_autoincrement', stops_on_reminders)
+    assert migrations.run(path) is False
+    conn = sqlite3.connect(path)
+    assert sorted(r[0] for r in conn.execute("SELECT id FROM reminder")) == [1, 7]
+    conn.close()
+    monkeypatch.setattr(migrations, 'use_autoincrement', real)
+    assert migrations.run(path) is True
+    conn = sqlite3.connect(path)
+    assert [r[0] for r in conn.execute("SELECT id FROM reminder")] == [1]
+    conn.execute("INSERT INTO reminder (date, title) VALUES ('2026-02-01', 'New')")
+    assert conn.execute("SELECT id FROM reminder WHERE title='New'").fetchone()[0] == 8
+
