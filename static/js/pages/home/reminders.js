@@ -907,7 +907,7 @@
 		go: (y, m)=> onMonthChange((y*12+m) - (display.getFullYear()*12+display.getMonth())),
 		today: ()=> document.getElementById('backToToday').click(),
 	});
-	function buildAndEnsure(){ const mk=display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0'); const have = monthCache[mk]; if(!have || !have.recurring_rules){ fetchMonth(mk+'-01', true).then(()=>{ renderCalendar(); renderList(); }); } renderCalendar(); }
+	function buildAndEnsure(){ const mk=display.getFullYear()+'-'+String(display.getMonth()+1).padStart(2,'0'); const have = monthCache[mk]; if(!have || !have.recurring_rules){ fetchMonth(mk+'-01', !!have).then(()=>{ renderCalendar(); renderList(); }); } renderCalendar(); }
 	if(window.CALENDAR_ONLY && searchInput && !searchInput.dataset.bound){
 		searchInput.dataset.bound = '1';
 		let searchTimer = null;
