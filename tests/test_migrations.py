@@ -177,6 +177,9 @@ def test_api_tables_from_an_earlier_layout_get_missing_columns(tmp_path):
             assert column in columns(conn, table), (table, column)
     assert conn.execute("SELECT name, token_hash, prefix, act_as_members, allow_delete, revoked_at FROM api_token").fetchall() == [
         ('Old', 'abc', '', 0, 0, None)]
+    # Recurring expenses get a uid each
+    uids = [r[0] for r in conn.execute("SELECT uid FROM recurring_expense")]
+    assert uids and all(len(u) == 32 for u in uids)
     # Tokens from before keep Allow deleting for reminders only
     assert conn.execute("SELECT delete_scope FROM api_token").fetchall() == [('reminders',)]
     conn.close()

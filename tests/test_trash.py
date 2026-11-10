@@ -675,3 +675,29 @@ def test_long_owner_names_are_kept_whole(home):
                                                           follow_redirects=True).get_data(as_text=True)
     trash_action(home.client, eid, 'restore', {'user': long_name})
     assert count(home, ShoppingItem) == 1
+
+
+def test_day_finds_its_rule_after_a_rename_and_a_new_id(home):
+    """The rule is renamed after its day is trashed, then deleted and restored under a new id: the day must
+    still join it (by the rule's uid), not come back as a one-off."""
+    rid = make_rule(home)
+    day = TODAY - timedelta(days=2)
+    label = _delete_day(home, rid, day)
+    with home.ctx():
+        rule = db.session.get(RecurringExpense, rid)
+        rule.title = 'Cow milk'
+        uid = rule.uid
+        db.session.commit()
+    assert uid
+    home.client.post(f'/expenses/recurring/delete/{rid}', data={'user': 'Priya', 'delete_entries': '1'})
+    with home.ctx():
+        db.session.add(RecurringExpense(id=rid, title='Paper', unit_price=7.0, default_quantity=1.0, frequency='daily',
+                                        start_date=TODAY, effective_from=TODAY, creator='Dad'))
+        db.session.commit()
+    trash_action(home.client, entry_id(home, 'Cow milk'), 'restore', {'user': 'Priya'})
+    resp = trash_action(home.client, entry_id(home, label), 'restore', {'user': 'Priya'}, follow_redirects=True)
+    assert 'one-off' not in resp.get_data(as_text=True)
+    with home.ctx():
+        rule = RecurringExpense.query.filter_by(uid=uid).one()
+        assert (rule.title, rule.id != rid) == ('Cow milk', True)
+        assert ExpenseEntry.query.filter_by(date=day, title='Milk').one().recurring_id == rule.id

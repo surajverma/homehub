@@ -116,6 +116,7 @@ LATE_COLUMNS = [
     ('recurring_expense', 'category', 'TEXT', None),
     ('recurring_expense', 'effective_from', 'DATE', None),
     ('recurring_expense', 'split_with', 'TEXT', None),
+    ('recurring_expense', 'uid', 'VARCHAR(32)', None),
     ('expense_entry', 'skipped', 'INTEGER DEFAULT 0', 0),
     ('expense_entry', 'split_with', 'TEXT', None),
     ('expense_entry', 'is_settlement', 'INTEGER DEFAULT 0', 0),
@@ -323,6 +324,8 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
         # Anything else is scheduled monthly by the app's legacy fallback, so store that
         ok &= _step(conn, 'default recurring_reminder unit', cur.execute,
                     "UPDATE recurring_reminder SET unit='month' WHERE unit IS NULL OR unit=''")
+        ok &= _step(conn, 'give recurring expenses a uid', cur.execute,
+                    "UPDATE recurring_expense SET uid=lower(hex(randomblob(16))) WHERE uid IS NULL OR uid=''")
         ok &= _step(conn, 'move trashed reminders to the shared trash', move_reminder_trash, cur)
         ok &= _step(conn, 'note which record each trash entry holds', fill_trash_record_ids, cur)
         ok &= _step(conn, 'purge expired trash', purge_expired_stashes, cur)

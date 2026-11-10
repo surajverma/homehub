@@ -139,31 +139,38 @@ def trash_expense_entry(entry: ExpenseEntry, deleted_by: str, message: str | Non
     A recurring day keeps which rule it came from, so a restore can tell whether that rule is still there.
     """
     rule = db.session.get(RecurringExpense, entry.recurring_id) if entry.recurring_id else None
-    extra = {'rule': {'id': rule.id, 'timestamp': stamp(rule), 'title': rule.title}} if rule else {}
+    extra = {'rule': {'id': rule.id, 'uid': rule.uid, 'timestamp': stamp(rule), 'title': rule.title}} if rule else {}
     label = f"{entry.title} ({entry.date.isoformat()})" if entry.date else entry.title
     return trash_row('expense_entry', entry, trash_info('expenses', label, entry_owner(entry), deleted_by), message, extra)
 
 
 def _rule_by_identity(ref: dict) -> RecurringExpense | None:
-    """The rule ``ref`` names, wherever it is now. A rule restored after another took its id gets a new id,
-    but keeps its creation time, which together with its title tells it apart."""
+    """The rule ``ref`` names, wherever it is now: by its uid, which survives a new id and a new title.
+
+    Days trashed before rules had a uid fall back to the id with the rule's creation time.
+    """
+    if ref.get('uid'):
+        return RecurringExpense.query.filter_by(uid=ref['uid']).first()
     rule = db.session.get(RecurringExpense, ref['id'])
     if rule is not None and stamp(rule) == ref.get('timestamp'):
         return rule
     if not ref.get('timestamp'):
         return None
     created = datetime.fromisoformat(ref['timestamp'])
-    for rule in RecurringExpense.query.filter_by(timestamp=created).order_by(RecurringExpense.id.desc()).all():
-        if not ref.get('title') or rule.title == ref['title']:
-            return rule
-    return None
+    return RecurringExpense.query.filter_by(timestamp=created).order_by(RecurringExpense.id.desc()).first()
+
+
+def _same_rule(rule_data: dict, ref: dict) -> bool:
+    if ref.get('uid'):
+        return rule_data.get('uid') == ref['uid']
+    return rule_data.get('id') == ref.get('id') and rule_data.get('timestamp') == ref.get('timestamp')
 
 
 def _rule_from_trash(ref: dict) -> RecurringExpense | None:
     """Restore the deleted recurring rule ``ref`` points at, if it is in the trash; returns the restored rule."""
     for stash in UndoStash.query.filter(UndoStash.kind == 'expense_rule', UndoStash.module == 'expenses').all():
         rule_data = json.loads(stash.payload).get('rule') or {}
-        if rule_data.get('id') == ref.get('id') and rule_data.get('timestamp') == ref.get('timestamp'):
+        if _same_rule(rule_data, ref):
             restore_stash(stash)
             db.session.flush()
             return _rule_by_identity(ref)
