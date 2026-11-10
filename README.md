@@ -498,6 +498,7 @@ npm run watch:css
   ```bash
   docker compose up -d
   ```
+  To run your own changes in Docker, create a `compose.override.yml` next to `compose.yml` (it is gitignored) with `services: homehub: build: .` and `pull_policy: build`, then run `docker compose up -d --build`. Leave `compose.yml` itself unchanged.
 - **Locally (for development):**
   ```bash
   python run.py

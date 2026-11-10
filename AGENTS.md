@@ -16,7 +16,16 @@ HomeHub is a self-hosted family app: Flask, SQLAlchemy on SQLite, Jinja template
 
 - `config.yml` is gitignored. Without it, `python run.py` runs on the defaults from `config-example.yml`, and the tests always use their own temporary copy of `config-example.yml`. Copy `config-example.yml` to `config.yml` when you want to customise a local instance.
 - With Docker: copy `config-example.yml` to `config.yml` **before** the first `docker compose up -d`. Compose mounts that path, and if the file is missing Docker creates a folder named `config.yml` in its place. If that happened, stop the container, delete the folder, copy the file and start again.
-- To try local code changes in Docker, build the image from the checkout (for example `docker compose build` with `build: .` switched on for your run), but never commit that change to `compose.yml` (see below). `.dockerignore` keeps `config.yml`, `data/`, `uploads/`, `media/` and `pdfs/` out of the image; keep it that way, so a local build never carries the site password or household files.
+- To try local code changes in Docker, build the image from the checkout with a `compose.override.yml` next to `compose.yml` (it is gitignored, and Compose reads it automatically):
+
+  ```yaml
+  services:
+    homehub:
+      build: .
+      pull_policy: build
+  ```
+
+  Then `docker compose up -d --build`. Never edit `compose.yml` for this (see below). `.dockerignore` keeps `config.yml`, `data/`, `uploads/`, `media/` and `pdfs/` out of the image; keep it that way, so a local build never carries the site password or household files.
 - Without Docker: `pip install -r requirements-dev.txt`, `npm install`, `npm run build:css`, then `python run.py`. Set `FLASK_DEBUG=1` for auto-reload. Media downloads need FFmpeg and PDF compression needs Ghostscript (`gs`) on your PATH; the Docker image has both. Without Ghostscript, PDF compression quietly keeps an unchanged copy of the file.
 - The Docker image compiles the translations itself. Outside Docker, run `flask translations compile` before testing a language other than English, or the pages stay in English.
 
@@ -94,12 +103,12 @@ To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
 ## Files that must not be committed
 
-- `compose.yml` is the published config and points at `ghcr.io/surajverma/homehub:latest`. Do not commit a switch to a local build (such as uncommenting `build: .`) or other local edits to it.
+- `compose.yml` is the published config and points at `ghcr.io/surajverma/homehub:latest`. Do not commit a switch to a local build (such as uncommenting `build: .`) or other local edits to it; local settings go in the gitignored `compose.override.yml`.
 - `config.yml`, `.env`, `data/`, `uploads/`, `media/`, `pdfs/`, compiled `.mo` files and `static/output.css` are local data or build output.
 
 ## Reviewing a change
 
-The full checklist is in `.github/skills/code-review/SKILL.md`. In short, look for:
+`.github/skills/code-review/SKILL.md` says how to review against the rules in this file. In short, look for:
 
 - a new column without a migration entry, a migration that is not additive, or a migration change tested only through `create_app` (which skips migrations in tests);
 - an owner-only edit or delete without `can_modify`, or an admin check that bypasses `is_admin`;
