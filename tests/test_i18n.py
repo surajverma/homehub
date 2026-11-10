@@ -87,15 +87,15 @@ def test_service_worker_cache_name_follows_language(tmp_path, monkeypatch):
     from app import blueprints
     monkeypatch.setattr(blueprints, '_sw_version_cache', [])
     hindi = make_client(tmp_path, monkeypatch, 'hi', password='').get('/sw.js').get_data(as_text=True)
-    assert "const CACHE_NAME = 'homehub-v9-hi-" in hindi
+    assert "const CACHE_NAME = 'homehub-v9-hi';" in hindi
     english = make_client(tmp_path, monkeypatch, 'en', password='').get('/sw.js').get_data(as_text=True)
-    assert "const CACHE_NAME = 'homehub-v9-en-" in english
+    assert "const CACHE_NAME = 'homehub-v9-en';" in english
     assert 'You are offline' in english
 
 
-def test_service_worker_precaches_the_urls_pages_load_and_renews_its_cache(tmp_path, monkeypatch):
+def test_service_worker_precaches_the_urls_pages_load(tmp_path, monkeypatch):
     """Pages load output.css?v=<mtime>; precaching the bare URL kept a copy no page asked for. The cache
-    name follows the same version, so a new build drops the old cache."""
+    name follows only the app version: a rebuild of the same version keeps what the browser stored."""
     import os
     monkeypatch.setenv('SW_CACHE_VERSION', '9')
     from app import blueprints
@@ -106,9 +106,11 @@ def test_service_worker_precaches_the_urls_pages_load_and_renews_its_cache(tmp_p
     page = client.get('/').get_data(as_text=True)
     assert '"/static/output.css?v=1000"' in sw and '"/static/js/reminders_api.js?v=1000"' in sw
     assert '/static/output.css?v=1000' in page
-    assert "const CACHE_NAME = 'homehub-v9-en-1000';" in sw
+    assert "const CACHE_NAME = 'homehub-v9-en';" in sw
+    # A rebuild with new files but the same version: new URLs to precache, same cache
     monkeypatch.setattr(os.path, 'getmtime', lambda path: 2000)
-    assert "const CACHE_NAME = 'homehub-v9-en-2000';" in client.get('/sw.js').get_data(as_text=True)
+    rebuilt = client.get('/sw.js').get_data(as_text=True)
+    assert '"/static/output.css?v=2000"' in rebuilt and "const CACHE_NAME = 'homehub-v9-en';" in rebuilt
 
 
 def test_hindi_catalog_is_valid():
