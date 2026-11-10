@@ -251,8 +251,10 @@
 		params.append('timezone', config.timezone ? config.timezone : 'auto');
 
 		try {
-			// Use server-side proxy to avoid CORS issues
-			const response = await fetch(`/api/weather?${params}`);
+			// Use server-side proxy to avoid CORS issues. For the place in config.yml the server asks
+			// Open-Meteo itself and shares its 15-minute cache with the API, so no parameters are sent.
+			const url = config.fromConfig ? '/api/weather' : `/api/weather?${params}`;
+			const response = await fetch(url);
 			if (!response.ok) {
 				throw new Error(`Weather API returned ${response.status}`);
 			}
@@ -345,6 +347,7 @@
 			// Use configured coordinates (convert to numbers)
 			const lat = parseFloat(config.latitude);
 			const lon = parseFloat(config.longitude);
+			config.fromConfig = true;
 			initWithCoords(lat, lon);
 		} else if ('geolocation' in navigator && window.isSecureContext) {
 			// Use browser geolocation

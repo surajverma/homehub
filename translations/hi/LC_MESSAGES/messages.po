@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 05:30+0000\n"
+"POT-Creation-Date: 2026-11-10 19:35+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -55,6 +55,10 @@ msgid "Something went wrong. Please try again."
 msgstr "कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।"
 
 #: app/api/core.py
+msgid "A service HomeHub relies on could not be reached. Try again later."
+msgstr "HomeHub जिस सेवा पर निर्भर है, उससे संपर्क नहीं हो सका। बाद में फिर से कोशिश करें।"
+
+#: app/api/core.py
 #, python-format
 msgid "This token can read %(tool)s but not change it."
 msgstr "यह टोकन %(tool)s पढ़ सकता है, लेकिन बदल नहीं सकता।"
@@ -89,6 +93,10 @@ msgstr "\"by\" से बताएं कि यह परिवार के �
 #: app/api/core.py
 msgid "This token is not allowed to delete."
 msgstr "इस टोकन को हटाने की अनुमति नहीं है।"
+
+#: app/api/core.py
+msgid "This token may only move reminders to the trash: it was made when Allow deleting covered nothing else. Create a new token to delete in other tools."
+msgstr "यह टोकन सिर्फ़ रिमाइंडर ट्रैश में भेज सकता है: यह तब बना था जब हटाने की अनुमति में और कुछ शामिल नहीं था। दूसरे टूल में हटाने के लिए नया टोकन बनाएं।"
 
 #: app/api/core.py
 #, python-format
@@ -192,6 +200,19 @@ msgstr "%(field)s खाली नहीं हो सकता।"
 msgid "Send either amount, or unit_price and quantity."
 msgstr "या तो amount भेजें, या unit_price और quantity।"
 
+#: app/api/expenses.py
+msgid "That expense was not found."
+msgstr "यह खर्च नहीं मिला।"
+
+#: app/api/expenses.py
+msgid "This is a day of a recurring expense. Skip it instead, or delete it in HomeHub."
+msgstr "यह दोहराए जाने वाले खर्च का एक दिन है। इसके बजाय इसे छोड़ें, या HomeHub में हटाएं।"
+
+#: app/api/expenses.py app/api/home.py app/api/household.py
+#, python-format
+msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
+msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक ट्रैश पेज से वापस लाया जा सकता है।"
+
 #: app/api/home.py
 msgid "This needs a token that can act as family members."
 msgstr "इसके लिए ऐसा टोकन चाहिए जो परिवार के सदस्यों की ओर से काम कर सके।"
@@ -272,11 +293,6 @@ msgstr "%(title)s पूरा हुआ।"
 #, python-format
 msgid "%(title)s is not done."
 msgstr "%(title)s अभी बाकी है।"
-
-#: app/api/home.py
-#, python-format
-msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
-msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक कैलेंडर से वापस लाया जा सकता है।"
 
 #: app/api/home.py
 msgid "Send at least one field to change."
@@ -433,6 +449,15 @@ msgstr "%(name)s यह व्यंजन नहीं बदल सकते�
 msgid "Recipe updated: %(title)s."
 msgstr "व्यंजन बदल दिया गया: %(title)s।"
 
+#: app/api/household.py
+msgid "That note was not found."
+msgstr "यह नोट नहीं मिला।"
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this note."
+msgstr "%(name)s यह नोट नहीं बदल सकते।"
+
 #: app/api/mcp.py
 msgid "The MCP endpoint only accepts POST."
 msgstr "MCP एंडपॉइंट सिर्फ़ POST स्वीकार करता है।"
@@ -486,6 +511,22 @@ msgstr "सिर्फ़ पढ़ने के लिए। सूचना H
 #: app/api/tokens.py
 msgid "Not available: only the admin can change the notice"
 msgstr "उपलब्ध नहीं: सूचना सिर्फ़ एडमिन बदल सकता है"
+
+#: app/api/tokens.py templates/index.html
+msgid "Weather"
+msgstr "मौसम"
+
+#: app/api/tokens.py
+msgid "Current weather, the next 24 hours and 7 days, for the place set in config.yml"
+msgstr "config.yml में दी गई जगह का अभी का मौसम, अगले 24 घंटे और 7 दिन"
+
+#: app/api/tokens.py
+msgid "Not available: weather can only be read"
+msgstr "उपलब्ध नहीं: मौसम सिर्फ़ पढ़ा जा सकता है"
+
+#: app/api/tokens.py
+msgid "Weather is switched off in config.yml."
+msgstr "config.yml में मौसम बंद है।"
 
 #: app/api/tokens.py templates/index.html
 msgid "Reminders"
@@ -616,6 +657,24 @@ msgstr "पढ़ने और बदलने वाले %(tool)s के ल�
 #: app/api/tokens.py
 msgid "Revoke the token before deleting it."
 msgstr "हटाने से पहले टोकन रद्द करें।"
+
+#: app/api/weather.py
+msgid "Weather has no latitude and longitude in config.yml, so only a browser can look it up for its own location."
+msgstr "config.yml में मौसम के लिए अक्षांश और देशांतर नहीं दिए गए हैं, इसलिए सिर्फ़ ब्राउज़र ही अपनी जगह का मौसम देख सकता है।"
+
+#: app/api/weather.py
+msgid "The weather service could not be reached. Try again in a few minutes."
+msgstr "मौसम सेवा से संपर्क नहीं हो सका। कुछ मिनट बाद फिर से कोशिश करें।"
+
+#: app/api/weather.py
+#, python-format
+msgid "%(description)s, %(temp)s%(unit)s (feels like %(feels)s%(unit)s)."
+msgstr "%(description)s, %(temp)s%(unit)s (महसूस होता है %(feels)s%(unit)s)।"
+
+#: app/api/weather.py
+#, python-format
+msgid "Today %(low)s to %(high)s%(unit)s, %(chance)s%% chance of rain."
+msgstr "आज %(low)s से %(high)s%(unit)s, बारिश की संभावना %(chance)s%%।"
 
 #: app/blueprints/__init__.py
 msgid "Offline"
@@ -813,6 +872,16 @@ msgid "Not allowed to delete recurring rule."
 msgstr "आपको दोहराने का नियम हटाने की अनुमति नहीं है।"
 
 #: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s is now a one-off chore. Its recurring schedule went to the trash."
+msgstr "%(chore)s अब एक बार का काम है। इसका दोहराने का शेड्यूल ट्रैश में भेज दिया गया।"
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "Recurring chore %(chore)s moved to the trash."
+msgstr "दोहराया जाने वाला काम %(chore)s ट्रैश में भेज दिया गया।"
+
+#: app/blueprints/chores.py
 msgid "Not allowed to update chore."
 msgstr "आपको यह काम अपडेट करने की अनुमति नहीं है।"
 
@@ -837,12 +906,9 @@ msgid "Chore settings updated."
 msgstr "कामों की सेटिंग अपडेट हो गई।"
 
 #: app/blueprints/chores.py
-msgid "Recurring chore rule deleted."
-msgstr "दोहराने वाले काम का नियम हटा दिया गया।"
-
-#: app/blueprints/chores.py
-msgid "Chore deleted."
-msgstr "काम हटा दिया गया।"
+#, python-format
+msgid "%(chore)s moved to the trash."
+msgstr "%(chore)s ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/chores.py
 msgid "Not allowed to delete chore."
@@ -881,10 +947,6 @@ msgid "No ids provided"
 msgstr "कोई आईडी नहीं दी गई"
 
 #: app/blueprints/dashboard.py
-msgid "Reminder is not in trash"
-msgstr "रिमाइंडर ट्रैश में नहीं है"
-
-#: app/blueprints/dashboard.py
 msgid "Date and title are required for reminders."
 msgstr "रिमाइंडर के लिए तारीख और शीर्षक ज़रूरी हैं।"
 
@@ -896,9 +958,11 @@ msgstr "तारीख सही नहीं है।"
 msgid "Reminder added."
 msgstr "रिमाइंडर जोड़ दिया गया।"
 
-#: app/blueprints/dashboard.py
-msgid "Reminder moved to trash."
-msgstr "रिमाइंडर ट्रैश में भेज दिया गया।"
+#: app/blueprints/dashboard.py app/blueprints/expenses.py
+#: app/blueprints/recipes.py
+#, python-format
+msgid "%(title)s moved to the trash."
+msgstr "%(title)s ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/dashboard.py
 msgid "Not allowed to delete this reminder."
@@ -1026,6 +1090,36 @@ msgid "%(num)s expense imported."
 msgid_plural "%(num)s expenses imported."
 msgstr[0] "%(num)s खर्च इंपोर्ट हुआ।"
 msgstr[1] "%(num)s खर्च इंपोर्ट हुए।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s is already there again (added back, or billed by the rule it was split into), so this copy cannot be restored. Delete it for good instead."
+msgstr "%(date)s का %(title)s फिर से मौजूद है (वापस जोड़ा गया, या उस नियम ने बिल किया जिसमें इसे बांटा गया), इसलिए यह कॉपी वापस नहीं लाई जा सकती। इसके बजाय इसे हमेशा के लिए हटा दें।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s is in the trash too, and only %(name)s or the admin can restore it. Ask them to restore the rule first; then this day can be restored."
+msgstr "इसका दोहराने का नियम %(title)s भी ट्रैश में है, और उसे सिर्फ़ %(name)s या एडमिन वापस ला सकते हैं। उनसे पहले नियम वापस लाने को कहें; फिर यह दिन वापस लाया जा सकता है।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense."
+msgstr "इसका दोहराने का नियम %(title)s अब मौजूद नहीं है, इसलिए इसे एक बार के खर्च के रूप में वापस लाया गया।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s was restored too."
+msgstr "इसका दोहराने का नियम %(title)s भी वापस लाया गया।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s is no longer part of its recurring rule, which was changed after the day was deleted. Delete it for good, or add the day on the Expenses page if it is still needed."
+msgstr "%(date)s का %(title)s अब अपने दोहराने के नियम का हिस्सा नहीं है, क्योंकि दिन हटाए जाने के बाद नियम बदला गया था। इसे हमेशा के लिए हटा दें, या ज़रूरत हो तो खर्च पेज पर यह दिन फिर से जोड़ें।"
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s was added back since it was deleted, so this copy cannot be restored. Delete it for good instead."
+msgstr "%(date)s का %(title)s हटाए जाने के बाद फिर से जोड़ा जा चुका है, इसलिए यह कॉपी वापस नहीं लाई जा सकती। इसके बजाय इसे हमेशा के लिए हटा दें।"
 
 #: app/blueprints/expenses.py static/js/pages/expenses_recurring.js
 msgid "Unit price must be greater than zero."
@@ -1168,12 +1262,12 @@ msgid "Not allowed to delete rule."
 msgstr "आपको यह नियम हटाने की अनुमति नहीं है।"
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries deleted."
-msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री भी हटा दी गईं।"
+msgid "Recurring rule moved to the trash with its generated entries."
+msgstr "दोहराने का नियम अपनी बनाई गई एंट्री के साथ ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries kept as history."
-msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री रिकॉर्ड के तौर पर रखी गई हैं।"
+msgid "Recurring rule moved to the trash. Its generated entries are kept as history."
+msgstr "दोहराने का नियम ट्रैश में भेज दिया गया। इसकी बनाई गई एंट्री इतिहास के तौर पर रखी गई हैं।"
 
 #: app/blueprints/expenses.py
 msgid "Only admin can update settings."
@@ -1204,10 +1298,6 @@ msgstr "बजट सेव हो गए।"
 #: app/blueprints/expenses.py
 msgid "Not allowed to delete entry."
 msgstr "आपको यह एंट्री हटाने की अनुमति नहीं है।"
-
-#: app/blueprints/expenses.py
-msgid "Expense deleted."
-msgstr "खर्च हटा दिया गया।"
 
 #: app/blueprints/expenses.py
 msgid "Not allowed to edit entry."
@@ -1260,10 +1350,10 @@ msgstr "कोई एंट्री नहीं चुनी गई।"
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid "%(num)s expense deleted."
-msgid_plural "%(num)s expenses deleted."
-msgstr[0] "%(num)s खर्च हटा दिया गया।"
-msgstr[1] "%(num)s खर्च हटा दिए गए।"
+msgid "%(num)s expense moved to the trash."
+msgid_plural "%(num)s expenses moved to the trash."
+msgstr[0] "%(num)s खर्च ट्रैश में भेजा गया।"
+msgstr[1] "%(num)s खर्च ट्रैश में भेजे गए।"
 
 #: app/blueprints/expenses.py
 msgid "Invalid month parameter. Must be an integer between 1 and 12."
@@ -1290,8 +1380,9 @@ msgid "Item added."
 msgstr "आइटम जोड़ दिया गया।"
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
-msgid "Item deleted."
-msgstr "आइटम हटा दिया गया।"
+#, python-format
+msgid "%(item)s moved to the trash."
+msgstr "%(item)s ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
 msgid "Not allowed to delete item."
@@ -1346,8 +1437,8 @@ msgid "Not allowed to edit note."
 msgstr "आपको यह नोट संपादित करने की अनुमति नहीं है।"
 
 #: app/blueprints/notes.py
-msgid "Note deleted."
-msgstr "नोट हटा दिया गया।"
+msgid "Note moved to the trash."
+msgstr "नोट ट्रैश में भेज दिया गया।"
 
 #: app/blueprints/notes.py
 msgid "Not allowed to delete note."
@@ -1378,8 +1469,8 @@ msgid "Not allowed to edit recipe."
 msgstr "आपको यह व्यंजन संपादित करने की अनुमति नहीं है।"
 
 #: app/blueprints/recipes.py
-msgid "Recipe deleted."
-msgstr "व्यंजन हटा दिया गया।"
+msgid "Not allowed to delete recipe."
+msgstr "यह व्यंजन हटाने की अनुमति नहीं है।"
 
 #: app/blueprints/shortener.py
 msgid "Please enter a valid http(s) URL."
@@ -1416,6 +1507,68 @@ msgstr "फ़ाइल हटा दी गई।"
 msgid "Not allowed to delete file."
 msgstr "आपको यह फ़ाइल हटाने की अनुमति नहीं है।"
 
+#: app/trash.py templates/base.html templates/notes.html
+msgid "Shared Notes"
+msgstr "साझा नोट्स"
+
+#: app/trash.py templates/base.html templates/shopping.html
+msgid "Shopping List"
+msgstr "शॉपिंग लिस्ट"
+
+#: app/trash.py templates/base.html
+msgid "Calendar"
+msgstr "कैलेंडर"
+
+#: app/trash.py templates/base.html
+msgid "To-Do/Chores"
+msgstr "टू-डू/घर के काम"
+
+#: app/trash.py templates/base.html templates/recipes.html
+msgid "Recipe Book"
+msgstr "व्यंजन-पुस्तिका"
+
+#: app/trash.py templates/base.html templates/expiry.html
+msgid "Expiry Tracker"
+msgstr "एक्सपायरी ट्रैकर"
+
+#: app/trash.py templates/base.html templates/expenses.html
+msgid "Expense Tracker"
+msgstr "खर्च ट्रैकर"
+
+#: app/trash.py app/undo.py
+msgid "That is no longer in the trash."
+msgstr "यह अब ट्रैश में नहीं है।"
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to restore %(name)s."
+msgstr "%(name)s को वापस लाने की अनुमति नहीं है।"
+
+#: app/trash.py
+#, python-format
+msgid "Could not restore %(name)s."
+msgstr "%(name)s को वापस नहीं लाया जा सका।"
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s restored."
+msgstr "%(name)s वापस लाया गया।"
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to delete %(name)s."
+msgstr "%(name)s को हटाने की अनुमति नहीं है।"
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s deleted for good."
+msgstr "%(name)s हमेशा के लिए हटा दिया गया।"
+
+#: app/api/expenses.py app/api/household.py app/blueprints/chores.py
+#: app/blueprints/expenses.py app/undo.py
+msgid "That was already deleted."
+msgstr "यह पहले ही हटाया जा चुका है।"
+
 #: app/undo.py
 msgid "It is too late to undo that."
 msgstr "इसे वापस लेने का समय निकल चुका है।"
@@ -1427,6 +1580,103 @@ msgstr "यह बदलाव वापस नहीं लिया जा स
 #: app/undo.py
 msgid "Change undone."
 msgstr "बदलाव वापस ले लिया गया।"
+
+#: app/weather.py static/js/weather.js
+msgctxt "weather"
+msgid "Clear"
+msgstr "साफ़"
+
+#: app/weather.py static/js/weather.js
+msgid "Mainly Clear"
+msgstr "ज़्यादातर साफ़"
+
+#: app/weather.py static/js/weather.js
+msgid "Partly Cloudy"
+msgstr "आंशिक बादल"
+
+#: app/weather.py static/js/weather.js
+msgid "Overcast"
+msgstr "घने बादल"
+
+#: app/weather.py static/js/weather.js
+msgid "Fog"
+msgstr "कोहरा"
+
+#: app/weather.py static/js/weather.js
+msgid "Freezing Fog"
+msgstr "जमा देने वाला कोहरा"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Drizzle"
+msgstr "हल्की बूंदाबांदी"
+
+#: app/weather.py static/js/weather.js
+msgid "Drizzle"
+msgstr "बूंदाबांदी"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Drizzle"
+msgstr "तेज़ बूंदाबांदी"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Rain"
+msgstr "हल्की बारिश"
+
+#: app/weather.py static/js/weather.js
+msgid "Rain"
+msgstr "बारिश"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Rain"
+msgstr "तेज़ बारिश"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Snow"
+msgstr "हल्की बर्फ़बारी"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow"
+msgstr "बर्फ़बारी"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Snow"
+msgstr "भारी बर्फ़बारी"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow Grains"
+msgstr "बर्फ़ के दाने"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Showers"
+msgstr "हल्की बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Showers"
+msgstr "बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Showers"
+msgstr "तेज़ बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow Showers"
+msgstr "बर्फ़ की बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Snow Showers"
+msgstr "बर्फ़ की तेज़ बौछारें"
+
+#: app/weather.py static/js/weather.js
+msgid "Thunderstorm"
+msgstr "आंधी-तूफ़ान"
+
+#: app/weather.py static/js/weather.js
+msgid "Thunderstorm + Hail"
+msgstr "आंधी-तूफ़ान और ओले"
+
+#: app/weather.py static/js/weather.js templates/index.html
+msgid "Unknown"
+msgstr "पता नहीं"
 
 #: static/js/base/app.js static/js/pages/home/reminders.js
 msgid "Undo"
@@ -1757,8 +2007,8 @@ msgstr "बंटवारा:"
 msgid "Skip day"
 msgstr "यह दिन छोड़ें"
 
-#: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/backup_restore.html templates/backups.html
+#: static/js/pages/expenses.js templates/backup_restore.html
+#: templates/backups.html templates/trash.html
 msgid "Restore"
 msgstr "वापस लाएं"
 
@@ -1917,12 +2167,23 @@ msgid "(No category)"
 msgstr "(कोई श्रेणी नहीं)"
 
 #: static/js/pages/home/reminders.js
+msgid "Moved to the trash."
+msgstr "ट्रैश में भेज दिया गया।"
+
+#: static/js/pages/home/reminders.js
 msgid "Deleted"
 msgstr "हटा दिया गया"
 
 #: static/js/pages/home/reminders.js
 msgid "Delete failed"
 msgstr "हटाया नहीं जा सका"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "{count} reminder moved to the trash."
+msgid_plural "{count} reminders moved to the trash."
+msgstr[0] "{count} रिमाइंडर ट्रैश में भेजा गया।"
+msgstr[1] "{count} रिमाइंडर ट्रैश में भेजे गए।"
 
 #: static/js/pages/home/reminders.js
 #, python-brace-format
@@ -2198,43 +2459,11 @@ msgid "All: {count}"
 msgstr "सभी: {count}"
 
 #: static/js/pages/home/reminders.js
-msgid "Deleted (undo available)"
-msgstr "हटा दिया गया (वापस लिया जा सकता है)"
-
-#: static/js/pages/home/reminders.js
-msgid "Undo delete"
-msgstr "हटाना वापस लें"
-
-#: static/js/pages/home/reminders.js
 #, python-brace-format
 msgid "Move {count} selected reminder to the trash?"
 msgid_plural "Move {count} selected reminders to the trash?"
 msgstr[0] "क्या चुना गया {count} रिमाइंडर ट्रैश में भेज दें?"
 msgstr[1] "क्या चुने गए {count} रिमाइंडर ट्रैश में भेज दें?"
-
-#: static/js/pages/home/reminders.js
-msgid "Loading trash…"
-msgstr "ट्रैश लोड हो रहा है…"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed to load trash."
-msgstr "ट्रैश लोड नहीं हो सका।"
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle bin is empty. Items auto-purge after 7 days."
-msgstr "रीसायकल बिन खाली है। आइटम 7 दिन बाद अपने आप हट जाते हैं।"
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle Bin — items auto-purge after 7 days"
-msgstr "रीसायकल बिन — आइटम 7 दिन बाद अपने आप हट जाते हैं"
-
-#: static/js/pages/home/reminders.js
-msgid "Restored"
-msgstr "वापस लाया गया"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed"
-msgstr "नहीं हो सका"
 
 #: static/js/pages/home/reminders.js
 msgid "Upcoming (next 7 days)"
@@ -2291,7 +2520,8 @@ msgstr "यहां लिखें..."
 msgid "Edit Item"
 msgstr "आइटम संपादित करें"
 
-#: static/js/pages/shopping.js templates/shopping.html
+#: static/js/pages/shopping.js templates/api_activity.html
+#: templates/shopping.html
 msgid "Item"
 msgstr "आइटम"
 
@@ -2342,103 +2572,6 @@ msgstr "हटाएं"
 #, python-brace-format
 msgid "Delete tag \"{tag}\"? This removes it from suggestions (items keep their tags)."
 msgstr "क्या टैग \"{tag}\" हटा दें? यह सिर्फ़ सुझावों से हटेगा (आइटम पर लगे टैग बने रहेंगे)।"
-
-#: static/js/weather.js
-msgctxt "weather"
-msgid "Clear"
-msgstr "साफ़"
-
-#: static/js/weather.js
-msgid "Mainly Clear"
-msgstr "ज़्यादातर साफ़"
-
-#: static/js/weather.js
-msgid "Partly Cloudy"
-msgstr "आंशिक बादल"
-
-#: static/js/weather.js
-msgid "Overcast"
-msgstr "घने बादल"
-
-#: static/js/weather.js
-msgid "Fog"
-msgstr "कोहरा"
-
-#: static/js/weather.js
-msgid "Freezing Fog"
-msgstr "जमा देने वाला कोहरा"
-
-#: static/js/weather.js
-msgid "Light Drizzle"
-msgstr "हल्की बूंदाबांदी"
-
-#: static/js/weather.js
-msgid "Drizzle"
-msgstr "बूंदाबांदी"
-
-#: static/js/weather.js
-msgid "Heavy Drizzle"
-msgstr "तेज़ बूंदाबांदी"
-
-#: static/js/weather.js
-msgid "Light Rain"
-msgstr "हल्की बारिश"
-
-#: static/js/weather.js
-msgid "Rain"
-msgstr "बारिश"
-
-#: static/js/weather.js
-msgid "Heavy Rain"
-msgstr "तेज़ बारिश"
-
-#: static/js/weather.js
-msgid "Light Snow"
-msgstr "हल्की बर्फ़बारी"
-
-#: static/js/weather.js
-msgid "Snow"
-msgstr "बर्फ़बारी"
-
-#: static/js/weather.js
-msgid "Heavy Snow"
-msgstr "भारी बर्फ़बारी"
-
-#: static/js/weather.js
-msgid "Snow Grains"
-msgstr "बर्फ़ के दाने"
-
-#: static/js/weather.js
-msgid "Light Showers"
-msgstr "हल्की बौछारें"
-
-#: static/js/weather.js
-msgid "Showers"
-msgstr "बौछारें"
-
-#: static/js/weather.js
-msgid "Heavy Showers"
-msgstr "तेज़ बौछारें"
-
-#: static/js/weather.js
-msgid "Snow Showers"
-msgstr "बर्फ़ की बौछारें"
-
-#: static/js/weather.js
-msgid "Heavy Snow Showers"
-msgstr "बर्फ़ की तेज़ बौछारें"
-
-#: static/js/weather.js
-msgid "Thunderstorm"
-msgstr "आंधी-तूफ़ान"
-
-#: static/js/weather.js
-msgid "Thunderstorm + Hail"
-msgstr "आंधी-तूफ़ान और ओले"
-
-#: static/js/weather.js templates/index.html
-msgid "Unknown"
-msgstr "पता नहीं"
 
 #: static/js/weather.js
 msgid "Invalid weather data received"
@@ -2565,12 +2698,17 @@ msgstr "रकम के हिसाब से"
 msgid "%(name)s split value"
 msgstr "%(name)s के बंटवारे की वैल्यू"
 
+#: templates/_trash_link.html templates/base.html templates/index.html
+#: templates/trash.html
+msgid "Trash"
+msgstr "ट्रैश"
+
 #: templates/api_access.html
 msgid "No access"
 msgstr "अनुमति नहीं"
 
 #: templates/api_access.html templates/api_access_locked.html
-#: templates/base.html templates/index.html
+#: templates/api_activity.html templates/base.html templates/index.html
 msgid "API access"
 msgstr "API एक्सेस"
 
@@ -2674,8 +2812,8 @@ msgid "Allow deleting"
 msgstr "हटाने की अनुमति दें"
 
 #: templates/api_access.html
-msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
-msgstr "सिर्फ़ रिमाइंडर को ट्रैश में भेजता है, जहां से उन्हें वापस लाया जा सकता है। इसके लिए रिमाइंडर में पढ़ना और बदलना ज़रूरी है। AI एजेंट के लिए इसे बंद रखें: वे जो टेक्स्ट पढ़ते हैं, वह उन्हें चीज़ें हटाने के लिए बहका सकता है।"
+msgid "Lets the token move items to the trash, where they can be restored for 7 days: reminders, shopping items, one-off chores, notes, recipes, expiry items and expenses, in the tools it has with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+msgstr "टोकन को चीज़ें ट्रैश में भेजने देता है, जहां से उन्हें 7 दिन तक वापस लाया जा सकता है: रिमाइंडर, शॉपिंग आइटम, एक बार के काम, नोट, व्यंजन, एक्सपायरी आइटम और खर्च, उन टूल में जिनमें इसे पढ़ने और बदलने की अनुमति है। AI एजेंट के लिए इसे बंद रखें: वे जो टेक्स्ट पढ़ते हैं, वह उन्हें चीज़ें हटाने के लिए बहका सकता है।"
 
 #: templates/api_access.html
 msgid "Whatever a token can read can leave your home if the client passes it on. AI agents usually send what they read to their provider."
@@ -2715,6 +2853,14 @@ msgid "Can move reminders to the trash"
 msgstr "रिमाइंडर ट्रैश में भेज सकता है"
 
 #: templates/api_access.html
+msgid "Can move items to the trash"
+msgstr "चीज़ें ट्रैश में भेज सकता है"
+
+#: templates/api_access.html
+msgid "Made when Allow deleting covered reminders only, so it still does. To let a client delete in other tools too, create a new token."
+msgstr "यह तब बना था जब हटाने की अनुमति सिर्फ़ रिमाइंडर के लिए थी, इसलिए अब भी वैसा ही है। दूसरे टूल में भी हटाने देने के लिए नया टोकन बनाएं।"
+
+#: templates/api_access.html
 msgid "This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed."
 msgstr "इस टोकन का नाम परिवार के किसी सदस्य या एडमिन जैसा है, इसलिए इसके बदलाव उनके लगेंगे। नाम बदलने तक इससे बदलाव नहीं किए जा सकते।"
 
@@ -2752,8 +2898,12 @@ msgstr "नया बनाएं"
 
 #: templates/api_access.html
 #, python-format
-msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
-msgstr "%(name)s हटाएं? यह इसे सूची से हमेशा के लिए हटा देगा। इसके बदलावों का इतिहास रखा जाता है।"
+msgid "Delete %(name)s? Its activity history is deleted too."
+msgstr "%(name)s हटाएं? इसके बदलावों का इतिहास भी हट जाएगा।"
+
+#: templates/api_access.html
+msgid "Deleting it also deletes its activity history. To keep a copy, download it as CSV first."
+msgstr "इसे हटाने से इसके बदलावों का इतिहास भी हट जाता है। कॉपी रखनी हो तो पहले इसे सीएसवी में डाउनलोड कर लें।"
 
 #: templates/api_access.html
 #, python-format
@@ -2769,6 +2919,15 @@ msgid "Recent activity"
 msgstr "हाल के बदलाव"
 
 #: templates/api_access.html
+#, python-format
+msgid "View all (%(num)s)"
+msgstr "सभी देखें (%(num)s)"
+
+#: templates/api_access.html templates/api_activity.html
+msgid "Download CSV"
+msgstr "सीएसवी डाउनलोड करें"
+
+#: templates/api_access.html templates/api_activity.html
 msgid "No changes made with this token yet."
 msgstr "इस टोकन से अभी तक कोई बदलाव नहीं हुआ।"
 
@@ -2799,6 +2958,35 @@ msgstr "फिर एडमिन यूज़र पर जाएं, उसे
 #: templates/api_access_locked.html
 msgid "Until then, you can manage tokens on the server instead, for example:"
 msgstr "तब तक आप टोकन सर्वर पर संभाल सकते हैं, जैसे:"
+
+#: templates/api_activity.html
+#, python-format
+msgid "Activity of %(name)s"
+msgstr "%(name)s के बदलाव"
+
+#: templates/api_activity.html
+#, python-format
+msgid "Every change made with this token, newest first. HomeHub keeps the latest %(num)s."
+msgstr "इस टोकन से किए गए सभी बदलाव, सबसे नए पहले। HomeHub आख़िरी %(num)s बदलाव रखता है।"
+
+#: templates/api_activity.html
+#, python-format
+msgid "%(num)s change"
+msgid_plural "%(num)s changes"
+msgstr[0] "%(num)s बदलाव"
+msgstr[1] "%(num)s बदलाव"
+
+#: templates/api_activity.html
+msgid "Time"
+msgstr "समय"
+
+#: templates/api_activity.html
+msgid "Acting as"
+msgstr "किसकी ओर से"
+
+#: templates/api_activity.html
+msgid "Action"
+msgstr "कार्रवाई"
 
 #: templates/backup_restore.html
 msgid "Back to backups"
@@ -2990,33 +3178,9 @@ msgstr "मेन्यू बंद करें"
 msgid "Welcome"
 msgstr "होम"
 
-#: templates/base.html templates/notes.html
-msgid "Shared Notes"
-msgstr "साझा नोट्स"
-
 #: templates/base.html templates/upload.html
 msgid "Shared Cloud"
 msgstr "साझा क्लाउड"
-
-#: templates/base.html templates/shopping.html
-msgid "Shopping List"
-msgstr "शॉपिंग लिस्ट"
-
-#: templates/base.html
-msgid "Calendar"
-msgstr "कैलेंडर"
-
-#: templates/base.html
-msgid "To-Do/Chores"
-msgstr "टू-डू/घर के काम"
-
-#: templates/base.html templates/recipes.html
-msgid "Recipe Book"
-msgstr "व्यंजन-पुस्तिका"
-
-#: templates/base.html templates/expiry.html
-msgid "Expiry Tracker"
-msgstr "एक्सपायरी ट्रैकर"
 
 #: templates/base.html templates/shorten.html
 msgid "URL Shortener"
@@ -3033,10 +3197,6 @@ msgstr "पीडीएफ कंप्रेसर"
 #: templates/base.html
 msgid "QR Generator"
 msgstr "क्यूआर जेनरेटर"
-
-#: templates/base.html templates/expenses.html
-msgid "Expense Tracker"
-msgstr "खर्च ट्रैकर"
 
 #: templates/base.html
 msgid "Admin"
@@ -3808,7 +3968,7 @@ msgstr "आइटम जोड़ें"
 msgid "Nothing tracked yet."
 msgstr "अभी कुछ ट्रैक नहीं किया गया है।"
 
-#: templates/expiry.html
+#: templates/expiry.html templates/trash.html
 #, python-format
 msgid "%(num)s day left"
 msgid_plural "%(num)s days left"
@@ -3831,10 +3991,6 @@ msgstr "%(name)s में आपका स्वागत है"
 #: templates/index.html
 msgid "Pick a tool from the left to get started."
 msgstr "शुरू करने के लिए बाईं ओर से कोई टूल चुनें।"
-
-#: templates/index.html
-msgid "Weather"
-msgstr "मौसम"
 
 #: templates/index.html
 msgid "Loading weather data..."
@@ -3955,12 +4111,8 @@ msgid "Search reminders by title or description"
 msgstr "शीर्षक या विवरण से रिमाइंडर खोजें"
 
 #: templates/index.html
-msgid "Recycle Bin"
-msgstr "रीसायकल बिन"
-
-#: templates/index.html
-msgid "Trash"
-msgstr "ट्रैश"
+msgid "Deleted reminders, restorable for 7 days"
+msgstr "हटाए गए रिमाइंडर, 7 दिन तक वापस लाए जा सकते हैं"
 
 #: templates/index.html
 msgid "Drag reminder cards onto a date to reschedule."
@@ -4349,6 +4501,55 @@ msgstr "क्या यह छोटा लिंक हटा दें?"
 msgid "Delete short link"
 msgstr "छोटा लिंक हटाएं"
 
+#: templates/trash.html
+msgid "What was deleted in the last 7 days, newest first. After 7 days it is deleted for good."
+msgstr "पिछले 7 दिनों में हटाई गई चीज़ें, सबसे नई पहले। 7 दिन बाद ये हमेशा के लिए हट जाती हैं।"
+
+#: templates/trash.html
+#, python-format
+msgid "Back to %(page)s"
+msgstr "%(page)s पर वापस जाएं"
+
+#: templates/trash.html
+msgid "Show deleted items from"
+msgstr "यहां से हटाई गई चीज़ें दिखाएं"
+
+#: templates/trash.html
+msgid "All"
+msgstr "सभी"
+
+#: templates/trash.html
+msgid "Nothing here. Deleted items stay in the trash for 7 days."
+msgstr "यहां कुछ नहीं है। हटाई गई चीज़ें 7 दिन तक ट्रैश में रहती हैं।"
+
+#: templates/trash.html
+#, python-format
+msgid "Deleted by %(name)s at %(time)s"
+msgstr "%(name)s ने %(time)s पर हटाया"
+
+#: templates/trash.html
+#, python-format
+msgid "Deleted at %(time)s"
+msgstr "%(time)s पर हटाया गया"
+
+#: templates/trash.html
+#, python-format
+msgid "Delete %(name)s for good? This cannot be undone."
+msgstr "%(name)s हमेशा के लिए हटाएं? यह वापस नहीं लिया जा सकता।"
+
+#: templates/trash.html
+msgid "Delete forever"
+msgstr "हमेशा के लिए हटाएं"
+
+#: templates/trash.html
+#, python-format
+msgid "Only %(name)s or the admin can restore this."
+msgstr "इसे सिर्फ़ %(name)s या एडमिन वापस ला सकते हैं।"
+
+#: templates/trash.html
+msgid "Only the admin can restore this."
+msgstr "इसे सिर्फ़ एडमिन वापस ला सकता है।"
+
 #: templates/upload.html
 msgid "Files shared with everyone on the home network."
 msgstr "घर के नेटवर्क पर सबके साथ शेयर की गई फ़ाइलें।"
@@ -4431,4 +4632,78 @@ msgstr "क्या यह फ़ाइल हटा दें? यह सर�
 
 #~ msgid "Add a recipe"
 #~ msgstr "व्यंजन जोड़ें"
+
+#~ msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
+#~ msgstr "%(name)s हटाएं? यह इसे सूची से हमेशा के लिए हटा देगा। इसके बदलावों का इतिहास रखा जाता है।"
+
+#~ msgid "Recurring chore rule deleted."
+#~ msgstr "दोहराने वाले काम का नियम हटा दिया गया।"
+
+#~ msgid "Chore deleted."
+#~ msgstr "काम हटा दिया गया।"
+
+#~ msgid "Recurring rule deleted. Linked generated entries deleted."
+#~ msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री भी हटा दी गईं।"
+
+#~ msgid "Recurring rule deleted. Linked generated entries kept as history."
+#~ msgstr "दोहराने का नियम हटा दिया गया। उससे बनी एंट्री रिकॉर्ड के तौर पर रखी गई हैं।"
+
+#~ msgid "Expense deleted."
+#~ msgstr "खर्च हटा दिया गया।"
+
+#~ msgid "%(num)s expense deleted."
+#~ msgid_plural "%(num)s expenses deleted."
+#~ msgstr[0] "%(num)s खर्च हटा दिया गया।"
+#~ msgstr[1] "%(num)s खर्च हटा दिए गए।"
+
+#~ msgid "Item deleted."
+#~ msgstr "आइटम हटा दिया गया।"
+
+#~ msgid "Note deleted."
+#~ msgstr "नोट हटा दिया गया।"
+
+#~ msgid "Recipe deleted."
+#~ msgstr "व्यंजन हटा दिया गया।"
+
+#~ msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+#~ msgstr "%(title)s ट्रैश में भेज दिया गया। इसे 7 दिन तक कैलेंडर से वापस लाया जा सकता है।"
+
+#~ msgid "Reminder is not in trash"
+#~ msgstr "रिमाइंडर ट्रैश में नहीं है"
+
+#~ msgid "Reminder moved to trash."
+#~ msgstr "रिमाइंडर ट्रैश में भेज दिया गया।"
+
+#~ msgid "Deleted (undo available)"
+#~ msgstr "हटा दिया गया (वापस लिया जा सकता है)"
+
+#~ msgid "Undo delete"
+#~ msgstr "हटाना वापस लें"
+
+#~ msgid "Loading trash…"
+#~ msgstr "ट्रैश लोड हो रहा है…"
+
+#~ msgid "Failed to load trash."
+#~ msgstr "ट्रैश लोड नहीं हो सका।"
+
+#~ msgid "Recycle bin is empty. Items auto-purge after 7 days."
+#~ msgstr "रीसायकल बिन खाली है। आइटम 7 दिन बाद अपने आप हट जाते हैं।"
+
+#~ msgid "Recycle Bin — items auto-purge after 7 days"
+#~ msgstr "रीसायकल बिन — आइटम 7 दिन बाद अपने आप हट जाते हैं"
+
+#~ msgid "Restored"
+#~ msgstr "वापस लाया गया"
+
+#~ msgid "Failed"
+#~ msgstr "नहीं हो सका"
+
+#~ msgid "Recycle Bin"
+#~ msgstr "रीसायकल बिन"
+
+#~ msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+#~ msgstr "सिर्फ़ रिमाइंडर को ट्रैश में भेजता है, जहां से उन्हें वापस लाया जा सकता है। इसके लिए रिमाइंडर में पढ़ना और बदलना ज़रूरी है। AI एजेंट के लिए इसे बंद रखें: वे जो टेक्स्ट पढ़ते हैं, वह उन्हें चीज़ें हटाने के लिए बहका सकता है।"
+
+#~ msgid "Can move reminders to the trash"
+#~ msgstr "रिमाइंडर ट्रैश में भेज सकता है"
 

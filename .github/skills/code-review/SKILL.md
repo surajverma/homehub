@@ -12,17 +12,20 @@ HomeHub is a small self-hosted family app (Flask, SQLAlchemy on SQLite, Jinja te
 - There is no Alembic. Existing databases are upgraded at startup by `app/migrations.py`, which `create_app` calls. New columns go in its `COLUMNS` or `LATE_COLUMNS` lists.
 - **A new column on an existing table needs both the model field and an entry in `COLUMNS` or `LATE_COLUMNS` in `app/migrations.py`**. Without it, existing installs crash with "no such column". Check that the default makes sense for old rows.
 - A new table needs a `CREATE TABLE IF NOT EXISTS` in `TABLES` there, or must be safe to create through `db.create_all()`.
-- Startup migrations must be idempotent and additive. Flag column renames, drops or type changes, since they break existing `data/app.db` files.
+- Startup migrations must be idempotent and additive. Flag column renames, drops or type changes, since they break existing `data/app.db` files. The one allowed exception is a table rebuild for what SQLite cannot `ALTER` (such as `AUTOINCREMENT`), done through `use_autoincrement`-style code and tested on an old database (see AGENTS.md).
+- Upgrading must need nothing but pulling the image: flag anything that asks people to run a command, and any step whose failure would stop the app instead of being retried at the next start.
+- Deleting user content must go through the shared trash (`app/undo.py`); flag a hard delete of user content, or an API/MCP operation that deletes for good.
 - New `config.yml` keys must have a default in code, and should be added to `config-example.yml`. An existing `config.yml` without the key must keep working.
 
 ## Permissions
 
 - Family members pick their name from a switcher; there are no per-member accounts. The acting user arrives as a `user` form or query field and should go through `sanitize_text`.
 - **Admin checks go through the single `is_admin(user)` helper in `app/admin.py`.** Flag code that compares a name to `admin_name`, `'Administrator'` or `'admin'` directly, or reads `admin_name` from config to decide permissions. A direct comparison bypasses whatever protection the helper adds.
-- Ownership checks go through `can_modify(user, <owner field>)` in `app/admin.py` (for example with `creator` or `payer`). Flag an owner-only edit or delete without it, including a hand-written `is_admin(user) or user == owner`, which lets a locked session reach an admin-owned record by naming the admin. Shared actions such as ticking a shopping item or marking a chore done are open to everyone on purpose; don't ask for an owner check there.
+- Ownership checks go through `can_modify(user, <owner field>)` in `app/admin.py` (for example with `creator` or `payer`). Flag an owner-only edit or delete without it, including a hand-written `is_admin(user) or user == owner`, which lets a locked session reach an admin-owned record by naming the admin. Shared actions such as ticking a shopping item or marking a chore done are open to everyone on purpose; don't ask for an owner check there. Flag code that lets an empty user count as an owner, and any upgrade that widens what an existing API token can do.
 - Secrets (passwords, hashes, `SECRET_KEY`) must never be logged, flashed, rendered or returned in JSON. Password checks must fail closed.
 - The site password in `config.yml` is a separate gate and must keep working.
-- There are no CSRF tokens, on purpose. Don't ask for CSRF tokens on individual forms; do flag state changes made through GET requests.
+- There are no CSRF tokens, on purpose. Don't ask for CSRF tokens on individual forms; do flag state changes a person chose that are made through GET requests (time-based housekeeping on a GET, such as generating due recurring items or purging expired trash, is fine).
+- Undo tokens are secrets: flag one shown anywhere but to the client that made the change.
 
 ## Input and output safety
 

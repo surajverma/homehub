@@ -36,7 +36,8 @@ def N_(text):
 @dataclass(frozen=True)
 class Tool:
     key: str
-    # Key under feature_toggles in config.yml, or None for a tool that is always on
+    # Key under feature_toggles in config.yml, "section.key" for a switch elsewhere in config.yml
+    # (weather.enabled), or None for a tool that is always on
     feature: str | None
     # What a missing feature_toggles line means (the same defaults as the sidebar in base.html)
     default_on: bool
@@ -46,6 +47,8 @@ class Tool:
     write_help_text: str | None = None
     # Why there is no Read & write level (shown on the dash in the token page's table)
     no_write_reason_text: str | None = None
+    # What the API says when the tool is switched off; without it, a plain "Not found."
+    switched_off_text: str | None = None
 
     @property
     def label(self) -> str:
@@ -58,6 +61,10 @@ class Tool:
     @property
     def write_help(self) -> str | None:
         return _(self.write_help_text) if self.write_help_text else None
+
+    @property
+    def switched_off(self) -> str | None:
+        return _(self.switched_off_text) if self.switched_off_text else None
 
     @property
     def no_write_reason(self) -> str:
@@ -73,6 +80,9 @@ TOOLS = (
     Tool('notice', None, True, N_('Notice board'), ('read',),
          N_('Read only. Only the admin can change the notice in HomeHub.'), None,
          N_('Not available: only the admin can change the notice')),
+    Tool('weather', 'weather.enabled', False, N_('Weather'), ('read',),
+         N_('Current weather, the next 24 hours and 7 days, for the place set in config.yml'), None,
+         N_('Not available: weather can only be read'), N_('Weather is switched off in config.yml.')),
     Tool('reminders', 'calendar', True, N_('Reminders'), ('read', 'write'),
          N_('Reminders for a day, a week or a range'), N_('Add and edit reminders, mark them done or not done')),
     Tool('shopping', 'shopping_list', False, N_('Shopping list'), ('read', 'write'),
@@ -91,6 +101,8 @@ TOOLS = (
 TOOLS_BY_KEY = {t.key: t for t in TOOLS}
 # Tools whose writes change a person, so they only make sense when the token can act as family members
 NEEDS_ACT_AS = ('presence', 'statuses')
+# Tools whose items the API can move to the trash (with Allow deleting and Read & write on the tool)
+DELETABLE = ('reminders', 'shopping', 'chores', 'notes', 'recipes', 'expiry', 'expenses')
 
 
 class TokenError(ValueError):
@@ -107,7 +119,11 @@ def tool_enabled(key: str, config: dict | None = None) -> bool:
         return False
     if tool.feature is None:
         return True
-    toggles = (config if config is not None else _config()).get('feature_toggles') or {}
+    config = config if config is not None else _config()
+    section, dot, key = tool.feature.partition('.')
+    if dot:
+        return bool((config.get(section) or {}).get(key, tool.default_on))
+    toggles = config.get('feature_toggles') or {}
     return bool(toggles.get(tool.feature, tool.default_on))
 
 
@@ -189,9 +205,30 @@ def clean_permissions(raw: dict, act_as_members: bool) -> dict:
     return {t.key: permissions[t.key] for t in TOOLS if t.key in permissions}
 
 
+DELETE_SCOPE_ALL = 'all'
+DELETE_SCOPE_REMINDERS = 'reminders'
+
+
+def delete_scope(token: ApiToken) -> str:
+    return DELETE_SCOPE_ALL if token.delete_scope == DELETE_SCOPE_ALL else DELETE_SCOPE_REMINDERS
+
+
+def delete_tools(token: ApiToken, permissions: dict | None = None) -> list:
+    """The tools whose items this token may move to the trash, in table order.
+
+    Allow deleting, Read & write on the tool, and the tool within what Allow deleting covered when the
+    token was made: a token from before it covered every tool keeps it for reminders only.
+    """
+    if not token.allow_delete:
+        return []
+    permissions = token.permission_map if permissions is None else permissions
+    covered = DELETABLE if delete_scope(token) == DELETE_SCOPE_ALL else (DELETE_SCOPE_REMINDERS,)
+    return [t.key for t in TOOLS if t.key in covered and permissions.get(t.key) == 'write']
+
+
 def can_delete(permissions: dict) -> bool:
-    """Allow deleting only covers moving reminders to the trash, so it needs Reminders Read & write."""
-    return permissions.get('reminders') == 'write'
+    """Allow deleting moves items to the trash, so it needs Read & write on at least one tool that has one."""
+    return any(permissions.get(key) == 'write' for key in DELETABLE)
 
 
 def create_token(name, permissions: dict, act_as_members: bool = False, allow_delete: bool = False):
@@ -207,6 +244,7 @@ def create_token(name, permissions: dict, act_as_members: bool = False, allow_de
         permissions=json.dumps(permissions),
         act_as_members=act_as_members,
         allow_delete=bool(allow_delete) and can_delete(permissions),
+        delete_scope=DELETE_SCOPE_ALL,
         created_at=utcnow(),
     )
     db.session.add(token)
@@ -241,19 +279,13 @@ def regenerate_token(token: ApiToken) -> str:
 
 
 def delete_token(token: ApiToken) -> None:
-    """Remove a revoked token for good, so its name can be used again.
+    """Remove a revoked token for good, with its activity history, so its name can be used again.
 
-    Its activity rows stay in the database (they keep the token's name) for the record, at most
-    the newest ACTIVITY_KEEP of them. They are detached from the token id, which a new token could
-    get again, so they show nowhere on the page.
+    Revoking keeps the history; deleting removes it too (download the CSV first to keep a copy).
     """
     if not token.revoked_at:
         raise TokenError(_('Revoke the token before deleting it.'))
-    keep = (db.session.query(ApiActivity.id).filter(ApiActivity.token_id == token.id)
-            .order_by(ApiActivity.id.desc()).offset(ACTIVITY_KEEP - 1).limit(1).scalar())
-    if keep is not None:
-        ApiActivity.query.filter(ApiActivity.token_id == token.id, ApiActivity.id < keep).delete(synchronize_session=False)
-    ApiActivity.query.filter(ApiActivity.token_id == token.id).update({ApiActivity.token_id: None}, synchronize_session=False)
+    ApiActivity.query.filter(ApiActivity.token_id == token.id).delete(synchronize_session=False)
     db.session.delete(token)
     db.session.commit()
 
@@ -364,3 +396,39 @@ def log_activity(token: ApiToken, acting_as: str, action: str, target: str) -> N
 def recent_activity(token: ApiToken, limit: int = 20) -> list:
     return (ApiActivity.query.filter_by(token_id=token.id)
             .order_by(ApiActivity.id.desc()).limit(limit).all())
+
+
+def activity_count(token: ApiToken) -> int:
+    return ApiActivity.query.filter_by(token_id=token.id).count()
+
+
+def all_activity(token: ApiToken) -> list:
+    """Every stored change made with the token, newest first (at most ACTIVITY_KEEP)."""
+    return recent_activity(token, ACTIVITY_KEEP)
+
+
+ACTIVITY_CSV_COLUMNS = ('time_utc', 'token', 'acting_as', 'action', 'target')
+
+
+def activity_csv(token: ApiToken) -> str:
+    """The token's activity as CSV text, newest first, with a BOM so spreadsheets read it as UTF-8."""
+    import csv
+    import io
+    from ..blueprints.expenses import _csv_text
+    out = io.StringIO()
+    out.write('\ufeff')
+    writer = csv.writer(out)
+    writer.writerow(ACTIVITY_CSV_COLUMNS)
+    for a in all_activity(token):
+        writer.writerow([
+            a.created_at.strftime('%Y-%m-%dT%H:%M:%SZ') if a.created_at else '',
+            _csv_text(a.token_name), _csv_text(a.acting_as), _csv_text(a.action), _csv_text(a.target),
+        ])
+    return out.getvalue()
+
+
+def activity_filename(token: ApiToken) -> str:
+    """A file name for the token's CSV: letters, digits and dashes only."""
+    import re
+    slug = re.sub(r'[^A-Za-z0-9]+', '-', token.name).strip('-').lower() or f'token-{token.id}'
+    return f'homehub-api-activity-{slug}.csv'

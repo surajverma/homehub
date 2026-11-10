@@ -33,6 +33,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **👋 Who's Home?**: See at a glance who is currently home.
 * **💰 Expense Tracker**: A powerful tool to track family spending, with support for recurring bills like newspapers, milk, or subscriptions. Set monthly budgets (overall and per category) and see charts of spending by category, by person and by day. Export a month or a date range as a CSV file for Excel or Google Sheets, and import expenses from a CSV file (HomeHub's own export or a bank or UPI statement) with a preview that flags likely duplicates. Anyone can record an expense paid by anyone, but only the person who added it (or the admin) can edit or delete it.
 * **🎬 Media Downloader**: Save videos or music from popular sites directly to your server.
+* **🗑️ Trash**: Deleted reminders, shopping items, chores, notes, recipes, expiry items and expenses wait in a shared Trash for 7 days, so anything removed by mistake (in HomeHub or through the API) can be restored.
 * ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, **Weather Updates** and **QR Code Generator**!
 
 ## Salient Features
@@ -40,6 +41,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **Simple & Lightweight**: Runs smoothly on minimal hardware.
 * **Family-Focused**: Designed to be intuitive for users of all technical skill levels.
 * **Customizable**: Toggle features on or off and even change the color theme right from the `config.yml` file.
+* **Forgiving**: Deleted reminders, shopping items, chores, notes, recipes, expiry items and expenses go to a shared **Trash** for 7 days, so a slip of the finger can be undone.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/homehub-dark.gif">
@@ -227,6 +229,22 @@ The `password` in `config.yml` is separate: it protects the whole site and keeps
 
 Logins and admin unlocks survive a restart: if `SECRET_KEY` is not set, HomeHub generates one on first start and keeps it in `data/secret_key`.
 
+## Trash
+
+Deleting something in HomeHub moves it to the **Trash** (in the menu) instead of removing it at once: reminders and recurring reminders, shopping items, chores and recurring chores, notes, recipes, expiry items, expenses and recurring expenses. (Deleting a recurring reminder that has already started only ends it from today, keeping its earlier dates; that has a short Undo instead.) Right after a delete, the **Undo** button in the message brings it back; after that, the Trash page lists everything deleted in the last 7 days, newest first, with who deleted it and how many days are left. Each module page has a **Trash** link that shows only its own items (on the Calendar it's the **Trash** button). Reminders that were in the calendar's old trash when you upgrade are moved to the Trash page, keeping the day they were deleted.
+
+Whoever added an item (or the admin) can **Restore** it or **Delete forever**. Things deleted through the [API](docs/api.md) land here too, marked with the app that deleted them, for example *Priya (via Hermes)*. After 7 days items are deleted for good automatically. On the server:
+
+```bash
+docker exec -it homehub flask trash list
+```
+
+```bash
+docker exec -it homehub flask trash restore t-3f9c2a7d1e
+```
+
+The restore takes the reference in the first column of `flask trash list` (it starts with `t-`). It names one entry for good, so a restore typed from an older listing never brings back a different item.
+
 ## Backup and restore
 
 Backups are zip files kept on the server in `data/backups/` (on the host through the `./data` volume). The Backups page and the `flask backup` command save to the same folder and see the same list. A backup only protects you once it is copied to another device, so download it or copy it off the machine.
@@ -297,7 +315,7 @@ If it leaks, change the token in `config.yml`; old links stop working straight a
 
 ## API, Home Assistant and AI agents (optional)
 
-HomeHub has a token-protected JSON API at `/api/v1/` and a built-in [MCP](https://modelcontextprotocol.io) endpoint at `/api/v1/mcp`, so Home Assistant, phone shortcuts, NFC tags, Node-RED, scripts and AI agents (such as Hermes or Claude) can read and update who is home, reminders, the shopping list, chores, notes, recipes, the expiry tracker and expenses.
+HomeHub has a token-protected JSON API at `/api/v1/` and a built-in [MCP](https://modelcontextprotocol.io) endpoint at `/api/v1/mcp`, so Home Assistant, phone shortcuts, NFC tags, Node-RED, scripts and AI agents (such as Hermes or Claude) can read and update who is home, reminders, the shopping list, chores, notes, recipes, the expiry tracker and expenses, and read the notice board and the weather.
 
 The API is off until you create a token. Switch to the admin user and open **Admin tools > API access** on the Welcome page (it needs an [admin password](#admin-password-optional)), or use the command line:
 
@@ -438,7 +456,7 @@ weather:
 - **Two view modes:**
   - `compact`: Shows current temperature, weather condition, feels like, wind (with direction and gusts), humidity, and recent precipitation
   - `detailed`: Adds today's forecast with sunrise/sunset times, UV index, precipitation probability, and daily high/low temperatures
-- **Smart caching:** Weather data is cached for 15 minutes to respect API rate limits and improve performance
+- **Smart caching:** Weather data is cached for 15 minutes to respect API rate limits and improve performance. With coordinates in `config.yml`, the server fetches it and shares that cache with the [API](docs/api.md#weather)
 - **Flexible location:** Use configured coordinates or browser geolocation
 - **Timezone support:** Displays times in your configured timezone, or uses automatic detection
 - **Unit selection:** Choose between metric (°C, km/h, mm) or imperial (°F, mph, mm) units
@@ -521,11 +539,11 @@ It is **not designed or hardened to be safely exposed to the public internet.** 
 ### 🌤️ Weather Data & Third-Party Services
 
 The optional weather widget uses [Open-Meteo](https://open-meteo.com/), a free weather API service. When the weather widget is enabled:
-- Your browser makes requests to Open-Meteo's servers to fetch weather data
+- With `latitude` and `longitude` in `config.yml`, the HomeHub server fetches the weather from Open-Meteo; without them, your browser uses its own location and the server passes that request on
 - Location coordinates (latitude/longitude) are sent to their API
 - Open-Meteo has its own [privacy policy](https://open-meteo.com/en/terms) and terms of service
 
-By enabling the weather widget, you acknowledge that weather data is provided by a third-party service and is subject to their policies. HomeHub itself does not store or process weather data beyond local browser caching.
+By enabling the weather widget, you acknowledge that weather data is provided by a third-party service and is subject to their policies. HomeHub itself keeps weather data only in memory (on the server, for 15 minutes) and in the browser's cache. The API's weather answer never includes the coordinates or the place name.
 
 ## Have Fun!
 

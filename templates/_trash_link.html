@@ -1,0 +1,4 @@
+{# A quiet link to the Trash page, showing only this module's deleted items #}
+{% macro trash_link(module) -%}
+<a href="{{ url_for('main.trash_page', module=module) }}" class="btn btn-ghost btn-sm flex-shrink-0 sm:mt-1 trash-link" style="color: var(--primary-text);"><i class="fa-solid fa-trash-can-arrow-up" aria-hidden="true"></i>{{ _('Trash') }}</a>
+{%- endmacro %}

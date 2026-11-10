@@ -130,8 +130,7 @@ def test_revoked_token_is_refused(home):
 
 
 PAGES = ['/', '/notes', '/shopping', '/calendar', '/expenses', '/admin/backups', '/upload', '/sw.js']
-WEB_API = ['/api/reminders', '/api/shopping', '/api/chores', '/api/recipes', '/api/expenses/month',
-           '/api/reminders/trash']
+WEB_API = ['/api/reminders', '/api/shopping', '/api/chores', '/api/recipes', '/api/expenses/month', '/trash']
 
 
 @pytest.mark.parametrize('path', PAGES + WEB_API)

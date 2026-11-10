@@ -5,8 +5,10 @@ module adds columns and tables that older ``data/app.db`` files lack. Every
 step is additive and safe to run on every start. A step that fails is logged
 and skipped so the rest still run.
 """
+import json
 import logging
 import os
+import secrets
 import sqlite3
 from datetime import datetime, timedelta, timezone
 
@@ -33,6 +35,8 @@ COLUMNS = [
     ('reminder', 'end_time', 'TEXT', None),
     ('reminder', 'all_day', 'INTEGER DEFAULT 0', None),
     ('reminder', 'completed_at', 'TIMESTAMP', None),
+    # No longer used: trashed reminders moved to the shared trash (move_reminder_trash). The column
+    # stays because dropping one is a table rebuild in SQLite.
     ('reminder', 'deleted_at', 'TIMESTAMP', None),
     ('file', 'stored_name', 'TEXT', None),
 ]
@@ -74,6 +78,14 @@ TABLES = [
         last_generated_date DATE,
         timestamp TIMESTAMP
     )""",
+    # Undo and the shared trash (app/undo.py); normally made by db.create_all(), but `flask restore` runs these alone
+    """CREATE TABLE IF NOT EXISTS undo_stash (
+        id INTEGER PRIMARY KEY,
+        token VARCHAR(32) NOT NULL UNIQUE,
+        kind VARCHAR(32) NOT NULL,
+        payload TEXT NOT NULL,
+        expires_at DATETIME NOT NULL
+    )""",
     # The JSON API (app/api). Older versions ignore these tables.
     """CREATE TABLE IF NOT EXISTS api_token (
         id INTEGER PRIMARY KEY,
@@ -104,6 +116,8 @@ LATE_COLUMNS = [
     ('recurring_expense', 'category', 'TEXT', None),
     ('recurring_expense', 'effective_from', 'DATE', None),
     ('recurring_expense', 'split_with', 'TEXT', None),
+    ('recurring_expense', 'uid', 'VARCHAR(32)', None),
+    ('recurring_expense', 'previous_uid', 'VARCHAR(32)', None),
     ('expense_entry', 'skipped', 'INTEGER DEFAULT 0', 0),
     ('expense_entry', 'split_with', 'TEXT', None),
     ('expense_entry', 'is_settlement', 'INTEGER DEFAULT 0', 0),
@@ -131,6 +145,15 @@ LATE_COLUMNS = [
     ('api_activity', 'action', 'VARCHAR(64)', None),
     ('api_activity', 'target', 'VARCHAR(200)', None),
     ('api_activity', 'created_at', 'TIMESTAMP', None),
+    # Tokens made before Allow deleting covered every tool keep it for reminders only
+    ('api_token', 'delete_scope', 'VARCHAR(16)', 'reminders'),
+    # The shared trash keeps deleted records in the undo store (app/undo.py)
+    ('undo_stash', 'module', 'VARCHAR(32)', None),
+    ('undo_stash', 'label', 'VARCHAR(256)', None),
+    ('undo_stash', 'owner', 'TEXT', None),
+    ('undo_stash', 'deleted_by', 'TEXT', None),
+    ('undo_stash', 'deleted_at', 'TIMESTAMP', None),
+    ('undo_stash', 'record_id', 'INTEGER', None),
 ]
 
 
@@ -148,11 +171,226 @@ def ensure_column(cur, table: str, column: str, type_spec: str, default=None) ->
         cur.execute(f"UPDATE {table} SET {column}=? WHERE {column} IS NULL", (default,))
 
 
-def purge_reminder_trash(cur, now: datetime | None = None) -> int:
-    """Delete reminders that have sat in the trash longer than the retention period."""
+def _stored_time(value):
+    """A timestamp as SQLite holds it, as the shared trash's copies hold it (ISO, "T" between date and time)."""
+    if isinstance(value, str) and len(value) > 10 and value[10] == ' ':
+        return value[:10] + 'T' + value[11:]
+    return value
+
+
+def _is_timestamp(declared_type: str) -> bool:
+    """True for a column declared as a date and time (DATETIME from SQLAlchemy, TIMESTAMP from these upgrades)."""
+    declared = (declared_type or '').upper()
+    return 'DATETIME' in declared or 'TIMESTAMP' in declared
+
+
+def _parse_time(value: str) -> datetime:
+    return datetime.fromisoformat(str(value).replace(' ', 'T', 1))
+
+
+def move_reminder_trash(cur, now: datetime | None = None) -> int:
+    """Move reminders in the calendar's old trash (deleted_at set) into the shared trash, then off the calendar.
+
+    Each keeps the time it was deleted and leaves the trash 7 days after it, as before. Ones already older
+    than that are deleted, as the old trash would have done. Nobody recorded who deleted them.
+    """
     now = now or datetime.now(timezone.utc).replace(tzinfo=None)
-    cutoff = (now - timedelta(days=TRASH_RETENTION_DAYS)).strftime('%Y-%m-%d %H:%M:%S')
-    cur.execute("DELETE FROM reminder WHERE deleted_at IS NOT NULL AND deleted_at < ?", (cutoff,))
+    if not has_autoincrement(cur, 'reminder'):
+        # Removing rows first would free their ids; wait until the table has AUTOINCREMENT (next start)
+        log.warning('Old reminder trash left in place until the reminder table has AUTOINCREMENT')
+        return 0
+    cur.execute("PRAGMA table_info(reminder)")
+    columns = cur.fetchall()
+    names = [row[1] for row in columns]
+    timestamps = {row[1] for row in columns if _is_timestamp(row[2])}
+    if 'deleted_at' not in names:
+        return 0
+    cur.execute(f"SELECT {', '.join(names)} FROM reminder WHERE deleted_at IS NOT NULL")
+    moved = 0
+    for values in cur.fetchall():
+        row = dict(zip(names, values))
+        try:
+            deleted_at = _parse_time(row['deleted_at'])
+        except ValueError:
+            deleted_at = now
+        expires_at = deleted_at + timedelta(days=TRASH_RETENTION_DAYS)
+        if expires_at > now:
+            # Only timestamps change form; text such as a title or a name is copied exactly
+            data = {name: _stored_time(value) if name in timestamps else value for name, value in row.items()}
+            data['deleted_at'] = None
+            for flag in ('all_day',):
+                if flag in data and data[flag] is not None:
+                    data[flag] = bool(data[flag])
+            day = str(row.get('start_date') or row.get('date') or '')[:10]
+            title = str(row.get('title') or '')
+            label = f'{title} ({day})' if day else title
+            cur.execute(
+                "INSERT INTO undo_stash (token, kind, payload, expires_at, module, label, owner, deleted_by, deleted_at, record_id) "
+                "VALUES (?, 'reminder', ?, ?, 'reminders', ?, ?, '', ?, ?)",
+                (secrets.token_hex(16), json.dumps({'row': data}), expires_at.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                 label[:256], str(row.get('creator') or ''), deleted_at.strftime('%Y-%m-%d %H:%M:%S.%f'), row['id']))
+            moved += 1
+        cur.execute("DELETE FROM reminder WHERE id=?", (row['id'],))
+    return moved
+
+
+def fill_trash_record_ids(cur) -> int:
+    """Note which record each trash entry holds, for entries made before record_id existed."""
+    cur.execute("SELECT id, payload FROM undo_stash WHERE module IS NOT NULL AND record_id IS NULL")
+    filled = 0
+    for stash_id, payload in cur.fetchall():
+        try:
+            data = json.loads(payload or '{}')
+        except ValueError:
+            continue
+        record = data.get('row') or data.get('rule') or {}
+        if isinstance(record, dict) and isinstance(record.get('id'), int):
+            cur.execute("UPDATE undo_stash SET record_id=? WHERE id=?", (record['id'], stash_id))
+            filled += 1
+    return filled
+
+
+# Tables with a trash, and the trash kinds whose entries hold their ids (see app/models.py TRASHABLE)
+AUTOINCREMENT_TABLES = {
+    'shopping_item': ('shopping_item',),
+    'note': ('note',),
+    'recipe': ('recipe',),
+    'expiry_item': ('expiry_item',),
+    'chore': ('chore',),
+    'recurring_chore': ('chore_rule',),
+    'reminder': ('reminder',),
+    'recurring_reminder': ('reminder_rule',),
+    'expense_entry': ('expense_entry',),
+    'recurring_expense': ('expense_rule',),
+    # The trash itself: an entry's id, as listed by flask trash list, never names a later entry
+    'undo_stash': (),
+}
+# Rows a trash entry holds besides its main record: (kind, payload key) -> table
+_TRASHED_CHILDREN = {('chore_rule', 'chores'): 'chore', ('expense_rule', 'entries'): 'expense_entry'}
+
+
+def _ids_held_in_trash(cur) -> dict:
+    """{table: highest id held by a trash entry}, so a rebuilt table never hands those ids out again."""
+    held: dict = {}
+    if not has_column(cur, 'undo_stash', 'module'):
+        return held
+    kind_tables = {kind: table for table, kinds in AUTOINCREMENT_TABLES.items() for kind in kinds}
+    cur.execute("SELECT kind, payload FROM undo_stash WHERE module IS NOT NULL")
+    for kind, payload in cur.fetchall():
+        try:
+            data = json.loads(payload or '{}')
+        except ValueError:
+            continue
+        found = []
+        main = data.get('row') or data.get('rule')
+        if kind in kind_tables and isinstance(main, dict):
+            found.append((kind_tables[kind], main.get('id')))
+        for (child_kind, key), table in _TRASHED_CHILDREN.items():
+            if kind == child_kind:
+                found.extend((table, child.get('id')) for child in data.get(key) or [] if isinstance(child, dict))
+        for table, record_id in found:
+            if isinstance(record_id, int):
+                held[table] = max(held.get(table, 0), record_id)
+    return held
+
+
+def has_autoincrement(cur, table: str) -> bool:
+    cur.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,))
+    row = cur.fetchone()
+    return bool(row and row[0] and 'AUTOINCREMENT' in row[0].upper())
+
+
+def _quote(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
+
+
+def use_autoincrement(conn, table: str, held_id: int = 0) -> bool:
+    """Rebuild ``table`` with "id INTEGER PRIMARY KEY AUTOINCREMENT", keeping every column, value, default,
+    foreign key, unique constraint and index (SQLite's documented way to change a table's definition).
+
+    The id counter starts past the highest id in the table and ``held_id`` (an id in the trash). Does
+    nothing for a missing table or one that already has AUTOINCREMENT. All or nothing: one transaction.
+    Returns True when the table was rebuilt.
+    """
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,))
+    if cur.fetchone() is None or has_autoincrement(cur, table):
+        return False
+    cur.execute(f"PRAGMA table_info({_quote(table)})")
+    columns = cur.fetchall()
+    keys = [c for c in columns if c[5]]
+    if len(keys) != 1 or keys[0][1] != 'id' or 'INT' not in (keys[0][2] or '').upper():
+        log.warning('Not rebuilding %s with AUTOINCREMENT: its primary key is not a single integer id', table)
+        return False
+    definitions = []
+    for _cid, name, type_, notnull, default, pk in columns:
+        if pk:
+            definitions.append(f'{_quote(name)} INTEGER PRIMARY KEY AUTOINCREMENT')
+            continue
+        column = f'{_quote(name)} {type_ or ""}'.rstrip()
+        if notnull:
+            column += ' NOT NULL'
+        if default is not None:
+            column += f' DEFAULT {default}'
+        definitions.append(column)
+    cur.execute(f"PRAGMA index_list({_quote(table)})")
+    for _seq, index_name, unique, origin, _partial in cur.fetchall():
+        if unique and origin == 'u':
+            cur.execute(f"PRAGMA index_info({_quote(index_name)})")
+            names = ', '.join(_quote(r[2]) for r in sorted(cur.fetchall()))
+            definitions.append(f'UNIQUE ({names})')
+    cur.execute(f"PRAGMA foreign_key_list({_quote(table)})")
+    foreign: dict = {}
+    for fk_id, _seq, ref_table, from_col, to_col, on_update, on_delete, _match in cur.fetchall():
+        entry = foreign.setdefault(fk_id, {'table': ref_table, 'from': [], 'to': [], 'update': on_update, 'delete': on_delete})
+        entry['from'].append(from_col)
+        entry['to'].append(to_col)
+    for fk in foreign.values():
+        clause = (f"FOREIGN KEY ({', '.join(_quote(c) for c in fk['from'])}) REFERENCES {_quote(fk['table'])}"
+                  + (f" ({', '.join(_quote(c) for c in fk['to'] if c)})" if any(fk['to']) else ''))
+        if fk['update'] and fk['update'] != 'NO ACTION':
+            clause += f" ON UPDATE {fk['update']}"
+        if fk['delete'] and fk['delete'] != 'NO ACTION':
+            clause += f" ON DELETE {fk['delete']}"
+        definitions.append(clause)
+    cur.execute("SELECT sql FROM sqlite_master WHERE type='index' AND tbl_name=? AND sql IS NOT NULL", (table,))
+    indexes = [r[0] for r in cur.fetchall()]
+    names = ', '.join(_quote(c[1]) for c in columns)
+    new = _quote(table + '__autoincrement')
+    conn.commit()
+    cur.execute('PRAGMA foreign_keys')
+    foreign_keys_on = bool(cur.fetchone()[0])
+    if foreign_keys_on:
+        cur.execute('PRAGMA foreign_keys=OFF')
+    try:
+        cur.execute('BEGIN IMMEDIATE')
+        cur.execute(f"CREATE TABLE {new} ({', '.join(definitions)})")
+        cur.execute(f"INSERT INTO {new} ({names}) SELECT {names} FROM {_quote(table)}")
+        cur.execute(f"DROP TABLE {_quote(table)}")
+        cur.execute(f"ALTER TABLE {new} RENAME TO {_quote(table)}")
+        for sql in indexes:
+            cur.execute(sql)
+        cur.execute(f"SELECT COALESCE(MAX(id), 0) FROM {_quote(table)}")
+        start = max(cur.fetchone()[0], held_id or 0)
+        cur.execute("DELETE FROM sqlite_sequence WHERE name=?", (table,))
+        cur.execute("INSERT INTO sqlite_sequence (name, seq) VALUES (?, ?)", (table, start))
+        cur.execute(f"PRAGMA foreign_key_check({_quote(table)})")
+        if cur.fetchall():
+            raise sqlite3.IntegrityError(f'foreign key check failed after rebuilding {table}')
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        if foreign_keys_on:
+            cur.execute('PRAGMA foreign_keys=ON')
+    return True
+
+
+def purge_expired_stashes(cur, now: datetime | None = None) -> int:
+    """Delete undo stashes and trash entries whose time is up."""
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
+    cur.execute("DELETE FROM undo_stash WHERE expires_at < ?", (now.strftime('%Y-%m-%d %H:%M:%S.%f'),))
     return cur.rowcount
 
 
@@ -211,7 +449,6 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
         cur = conn.cursor()
         for table, column, type_spec, default in COLUMNS:
             ok &= _step(conn, f'add {table}.{column}', ensure_column, cur, table, column, type_spec, default)
-        ok &= _step(conn, 'purge old reminder trash', purge_reminder_trash, cur)
         ok &= _step(conn, 'mark interrupted downloads as failed', fail_interrupted_downloads, cur)
         ok &= _step(conn, 'backfill reminder start_date', cur.execute,
                     "UPDATE reminder SET start_date=date WHERE start_date IS NULL AND date IS NOT NULL")
@@ -229,6 +466,25 @@ def run(db_path: str, pdf_dir: str | None = None) -> bool:
         # Anything else is scheduled monthly by the app's legacy fallback, so store that
         ok &= _step(conn, 'default recurring_reminder unit', cur.execute,
                     "UPDATE recurring_reminder SET unit='month' WHERE unit IS NULL OR unit=''")
+        ok &= _step(conn, 'give recurring expenses a uid', cur.execute,
+                    "UPDATE recurring_expense SET uid=lower(hex(randomblob(16))) WHERE uid IS NULL OR uid=''")
+        ok &= _step(conn, 'note which record each trash entry holds', fill_trash_record_ids, cur)
+        held = {}
+        try:
+            held = _ids_held_in_trash(cur)
+        except Exception:
+            log.exception('Could not read which ids the trash holds')
+        # AUTOINCREMENT first, while every row is still there: its counter is saved in the file at once,
+        # so ids of rows removed below (old trashed reminders past their 7 days) are never handed out
+        # again, even if the upgrade stops half way and runs again
+        for table in AUTOINCREMENT_TABLES:
+            try:
+                use_autoincrement(conn, table, held.get(table, 0))
+            except Exception:
+                ok = False
+                log.exception('Database upgrade step failed: AUTOINCREMENT for %s', table)
+        ok &= _step(conn, 'move trashed reminders to the shared trash', move_reminder_trash, cur)
+        ok &= _step(conn, 'purge expired trash', purge_expired_stashes, cur)
         if pdf_dir and os.path.isdir(pdf_dir):
             ok &= _step(conn, 'remove leftover PDF originals', remove_leftover_pdf_originals, cur, pdf_dir)
     finally:

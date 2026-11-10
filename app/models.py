@@ -33,7 +33,13 @@ def parse_split(raw):
         return mode, weights
     return 'equal', {}
 
+# Tables with a trash: SQLite never hands out an id twice (AUTOINCREMENT), so an id seen by a client or
+# held by a trash entry can never come to mean another record, even after the entry is deleted for good
+TRASHABLE = {'sqlite_autoincrement': True}
+
+
 class Note(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     creator = db.Column(db.String(64), nullable=False)
@@ -69,6 +75,7 @@ class PDF(db.Model):
     compressed_path = db.Column(db.String(512))
 
 class ShoppingItem(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     item = db.Column(db.String(256), nullable=False)
     checked = db.Column(db.Boolean, default=False)
@@ -89,6 +96,7 @@ class HomeStatus(db.Model):
     status = db.Column(db.String(16), default='Away')
 
 class Chore(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text, nullable=False)
     creator = db.Column(db.String(64))
@@ -101,6 +109,7 @@ class Chore(db.Model):
 
 
 class RecurringChore(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text, nullable=False)
     creator = db.Column(db.String(64))
@@ -113,6 +122,7 @@ class RecurringChore(db.Model):
     timestamp = db.Column(db.DateTime, default=utcnow)
 
 class Recipe(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(256), nullable=False)
     link = db.Column(db.String(512))
@@ -124,6 +134,7 @@ class Recipe(db.Model):
     tags = db.Column(db.Text, default='[]')
 
 class ExpiryItem(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
     expiry_date = db.Column(db.Date)
@@ -152,6 +163,7 @@ class Notice(db.Model):
     updated_at = db.Column(db.DateTime, default=utcnow)
 
 class Reminder(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.String(5))  # HH:MM (optional)
@@ -171,6 +183,8 @@ class Reminder(db.Model):
     # Tie back to a recurring rule (if generated)
     recurring_id = db.Column(db.Integer)
     completed_at = db.Column(db.DateTime)
+    # The calendar's old trash, before the shared Trash. Only set on rows from older versions until the
+    # startup upgrade moves them (app/migrations.py move_reminder_trash); reminder queries skip such rows.
     deleted_at = db.Column(db.DateTime)
 
 class MemberStatus(db.Model):
@@ -179,8 +193,18 @@ class MemberStatus(db.Model):
     text = db.Column(db.Text, default='')
     updated_at = db.Column(db.DateTime, default=utcnow)
 
+def new_uid() -> str:
+    import secrets
+    return secrets.token_hex(16)
+
+
 class RecurringExpense(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
+    # Names this rule for good: its id can change when it is restored from the trash, its title when edited
+    uid = db.Column(db.String(32), default=new_uid)
+    # The uid of the rule this one continues after a split (Recurring rules > edit > split from a date)
+    previous_uid = db.Column(db.String(32))
     title = db.Column(db.String(256), nullable=False)
     unit_price = db.Column(db.Float, default=0.0)
     default_quantity = db.Column(db.Float, default=1.0)
@@ -209,6 +233,7 @@ class RecurringExpense(db.Model):
         return parse_split(self.split_with)[1]
 
 class RecurringReminder(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(256), nullable=False)
     description = db.Column(db.Text)
@@ -232,6 +257,7 @@ class RecurringReminder(db.Model):
     timestamp = db.Column(db.DateTime, default=utcnow)
 
 class ExpenseEntry(db.Model):
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
     title = db.Column(db.String(256), nullable=False)
@@ -268,12 +294,28 @@ class ExpenseBudget(db.Model):
 
 
 class UndoStash(db.Model):
-    """What a change replaced, kept for a few seconds so it can be undone (see app/undo.py)."""
+    """What a change replaced, kept so it can be undone (see app/undo.py).
+
+    A change is kept for a few seconds. A delete is kept for 7 days and is the trash: those rows
+    have a module, a label, the owner whose records they were and who deleted them.
+    """
+    # Its id names an entry for good (the Trash page and flask trash restore use it)
+    __table_args__ = TRASHABLE
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(32), unique=True, nullable=False)
     kind = db.Column(db.String(32), nullable=False)
     payload = db.Column(db.Text, nullable=False)  # JSON
     expires_at = db.Column(db.DateTime, nullable=False)
+    # Set only on trash entries
+    module = db.Column(db.String(32))
+    label = db.Column(db.String(256))
+    # The record's owner exactly as stored with it (never shortened: who may restore depends on it)
+    owner = db.Column(db.Text)
+    # Whole, never shortened: an Undo restores for this person, so it decides what they may bring back
+    deleted_by = db.Column(db.Text)
+    deleted_at = db.Column(db.DateTime)
+    # Id of the record in its own table, kept from new rows while it is in the trash (app/undo.py)
+    record_id = db.Column(db.Integer)
 
 
 class ApiToken(db.Model):
@@ -288,6 +330,9 @@ class ApiToken(db.Model):
     permissions = db.Column(db.Text, nullable=False, default='{}')
     act_as_members = db.Column(db.Boolean, nullable=False, default=False)
     allow_delete = db.Column(db.Boolean, nullable=False, default=False)
+    # What Allow deleting covers: 'all' (every tool with a trash) for tokens made since it did,
+    # 'reminders' for tokens made when it only covered reminders. Empty counts as 'reminders'.
+    delete_scope = db.Column(db.String(16))
     created_at = db.Column(db.DateTime, default=utcnow)
     last_used_at = db.Column(db.DateTime)
     revoked_at = db.Column(db.DateTime)

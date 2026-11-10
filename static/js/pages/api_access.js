@@ -74,9 +74,10 @@ document.addEventListener('DOMContentLoaded', function(){
     return Array.from(form.querySelectorAll('.tool-row')).map(function(row){ return row.dataset.tool; });
   }
 
-  // Allow deleting only covers reminders, so it needs Reminders with Read & write
+  // Allow deleting moves items to the trash, so it needs Read & write on a tool that has one
+  const DELETABLE = ['reminders', 'shopping', 'chores', 'notes', 'recipes', 'expiry', 'expenses'];
   function syncDelete(){
-    const possible = levelOf('reminders') === 'write';
+    const possible = DELETABLE.some(function(tool){ return levelOf(tool) === 'write'; });
     allowDelete.disabled = !possible;
     if (!possible) allowDelete.checked = false;
     allowDelete.closest('label').classList.toggle('opacity-60', !possible);

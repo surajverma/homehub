@@ -21,7 +21,7 @@ def visible_operations(token, config=None) -> list:
         if op.tool is None:
             out.append(op)
         elif tokens.level_allows(allowed.get(op.tool), op.level):
-            if op.destructive and not token.allow_delete:
+            if op.destructive and op.tool not in tokens.delete_tools(token):
                 continue
             out.append(op)
     return out
@@ -32,6 +32,8 @@ def overview_payload(token) -> dict:
         'token': token.name,
         'act_as_members': bool(token.act_as_members),
         'allow_delete': bool(token.allow_delete),
+        # Tools whose items it may move to the trash now (switched-off tools left out)
+        'delete_tools': [t for t in tokens.delete_tools(token) if tokens.tool_enabled(t)],
         'tools': tokens.effective_permissions(token),
         'family_members': [m for m in tokens.family_members() if not tokens.is_admin_name(m)],
         'version': core.API_VERSION,

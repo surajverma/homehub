@@ -6,12 +6,14 @@ import csv
 import io
 import json
 import math
-from ..models import db, RecurringExpense, ExpenseEntry, ExpenseBudget, parse_split
+from ..models import db, RecurringExpense, ExpenseEntry, ExpenseBudget, UndoStash, parse_split
 from ..security import sanitize_text
 from ..blueprints import main_bp
 from ..admin import is_admin, can_modify
 from ..recurrence import serialized
-from ..undo import offer_undo, restore_row, restorer, row_to_dict, same_record, stamp
+from ..undo import (RestoreConflict, delete_exactly, may_restore, offer_batch_undo, offer_undo, restore_row, restore_stash, restorer,
+                    row_to_dict, valid_ids,
+                    same_record, stamp, stash_undo, trash_info, trash_row)
 import bleach
 from flask_babel import gettext as _, ngettext
 
@@ -130,6 +132,113 @@ def _reapply_skips(rule_id: int, dates: set) -> None:
 def entry_owner(e: ExpenseEntry) -> str:
     """Who may change an entry besides the admin: whoever entered it, or the payer on rows from before that was kept."""
     return e.created_by or e.payer or ''
+
+
+def trash_expense_entry(entry: ExpenseEntry, deleted_by: str, message: str | None = None, commit: bool = True) -> str | None:
+    """Move an entry to the trash (restorable for 7 days). Commits.
+
+    A recurring day keeps which rule it came from, so a restore can tell whether that rule is still there.
+    """
+    rule = db.session.get(RecurringExpense, entry.recurring_id) if entry.recurring_id else None
+    extra = {'rule': {'id': rule.id, 'uid': rule.uid, 'timestamp': stamp(rule), 'title': rule.title}} if rule else {}
+    label = f"{entry.title} ({entry.date.isoformat()})" if entry.date else entry.title
+    return trash_row('expense_entry', entry, trash_info('expenses', label, entry_owner(entry), deleted_by), message, extra,
+                     commit=commit)
+
+
+def _rule_by_identity(ref: dict) -> RecurringExpense | None:
+    """The rule ``ref`` names, wherever it is now: by its uid, which survives a new id and a new title.
+
+    Days trashed before rules had a uid fall back to the id with the rule's creation time.
+    """
+    if ref.get('uid'):
+        return RecurringExpense.query.filter_by(uid=ref['uid']).first()
+    rule = db.session.get(RecurringExpense, ref['id'])
+    if rule is not None and stamp(rule) == ref.get('timestamp'):
+        return rule
+    if not ref.get('timestamp'):
+        return None
+    created = datetime.fromisoformat(ref['timestamp'])
+    return RecurringExpense.query.filter_by(timestamp=created).order_by(RecurringExpense.id.desc()).first()
+
+
+def _same_rule(rule_data: dict, ref: dict) -> bool:
+    if ref.get('uid'):
+        return rule_data.get('uid') == ref['uid']
+    return rule_data.get('id') == ref.get('id') and rule_data.get('timestamp') == ref.get('timestamp')
+
+
+def _rule_lineage(uid: str) -> list:
+    """Ids of the rule with ``uid`` and of every rule split from it since, however often."""
+    uids, frontier = {uid}, [uid]
+    while frontier:
+        found = {r.uid for r in RecurringExpense.query.filter(RecurringExpense.previous_uid.in_(frontier)).all()}
+        frontier = list(found - uids)
+        uids |= found
+    return [r.id for r in RecurringExpense.query.filter(RecurringExpense.uid.in_(uids)).all()]
+
+
+def _refuse_if_billed(uid: str, day: date, data: dict) -> None:
+    """RestoreConflict when the day's rule, or a rule split from it (even if the rule itself is gone for
+    good), already has this day: restoring the deleted copy as well would count the expense twice.
+
+    A day moved past its rule's end by hand, with nothing else on that date, is restored as usual.
+    """
+    rule_ids = _rule_lineage(uid)
+    if not rule_ids:
+        return
+    for entry in ExpenseEntry.query.filter(ExpenseEntry.recurring_id.in_(rule_ids), ExpenseEntry.date == day).all():
+        if not same_record(entry, data):
+            raise RestoreConflict(_('%(title)s for %(date)s is already there again (added back, or billed by the rule it was split into), so this copy cannot be restored. Delete it for good instead.',
+                                    title=data.get('title') or '', date=day))
+
+
+def _rule_from_trash(ref: dict) -> RecurringExpense | None:
+    """Restore the deleted recurring rule ``ref`` points at, if it is in the trash; returns the restored rule."""
+    for stash in UndoStash.query.filter(UndoStash.kind == 'expense_rule', UndoStash.module == 'expenses').all():
+        rule_data = json.loads(stash.payload).get('rule') or {}
+        if _same_rule(rule_data, ref):
+            # Bringing the rule back restarts its charges, so it takes the right to restore the rule itself
+            if not may_restore(stash.owner):
+                raise RestoreConflict(_('Its recurring rule %(title)s is in the trash too, and only %(name)s or the admin can restore it. Ask them to restore the rule first; then this day can be restored.',
+                                        title=rule_data.get('title') or ref.get('title') or '', name=stash.owner or '?'))
+            restore_stash(stash)
+            db.session.flush()
+            return _rule_by_identity(ref)
+    return None
+
+
+@restorer('expense_entry')
+@serialized
+def _restore_expense_entry(payload: dict):
+    data = payload['row']
+    ref = payload.get('rule')
+    if not ref:
+        restore_row(ExpenseEntry, data)
+        return None
+    note = None
+    day = date.fromisoformat(data['date'])
+    if ref.get('uid'):
+        _refuse_if_billed(ref['uid'], day, data)
+    rule = _rule_by_identity(ref)
+    if rule is None:
+        # The rule was deleted after this day: bring it back from the trash as well, when it is there
+        rule = _rule_from_trash(ref)
+        if rule is None:
+            restore_row(ExpenseEntry, data, recurring_id=None)
+            return _('Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense.', title=ref.get('title') or '')
+        note = _('Its recurring rule %(title)s was restored too.', title=rule.title)
+    if not ref.get('uid') and rule.end_date and day > rule.end_date:
+        # Trashed before rules had a uid, so the rules it was split into are unknown: a newer rule may have
+        # billed this day, and restoring this one too would count the expense twice
+        raise RestoreConflict(_('%(title)s for %(date)s is no longer part of its recurring rule, which was changed after the day was deleted. Delete it for good, or add the day on the Expenses page if it is still needed.',
+                                title=data.get('title') or '', date=day))
+    twin = ExpenseEntry.query.filter_by(recurring_id=rule.id, date=day).first()
+    if twin is not None and not same_record(twin, data):
+        raise RestoreConflict(_('%(title)s for %(date)s was added back since it was deleted, so this copy cannot be restored. Delete it for good instead.',
+                                title=data.get('title') or '', date=day))
+    restore_row(ExpenseEntry, data, recurring_id=rule.id)
+    return note
 
 
 def _parse_split(raw) -> list:
@@ -784,6 +893,12 @@ def _restore_rule_snapshot(payload: dict) -> None:
     rule = restore_row(RecurringExpense, rule_data)
     for data in payload['entries']:
         restore_row(ExpenseEntry, data, recurring_id=rule.id)
+    # Entries kept as history when the rule was deleted: link back the ones that are still there,
+    # as they are now. One deleted since stays deleted; one edited since keeps its edit.
+    for ref in payload.get('kept') or []:
+        entry = db.session.get(ExpenseEntry, ref['id'])
+        if entry is not None and entry.recurring_id is None and stamp(entry) == ref.get('timestamp'):
+            entry.recurring_id = rule.id
 
 
 def _rule_edit_from_request(rid):
@@ -878,6 +993,8 @@ def edit_recurring_expense(rid):
 
         new_rule = RecurringExpense(creator=r.creator, last_generated_date=None, effective_from=split_start, **values)
         new_rule.start_date = max(values['start_date'] or split_start, split_start)
+        # So a day deleted before the split knows the new rule may have billed it again
+        new_rule.previous_uid = r.uid
         db.session.add(new_rule)
         db.session.commit()
         snapshot['new_rule_id'] = new_rule.id
@@ -973,7 +1090,22 @@ def delete_recurring_expense(rid):
         flash(_('Not allowed to delete rule.'), 'error')
         return redirect(url_for('main.expenses'))
     delete_entries = request.form.get('delete_entries') in ('1', 'true', 'on', 'yes')
+    _trash_expense_rule(r, delete_entries, user)
+    return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
+
+
+@serialized
+def _trash_expense_rule(r: RecurringExpense, delete_entries: bool, user: str) -> None:
+    """Move a recurring expense to the trash, with its entries or keeping them as history. Commits.
+
+    Holds the generation lock from the snapshot to the commit, so no day generated in between is lost.
+    """
     snapshot = _rule_snapshot(r)
+    title, creator = r.title, r.creator
+    if not delete_exactly(r):
+        db.session.rollback()
+        flash(_('That was already deleted.'), 'info')
+        return
     if delete_entries:
         try:
             ExpenseEntry.query.filter_by(recurring_id=r.id).delete()
@@ -981,16 +1113,16 @@ def delete_recurring_expense(rid):
             pass
     else:
         # Kept as plain history: left pointing at this id, they would attach themselves to
-        # whichever rule SQLite gives the id to next
+        # whichever rule SQLite gives the id to next. They stay editable, so the trash keeps only
+        # which rows they are: a restore relinks the ones still there and keeps their later edits.
+        snapshot['kept'] = [{'id': e['id'], 'timestamp': e.get('timestamp')} for e in snapshot['entries']]
+        snapshot['entries'] = []
         ExpenseEntry.query.filter_by(recurring_id=r.id).update({ExpenseEntry.recurring_id: None})
-    db.session.delete(r)
-    db.session.commit()
     if delete_entries:
-        message = _('Recurring rule deleted. Linked generated entries deleted.')
+        message = _('Recurring rule moved to the trash with its generated entries.')
     else:
-        message = _('Recurring rule deleted. Linked generated entries kept as history.')
-    offer_undo('expense_rule', snapshot, message)
-    return redirect(url_for('main.recurring_expenses_page', tab='recurring-rules'))
+        message = _('Recurring rule moved to the trash. Its generated entries are kept as history.')
+    offer_undo('expense_rule', snapshot, message, trash=trash_info('expenses', title, creator, user))
 
 
 
@@ -1054,9 +1186,7 @@ def delete_expense_entry(entry_id):
     if not can_modify(user, entry_owner(entry)):
         flash(_('Not allowed to delete entry.'), 'error')
         return redirect(url_for('main.expenses'))
-    db.session.delete(entry)
-    db.session.commit()
-    flash(_('Expense deleted.'), 'success')
+    trash_expense_entry(entry, user, _('%(title)s moved to the trash.', title=entry.title))
     # Preserve view
     today = date.today()
     y = request.args.get('y') or today.year
@@ -1209,17 +1339,15 @@ def bulk_delete_expenses():
     if not ids:
         flash(_('No entries selected.'), 'warning')
         return redirect(url_for('main.expenses'))
-    deleted = 0
-    for entry_id in ids:
-        try:
-            entry = db.session.get(ExpenseEntry, int(entry_id))
-            if entry and can_modify(user, entry_owner(entry)):
-                db.session.delete(entry)
-                deleted += 1
-        except Exception:
-            continue
-    db.session.commit()
-    flash(ngettext('%(num)s expense deleted.', '%(num)s expenses deleted.', deleted), 'success')
+    stashed = []
+    # Every entry and its Undo are committed together, after all ids are checked
+    for entry_id in valid_ids(ids):
+        entry = db.session.get(ExpenseEntry, entry_id)
+        if entry and can_modify(user, entry_owner(entry)):
+            token = trash_expense_entry(entry, user, commit=False)
+            if token:
+                stashed.append(token)
+    offer_batch_undo(stashed, ngettext('%(num)s expense moved to the trash.', '%(num)s expenses moved to the trash.', len(stashed)))
     # Preserve view
     today = date.today()
     y = request.args.get('y') or today.year

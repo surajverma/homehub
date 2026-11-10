@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_trash_link.html" import trash_link %}
 {% from "_expense_split.html" import split_box, split_script %}
 {% block content %}
 <style>
@@ -40,7 +41,10 @@
       <p class="page-subtitle">{{ _('Spending by day, with shared balances.') }}</p>
     </div>
     {# Rules and settings are not needed every day, so a quiet link rather than a card #}
-    <a href="/expenses/recurring" class="btn btn-ghost btn-sm flex-shrink-0 sm:mt-1" style="color: var(--primary-text);"><i class="fas fa-gear" aria-hidden="true"></i>{{ _('Recurring rules & config') }}</a>
+    <div class="flex flex-wrap items-center gap-1">
+      {{ trash_link('expenses') }}
+      <a href="/expenses/recurring" class="btn btn-ghost btn-sm flex-shrink-0 sm:mt-1" style="color: var(--primary-text);"><i class="fas fa-gear" aria-hidden="true"></i>{{ _('Recurring rules & config') }}</a>
+    </div>
   </div>
 
   <!-- Month summary: the headline figures; the charts below break them down -->

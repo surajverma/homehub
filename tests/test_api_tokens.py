@@ -51,7 +51,7 @@ def test_name_is_sanitised(home):
 def test_permission_rules(home):
     with home.ctx():
         with pytest.raises(tokens.TokenError, match='Unknown tool'):
-            tokens.create_token('A', {'weather': 'read'})
+            tokens.create_token('A', {'sunshine': 'read'})
         with pytest.raises(tokens.TokenError):
             tokens.create_token('A', {'notice': 'write'})
         with pytest.raises(tokens.TokenError, match='Act as family members'):
@@ -60,12 +60,16 @@ def test_permission_rules(home):
         assert row.permission_map == {'presence': 'write'}
 
 
-def test_allow_delete_needs_reminders_write(home):
+def test_allow_delete_needs_write_on_a_tool_with_a_trash(home):
     with home.ctx():
-        row, _ = tokens.create_token('A', {'reminders': 'read'}, allow_delete=True)
+        row, _ = tokens.create_token('A', {'reminders': 'read', 'shopping': 'read'}, allow_delete=True)
         assert row.allow_delete is False
-        row, _ = tokens.create_token('B', {'reminders': 'write'}, allow_delete=True)
-        assert row.allow_delete is True
+        # Who is home has Read & write but nothing that goes to the trash
+        row, _ = tokens.create_token('A2', {'presence': 'write', 'notice': 'read'}, act_as_members=True, allow_delete=True)
+        assert row.allow_delete is False
+        for i, tool in enumerate(tokens.DELETABLE):
+            row, _ = tokens.create_token(f'B{i}', {tool: 'write'}, allow_delete=True)
+            assert row.allow_delete is True, tool
 
 
 def test_regenerate_and_revoke(home):
@@ -106,7 +110,7 @@ def test_overview(home):
     assert resp.content_type.startswith('application/json')
     data = resp.get_json()
     assert data == {
-        'token': 'Hermes', 'act_as_members': True, 'allow_delete': False,
+        'token': 'Hermes', 'act_as_members': True, 'allow_delete': False, 'delete_tools': [],
         'tools': {'presence': 'write', 'notice': 'read', 'shopping': 'read'},
         'family_members': ['Priya', 'Dad', 'Mom'], 'version': '1',
     }
@@ -202,8 +206,10 @@ def test_cli_rejects_bad_input(home):
     assert 'TOOL=LEVEL' in run(home, 'create', 'X', '--tool', 'presence').output
     result = run(home, 'create', 'Priya', '--tool', 'notice=read')
     assert result.exit_code != 0 and 'family member' in result.output
-    result = run(home, 'create', 'X', '--tool', 'reminders=read', '--allow-delete')
-    assert result.exit_code != 0 and 'reminders=write' in result.output
+    result = run(home, 'create', 'X', '--tool', 'reminders=read', '--tool', 'presence=read', '--allow-delete')
+    assert result.exit_code != 0 and 'needs write on a tool' in result.output and 'shopping' in result.output
+    result = run(home, 'create', 'Y', '--tool', 'shopping=write', '--allow-delete')
+    assert result.exit_code == 0 and 'can move items to the trash' in result.output
     assert run(home, 'revoke', 'Nobody').exit_code != 0
 
 
@@ -285,35 +291,36 @@ def test_repeated_query_parameter_has_its_own_message(home):
 
 # --- Deleting revoked tokens ---
 
-def test_delete_revoked_token_keeps_its_history(home):
+def test_delete_revoked_token_deletes_its_history(home):
     home.token('Hermes', notice='read')
+    home.token('Other', notice='read')
     with home.ctx():
         token = tokens.find_by_name('Hermes')
-        tokens.log_activity(token, 'Mom', 'notes_add', 'kept')
+        tokens.log_activity(token, 'Mom', 'notes_add', 'gone')
+        tokens.log_activity(tokens.find_by_name('Other'), 'Dad', 'notes_add', 'stays')
         with pytest.raises(tokens.TokenError, match='Revoke'):
             tokens.delete_token(token)
         tokens.revoke_token(token)
+        # Revoking keeps the history
+        assert [a.target for a in tokens.recent_activity(token)] == ['gone']
         tokens.delete_token(token)
         assert tokens.find_by_name('Hermes') is None
-        row = ApiActivity.query.one()
-        assert (row.token_name, row.target, row.token_id) == ('Hermes', 'kept', None)
+        assert [a.target for a in ApiActivity.query.all()] == ['stays']
     # The name is free again, and the new token does not show the old history
     home.token('Hermes', notice='read')
     with home.ctx():
         assert tokens.recent_activity(tokens.find_by_name('Hermes')) == []
 
 
-def test_delete_keeps_at_most_the_newest_rows(home, monkeypatch):
-    monkeypatch.setattr(tokens, 'ACTIVITY_KEEP', 50)
+def test_delete_removes_every_row_of_the_token(home):
     home.token('Hermes', notice='read')
     with home.ctx():
         token = tokens.find_by_name('Hermes')
         for i in range(10):
             tokens.log_activity(token, 'Mom', 'notes_add', f'{i}')
-        monkeypatch.setattr(tokens, 'ACTIVITY_KEEP', 3)
         tokens.revoke_token(token)
         tokens.delete_token(token)
-        assert [a.target for a in ApiActivity.query.order_by(ApiActivity.id).all()] == ['7', '8', '9']
+        assert ApiActivity.query.count() == 0
 
 
 def test_cli_delete(home):
@@ -326,5 +333,24 @@ def test_cli_delete(home):
         assert tokens.find_by_name('Hermes') is not None
     result = home.app.test_cli_runner().invoke(args=['api-token', 'delete', 'hermes'], input='y\n')
     assert result.exit_code == 0 and 'deleted' in result.output
+    assert 'Its activity history is deleted too.' in result.output
     assert run(home, 'create', 'Hermes', '--tool', 'notice=read').exit_code == 0
     assert run(home, 'delete', 'Nobody', '--yes').exit_code != 0
+
+
+def test_cli_activity(home):
+    home.token('Hermes', notes='write')
+    assert 'No changes made with Hermes yet.' in run(home, 'activity', 'hermes').output
+    with home.ctx():
+        token = tokens.find_by_name('Hermes')
+        tokens.log_activity(token, 'Priya', 'notes_add', 'first')
+        tokens.log_activity(token, 'Dad', 'notes_add', 'second')
+    result = run(home, 'activity', 'Hermes')
+    assert result.exit_code == 0
+    lines = result.output.splitlines()
+    assert lines[0].endswith('UTC  Dad  notes_add  second') and lines[1].endswith('UTC  Priya  notes_add  first')
+    assert lines[2] == '2 changes made with Hermes.'
+    result = run(home, 'activity', 'Hermes', '--csv')
+    assert result.output.splitlines()[0] == 'time_utc,token,acting_as,action,target'
+    assert result.output.splitlines()[1].endswith(',Hermes,Dad,notes_add,second')
+    assert run(home, 'activity', 'Nobody').exit_code != 0

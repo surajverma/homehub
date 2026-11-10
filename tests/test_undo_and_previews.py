@@ -538,5 +538,5 @@ def test_sidebar_is_one_flat_list_in_its_usual_order(client):
     # The example config leaves the URL shortener off, so its link is not there
     # The admin's links (shown only to the admin, see test_api_admin_page.py) come after the usual list
     assert hrefs == ['/', '/notes', '/upload', '/shopping', '/calendar', '/chores', '/recipes', '/expiry',
-                     '/media', '/pdfs', '/qr', '/expenses', '/admin/backups', '/admin/api']
+                     '/media', '/pdfs', '/qr', '/expenses', '/trash', '/admin/backups', '/admin/api']
     assert 'nav-group' not in nav

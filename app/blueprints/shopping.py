@@ -6,6 +6,7 @@ from ..blueprints import main_bp, json_error_response
 from ..clock import utcnow
 from ..admin import can_modify
 from ..security import sanitize_text, sanitize_tags
+from ..undo import row_restorer, trash_info, trash_row
 import json
 
 
@@ -114,12 +115,18 @@ def delete_shopping(item_id):
     item = db.get_or_404(ShoppingItem, item_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, item.creator):
-        db.session.delete(item)
-        db.session.commit()
-        flash(_('Item deleted.'), 'success')
+        trash_shopping_item(item, user, _('%(item)s moved to the trash.', item=item.item))
     else:
         flash(_('Not allowed to delete item.'), 'error')
     return redirect(url_for('main.shopping'))
+
+
+def trash_shopping_item(item: ShoppingItem, deleted_by: str, message: str | None = None) -> str:
+    """Move an item to the trash (restorable for 7 days). Commits."""
+    return trash_row('shopping_item', item, trash_info('shopping', item.item, item.creator, deleted_by), message)
+
+
+row_restorer('shopping_item', ShoppingItem)
 
 
 @main_bp.route('/api/shopping/<int:item_id>/tags', methods=['POST'])

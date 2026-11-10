@@ -4,7 +4,7 @@ Protected like the Backups page: it needs an admin password, set and unlocked in
 A new token is shown once, in the answer to the POST that made it. It is never kept in the
 session, flashed into a later page or put in a URL, and the page is sent with no-store.
 """
-from flask import current_app, flash, make_response, redirect, render_template, request, url_for
+from flask import Response, current_app, flash, make_response, redirect, render_template, request, url_for
 from flask_babel import gettext as _
 
 from .. import admin
@@ -14,12 +14,14 @@ from ..models import ApiToken, db
 from ..security import sanitize_text
 
 API_GUIDE_URL = 'https://github.com/surajverma/homehub/blob/main/docs/api.md'
+# Changes listed under each token on the page; the rest are on its activity page
+RECENT_SHOWN = 20
 
 
 def presets(enabled_keys) -> dict:
     """The preset buttons: {key: {'permissions': {tool: level}, 'act_as': bool, 'allow_delete': bool}}."""
     enabled = [t for t in tokens.TOOLS if t.key in enabled_keys]
-    home_automation = {'presence': 'write', 'notice': 'read', 'reminders': 'read'}
+    home_automation = {'presence': 'write', 'notice': 'read', 'weather': 'read', 'reminders': 'read'}
     return {
         'read_all': {'permissions': {t.key: 'read' for t in enabled}, 'act_as': False, 'allow_delete': False},
         'home_automation': {'permissions': {k: v for k, v in home_automation.items() if k in enabled_keys},
@@ -69,10 +71,13 @@ def _summary(token: ApiToken, config) -> dict:
         'token': token,
         'access': access,
         'reaches_nothing': not reachable,
-        'can_delete': bool(token.allow_delete) and tokens.can_delete(stored),
+        'can_delete': bool(tokens.delete_tools(token)),
+        # Made when Allow deleting covered reminders only, and kept so
+        'delete_reminders_only': bool(token.allow_delete) and tokens.delete_scope(token) == tokens.DELETE_SCOPE_REMINDERS,
         # A family member or the admin now has this name, so writes made as the token are refused
         'name_clash': tokens.name_taken_by_person(token.name, config),
-        'activity': tokens.recent_activity(token, 20),
+        'activity': tokens.recent_activity(token, RECENT_SHOWN),
+        'activity_total': tokens.activity_count(token),
     }
 
 
@@ -194,3 +199,38 @@ def api_access_revoke(token_id):
         tokens.revoke_token(token)
         flash(_('Token %(name)s revoked. Anything that used it can no longer reach HomeHub.', name=token.name), 'success')
     return redirect(url_for('main.api_access_page', user=_user()))
+
+
+@main_bp.route('/admin/api/<int:token_id>/activity', methods=['GET'])
+def api_access_activity(token_id):
+    """Every stored change made with one token (the newest ACTIVITY_KEEP), newest first."""
+    denied = _require_admin()
+    if denied:
+        return denied
+    token = _get_token(token_id)
+    if token is None:
+        flash(_('That token was not found.'), 'error')
+        return redirect(url_for('main.api_access_page', user=_user()))
+    return _no_store(render_template(
+        'api_activity.html',
+        config=current_app.config['HOMEHUB_CONFIG'],
+        user=_user(),
+        token=token,
+        activity=tokens.all_activity(token),
+        keep=tokens.ACTIVITY_KEEP,
+    ))
+
+
+@main_bp.route('/admin/api/<int:token_id>/activity.csv', methods=['GET'])
+def api_access_activity_csv(token_id):
+    denied = _require_admin()
+    if denied:
+        return denied
+    token = _get_token(token_id)
+    if token is None:
+        flash(_('That token was not found.'), 'error')
+        return redirect(url_for('main.api_access_page', user=_user()))
+    response = Response(tokens.activity_csv(token).encode('utf-8'), mimetype='text/csv')
+    response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    response.headers['Content-Disposition'] = f'attachment; filename="{tokens.activity_filename(token)}"'
+    return _no_store(response)

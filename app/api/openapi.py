@@ -13,6 +13,7 @@ TAG_NAMES = {
     'presence': 'Who is home',
     'statuses': 'Personal status',
     'notice': 'Notice board',
+    'weather': 'Weather',
     'reminders': 'Reminders',
     'shopping': 'Shopping list',
     'chores': 'Chores',
@@ -78,6 +79,11 @@ def _operation_doc(op) -> dict:
     if op.destructive or (op.tool == 'expenses' and op.is_write):
         responses['409'] = {'description': 'That cannot be done right now; the message says why.',
                             'content': {'application/json': {'schema': {'$ref': '#/components/schemas/Error'}}}}
+    if op.tool == 'weather':
+        responses['409'] = {'description': 'No latitude and longitude in config.yml, so HomeHub cannot look the weather up.',
+                            'content': {'application/json': {'schema': {'$ref': '#/components/schemas/Error'}}}}
+        responses['502'] = {'description': 'Open-Meteo could not be reached; try again later.',
+                            'content': {'application/json': {'schema': {'$ref': '#/components/schemas/Error'}}}}
     doc['responses'] = responses
     return doc
 
@@ -124,7 +130,7 @@ def build_openapi(operations=None, server_url: str = '/api/v1') -> dict:
             'schemas': {'Error': {
                 'type': 'object',
                 'properties': {
-                    'error': {'type': 'string', 'description': 'Machine-readable code: unauthorized, forbidden, not_found, bad_request, conflict, too_large, method_not_allowed, server_error.'},
+                    'error': {'type': 'string', 'description': 'Machine-readable code: unauthorized, forbidden, not_found, bad_request, conflict, too_large, method_not_allowed, server_error, upstream_error.'},
                     'message': {'type': 'string', 'description': 'What went wrong, in the household language.'},
                 },
                 'required': ['error', 'message'],

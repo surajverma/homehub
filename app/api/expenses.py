@@ -248,3 +248,27 @@ def expenses_add(ctx, args):
     db.session.commit()
     ctx.target = f'#{entry.id} {title}'
     return {**_entry(entry), 'summary': _summary(entry, settings)}
+
+
+@operation('expenses_delete', tool='expenses', level='write', method='DELETE', path='/expenses/<int:entry_id>',
+           title='Move an expense to the trash',
+           description=('Move an expense entry (a one-off expense or a settlement) to the trash, where it can be restored '
+                        'from the Trash page in HomeHub for 7 days. Needs a token with Allow deleting. Only whoever added '
+                        'it may do this. A day of a recurring expense is skipped instead (PUT .../skipped).'),
+           properties={'entry_id': {'type': 'integer', 'in': 'path', 'description': 'The entry id from GET /expenses.'}},
+           required=('entry_id',), idempotent=True, destructive=True)
+def expenses_delete(ctx, args):
+    entry = db.session.get(ExpenseEntry, args['entry_id'])
+    if entry is None:
+        raise ApiError(404, 'not_found', _('That expense was not found.'))
+    if entry.recurring_id:
+        raise ApiError(409, 'conflict', _('This is a day of a recurring expense. Skip it instead, or delete it in HomeHub.'))
+    if not admin.can_modify(ctx.user, web.entry_owner(entry)):
+        raise ApiError(403, 'forbidden', _('%(name)s cannot change this entry.', name=ctx.user))
+    entry_id, name = entry.id, entry.title
+    when = entry.date
+    if web.trash_expense_entry(entry, ctx.deleted_by) is None:
+        raise ApiError(404, 'not_found', _('That was already deleted.'))
+    ctx.target = f'#{entry_id} {name}'
+    return {'id': entry_id, 'title': name, 'date': iso(when), 'trashed': True,
+            'summary': _('%(title)s moved to the trash. It can be restored from the Trash page for 7 days.', title=name)}

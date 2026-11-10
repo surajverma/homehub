@@ -132,9 +132,10 @@ def test_reminders_edit_rules(home, agent):
     assert home.patch(f'/reminders/{rid}', agent, json={'category': 'nope', 'by': 'Priya'}).status_code == 400
     assert home.patch(f'/reminders/{rid}', agent, json={'time': '9am', 'by': 'Priya'}).status_code == 400
     assert home.patch(f'/reminders/{rid}', agent, json={'color': 'red', 'by': 'Priya'}).status_code == 400
+    # Moved to the trash: it is no longer a reminder
     with home.ctx():
-        db.session.get(Reminder, rid).deleted_at = date.today()
-        db.session.commit()
+        from app.blueprints import dashboard
+        dashboard.trash_reminder(db.session.get(Reminder, rid), 'Priya')
     assert home.patch(f'/reminders/{rid}', agent, json={'title': 'X', 'by': 'Priya'}).status_code == 404
 
 

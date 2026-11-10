@@ -97,7 +97,7 @@
           <label class="flex items-start gap-2 text-sm">
             <input type="checkbox" name="allow_delete" value="1" id="allowDelete" class="mt-1" {% if form.allow_delete %}checked{% endif %} aria-describedby="allowDeleteHelp">
             <span><span class="font-medium">{{ _('Allow deleting') }}</span>
-              <span class="block text-xs text-gray-500" id="allowDeleteHelp">{{ _('Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things.') }}</span></span>
+              <span class="block text-xs text-gray-500" id="allowDeleteHelp">{{ _('Lets the token move items to the trash, where they can be restored for 7 days: reminders, shopping items, one-off chores, notes, recipes, expiry items and expenses, in the tools it has with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things.') }}</span></span>
           </label>
         </div>
       </div>
@@ -131,8 +131,11 @@
             <div class="text-xs text-gray-500 mt-0.5">
               {% if t.act_as_members %}<span class="whitespace-nowrap"><i class="fa-solid fa-users" aria-hidden="true"></i> {{ _('Acts as family members') }}</span>{% endif %}
               {% if t.act_as_members and item.can_delete %} · {% endif %}
-              {% if item.can_delete %}<span class="whitespace-nowrap"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> {{ _('Can move reminders to the trash') }}</span>{% endif %}
+              {% if item.can_delete %}<span class="whitespace-nowrap"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> {% if item.delete_reminders_only %}{{ _('Can move reminders to the trash') }}{% else %}{{ _('Can move items to the trash') }}{% endif %}</span>{% endif %}
             </div>
+            {% endif %}
+            {% if item.delete_reminders_only %}
+            <div class="text-xs text-gray-500 mt-0.5 token-delete-scope">{{ _('Made when Allow deleting covered reminders only, so it still does. To let a client delete in other tools too, create a new token.') }}</div>
             {% endif %}
             {% if item.name_clash %}
             <div class="text-xs text-red-600 mt-0.5 token-name-clash" role="note">{{ _('This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed.') }}</div>
@@ -160,11 +163,14 @@
             </form>
             {% if t.revoked_at %}
             <form method="POST" action="{{ url_for('main.api_access_delete', token_id=t.id) }}"
-                  data-confirm="{{ _('Delete %(name)s? This removes it from the list for good. Its activity history is kept.', name=t.name) }}"
+                  data-confirm="{{ _('Delete %(name)s? Its activity history is deleted too.', name=t.name) }}"
                   data-confirm-action="{{ _('Delete') }}">
               <input type="hidden" name="user" value="{{ user }}">
               <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash-can" aria-hidden="true"></i>{{ _('Delete') }}</button>
             </form>
+            {% endif %}
+            {% if t.revoked_at and item.activity_total %}
+            <p class="text-xs text-gray-500 w-full token-delete-hint">{{ _('Deleting it also deletes its activity history. To keep a copy, download it as CSV first.') }}</p>
             {% endif %}
             {% if not t.revoked_at %}
             <form method="POST" action="{{ url_for('main.api_access_revoke', token_id=t.id) }}"
@@ -177,13 +183,17 @@
           </div>
         </div>
         <details class="text-xs">
-          <summary class="cursor-pointer text-gray-500">{{ _('Recent activity') }} ({{ item.activity|length }})</summary>
+          <summary class="cursor-pointer text-gray-500">{{ _('Recent activity') }} ({{ item.activity_total }})</summary>
           {% if item.activity %}
           <ul class="mt-2 space-y-1">
             {% for a in item.activity %}
             <li><span class="text-gray-500 tabular-nums">{{ a.created_at|localtime }}</span> · {{ a.acting_as }} · <code>{{ a.action }}</code> · {{ a.target }}</li>
             {% endfor %}
           </ul>
+          <p class="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+            <a href="{{ url_for('main.api_access_activity', token_id=t.id, user=user) }}" class="hover:underline token-activity-all" style="color: var(--primary-text);">{{ _('View all (%(num)s)', num=item.activity_total) }}</a>
+            <a href="{{ url_for('main.api_access_activity_csv', token_id=t.id, user=user) }}" class="hover:underline" style="color: var(--primary-text);" download><i class="fa-solid fa-file-csv" aria-hidden="true"></i> {{ _('Download CSV') }}</a>
+          </p>
           {% else %}
           <p class="mt-2 text-gray-500">{{ _('No changes made with this token yet.') }}</p>
           {% endif %}

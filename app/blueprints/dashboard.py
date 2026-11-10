@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import abort, render_template, request, redirect, url_for, flash, jsonify, current_app
 from datetime import datetime, date, timedelta
 from ..models import db, HomeStatus, MemberStatus, Notice, Reminder, RecurringReminder, Chore
 from ..blueprints import main_bp
@@ -7,7 +7,9 @@ from ..admin import is_admin, can_modify
 from ..security import sanitize_html, sanitize_text
 from ..recurrence import first_on_or_after, occurrences_between, rule_interval_unit
 from flask_babel import gettext as _, ngettext
-from ..undo import restore_row, restorer, row_to_dict, stamp, stash_undo
+from ..undo import (delete_exactly, offer_batch_undo, offer_undo, restore_row, restorer, row_restorer, row_to_dict, stamp,
+                    stash_undo, valid_ids,
+                    trash_info, trash_row)
 
 
 def _parse_date_param(value, default=None):
@@ -233,7 +235,6 @@ def _serialize_reminder(r: Reminder):
         'timestamp': r.timestamp.isoformat() if r.timestamp else None,
         'updated_at': getattr(r, 'updated_at', None).isoformat() if getattr(r, 'updated_at', None) else None,
         'completed_at': getattr(r, 'completed_at', None).isoformat() if getattr(r, 'completed_at', None) else None,
-        'deleted_at': getattr(r, 'deleted_at', None).isoformat() if getattr(r, 'deleted_at', None) else None,
     }
 
 def _serialize_recurring_rule(rr: RecurringReminder):
@@ -259,13 +260,29 @@ def week_bounds(base_date: date) -> tuple:
     return start, start + timedelta(days=6)
 
 
+def live_reminders():
+    """Reminders, without any still in the calendar's old trash.
+
+    The upgrade moves those to the shared Trash (app/migrations.py move_reminder_trash). If that step has
+    not run yet, for example because it failed and is retried at the next start, they must stay hidden.
+    """
+    return Reminder.query.filter(Reminder.deleted_at.is_(None))
+
+
+def live_reminder_or_404(reminder_id: int) -> Reminder:
+    r = db.session.get(Reminder, reminder_id)
+    if r is None or r.deleted_at is not None:
+        abort(404)
+    return r
+
+
 def reminders_in_window(window_start: date, window_end: date):
-    """Reminders dated in the window (trashed ones left out) plus the dates recurring rules add there.
+    """Reminders dated in the window plus the dates recurring rules add there.
 
     Returns (stored rows, generated rows, rules, {rule id: [dates]}, everything sorted). Generated
     rows are unsaved Reminder objects with a negative id, as /api/reminders has always shown them.
     """
-    q = Reminder.query.filter(Reminder.deleted_at.is_(None), Reminder.date >= window_start, Reminder.date <= window_end)
+    q = live_reminders().filter(Reminder.date >= window_start, Reminder.date <= window_end)
     try:
         from sqlalchemy import case
         rows = q.order_by(
@@ -374,12 +391,36 @@ _RULE_COPY_FIELDS = ('title', 'description', 'creator', 'frequency', 'monthly_mo
                      'time', 'category', 'color', 'start_date', 'end_date')
 
 
-def _stash_reminder_rule(snapshot: dict, successor: RecurringReminder | None = None) -> str:
+def _stash_reminder_rule(snapshot: dict, successor: RecurringReminder | None = None, trash: dict | None = None) -> str:
     return stash_undo('reminder_rule', {
         'rule': snapshot,
         'successor_id': successor.id if successor else None,
         'successor_timestamp': stamp(successor),
-    })
+    }, trash)
+
+
+def trash_reminder(r: Reminder, deleted_by: str, message: str | None = None, commit: bool = True) -> str | None:
+    """Move a one-off reminder to the trash (restorable for 7 days). Commits unless ``commit`` is False.
+    None when another request deleted it first."""
+    day = r.start_date or r.date
+    label = f'{r.title} ({day.isoformat()})' if day else r.title
+    return trash_row('reminder', r, trash_info('reminders', label, r.creator, deleted_by), message, commit=commit)
+
+
+def trash_reminder_rule(rr: RecurringReminder, deleted_by: str) -> str:
+    """Move a whole recurring reminder, every date of it, to the trash. Commits; returns the Undo token."""
+    snapshot = row_to_dict(rr)
+    trash = trash_info('reminders', rr.title, rr.creator, deleted_by)
+    if not delete_exactly(rr):
+        db.session.rollback()
+        return None
+    return _stash_reminder_rule(snapshot, trash=trash)
+
+
+@restorer('reminder')
+def _restore_reminder(payload: dict) -> None:
+    # A reminder deleted while still in the calendar's old trash comes back as a live reminder
+    restore_row(Reminder, payload['row'], deleted_at=None)
 
 
 @restorer('reminder_rule')
@@ -413,9 +454,7 @@ def api_recurring_rules_update_delete(rid):
     if request.method == 'DELETE':
         # scope 'all' removes the rule and with it every date, past ones included
         if payload.get('scope') == 'all' or not has_past:
-            db.session.delete(rr)
-            db.session.commit()
-            return jsonify({'ok': True, 'ended': False, 'undo_token': _stash_reminder_rule(before)})
+            return jsonify({'ok': True, 'ended': False, 'undo_token': trash_reminder_rule(rr, user)})
         if not rr.end_date or rr.end_date > yesterday:
             rr.end_date = yesterday
             db.session.commit()
@@ -663,7 +702,7 @@ def apply_reminder_changes(r: Reminder, payload: dict) -> str | None:
 
 @main_bp.route('/api/reminders/<int:rid>', methods=['PATCH'])
 def api_reminders_update(rid):
-    r = db.get_or_404(Reminder, rid)
+    r = live_reminder_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -677,7 +716,7 @@ def api_reminders_update(rid):
 
 @main_bp.route('/api/reminders/<int:rid>/done', methods=['POST'])
 def api_reminder_mark_done(rid):
-    r = db.get_or_404(Reminder, rid)
+    r = live_reminder_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -689,7 +728,7 @@ def api_reminder_mark_done(rid):
 
 @main_bp.route('/api/reminders/<int:rid>/undo', methods=['POST'])
 def api_reminder_mark_undo(rid):
-    r = db.get_or_404(Reminder, rid)
+    r = live_reminder_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -701,7 +740,7 @@ def api_reminder_mark_undo(rid):
 
 @main_bp.route('/api/reminders/<int:rid>/snooze', methods=['POST'])
 def api_reminder_snooze(rid):
-    r = db.get_or_404(Reminder, rid)
+    r = live_reminder_or_404(rid)
     payload = request.get_json(silent=True) or {}
     user = sanitize_text(payload.get('creator', ''))
     if not can_modify(user, r.creator or ''):
@@ -766,71 +805,33 @@ def api_reminder_snooze(rid):
 
 @main_bp.route('/api/reminders', methods=['DELETE'])
 def api_reminders_delete_bulk():
-    """Soft-delete: moves reminders to trash (sets deleted_at)."""
+    """Move reminders to the trash (the Trash page); the answer carries one Undo token for all of them."""
     payload = request.get_json(silent=True) or {}
     ids = payload.get('ids') or []
     user = sanitize_text(payload.get('creator', ''))
     if not isinstance(ids, list) or not ids:
         return jsonify({'ok': False, 'error': _('No ids provided')}), 400
-    soft_deleted = 0
+    tokens = []
     dates = set()
-    now = utcnow()
-    for rid in ids:
-        if not isinstance(rid, int):
-            continue
+    # Every reminder and its Undo are committed together, after all ids are checked
+    for rid in valid_ids(ids):
         r = db.session.get(Reminder, rid)
         if not r:
             continue
         if can_modify(user, r.creator or ''):
-            if r.date:
-                dates.add(r.date.strftime('%Y-%m-%d'))
-            r.deleted_at = now
-            soft_deleted += 1
-    if soft_deleted:
-        db.session.commit()
-    return jsonify({'ok': True, 'deleted': soft_deleted, 'dates': list(dates)})
-
-
-@main_bp.route('/api/reminders/trash', methods=['GET'])
-def api_reminders_trash():
-    """List soft-deleted (trashed) reminders, auto-purging entries older than 7 days."""
-    cutoff = utcnow() - timedelta(days=7)
-    try:
-        Reminder.query.filter(Reminder.deleted_at < cutoff).delete(synchronize_session=False)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-    rows = Reminder.query.filter(Reminder.deleted_at.isnot(None)).order_by(Reminder.deleted_at.desc()).all()
-    return jsonify({'ok': True, 'reminders': [_serialize_reminder(r) for r in rows]})
-
-
-@main_bp.route('/api/reminders/<int:rid>/restore', methods=['POST'])
-def api_reminder_restore(rid):
-    r = db.get_or_404(Reminder, rid)
-    payload = request.get_json(silent=True) or {}
-    user = sanitize_text(payload.get('creator', ''))
-    if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
-    if r.deleted_at is None:
-        return jsonify({'ok': False, 'error': _('Reminder is not in trash')}), 400
-    r.deleted_at = None
+            day = r.date.strftime('%Y-%m-%d') if r.date else None
+            token = trash_reminder(r, user, commit=False)
+            if token:
+                tokens.append(token)
+                if day:
+                    dates.add(day)
+    undo_token = None
+    if len(tokens) == 1:
+        undo_token = tokens[0]
+    elif tokens:
+        undo_token = stash_undo('trash_batch', {'tokens': tokens}, commit=False)
     db.session.commit()
-    return jsonify({'ok': True, 'reminder': _serialize_reminder(r)})
-
-
-@main_bp.route('/api/reminders/<int:rid>/purge', methods=['DELETE'])
-def api_reminder_purge(rid):
-    """Permanently delete a reminder from trash."""
-    r = db.get_or_404(Reminder, rid)
-    payload = request.get_json(silent=True) or {}
-    user = sanitize_text(payload.get('creator', ''))
-    if not can_modify(user, r.creator or ''):
-        return jsonify({'ok': False, 'error': _('Not allowed')}), 403
-    if r.deleted_at is None:
-        return jsonify({'ok': False, 'error': _('Reminder is not in trash')}), 400
-    db.session.delete(r)
-    db.session.commit()
-    return jsonify({'ok': True})
+    return jsonify({'ok': True, 'deleted': len(tokens), 'dates': sorted(dates), 'undo_token': undo_token})
 
 
 @main_bp.route('/calendar/add', methods=['POST'])
@@ -858,18 +859,16 @@ def add_reminder():
 def delete_reminder(reminder_id):
     r = db.get_or_404(Reminder, reminder_id)
     user = sanitize_text(request.form.get('user'))
-    if can_modify(user, r.creator):
-        r.deleted_at = utcnow()
-        db.session.commit()
-        flash(_('Reminder moved to trash.'), 'success')
-    else:
-        flash(_('Not allowed to delete this reminder.'), 'error')
     date_s = None
     try:
         if r.date:
             date_s = r.date.strftime('%Y-%m-%d')
     except Exception:
         date_s = None
+    if can_modify(user, r.creator):
+        trash_reminder(r, user, _('%(title)s moved to the trash.', title=r.title))
+    else:
+        flash(_('Not allowed to delete this reminder.'), 'error')
     return redirect(url_for('main.index', date=date_s) if date_s else url_for('main.index'))
 
 
@@ -879,16 +878,11 @@ def delete_reminders_bulk():
     user = sanitize_text(request.form.get('user', ''))
     if not ids_raw:
         return redirect(url_for('main.index'))
-    id_list = []
-    for part in ids_raw.split(','):
-        part = part.strip()
-        if part.isdigit():
-            id_list.append(int(part))
+    id_list = valid_ids(part.strip() for part in ids_raw.split(','))
     if not id_list:
         return redirect(url_for('main.index'))
     kept_date = None
-    deleted = 0
-    now = utcnow()
+    tokens = []
     for rid in id_list:
         r = db.session.get(Reminder, rid)
         if not r:
@@ -899,11 +893,11 @@ def delete_reminders_bulk():
             except Exception:
                 kept_date = None
         if can_modify(user, r.creator):
-            r.deleted_at = now
-            deleted += 1
-    if deleted:
-        db.session.commit()
-        flash(ngettext('Moved %(num)s reminder to trash.', 'Moved %(num)s reminders to trash.', deleted), 'success')
+            token = trash_reminder(r, user, commit=False)
+            if token:
+                tokens.append(token)
+    if tokens:
+        offer_batch_undo(tokens, ngettext('Moved %(num)s reminder to trash.', 'Moved %(num)s reminders to trash.', len(tokens)))
     else:
         flash(_('No reminders deleted (permission?).'), 'error')
     return redirect(url_for('main.index', date=kept_date) if kept_date else url_for('main.index'))

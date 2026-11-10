@@ -34,14 +34,14 @@ On the page:
 1. Give the token a name, such as *Home Assistant* or *Hermes*. Things the token adds without acting as a family member show this name as who added them. It can't be the name of a family member, the admin or another token.
 2. Pick a preset or set each tool to **No access**, **Read** or **Read & write**. Only tools switched on in `config.yml` are listed.
 3. Tick **Act as family members** if the client should make changes for a person (see [the `by` field](#who-a-change-is-made-as-the-by-field)). It is needed to set who is home or a person's status.
-4. Leave **Allow deleting** off unless you need it. It only lets the token move reminders to the trash, and needs Reminders with Read & write.
+4. Leave **Allow deleting** off unless you need it. It lets the token move items to the trash (reminders, shopping items, one-off chores, notes, recipes, expiry items and one-off expenses) in the tools it has with Read & write. Nothing is deleted for good: the Trash page in HomeHub can restore it for 7 days. Tokens made before this version, when Allow deleting covered only reminders, keep it for reminders only (the list says so); create a new token to let a client delete in other tools.
 5. Select **Create token** and copy the token straight away. HomeHub keeps only a fingerprint of it and can't show it again.
 
-The list below shows each token's access, when it was last used and its recent changes. **Rename** changes a token's name (the token itself keeps working); **Regenerate** makes a new token (the old one stops working at once); **Revoke** switches a token off. Regenerating a revoked token brings it back with the same access, and **Delete** (only for revoked tokens) removes it from the list for good, so its name can be used again.
+The list below shows each token's access, when it was last used and its recent changes. **Rename** changes a token's name (the token itself keeps working); **Regenerate** makes a new token (the old one stops working at once); **Revoke** switches a token off. Regenerating a revoked token brings it back with the same access, and **Delete** (only for revoked tokens) removes it from the list for good, with its activity history, so its name can be used again. Revoking keeps the history.
 
 Records a token added keep the name it had then. After a rename, the token can't edit those older records any more: in HomeHub, who may change something always follows the name it was added under.
 
-Deleting a token keeps up to its newest 200 changes in the database (with the token's name), for backups and the record; they no longer show anywhere on the page.
+Each token's **Recent activity** shows its latest 20 changes. **View all** opens a page with every stored change (HomeHub keeps the newest 200 of each token), and **Download CSV** saves them as a spreadsheet file. Deleting a token deletes its changes too, so download them first if you want to keep a copy.
 
 If a family member added to `config.yml` later has the same name as a token, the token's changes would look like that person's. The list then flags the token, and changes made as the token itself (without `by`) are refused with `409` until you rename it.
 
@@ -50,8 +50,8 @@ Presets:
 | Preset | Access | Act as family members | Allow deleting |
 |---|---|:---:|:---:|
 | Read everything | Every tool: Read | | |
-| Home automation | Who is home: Read & write; Notice board and Reminders: Read | ✓ | |
-| AI assistant | Every tool: Read & write (Notice board: Read) | ✓ | |
+| Home automation | Who is home: Read & write; Notice board, Weather and Reminders: Read | ✓ | |
+| AI assistant | Every tool: Read & write (Notice board and Weather: Read) | ✓ | |
 
 ### On the server
 
@@ -73,7 +73,11 @@ docker exec -it homehub flask api-token regenerate "Home Assistant"
 docker exec -it homehub flask api-token revoke "Home Assistant"
 ```
 
-`create` and `regenerate` print the token once. Tools for `--tool`: `presence`, `statuses`, `notice`, `reminders`, `shopping`, `chores`, `notes`, `recipes`, `expiry`, `expenses`, each `=read` or `=write`. Add `--allow-delete` to let the token move reminders to the trash.
+```bash
+docker exec -it homehub flask api-token activity "Home Assistant" --csv > activity.csv
+```
+
+`create` and `regenerate` print the token once. Tools for `--tool`: `presence`, `statuses`, `notice`, `weather`, `reminders`, `shopping`, `chores`, `notes`, `recipes`, `expiry`, `expenses`, each `=read` or `=write` (`notice` and `weather` only `=read`). Add `--allow-delete` to let the token move items to the trash in the tools it can write. `activity` lists the token's stored changes, newest first; add `--csv` for a CSV file.
 
 ### Tools and features
 
@@ -84,17 +88,18 @@ A tool whose feature is switched off in `config.yml` (under `feature_toggles`) d
 | `presence` | `who_is_home` | everyone's Home/Away | set a person Home or Away (needs Act as family members) |
 | `statuses` | `personal_status` | everyone's status text | set or clear a person's status (needs Act as family members) |
 | `notice` | always on | the notice | nothing: the admin edits it in HomeHub |
+| `weather` | `weather > enabled` | current weather, the next 24 hours and 7 days | nothing: weather can only be read |
 | `reminders` | `calendar` | today, this week or a range | add and edit one-off reminders, mark done or not done, move to the trash (with Allow deleting) |
-| `shopping` | `shopping_list` | items, tags, ticked or not | add and edit items, tick or untick them |
-| `chores` | `chores` | chores with due dates and tags | add and edit one-off chores, mark done or not done |
-| `notes` | `notes` | notes | add a note |
-| `recipes` | `recipes` | recipes with tags | add and edit recipes |
-| `expiry` | `expiry_tracker` | items, expiry dates, days left | add an item |
-| `expenses` | `expense_tracker` | recurring expenses, entries | skip or restore a recurring day, change its quantity, add an expense |
+| `shopping` | `shopping_list` | items, tags, ticked or not | add and edit items, tick or untick them, move to the trash (with Allow deleting) |
+| `chores` | `chores` | chores with due dates and tags | add and edit one-off chores, mark done or not done, move one-off chores to the trash (with Allow deleting) |
+| `notes` | `notes` | notes | add a note, move one to the trash (with Allow deleting) |
+| `recipes` | `recipes` | recipes with tags | add and edit recipes, move to the trash (with Allow deleting) |
+| `expiry` | `expiry_tracker` | items, expiry dates, days left | add an item, move one to the trash (with Allow deleting) |
+| `expenses` | `expense_tracker` | recurring expenses, entries | skip or restore a recurring day, change its quantity, add an expense, move a one-off expense to the trash (with Allow deleting) |
 
 Edits follow the web app: only shopping items, one-off chores, one-off reminders and recipes can be edited, and only by whoever added them. Notes and the expiry tracker can't be edited in HomeHub either, so the API only adds them.
 
-Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, weather, backups, settings, budgets, changes to recurring rules (and to chores and reminders made by them), and bulk actions. The only delete is moving a reminder to the trash, because it can be restored from the calendar's Trash for 7 days.
+Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, backups, settings, budgets, changes to recurring rules (and to chores and reminders made by them), and bulk actions. Deletes only move items to the trash, where they can be restored from HomeHub's Trash page for 7 days; nothing is deleted for good through the API.
 
 ## Making requests
 
@@ -122,11 +127,14 @@ curl -H "Authorization: Bearer hh_..." http://homehub.local:5000/api/v1/
   "token": "Hermes",
   "act_as_members": true,
   "allow_delete": false,
+  "delete_tools": [],
   "tools": {"presence": "write", "reminders": "write", "shopping": "write"},
   "family_members": ["Priya", "Dad", "Mom"],
   "version": "1"
 }
 ```
+
+`delete_tools` lists the tools whose items the token may move to the trash right now.
 
 `GET /api/v1/openapi.json` returns an OpenAPI 3.1 description of what the token can use. A full copy is in [openapi.json](openapi.json).
 
@@ -156,6 +164,7 @@ All paths are below `/api/v1`. **R** needs Read, **W** needs Read & write.
 | `GET /statuses` | statuses R | Personal statuses |
 | `PUT /statuses/me` | statuses W | Set or clear the status of the person in `by` |
 | `GET /notice` | notice R | The notice board |
+| `GET /weather` | weather R | Current weather and the forecast |
 | `GET /reminders` | reminders R | Reminders for today, this week or a range |
 | `POST /reminders` | reminders W | Add a one-off reminder |
 | `PATCH /reminders/{id}` | reminders W | Edit a one-off reminder |
@@ -165,22 +174,28 @@ All paths are below `/api/v1`. **R** needs Read, **W** needs Read & write.
 | `POST /shopping` | shopping W | Add an item |
 | `PATCH /shopping/{id}` | shopping W | Edit an item |
 | `PUT /shopping/{id}/checked` | shopping W | Tick or untick |
+| `DELETE /shopping/{id}` | shopping W + Allow deleting | Move to the trash |
 | `GET /chores` | chores R | Chores |
 | `POST /chores` | chores W | Add a chore |
 | `PATCH /chores/{id}` | chores W | Edit a one-off chore |
 | `PUT /chores/{id}/done` | chores W | Mark done or not done |
+| `DELETE /chores/{id}` | chores W + Allow deleting | Move a one-off chore to the trash |
 | `GET /notes` | notes R | Notes |
 | `POST /notes` | notes W | Add a note |
+| `DELETE /notes/{id}` | notes W + Allow deleting | Move to the trash |
 | `GET /recipes` | recipes R | Recipes |
 | `POST /recipes` | recipes W | Add a recipe |
 | `PATCH /recipes/{id}` | recipes W | Edit a recipe |
+| `DELETE /recipes/{id}` | recipes W + Allow deleting | Move to the trash |
 | `GET /expiry` | expiry R | Expiry tracker |
 | `POST /expiry` | expiry W | Add an item |
+| `DELETE /expiry/{id}` | expiry W + Allow deleting | Move to the trash |
 | `GET /expenses/rules` | expenses R | Recurring expenses still running |
 | `GET /expenses` | expenses R | Entries for a day or a range |
 | `PUT /expenses/rules/{id}/days/{date}/skipped` | expenses W | Skip or restore a recurring day |
 | `PATCH /expenses/rules/{id}/days/{date}` | expenses W | Change a recurring day's quantity |
 | `POST /expenses` | expenses W | Add a one-off expense |
+| `DELETE /expenses/{id}` | expenses W + Allow deleting | Move a one-off expense to the trash |
 
 To keep the examples short, they assume the token is in a shell variable:
 
@@ -230,6 +245,32 @@ curl -H "$HH" http://homehub.local:5000/api/v1/notice
 
 `content` is simple HTML. Only the admin edits the notice, in HomeHub.
 
+### Weather
+
+```bash
+curl -H "$HH" http://homehub.local:5000/api/v1/weather
+```
+
+The same weather as the Welcome page widget, for the place set under `weather` in `config.yml` (it needs `enabled: true` and a `latitude` and `longitude`). The answer (shortened here) has everything the widget can show, so a client can pick what it needs:
+
+```json
+{
+  "fetched_at": "2026-11-09T08:15:02Z",
+  "units": {"temperature": "°C", "wind_speed": "km/h", "wind_direction": "°", "precipitation": "mm", "snowfall": "cm", "humidity": "%", "cloud_cover": "%", "precipitation_probability": "%", "pressure": "hPa", "visibility": "m"},
+  "current": {"time": "2026-11-09T13:45+05:30", "description": "Partly Cloudy", "weather_code": 2, "is_day": true, "temperature": 27.4, "feels_like": 29.1, "humidity": 61, "dew_point": 19.2, "precipitation": 0.0, "rain": 0.0, "showers": 0.0, "snowfall": 0.0, "pressure": 1011.2, "cloud_cover": 40, "visibility": 24140.0, "uv_index": 5.3, "wind_speed": 11.2, "wind_gusts": 20.5, "wind_direction": 225, "wind_direction_compass": "SW"},
+  "hourly": [{"time": "2026-11-09T13:00+05:30", "description": "Overcast", "temperature": 26.0, "feels_like": 27.0, "precipitation_probability": 10, "precipitation": 0.0, "uv_index": 4.0, "wind_speed": 9.0, "...": "..."}],
+  "daily": [{"date": "2026-11-09", "description": "Light Rain", "temperature_max": 31.2, "temperature_min": 19.6, "precipitation_probability": 35, "precipitation": 1.4, "uv_index_max": 8.1, "wind_speed_max": 18.0, "sunrise": "2026-11-09T06:42+05:30", "sunset": "2026-11-09T17:58+05:30", "...": "..."}],
+  "summary": "Partly Cloudy, 27°C (feels like 29°C). Today 20 to 31°C, 35% chance of rain."
+}
+```
+
+- `hourly` covers the next 24 hours and `daily` the next 7 days, today first. `description` is in the household's language; `weather_code` is the [WMO code](https://open-meteo.com/en/docs) it comes from.
+- Times carry the UTC offset of the place. `fetched_at` is when HomeHub got the data from Open-Meteo, in UTC.
+- Units follow `units` in `config.yml`: `metric` or `imperial` (°F and mph; precipitation stays in mm). `units` says which apply.
+- HomeHub asks Open-Meteo at most every 15 minutes and shares the answer with the Welcome page, so polling the API doesn't add requests to Open-Meteo.
+- The answer never includes the latitude, longitude, place name or time zone name, and the endpoint takes no location: it only answers for the home.
+- With `enabled: false` it answers `404`. Without a latitude and longitude it answers `409` (the widget then uses the browser's location, which the server doesn't know). If Open-Meteo can't be reached it answers `502`.
+
 ### Reminders
 
 ```bash
@@ -244,7 +285,7 @@ curl -H "$HH" "http://homehub.local:5000/api/v1/reminders?scope=week"
 curl -H "$HH" "http://homehub.local:5000/api/v1/reminders?from=2026-11-01&to=2026-11-30"
 ```
 
-`scope` is `today` (the default) or `week` (Monday to Sunday, as the calendar shows it). A range can be at most 62 days. The dates are exactly the ones HomeHub's calendar shows, including dates of recurring reminders (with a negative `id` and a `recurring_id`) and month-end dates such as the 31st becoming the 30th. Reminders in the trash are left out.
+`scope` is `today` (the default) or `week` (Monday to Sunday, as the calendar shows it). A range can be at most 62 days. The dates are exactly the ones HomeHub's calendar shows, including dates of recurring reminders (with a negative `id` and a `recurring_id`) and month-end dates such as the 31st becoming the 30th. Reminders in the trash aren't reminders any more, so they're left out.
 
 ```bash
 curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"title": "Dentist", "date": "2026-11-12", "time": "09:30", "category": "health", "by": "Priya"}' http://homehub.local:5000/api/v1/reminders
@@ -266,7 +307,7 @@ Edit a reminder: send only what changes. `"time": null` makes it all-day.
 curl -X PATCH -H "$HH" -H "Content-Type: application/json" -d '{"date": "2026-11-13", "time": "10:15", "by": "Priya"}' http://homehub.local:5000/api/v1/reminders/42
 ```
 
-Only whoever added a reminder can edit it, mark it or move it to the trash. Moving to the trash needs a token with Allow deleting; the reminder can be restored from the calendar's Trash for 7 days. Recurring reminders and their dates can't be changed through the API (`409`): change them in HomeHub.
+Only whoever added a reminder can edit it, mark it or move it to the trash. Moving to the trash needs a token with Allow deleting; the reminder can be restored from the Trash page (in HomeHub's menu) for 7 days, where it shows who deleted it, for example *Priya (via Hermes)*. Recurring reminders and their dates can't be changed through the API (`409`): change them in HomeHub.
 
 ### Shopping list
 
@@ -288,6 +329,18 @@ Edit an item: its text and/or its tags (the list you send replaces the old one).
 curl -X PATCH -H "$HH" -H "Content-Type: application/json" -d '{"item": "Bread", "tags": ["Costco", "Bakery"], "by": "Priya"}' http://homehub.local:5000/api/v1/shopping/7
 ```
 
+With Allow deleting, an item can be moved to the trash (only by whoever added it). It can be restored from HomeHub's Trash page for 7 days:
+
+```bash
+curl -X DELETE -H "$HH" -H "Content-Type: application/json" -d '{"by": "Priya"}' http://homehub.local:5000/api/v1/shopping/7
+```
+
+```json
+{"id": 7, "name": "Bread", "trashed": true, "summary": "Bread moved to the trash. It can be restored from the Trash page for 7 days."}
+```
+
+Chores, notes, recipes, expiry items and expenses work the same way (`DELETE /chores/{id}`, `/notes/{id}`, `/recipes/{id}`, `/expiry/{id}`, `/expenses/{id}`). The Trash page shows who deleted it, for example *Priya (via Hermes)*.
+
 ### Chores
 
 ```bash
@@ -308,7 +361,7 @@ Edit a one-off chore: description, `due_date` (`null` clears it) and/or tags. On
 curl -X PATCH -H "$HH" -H "Content-Type: application/json" -d '{"due_date": "2026-11-15", "tags": ["Priya", "Weekend"]}' http://homehub.local:5000/api/v1/chores/3
 ```
 
-Recurring chores work as on the Chores page: done moves the chore to its next date (it counts as done until then), and not done takes that back. Recurring chores are set up and changed in HomeHub; editing one through the API answers `409`.
+Recurring chores work as on the Chores page: done moves the chore to its next date (it counts as done until then), and not done takes that back. Recurring chores are set up and changed in HomeHub; editing or deleting one through the API answers `409`.
 
 ### Notes, recipes and the expiry tracker
 
@@ -379,7 +432,8 @@ curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"title": "Vegetab
 - `by` is required, so the token needs Act as family members. The expense is recorded as paid by, and added by, the person in `by`. To record that someone else paid, that person asks (or it's entered in HomeHub). There is no `payer` field.
 - `category` must be one of the categories set on the Expenses page.
 - A recurring day that was deleted in HomeHub answers `409`: add it back on the Expenses page first.
-- Expenses added through the API aren't split. Rules, settlements, budgets and deletes stay in HomeHub.
+- Expenses added through the API aren't split. Rules, settlements and budgets stay in HomeHub.
+- With Allow deleting, `DELETE /expenses/{id}` moves a one-off expense or a settlement to the trash. A day of a recurring expense answers `409`: skip it instead.
 
 ## Errors
 
@@ -398,13 +452,14 @@ Errors are JSON with a code and a message in the household's language:
 | 405 | `method_not_allowed` | Wrong method for that path |
 | 409 | `conflict` | Can't be done right now, for example a recurring day deleted in HomeHub, editing a recurring chore or reminder, or a token whose name is now a family member's |
 | 413 | `too_large` | Body larger than 64 KB |
+| 502 | `upstream_error` | Open-Meteo, which the weather comes from, couldn't be reached |
 
 
 ## Home Assistant
 
 A native Home Assistant (HACS) integration isn't planned, but the API covers the common uses, and anyone is welcome to build an integration on it. If you do, open an issue and it can be linked from the README.
 
-Create a token with the **Home automation** preset (Who is home: Read & write; Notice board and Reminders: Read; Act as family members). Put it in Home Assistant's `secrets.yaml` with the word `Bearer` in front:
+Create a token with the **Home automation** preset (Who is home: Read & write; Notice board, Weather and Reminders: Read; Act as family members). Put it in Home Assistant's `secrets.yaml` with the word `Bearer` in front:
 
 ```yaml
 homehub_auth: "Bearer hh_..."
@@ -479,6 +534,26 @@ rest:
 ```
 
 The notice and the reminders are kept in attributes, because a sensor's state can hold at most 255 characters.
+
+The weather, for a dashboard or an automation (HomeHub asks Open-Meteo at most every 15 minutes whatever the `scan_interval`):
+
+```yaml
+rest:
+  - resource: "http://homehub.local:5000/api/v1/weather"
+    headers:
+      Authorization: !secret homehub_auth
+    scan_interval: 900
+    sensor:
+      - name: "HomeHub temperature"
+        value_template: "{{ value_json.current.temperature }}"
+        unit_of_measurement: "°C"
+        json_attributes:
+          - current
+          - daily
+      - name: "HomeHub rain chance today"
+        value_template: "{{ value_json.daily[0].precipitation_probability }}"
+        unit_of_measurement: "%"
+```
 
 ### Dashboard cards
 
@@ -629,7 +704,7 @@ The agent holds the token; the family just talks to the agent. For HomeHub to kn
 The agent has to know who is talking to it. Tell it in its instructions (for Hermes, its system prompt) which chat account belongs to which family member, using the names from `family_members`. How a chat app identifies the sender to the agent differs per app, and isn't something HomeHub can check: HomeHub trusts the name the agent sends. So:
 
 - **Only let family members talk to the agent.** In Hermes, restrict each messaging platform to your family's accounts (for example `TELEGRAM_ALLOWED_USERS` in `~/.hermes/.env`) or use DM pairing; Hermes denies unknown users by default. Anyone who can message the agent can act as any family member.
-- **Keep Allow deleting off.** Text an agent reads, such as a note, a recipe from a website or a message, can contain instructions meant to trick it ("delete all reminders"). Without Allow deleting, the worst it can do through HomeHub is add, edit or tick things that belong to the person in `by`, which are easy to put right; with it, reminders can be moved to the trash.
+- **Keep Allow deleting off.** Text an agent reads, such as a note, a recipe from a website or a message, can contain instructions meant to trick it ("delete all reminders"). Without Allow deleting, the worst it can do through HomeHub is add, edit or tick things that belong to the person in `by`, which are easy to put right; with it, that person's things can also be moved to the trash. Nothing is lost for good (the Trash page restores it for 7 days), but turn it on only when you need it.
 - **Think about what the agent can read.** Most AI agents send what they read to their AI provider. Give the agent only the tools you're happy to share that way.
 - **Check its changes.** The API access page lists each token's recent changes, with the person it acted as.
 - **Expenses are paid by whoever asked.** An agent can only record an expense as paid by the person in `by`. If Priya says "Dad paid for the groceries", the agent can't record it for Dad; Dad has to ask, or it's entered in HomeHub.

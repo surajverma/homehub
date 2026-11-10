@@ -162,14 +162,15 @@ def test_write_on_presence_needs_act_as(home):
     assert resp.status_code == 400 and 'Act as family members' in resp.get_data(as_text=True)
 
 
-def test_allow_delete_needs_reminders_write(home):
+def test_allow_delete_needs_write_on_a_tool_with_a_trash(home):
     create(home, name='A', reminders='read', allow_delete=True)
-    create(home, name='B', reminders='write', allow_delete=True)
+    create(home, name='B', notes='write', allow_delete=True)
     with home.ctx():
         assert tokens.find_by_name('A').allow_delete is False
         assert tokens.find_by_name('B').allow_delete is True
     body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
-    assert body.count('Can move reminders to the trash') == 1
+    assert body.count('Can move items to the trash') == 1
+    assert 'reminders, shopping items, one-off chores, notes, recipes, expiry items and expenses' in body
 
 
 # --- What the page lists ---
@@ -189,7 +190,13 @@ def test_only_enabled_tools_are_offered(home):
 def test_table_lists_tools_in_order_with_dash_for_missing_levels(home):
     body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
     order = [m for m in re.findall(r'data-tool="(\w+)"', body)]
-    assert order == [t.key for t in tokens.TOOLS]
+    # Weather is off unless config.yml switches it on
+    assert order == [t.key for t in tokens.TOOLS if t.key != 'weather']
+    home.set(weather={'enabled': True, 'latitude': '1', 'longitude': '2'})
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert [m for m in re.findall(r'data-tool="(\w+)"', body)] == [t.key for t in tokens.TOOLS]
+    weather_row = body.split('data-tool="weather"')[1].split('</tr>')[0]
+    assert 'value="write"' not in weather_row and 'Not available: weather can only be read' in weather_row
     notice_row = body.split('data-tool="notice"')[1].split('</tr>')[0]
     assert 'value="write"' not in notice_row and '–' in notice_row
 
@@ -222,12 +229,12 @@ def test_presets(home):
     all_on = [t.key for t in tokens.TOOLS]
     p = api_admin.presets(all_on)
     assert p['read_all'] == {'permissions': {k: 'read' for k in all_on}, 'act_as': False, 'allow_delete': False}
-    assert p['home_automation'] == {'permissions': {'presence': 'write', 'notice': 'read', 'reminders': 'read'},
+    assert p['home_automation'] == {'permissions': {'presence': 'write', 'notice': 'read', 'weather': 'read', 'reminders': 'read'},
                                     'act_as': True, 'allow_delete': False}
     ai = p['ai_assistant']
     assert ai['act_as'] is True and ai['allow_delete'] is False
-    assert ai['permissions']['notice'] == 'read'
-    assert all(ai['permissions'][k] == 'write' for k in all_on if k != 'notice')
+    assert ai['permissions']['notice'] == 'read' and ai['permissions']['weather'] == 'read'
+    assert all(ai['permissions'][k] == 'write' for k in all_on if k not in ('notice', 'weather'))
     # Switched-off tools are left out of every preset
     p = api_admin.presets(['presence', 'notice'])
     assert p['home_automation']['permissions'] == {'presence': 'write', 'notice': 'read'}
@@ -293,7 +300,7 @@ def test_delete_on_the_page(home):
     assert 'Revoke the token before deleting it' in resp.get_data(as_text=True)
     home.client.post(f'/admin/api/{token_id}/revoke', data={'user': ADMIN})
     body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
-    assert re.search(r'delete"\s+data-confirm="Delete Hermes\? This removes it from the list for good\. Its activity history is kept\."', body)
+    assert re.search(r'delete"\s+data-confirm="Delete Hermes\? Its activity history is deleted too\."', body)
     home.client.post(f'/admin/api/{token_id}/delete', data={'user': ADMIN})
     with home.ctx():
         assert ApiToken.query.count() == 0
@@ -360,3 +367,84 @@ def test_admin_links_still_refuse_others(bare):
         for page in ('/admin/api', '/admin/backups'):
             resp = bare.client.get(f'{page}?user={user}')
             assert resp.status_code == 302 and resp.headers['Location'].endswith('/'), (page, user)
+
+
+# --- Full activity per token ---
+
+def _log(home, name, count):
+    with home.ctx():
+        token = tokens.find_by_name(name)
+        for i in range(count):
+            tokens.log_activity(token, 'Priya', 'notes_add', f'note {i}')
+        return token.id
+
+
+def test_page_lists_20_and_links_to_all(home):
+    create(home, name='Hermes', notes='write')
+    token_id = _log(home, 'Hermes', 25)
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert 'Recent activity (25)' in body
+    assert 'note 24' in body and 'note 5' in body and 'note 4<' not in body
+    assert f'/admin/api/{token_id}/activity?user=Administrator' in body and 'View all (25)' in body
+    assert f'/admin/api/{token_id}/activity.csv?user=Administrator' in body
+
+
+def test_activity_page_lists_everything_stored(home):
+    create(home, name='Hermes', notes='write')
+    token_id = _log(home, 'Hermes', 25)
+    resp = home.client.get(f'/admin/api/{token_id}/activity?user=Administrator')
+    assert resp.status_code == 200 and resp.headers['Cache-Control'] == 'no-store'
+    body = resp.get_data(as_text=True)
+    assert 'Activity of Hermes' in body and '25 changes' in body
+    assert body.count('<code>notes_add</code>') == 25
+    assert body.index('note 24') < body.index('note 0<')
+
+
+def test_activity_csv(home):
+    create(home, name='Home Assistant', notes='write')
+    with home.ctx():
+        token = tokens.find_by_name('Home Assistant')
+        tokens.log_activity(token, 'Priya', 'notes_add', '=SUM(A1)')
+        tokens.log_activity(token, 'Dad', 'shopping_add', 'Milk')
+        token_id = token.id
+    resp = home.client.get(f'/admin/api/{token_id}/activity.csv?user=Administrator')
+    assert resp.status_code == 200 and resp.headers['Cache-Control'] == 'no-store'
+    assert resp.headers['Content-Type'].startswith('text/csv')
+    assert 'filename="homehub-api-activity-home-assistant.csv"' in resp.headers['Content-Disposition']
+    text = resp.get_data().decode('utf-8')
+    lines = text.lstrip('\ufeff').splitlines()
+    assert lines[0] == 'time_utc,token,acting_as,action,target'
+    assert lines[1].endswith(',Home Assistant,Dad,shopping_add,Milk')
+    # Text a spreadsheet would run as a formula is quoted
+    assert lines[2].endswith(",Home Assistant,Priya,notes_add,'=SUM(A1)")
+
+
+def test_activity_pages_need_the_unlocked_admin(bare):
+    with bare.ctx():
+        admin.set_admin_password(PASSWORD)
+        row, _secret = tokens.create_token('Hermes', {'notice': 'read'})
+        token_id = row.id
+    for path in (f'/admin/api/{token_id}/activity', f'/admin/api/{token_id}/activity.csv'):
+        for user in (ADMIN, 'Priya'):
+            resp = bare.client.get(f'{path}?user={user}')
+            assert resp.status_code == 302 and 'text/csv' not in resp.headers['Content-Type']
+
+
+def test_activity_of_a_missing_token(home):
+    resp = home.client.get('/admin/api/999/activity?user=Administrator', follow_redirects=True)
+    assert 'That token was not found.' in resp.get_data(as_text=True)
+
+
+def test_delete_hint_suggests_the_csv(home):
+    create(home, name='Hermes', notes='write')
+    token_id = _log(home, 'Hermes', 1)
+    home.client.post(f'/admin/api/{token_id}/revoke', data={'user': ADMIN})
+    body = home.client.get('/admin/api?user=Administrator').get_data(as_text=True)
+    assert 'Deleting it also deletes its activity history. To keep a copy, download it as CSV first.' in body
+
+
+def test_activity_page_keeps_the_user_in_its_address(home):
+    create(home, name='Hermes', notes='write')
+    token_id = _log(home, 'Hermes', 1)
+    body = home.client.get(f'/admin/api/{token_id}/activity?user=Administrator').get_data(as_text=True)
+    assert 'keepUserParam: true' in body

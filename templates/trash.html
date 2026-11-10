@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mx-auto max-w-4xl" id="trashPage">
+    <div class="page-header flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+        <div>
+            <h1 class="page-title">{{ _('Trash') }}{% if current %} <span class="text-gray-500 font-normal">· {{ current.label }}</span>{% endif %}</h1>
+            <p class="page-subtitle">{{ _('What was deleted in the last 7 days, newest first. After 7 days it is deleted for good.') }}</p>
+        </div>
+        {% if current %}
+        <a href="{{ url_for(current.endpoint) }}" class="btn btn-ghost btn-sm flex-shrink-0 self-start sm:mt-1" style="color: var(--primary-text);"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>{{ _('Back to %(page)s', page=current.label) }}</a>
+        {% endif %}
+    </div>
+
+    <nav class="flex flex-wrap gap-2 mb-4" aria-label="{{ _('Show deleted items from') }}" id="trashFilters">
+        <a href="{{ url_for('main.trash_page') }}" class="btn btn-sm filter-chip" {% if not module %}aria-current="page"{% endif %}>{{ _('All') }}</a>
+        {% for m in modules %}
+        <a href="{{ url_for('main.trash_page', module=m.key) }}" class="btn btn-sm filter-chip" {% if module == m.key %}aria-current="page"{% endif %}><i class="fa-solid {{ m.icon }}" aria-hidden="true"></i>{{ m.label }}</a>
+        {% endfor %}
+    </nav>
+
+    {% if not rows %}
+    <div class="card list-empty" id="trashEmpty">{{ _('Nothing here. Deleted items stay in the trash for 7 days.') }}</div>
+    {% else %}
+    <ul class="card list-card" id="trashList">
+        {% for row in rows %}
+        {% set e = row.entry %}
+        <li class="list-row flex-col sm:flex-row items-stretch sm:items-center gap-2 trash-item" data-id="{{ e.id }}" data-module="{{ e.module }}">
+            <div class="flex-1 min-w-0 flex items-start gap-3">
+                <i class="fa-solid {{ row.module.icon if row.module else 'fa-trash-can' }} w-5 text-center mt-1 text-gray-500" aria-hidden="true"></i>
+                <div class="min-w-0">
+                    <div class="font-medium break-words">{{ e.label }}</div>
+                    <div class="meta mt-0.5">
+                        {% if row.module and not module %}<span class="whitespace-nowrap">{{ row.module.label }}</span> · {% endif %}
+                        {% if e.deleted_by %}{{ _('Deleted by %(name)s at %(time)s', name=e.deleted_by, time=e.deleted_at|localtime) }}{% else %}{{ _('Deleted at %(time)s', time=e.deleted_at|localtime) }}{% endif %} ·
+                        <span class="whitespace-nowrap {{ 'text-amber-700' if row.days_left <= 1 else '' }}">{{ ngettext('%(num)s day left', '%(num)s days left', row.days_left) }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 sm:flex-shrink-0 trash-actions" data-owner="{{ e.owner }}">
+                <form method="POST" action="{{ url_for('main.trash_restore', entry_id=e.id) }}">
+                    <input type="hidden" name="user">
+                    <input type="hidden" name="stamp" value="{{ stamp(e) }}">
+                    {% if module %}<input type="hidden" name="module" value="{{ module }}">{% endif %}
+                    <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>{{ _('Restore') }}</button>
+                </form>
+                <form method="POST" action="{{ url_for('main.trash_delete', entry_id=e.id) }}"
+                      data-confirm="{{ _('Delete %(name)s for good? This cannot be undone.', name=e.label) }}" data-confirm-action="{{ _('Delete forever') }}">
+                    <input type="hidden" name="user">
+                    <input type="hidden" name="stamp" value="{{ stamp(e) }}">
+                    {% if module %}<input type="hidden" name="module" value="{{ module }}">{% endif %}
+                    <button type="submit" class="btn btn-ghost btn-sm btn-danger-text"><i class="fa-solid fa-trash-can" aria-hidden="true"></i>{{ _('Delete forever') }}</button>
+                </form>
+            </div>
+            <p class="text-xs text-gray-500 hidden trash-not-yours">{% if e.owner %}{{ _('Only %(name)s or the admin can restore this.', name=e.owner) }}{% else %}{{ _('Only the admin can restore this.') }}{% endif %}</p>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+<script src="{{ asset_url('js/pages/trash.js') }}"></script>
+{% endblock %}

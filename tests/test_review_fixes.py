@@ -39,6 +39,16 @@ def add_expense_rule(client, title, creator, price):
         return RecurringExpense.query.filter_by(title=title).one().id
 
 
+def forget_trash_ids(client):
+    """Let SQLite hand out a freed id again, as it did before these tables used AUTOINCREMENT
+    (an old database whose upgrade failed still can): these tests are about an id that was taken."""
+    with client.application.app_context():
+        for (name,) in db.session.execute(db.text('SELECT name FROM sqlite_sequence')).fetchall():
+            db.session.execute(db.text(f'UPDATE sqlite_sequence SET seq = (SELECT COALESCE(MAX(id), 0) FROM "{name}") '
+                                       'WHERE name = :name'), {'name': name})
+        db.session.commit()
+
+
 def expense_rules(client):
     """title -> (creator, sorted amounts of its entries)"""
     with client.application.app_context():
@@ -54,6 +64,7 @@ def test_undo_of_a_deleted_expense_rule_leaves_a_rule_that_took_its_id_alone(cli
     client.post(f'/expenses/recurring/delete/{milk}', data={'user': 'Mom', 'delete_entries': delete_entries})
     token = last_token(client)
     # Someone else adds a rule inside the undo window, and SQLite hands it the id that just became free
+    forget_trash_ids(client)
     paper = add_expense_rule(client, 'Paper', 'Dad', 7)
     assert paper == milk
     if delete_entries:
@@ -89,6 +100,7 @@ def test_undo_of_a_split_never_deletes_a_rule_that_took_the_new_rules_id(client)
     with client.application.app_context():
         curd = RecurringExpense.query.filter_by(title='Curd').one().id
     client.post(f'/expenses/recurring/delete/{curd}', data={'user': 'Mom', 'delete_entries': '1'})
+    forget_trash_ids(client)
     paper = add_expense_rule(client, 'Paper', 'Dad', 7)
     assert paper == curd
 
@@ -120,6 +132,7 @@ def test_undo_of_a_deleted_recurring_chore_leaves_one_that_took_its_id_alone(cli
     plants = add_recurring_chore(client, 'Water plants', 'Mom')
     client.post(f'/chores/recurring/delete/{plants}', data={'user': 'Mom'})
     token = last_token(client)
+    forget_trash_ids(client)
     bins = add_recurring_chore(client, 'Take out bins', 'Dad')
     assert bins == plants
 
@@ -138,6 +151,7 @@ def test_undo_of_a_chore_tick_ignores_a_chore_that_took_its_id(client):
     client.post(f'/chores/toggle/{chore_id}')
     token = last_token(client)
     client.post(f'/chores/recurring/delete/{plants}', data={'user': 'Mom'})
+    forget_trash_ids(client)
     add_recurring_chore(client, 'Take out bins', 'Dad')
     with client.application.app_context():
         other = Chore.query.one()
@@ -165,6 +179,7 @@ def reminder_rules(client):
 def test_undo_of_a_deleted_reminder_rule_leaves_one_that_took_its_id_alone(client):
     rent = add_reminder_rule(client, 'Pay rent', 'Mom', days_ago(5))
     token = client.delete(f'/api/recurring_rules/{rent}', json={'creator': 'Mom', 'scope': 'all'}).get_json()['undo_token']
+    forget_trash_ids(client)
     gym = add_reminder_rule(client, 'Gym', 'Dad', TODAY)
     assert gym == rent
 
@@ -180,6 +195,7 @@ def test_undo_of_a_reminder_edit_never_deletes_a_rule_that_took_the_successors_i
     resp = client.patch(f'/api/recurring_rules/{rent}', json={'creator': 'Mom', 'title': 'Pay landlord'}).get_json()
     successor = resp['rule']['id']
     client.delete(f'/api/recurring_rules/{successor}', json={'creator': 'Mom', 'scope': 'all'})
+    forget_trash_ids(client)
     gym = add_reminder_rule(client, 'Gym', 'Dad', TODAY)
     assert gym == successor
 

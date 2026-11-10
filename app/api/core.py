@@ -33,6 +33,7 @@ def default_message(code: str) -> str:
         'too_large': _('The request is too large.'),
         'method_not_allowed': _('That method is not allowed here.'),
         'server_error': _('Something went wrong. Please try again.'),
+        'upstream_error': _('A service HomeHub relies on could not be reached. Try again later.'),
     }.get(code, code)
 
 
@@ -75,7 +76,7 @@ def check_access(token, tool: str | None, level: str) -> None:
     if tool is None:
         return
     if not tokens.tool_enabled(tool):
-        raise ApiError(404, 'not_found')
+        raise ApiError(404, 'not_found', tokens.TOOLS_BY_KEY[tool].switched_off)
     granted = tokens.effective_permissions(token).get(tool)
     if not tokens.level_allows(granted, level):
         label = str(tokens.TOOLS_BY_KEY[tool].label)
@@ -139,6 +140,13 @@ class Context:
         self.acting_given = acting_given
         self.target = None
 
+    @property
+    def deleted_by(self) -> str:
+        """Who the Trash page says deleted something: "Priya (via Hermes)", or the token's name alone."""
+        if self.acting_given:
+            return f'{self.user} (via {self.token.name})'
+        return self.token.name
+
     def require_member(self, message: str | None = None) -> str:
         """The family member this call acts for; "by" is needed for changes that belong to a person."""
         if not self.acting_given:
@@ -156,6 +164,8 @@ def run_operation(op, token, args: dict, *, from_query=()):
     check_access(token, op.tool, op.level)
     if op.destructive and not token.allow_delete:
         raise ApiError(403, 'forbidden', _('This token is not allowed to delete.'))
+    if op.destructive and op.tool not in tokens.delete_tools(token):
+        raise ApiError(403, 'forbidden', _('This token may only move reminders to the trash: it was made when Allow deleting covered nothing else. Create a new token to delete in other tools.'))
     try:
         cleaned = registry.validate(op, args, from_query=from_query)
     except registry.ArgumentError as exc:

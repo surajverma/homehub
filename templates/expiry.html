@@ -1,9 +1,13 @@
 {% extends "base.html" %}
+{% from "_trash_link.html" import trash_link %}
 {% block content %}
 <div class="mx-auto max-w-4xl">
-    <div class="page-header">
-        <h1 class="page-title">{{ _('Expiry Tracker') }}</h1>
-        <p class="page-subtitle">{{ _('Food, medicines and documents, soonest first.') }}</p>
+    <div class="page-header flex items-start justify-between gap-4">
+        <div class="min-w-0">
+            <h1 class="page-title">{{ _('Expiry Tracker') }}</h1>
+            <p class="page-subtitle">{{ _('Food, medicines and documents, soonest first.') }}</p>
+        </div>
+        {{ trash_link('expiry') }}
     </div>
     <form method="POST" class="card p-4 mb-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
         <input type="text" name="name" aria-label="{{ _('Item name') }}" class="md:col-span-5 w-full" placeholder="{{ _('Item name') }}" required>

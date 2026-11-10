@@ -4,6 +4,7 @@ from ..models import db, Recipe
 from ..blueprints import main_bp, json_error_response
 from ..admin import can_modify
 from ..security import sanitize_text, sanitize_html, is_http_url, sanitize_tags
+from ..undo import row_restorer, trash_info, trash_row
 import json
 
 
@@ -146,10 +147,18 @@ def delete_recipe(recipe_id):
     recipe = db.get_or_404(Recipe, recipe_id)
     user = sanitize_text(request.form['user'])
     if can_modify(user, recipe.creator):
-        db.session.delete(recipe)
-        db.session.commit()
-        flash(_('Recipe deleted.'), 'success')
+        trash_recipe(recipe, user, _('%(title)s moved to the trash.', title=recipe.title))
+    else:
+        flash(_('Not allowed to delete recipe.'), 'error')
     return redirect(url_for('main.recipes'))
+
+
+def trash_recipe(recipe: Recipe, deleted_by: str, message: str | None = None) -> str:
+    """Move a recipe to the trash (restorable for 7 days). Commits."""
+    return trash_row('recipe', recipe, trash_info('recipes', recipe.title, recipe.creator, deleted_by), message)
+
+
+row_restorer('recipe', Recipe)
 
 
 @main_bp.route('/api/recipes/<int:recipe_id>/tags', methods=['POST'])

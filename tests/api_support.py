@@ -59,7 +59,7 @@ class Home:
 
     def all_tools(self, name='Agent', level='write', act_as=True, allow_delete=False):
         from app.api import tokens
-        perms = {t.key: ('read' if t.key == 'notice' else level) for t in tokens.TOOLS}
+        perms = {t.key: (level if level in t.levels else 'read') for t in tokens.TOOLS}
         return self.token(name, act_as=act_as, allow_delete=allow_delete, **perms)
 
     def call(self, method, path, secret=None, json=None, headers=None, **kwargs):
@@ -85,3 +85,13 @@ class Home:
 
     def ctx(self):
         return self.app.app_context()
+
+
+def trash_action(client, entry_id, action, data=None, **kwargs):
+    """POST Restore or Delete forever for a trash entry, as the Trash page sends it (with the entry's stamp)."""
+    from app import trash
+    from app.models import UndoStash, db
+    with client.application.app_context():
+        entry = db.session.get(UndoStash, entry_id)
+        stamp = trash.entry_stamp(entry) if entry is not None else ''
+    return client.post(f'/trash/{entry_id}/{action}', data={'stamp': stamp, **(data or {})}, **kwargs)

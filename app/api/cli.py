@@ -48,20 +48,22 @@ def _print_token(secret: str):
               help='Give access to a tool: read or write. Repeat for each tool. Tools: '
                    + ', '.join(t.key for t in tokens.TOOLS) + '.')
 @click.option('--act-as-members', is_flag=True, help='Let the token act as family members (the "by" field). Never the admin.')
-@click.option('--allow-delete', is_flag=True, help='Let the token move reminders to the trash (needs reminders=write).')
+@click.option('--allow-delete', is_flag=True,
+              help='Let the token move items to the trash, restorable for 7 days (needs write on a tool such as reminders or shopping).')
 def create_command(name, tool_values, act_as_members, allow_delete):
     """Create a token called NAME and print it once."""
     _fresh_config()
     try:
         permissions = _parse_tools(tool_values)
         if allow_delete and not tokens.can_delete(tokens.clean_permissions(permissions, act_as_members)):
-            raise tokens.TokenError('--allow-delete needs --tool reminders=write: it only moves reminders to the trash.')
+            raise tokens.TokenError('--allow-delete needs write on a tool whose items can go to the trash: '
+                                    + ', '.join(tokens.DELETABLE) + '.')
         token, secret = tokens.create_token(name, permissions, act_as_members, allow_delete)
     except tokens.TokenError as exc:
         raise click.ClickException(str(exc))
     click.echo(f'Token {token.name} created: {_summary(token)}'
                + ('; acts as family members' if token.act_as_members else '')
-               + ('; can move reminders to the trash' if token.allow_delete else '') + '.')
+               + ('; can move items to the trash' if token.allow_delete else '') + '.')
     disabled = [k for k in token.permission_map if not tokens.tool_enabled(k)]
     if disabled:
         click.echo('Switched off in config.yml, so unreachable until turned on: ' + ', '.join(disabled) + '.')
@@ -79,7 +81,10 @@ def list_command():
     for token in rows:
         state = f'revoked {token.revoked_at:%Y-%m-%d %H:%M}' if token.revoked_at else 'active'
         used = f'{token.last_used_at:%Y-%m-%d %H:%M} UTC' if token.last_used_at else 'not used yet'
-        flags = [f for f, on in (('act as family members', token.act_as_members), ('allow deleting', token.allow_delete)) if on]
+        trash_flag = ('can move reminders to the trash (made before Allow deleting covered more; '
+                      'create a new token to widen it)'
+                      if tokens.delete_scope(token) == tokens.DELETE_SCOPE_REMINDERS else 'can move items to the trash')
+        flags = [f for f, on in (('act as family members', token.act_as_members), (trash_flag, token.allow_delete)) if on]
         if tokens.name_taken_by_person(token.name):
             flags.append('same name as a person: writes blocked until renamed')
         click.echo(f'{token.name} ({token.prefix}…, {state}): {_summary(token)}'
@@ -135,7 +140,7 @@ def rename_command(old, new):
 @click.argument('name')
 @click.option('--yes', is_flag=True, help='Do not ask for confirmation.')
 def delete_command(name, yes):
-    """Delete revoked token NAME for good (its activity history is kept). Revoke it first."""
+    """Delete revoked token NAME for good, with its activity history. Revoke it first."""
     _fresh_config()
     token = tokens.find_by_name(name)
     if token is None:
@@ -143,7 +148,30 @@ def delete_command(name, yes):
     if not token.revoked_at:
         raise click.ClickException(f'Token {token.name} is still active. Revoke it first: flask api-token revoke "{token.name}"')
     if not yes:
-        click.confirm(f'Delete {token.name}? This removes it from the list for good. Its activity history is kept.', abort=True)
+        click.confirm(f'Delete {token.name}? Its activity history is deleted too.', abort=True)
     deleted = token.name
     tokens.delete_token(token)
     click.echo(f'Token {deleted} deleted.')
+
+
+@api_token_cli.command('activity')
+@click.argument('name')
+@click.option('--csv', 'as_csv', is_flag=True, help='Print it as CSV (time_utc, token, acting_as, action, target).')
+def activity_command(name, as_csv):
+    """Show every stored change made with token NAME, newest first (the latest 200 are kept)."""
+    _fresh_config()
+    token = tokens.find_by_name(name)
+    if token is None:
+        raise click.ClickException(f'No token called {name}.')
+    if as_csv:
+        # Without the byte order mark: it is for spreadsheets opening a file, not for a terminal or a pipe
+        click.echo(tokens.activity_csv(token).lstrip('\ufeff'), nl=False)
+        return
+    rows = tokens.all_activity(token)
+    if not rows:
+        click.echo(f'No changes made with {token.name} yet.')
+        return
+    for a in rows:
+        when = f'{a.created_at:%Y-%m-%d %H:%M} UTC' if a.created_at else '-'
+        click.echo(f'{when}  {a.acting_as}  {a.action}  {a.target}')
+    click.echo(f'{len(rows)} change{"" if len(rows) == 1 else "s"} made with {token.name}.')

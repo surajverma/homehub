@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 05:30+0000\n"
+"POT-Creation-Date: 2026-11-10 19:35+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -55,6 +55,10 @@ msgid "Something went wrong. Please try again."
 msgstr ""
 
 #: app/api/core.py
+msgid "A service HomeHub relies on could not be reached. Try again later."
+msgstr ""
+
+#: app/api/core.py
 #, python-format
 msgid "This token can read %(tool)s but not change it."
 msgstr ""
@@ -88,6 +92,10 @@ msgstr ""
 
 #: app/api/core.py
 msgid "This token is not allowed to delete."
+msgstr ""
+
+#: app/api/core.py
+msgid "This token may only move reminders to the trash: it was made when Allow deleting covered nothing else. Create a new token to delete in other tools."
 msgstr ""
 
 #: app/api/core.py
@@ -192,6 +200,19 @@ msgstr ""
 msgid "Send either amount, or unit_price and quantity."
 msgstr ""
 
+#: app/api/expenses.py
+msgid "That expense was not found."
+msgstr ""
+
+#: app/api/expenses.py
+msgid "This is a day of a recurring expense. Skip it instead, or delete it in HomeHub."
+msgstr ""
+
+#: app/api/expenses.py app/api/home.py app/api/household.py
+#, python-format
+msgid "%(title)s moved to the trash. It can be restored from the Trash page for 7 days."
+msgstr ""
+
 #: app/api/home.py
 msgid "This needs a token that can act as family members."
 msgstr ""
@@ -271,11 +292,6 @@ msgstr ""
 #: app/api/home.py
 #, python-format
 msgid "%(title)s is not done."
-msgstr ""
-
-#: app/api/home.py
-#, python-format
-msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
 msgstr ""
 
 #: app/api/home.py
@@ -433,6 +449,15 @@ msgstr ""
 msgid "Recipe updated: %(title)s."
 msgstr ""
 
+#: app/api/household.py
+msgid "That note was not found."
+msgstr ""
+
+#: app/api/household.py
+#, python-format
+msgid "%(name)s cannot change this note."
+msgstr ""
+
 #: app/api/mcp.py
 msgid "The MCP endpoint only accepts POST."
 msgstr ""
@@ -485,6 +510,22 @@ msgstr ""
 
 #: app/api/tokens.py
 msgid "Not available: only the admin can change the notice"
+msgstr ""
+
+#: app/api/tokens.py templates/index.html
+msgid "Weather"
+msgstr "Hava Durumu"
+
+#: app/api/tokens.py
+msgid "Current weather, the next 24 hours and 7 days, for the place set in config.yml"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Not available: weather can only be read"
+msgstr ""
+
+#: app/api/tokens.py
+msgid "Weather is switched off in config.yml."
 msgstr ""
 
 #: app/api/tokens.py templates/index.html
@@ -615,6 +656,24 @@ msgstr ""
 
 #: app/api/tokens.py
 msgid "Revoke the token before deleting it."
+msgstr ""
+
+#: app/api/weather.py
+msgid "Weather has no latitude and longitude in config.yml, so only a browser can look it up for its own location."
+msgstr ""
+
+#: app/api/weather.py
+msgid "The weather service could not be reached. Try again in a few minutes."
+msgstr ""
+
+#: app/api/weather.py
+#, python-format
+msgid "%(description)s, %(temp)s%(unit)s (feels like %(feels)s%(unit)s)."
+msgstr ""
+
+#: app/api/weather.py
+#, python-format
+msgid "Today %(low)s to %(high)s%(unit)s, %(chance)s%% chance of rain."
 msgstr ""
 
 #: app/blueprints/__init__.py
@@ -812,6 +871,16 @@ msgid "Not allowed to delete recurring rule."
 msgstr "Yinelenme kuralını silme izniniz yok."
 
 #: app/blueprints/chores.py
+#, python-format
+msgid "%(chore)s is now a one-off chore. Its recurring schedule went to the trash."
+msgstr ""
+
+#: app/blueprints/chores.py
+#, python-format
+msgid "Recurring chore %(chore)s moved to the trash."
+msgstr ""
+
+#: app/blueprints/chores.py
 msgid "Not allowed to update chore."
 msgstr "Görevi güncelleme izniniz yok."
 
@@ -836,12 +905,9 @@ msgid "Chore settings updated."
 msgstr "Görev ayarları güncellendi."
 
 #: app/blueprints/chores.py
-msgid "Recurring chore rule deleted."
-msgstr "Yinelenen görev kuralı silindi."
-
-#: app/blueprints/chores.py
-msgid "Chore deleted."
-msgstr "Görev silindi."
+#, python-format
+msgid "%(chore)s moved to the trash."
+msgstr ""
 
 #: app/blueprints/chores.py
 msgid "Not allowed to delete chore."
@@ -880,10 +946,6 @@ msgid "No ids provided"
 msgstr "Kimlik verilmedi"
 
 #: app/blueprints/dashboard.py
-msgid "Reminder is not in trash"
-msgstr "Hatırlatıcı çöp kutusunda değil"
-
-#: app/blueprints/dashboard.py
 msgid "Date and title are required for reminders."
 msgstr "Hatırlatıcılar için tarih ve başlık zorunludur."
 
@@ -895,9 +957,11 @@ msgstr "Geçersiz tarih."
 msgid "Reminder added."
 msgstr "Hatırlatıcı eklendi."
 
-#: app/blueprints/dashboard.py
-msgid "Reminder moved to trash."
-msgstr "Hatırlatıcı çöp kutusuna taşındı."
+#: app/blueprints/dashboard.py app/blueprints/expenses.py
+#: app/blueprints/recipes.py
+#, python-format
+msgid "%(title)s moved to the trash."
+msgstr ""
 
 #: app/blueprints/dashboard.py
 msgid "Not allowed to delete this reminder."
@@ -1023,6 +1087,36 @@ msgstr ""
 msgid "%(num)s expense imported."
 msgid_plural "%(num)s expenses imported."
 msgstr[0] ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s is already there again (added back, or billed by the rule it was split into), so this copy cannot be restored. Delete it for good instead."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s is in the trash too, and only %(name)s or the admin can restore it. Ask them to restore the rule first; then this day can be restored."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s no longer exists, so it was restored as a one-off expense."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "Its recurring rule %(title)s was restored too."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s is no longer part of its recurring rule, which was changed after the day was deleted. Delete it for good, or add the day on the Expenses page if it is still needed."
+msgstr ""
+
+#: app/blueprints/expenses.py
+#, python-format
+msgid "%(title)s for %(date)s was added back since it was deleted, so this copy cannot be restored. Delete it for good instead."
+msgstr ""
 
 #: app/blueprints/expenses.py static/js/pages/expenses_recurring.js
 msgid "Unit price must be greater than zero."
@@ -1155,12 +1249,12 @@ msgid "Not allowed to delete rule."
 msgstr "Kuralı silme izniniz yok."
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries deleted."
-msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar da silindi."
+msgid "Recurring rule moved to the trash with its generated entries."
+msgstr ""
 
 #: app/blueprints/expenses.py
-msgid "Recurring rule deleted. Linked generated entries kept as history."
-msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar geçmiş olarak korundu."
+msgid "Recurring rule moved to the trash. Its generated entries are kept as history."
+msgstr ""
 
 #: app/blueprints/expenses.py
 msgid "Only admin can update settings."
@@ -1191,10 +1285,6 @@ msgstr ""
 #: app/blueprints/expenses.py
 msgid "Not allowed to delete entry."
 msgstr "Kaydı silme izniniz yok."
-
-#: app/blueprints/expenses.py
-msgid "Expense deleted."
-msgstr "Harcama silindi."
 
 #: app/blueprints/expenses.py
 msgid "Not allowed to edit entry."
@@ -1247,9 +1337,9 @@ msgstr "Hiç kayıt seçilmedi."
 
 #: app/blueprints/expenses.py
 #, python-format
-msgid "%(num)s expense deleted."
-msgid_plural "%(num)s expenses deleted."
-msgstr[0] "%(num)s harcama silindi."
+msgid "%(num)s expense moved to the trash."
+msgid_plural "%(num)s expenses moved to the trash."
+msgstr[0] ""
 
 #: app/blueprints/expenses.py
 msgid "Invalid month parameter. Must be an integer between 1 and 12."
@@ -1276,8 +1366,9 @@ msgid "Item added."
 msgstr "Öğe eklendi."
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
-msgid "Item deleted."
-msgstr "Öğe silindi."
+#, python-format
+msgid "%(item)s moved to the trash."
+msgstr ""
 
 #: app/blueprints/expiry.py app/blueprints/shopping.py
 msgid "Not allowed to delete item."
@@ -1332,8 +1423,8 @@ msgid "Not allowed to edit note."
 msgstr "Notu düzenleme izniniz yok."
 
 #: app/blueprints/notes.py
-msgid "Note deleted."
-msgstr "Not silindi."
+msgid "Note moved to the trash."
+msgstr ""
 
 #: app/blueprints/notes.py
 msgid "Not allowed to delete note."
@@ -1364,8 +1455,8 @@ msgid "Not allowed to edit recipe."
 msgstr "Tarifi düzenleme izniniz yok."
 
 #: app/blueprints/recipes.py
-msgid "Recipe deleted."
-msgstr "Tarif silindi."
+msgid "Not allowed to delete recipe."
+msgstr ""
 
 #: app/blueprints/shortener.py
 msgid "Please enter a valid http(s) URL."
@@ -1401,6 +1492,68 @@ msgstr "Dosya silindi."
 msgid "Not allowed to delete file."
 msgstr "Dosyayı silme izniniz yok."
 
+#: app/trash.py templates/base.html templates/notes.html
+msgid "Shared Notes"
+msgstr "Paylaşılan Notlar"
+
+#: app/trash.py templates/base.html templates/shopping.html
+msgid "Shopping List"
+msgstr "Alışveriş Listesi"
+
+#: app/trash.py templates/base.html
+msgid "Calendar"
+msgstr "Takvim"
+
+#: app/trash.py templates/base.html
+msgid "To-Do/Chores"
+msgstr "Yapılacaklar/Ev İşleri"
+
+#: app/trash.py templates/base.html templates/recipes.html
+msgid "Recipe Book"
+msgstr "Tarif Defteri"
+
+#: app/trash.py templates/base.html templates/expiry.html
+msgid "Expiry Tracker"
+msgstr "Son Kullanma Takibi"
+
+#: app/trash.py templates/base.html templates/expenses.html
+msgid "Expense Tracker"
+msgstr "Harcama Takibi"
+
+#: app/trash.py app/undo.py
+msgid "That is no longer in the trash."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to restore %(name)s."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "Could not restore %(name)s."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s restored."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "Not allowed to delete %(name)s."
+msgstr ""
+
+#: app/trash.py
+#, python-format
+msgid "%(name)s deleted for good."
+msgstr ""
+
+#: app/api/expenses.py app/api/household.py app/blueprints/chores.py
+#: app/blueprints/expenses.py app/undo.py
+msgid "That was already deleted."
+msgstr ""
+
 #: app/undo.py
 msgid "It is too late to undo that."
 msgstr "Bunu geri almak için çok geç."
@@ -1412,6 +1565,103 @@ msgstr "Bu değişiklik geri alınamadı."
 #: app/undo.py
 msgid "Change undone."
 msgstr "Değişiklik geri alındı."
+
+#: app/weather.py static/js/weather.js
+msgctxt "weather"
+msgid "Clear"
+msgstr "Açık"
+
+#: app/weather.py static/js/weather.js
+msgid "Mainly Clear"
+msgstr "Çoğunlukla Açık"
+
+#: app/weather.py static/js/weather.js
+msgid "Partly Cloudy"
+msgstr "Parçalı Bulutlu"
+
+#: app/weather.py static/js/weather.js
+msgid "Overcast"
+msgstr "Kapalı"
+
+#: app/weather.py static/js/weather.js
+msgid "Fog"
+msgstr "Sis"
+
+#: app/weather.py static/js/weather.js
+msgid "Freezing Fog"
+msgstr "Dondurucu Sis"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Drizzle"
+msgstr "Hafif Çisenti"
+
+#: app/weather.py static/js/weather.js
+msgid "Drizzle"
+msgstr "Çisenti"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Drizzle"
+msgstr "Yoğun Çisenti"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Rain"
+msgstr "Hafif Yağmur"
+
+#: app/weather.py static/js/weather.js
+msgid "Rain"
+msgstr "Yağmur"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Rain"
+msgstr "Şiddetli Yağmur"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Snow"
+msgstr "Hafif Kar"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow"
+msgstr "Kar"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Snow"
+msgstr "Yoğun Kar"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow Grains"
+msgstr "Kar Tanecikleri"
+
+#: app/weather.py static/js/weather.js
+msgid "Light Showers"
+msgstr "Hafif Sağanak"
+
+#: app/weather.py static/js/weather.js
+msgid "Showers"
+msgstr "Sağanak"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Showers"
+msgstr "Şiddetli Sağanak"
+
+#: app/weather.py static/js/weather.js
+msgid "Snow Showers"
+msgstr "Kar Sağanağı"
+
+#: app/weather.py static/js/weather.js
+msgid "Heavy Snow Showers"
+msgstr "Şiddetli Kar Sağanağı"
+
+#: app/weather.py static/js/weather.js
+msgid "Thunderstorm"
+msgstr "Gök Gürültülü Fırtına"
+
+#: app/weather.py static/js/weather.js
+msgid "Thunderstorm + Hail"
+msgstr "Gök Gürültülü Fırtına + Dolu"
+
+#: app/weather.py static/js/weather.js templates/index.html
+msgid "Unknown"
+msgstr "Bilinmiyor"
 
 #: static/js/base/app.js static/js/pages/home/reminders.js
 msgid "Undo"
@@ -1739,8 +1989,8 @@ msgstr "Paylaşım:"
 msgid "Skip day"
 msgstr "Günü atla"
 
-#: static/js/pages/expenses.js static/js/pages/home/reminders.js
-#: templates/backup_restore.html templates/backups.html
+#: static/js/pages/expenses.js templates/backup_restore.html
+#: templates/backups.html templates/trash.html
 msgid "Restore"
 msgstr "Geri getir"
 
@@ -1898,12 +2148,22 @@ msgid "(No category)"
 msgstr "(Kategori yok)"
 
 #: static/js/pages/home/reminders.js
+msgid "Moved to the trash."
+msgstr ""
+
+#: static/js/pages/home/reminders.js
 msgid "Deleted"
 msgstr "Silindi"
 
 #: static/js/pages/home/reminders.js
 msgid "Delete failed"
 msgstr "Silme başarısız"
+
+#: static/js/pages/home/reminders.js
+#, python-brace-format
+msgid "{count} reminder moved to the trash."
+msgid_plural "{count} reminders moved to the trash."
+msgstr[0] ""
 
 #: static/js/pages/home/reminders.js
 #, python-brace-format
@@ -2171,42 +2431,10 @@ msgid "All: {count}"
 msgstr "Tümü: {count}"
 
 #: static/js/pages/home/reminders.js
-msgid "Deleted (undo available)"
-msgstr "Silindi (geri alınabilir)"
-
-#: static/js/pages/home/reminders.js
-msgid "Undo delete"
-msgstr "Silmeyi geri al"
-
-#: static/js/pages/home/reminders.js
 #, python-brace-format
 msgid "Move {count} selected reminder to the trash?"
 msgid_plural "Move {count} selected reminders to the trash?"
 msgstr[0] "Seçili {count} hatırlatıcı çöp kutusuna taşınsın mı?"
-
-#: static/js/pages/home/reminders.js
-msgid "Loading trash…"
-msgstr "Çöp kutusu yükleniyor…"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed to load trash."
-msgstr "Çöp kutusu yüklenemedi."
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle bin is empty. Items auto-purge after 7 days."
-msgstr "Geri dönüşüm kutusu boş. Öğeler 7 gün sonra kendiliğinden silinir."
-
-#: static/js/pages/home/reminders.js
-msgid "Recycle Bin — items auto-purge after 7 days"
-msgstr "Geri Dönüşüm Kutusu — öğeler 7 gün sonra kendiliğinden silinir"
-
-#: static/js/pages/home/reminders.js
-msgid "Restored"
-msgstr "Geri getirildi"
-
-#: static/js/pages/home/reminders.js
-msgid "Failed"
-msgstr "Başarısız"
 
 #: static/js/pages/home/reminders.js
 msgid "Upcoming (next 7 days)"
@@ -2263,7 +2491,8 @@ msgstr "Buraya yazın..."
 msgid "Edit Item"
 msgstr "Öğeyi Düzenle"
 
-#: static/js/pages/shopping.js templates/shopping.html
+#: static/js/pages/shopping.js templates/api_activity.html
+#: templates/shopping.html
 msgid "Item"
 msgstr "Öğe"
 
@@ -2314,103 +2543,6 @@ msgstr "Sil"
 #, python-brace-format
 msgid "Delete tag \"{tag}\"? This removes it from suggestions (items keep their tags)."
 msgstr "\"{tag}\" etiketi silinsin mi? Bu, etiketi önerilerden kaldırır (öğeler etiketlerini korur)."
-
-#: static/js/weather.js
-msgctxt "weather"
-msgid "Clear"
-msgstr "Açık"
-
-#: static/js/weather.js
-msgid "Mainly Clear"
-msgstr "Çoğunlukla Açık"
-
-#: static/js/weather.js
-msgid "Partly Cloudy"
-msgstr "Parçalı Bulutlu"
-
-#: static/js/weather.js
-msgid "Overcast"
-msgstr "Kapalı"
-
-#: static/js/weather.js
-msgid "Fog"
-msgstr "Sis"
-
-#: static/js/weather.js
-msgid "Freezing Fog"
-msgstr "Dondurucu Sis"
-
-#: static/js/weather.js
-msgid "Light Drizzle"
-msgstr "Hafif Çisenti"
-
-#: static/js/weather.js
-msgid "Drizzle"
-msgstr "Çisenti"
-
-#: static/js/weather.js
-msgid "Heavy Drizzle"
-msgstr "Yoğun Çisenti"
-
-#: static/js/weather.js
-msgid "Light Rain"
-msgstr "Hafif Yağmur"
-
-#: static/js/weather.js
-msgid "Rain"
-msgstr "Yağmur"
-
-#: static/js/weather.js
-msgid "Heavy Rain"
-msgstr "Şiddetli Yağmur"
-
-#: static/js/weather.js
-msgid "Light Snow"
-msgstr "Hafif Kar"
-
-#: static/js/weather.js
-msgid "Snow"
-msgstr "Kar"
-
-#: static/js/weather.js
-msgid "Heavy Snow"
-msgstr "Yoğun Kar"
-
-#: static/js/weather.js
-msgid "Snow Grains"
-msgstr "Kar Tanecikleri"
-
-#: static/js/weather.js
-msgid "Light Showers"
-msgstr "Hafif Sağanak"
-
-#: static/js/weather.js
-msgid "Showers"
-msgstr "Sağanak"
-
-#: static/js/weather.js
-msgid "Heavy Showers"
-msgstr "Şiddetli Sağanak"
-
-#: static/js/weather.js
-msgid "Snow Showers"
-msgstr "Kar Sağanağı"
-
-#: static/js/weather.js
-msgid "Heavy Snow Showers"
-msgstr "Şiddetli Kar Sağanağı"
-
-#: static/js/weather.js
-msgid "Thunderstorm"
-msgstr "Gök Gürültülü Fırtına"
-
-#: static/js/weather.js
-msgid "Thunderstorm + Hail"
-msgstr "Gök Gürültülü Fırtına + Dolu"
-
-#: static/js/weather.js templates/index.html
-msgid "Unknown"
-msgstr "Bilinmiyor"
 
 #: static/js/weather.js
 msgid "Invalid weather data received"
@@ -2535,12 +2667,17 @@ msgstr "Tutara göre"
 msgid "%(name)s split value"
 msgstr "%(name)s paylaşım değeri"
 
+#: templates/_trash_link.html templates/base.html templates/index.html
+#: templates/trash.html
+msgid "Trash"
+msgstr "Çöp Kutusu"
+
 #: templates/api_access.html
 msgid "No access"
 msgstr ""
 
 #: templates/api_access.html templates/api_access_locked.html
-#: templates/base.html templates/index.html
+#: templates/api_activity.html templates/base.html templates/index.html
 msgid "API access"
 msgstr ""
 
@@ -2644,7 +2781,7 @@ msgid "Allow deleting"
 msgstr ""
 
 #: templates/api_access.html
-msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+msgid "Lets the token move items to the trash, where they can be restored for 7 days: reminders, shopping items, one-off chores, notes, recipes, expiry items and expenses, in the tools it has with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
 msgstr ""
 
 #: templates/api_access.html
@@ -2685,6 +2822,14 @@ msgid "Can move reminders to the trash"
 msgstr ""
 
 #: templates/api_access.html
+msgid "Can move items to the trash"
+msgstr ""
+
+#: templates/api_access.html
+msgid "Made when Allow deleting covered reminders only, so it still does. To let a client delete in other tools too, create a new token."
+msgstr ""
+
+#: templates/api_access.html
 msgid "This token has the same name as a family member or the admin, so its changes would look like theirs. Writes are blocked until it is renamed."
 msgstr ""
 
@@ -2722,7 +2867,11 @@ msgstr ""
 
 #: templates/api_access.html
 #, python-format
-msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
+msgid "Delete %(name)s? Its activity history is deleted too."
+msgstr ""
+
+#: templates/api_access.html
+msgid "Deleting it also deletes its activity history. To keep a copy, download it as CSV first."
 msgstr ""
 
 #: templates/api_access.html
@@ -2739,6 +2888,15 @@ msgid "Recent activity"
 msgstr ""
 
 #: templates/api_access.html
+#, python-format
+msgid "View all (%(num)s)"
+msgstr ""
+
+#: templates/api_access.html templates/api_activity.html
+msgid "Download CSV"
+msgstr ""
+
+#: templates/api_access.html templates/api_activity.html
 msgid "No changes made with this token yet."
 msgstr ""
 
@@ -2768,6 +2926,34 @@ msgstr ""
 
 #: templates/api_access_locked.html
 msgid "Until then, you can manage tokens on the server instead, for example:"
+msgstr ""
+
+#: templates/api_activity.html
+#, python-format
+msgid "Activity of %(name)s"
+msgstr ""
+
+#: templates/api_activity.html
+#, python-format
+msgid "Every change made with this token, newest first. HomeHub keeps the latest %(num)s."
+msgstr ""
+
+#: templates/api_activity.html
+#, python-format
+msgid "%(num)s change"
+msgid_plural "%(num)s changes"
+msgstr[0] ""
+
+#: templates/api_activity.html
+msgid "Time"
+msgstr ""
+
+#: templates/api_activity.html
+msgid "Acting as"
+msgstr ""
+
+#: templates/api_activity.html
+msgid "Action"
 msgstr ""
 
 #: templates/backup_restore.html
@@ -2958,33 +3144,9 @@ msgstr "Menüyü kapat"
 msgid "Welcome"
 msgstr "Hoş Geldiniz"
 
-#: templates/base.html templates/notes.html
-msgid "Shared Notes"
-msgstr "Paylaşılan Notlar"
-
 #: templates/base.html templates/upload.html
 msgid "Shared Cloud"
 msgstr "Paylaşılan Bulut"
-
-#: templates/base.html templates/shopping.html
-msgid "Shopping List"
-msgstr "Alışveriş Listesi"
-
-#: templates/base.html
-msgid "Calendar"
-msgstr "Takvim"
-
-#: templates/base.html
-msgid "To-Do/Chores"
-msgstr "Yapılacaklar/Ev İşleri"
-
-#: templates/base.html templates/recipes.html
-msgid "Recipe Book"
-msgstr "Tarif Defteri"
-
-#: templates/base.html templates/expiry.html
-msgid "Expiry Tracker"
-msgstr "Son Kullanma Takibi"
 
 #: templates/base.html templates/shorten.html
 msgid "URL Shortener"
@@ -3001,10 +3163,6 @@ msgstr "PDF Sıkıştırıcı"
 #: templates/base.html
 msgid "QR Generator"
 msgstr "QR Üretici"
-
-#: templates/base.html templates/expenses.html
-msgid "Expense Tracker"
-msgstr "Harcama Takibi"
 
 #: templates/base.html
 msgid "Admin"
@@ -3772,7 +3930,7 @@ msgstr "Öğe ekle"
 msgid "Nothing tracked yet."
 msgstr "Henüz takip edilen bir şey yok."
 
-#: templates/expiry.html
+#: templates/expiry.html templates/trash.html
 #, python-format
 msgid "%(num)s day left"
 msgid_plural "%(num)s days left"
@@ -3794,10 +3952,6 @@ msgstr "Hoş geldiniz: %(name)s"
 #: templates/index.html
 msgid "Pick a tool from the left to get started."
 msgstr "Başlamak için soldan bir araç seçin."
-
-#: templates/index.html
-msgid "Weather"
-msgstr "Hava Durumu"
 
 #: templates/index.html
 msgid "Loading weather data..."
@@ -3917,12 +4071,8 @@ msgid "Search reminders by title or description"
 msgstr "Hatırlatıcıları başlığa ya da açıklamaya göre ara"
 
 #: templates/index.html
-msgid "Recycle Bin"
-msgstr "Geri Dönüşüm Kutusu"
-
-#: templates/index.html
-msgid "Trash"
-msgstr "Çöp Kutusu"
+msgid "Deleted reminders, restorable for 7 days"
+msgstr ""
 
 #: templates/index.html
 msgid "Drag reminder cards onto a date to reschedule."
@@ -4311,6 +4461,55 @@ msgstr "Bu kısa bağlantı silinsin mi?"
 msgid "Delete short link"
 msgstr "Kısa bağlantıyı sil"
 
+#: templates/trash.html
+msgid "What was deleted in the last 7 days, newest first. After 7 days it is deleted for good."
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Back to %(page)s"
+msgstr ""
+
+#: templates/trash.html
+msgid "Show deleted items from"
+msgstr ""
+
+#: templates/trash.html
+msgid "All"
+msgstr ""
+
+#: templates/trash.html
+msgid "Nothing here. Deleted items stay in the trash for 7 days."
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Deleted by %(name)s at %(time)s"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Deleted at %(time)s"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Delete %(name)s for good? This cannot be undone."
+msgstr ""
+
+#: templates/trash.html
+msgid "Delete forever"
+msgstr ""
+
+#: templates/trash.html
+#, python-format
+msgid "Only %(name)s or the admin can restore this."
+msgstr ""
+
+#: templates/trash.html
+msgid "Only the admin can restore this."
+msgstr ""
+
 #: templates/upload.html
 msgid "Files shared with everyone on the home network."
 msgstr "Ev ağındaki herkesle paylaşılan dosyalar."
@@ -4380,5 +4579,78 @@ msgstr "Bu dosya silinsin mi? Sunucudan kaldırılır."
 #~ msgstr ""
 
 #~ msgid "Add a recipe"
+#~ msgstr ""
+
+#~ msgid "Delete %(name)s? This removes it from the list for good. Its activity history is kept."
+#~ msgstr ""
+
+#~ msgid "Recurring chore rule deleted."
+#~ msgstr "Yinelenen görev kuralı silindi."
+
+#~ msgid "Chore deleted."
+#~ msgstr "Görev silindi."
+
+#~ msgid "Recurring rule deleted. Linked generated entries deleted."
+#~ msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar da silindi."
+
+#~ msgid "Recurring rule deleted. Linked generated entries kept as history."
+#~ msgstr "Yinelenme kuralı silindi. Bağlı oluşturulmuş kayıtlar geçmiş olarak korundu."
+
+#~ msgid "Expense deleted."
+#~ msgstr "Harcama silindi."
+
+#~ msgid "%(num)s expense deleted."
+#~ msgid_plural "%(num)s expenses deleted."
+#~ msgstr[0] "%(num)s harcama silindi."
+
+#~ msgid "Item deleted."
+#~ msgstr "Öğe silindi."
+
+#~ msgid "Note deleted."
+#~ msgstr "Not silindi."
+
+#~ msgid "Recipe deleted."
+#~ msgstr "Tarif silindi."
+
+#~ msgid "%(title)s moved to the trash. It can be restored from the calendar for 7 days."
+#~ msgstr ""
+
+#~ msgid "Reminder is not in trash"
+#~ msgstr "Hatırlatıcı çöp kutusunda değil"
+
+#~ msgid "Reminder moved to trash."
+#~ msgstr "Hatırlatıcı çöp kutusuna taşındı."
+
+#~ msgid "Deleted (undo available)"
+#~ msgstr "Silindi (geri alınabilir)"
+
+#~ msgid "Undo delete"
+#~ msgstr "Silmeyi geri al"
+
+#~ msgid "Loading trash…"
+#~ msgstr "Çöp kutusu yükleniyor…"
+
+#~ msgid "Failed to load trash."
+#~ msgstr "Çöp kutusu yüklenemedi."
+
+#~ msgid "Recycle bin is empty. Items auto-purge after 7 days."
+#~ msgstr "Geri dönüşüm kutusu boş. Öğeler 7 gün sonra kendiliğinden silinir."
+
+#~ msgid "Recycle Bin — items auto-purge after 7 days"
+#~ msgstr "Geri Dönüşüm Kutusu — öğeler 7 gün sonra kendiliğinden silinir"
+
+#~ msgid "Restored"
+#~ msgstr "Geri getirildi"
+
+#~ msgid "Failed"
+#~ msgstr "Başarısız"
+
+#~ msgid "Recycle Bin"
+#~ msgstr "Geri Dönüşüm Kutusu"
+
+#~ msgid "Only moves reminders to the trash, where they can be restored. Needs Reminders with Read & write. Leave it off for AI agents: text they read can try to trick them into removing things."
+#~ msgstr ""
+
+#~ msgid "Can move reminders to the trash"
 #~ msgstr ""
 

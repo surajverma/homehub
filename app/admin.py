@@ -94,8 +94,11 @@ def can_modify(user: str | None, owner: str | None) -> bool:
     """True when ``user`` is the admin or owns the record.
 
     An admin name only counts as the owner once the session is admin, so a locked
-    session can't reach admin-owned records by naming the admin.
+    session can't reach admin-owned records by naming the admin. A blank user never
+    matches, so a request without a user can't change a record that has no owner.
     """
+    if not (user or '').strip():
+        return False
     if is_admin(user):
         return True
     return user == owner and user not in admin_aliases()
