@@ -33,6 +33,7 @@ HomeHub is packed with useful tools to make family life a little more organized:
 * **👋 Who's Home?**: See at a glance who is currently home.
 * **💰 Expense Tracker**: A powerful tool to track family spending, with support for recurring bills like newspapers, milk, or subscriptions. Set monthly budgets (overall and per category) and see charts of spending by category, by person and by day. Export a month or a date range as a CSV file for Excel or Google Sheets, and import expenses from a CSV file (HomeHub's own export or a bank or UPI statement) with a preview that flags likely duplicates. Anyone can record an expense paid by anyone, but only the person who added it (or the admin) can edit or delete it.
 * **🎬 Media Downloader**: Save videos or music from popular sites directly to your server.
+* **🗑️ Trash**: Deleted reminders, shopping items, chores, notes, recipes, expiry items and expenses wait in a shared Trash for 7 days, so anything removed by mistake (in HomeHub or through the API) can be restored.
 * ...and more, including a **Recipe Book**, **Expiry Tracker**, **URL Shortener**, **PDF Compressor**, **Weather Updates** and **QR Code Generator**!
 
 ## Salient Features
