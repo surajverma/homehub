@@ -6,7 +6,7 @@ werkzeug==3.1.9
 qrcode==8.2
 yt-dlp==2026.10.26
 Pillow==13.0.0
-gunicorn==26.2.0
+gunicorn==27.0.0
 Flask-Babel==4.0.0
 Babel==2.18.0
 bleach==6.4.0
