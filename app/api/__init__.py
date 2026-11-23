@@ -16,6 +16,7 @@ def load_operations():
     from . import household  # noqa: F401
     from . import weather  # noqa: F401
     from . import expenses  # noqa: F401
+    from . import trash  # noqa: F401
     from . import mcp  # noqa: F401
     _loaded.append(True)
 

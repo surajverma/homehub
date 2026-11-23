@@ -42,7 +42,8 @@ def _rule_next_date(r: RecurringExpense, d: date, today: date) -> date:
     mode = getattr(r, 'monthly_mode', 'day_of_month') or 'day_of_month'
     if mode == 'calendar':
         return date(ny, nm, 1)
-    base_day = (r.start_date or today).day
+    # A rule split from a 31st rule may start on a shortened month end; anchor_day takes it back to the 31st
+    base_day = max((r.start_date or today).day, getattr(r, 'anchor_day', None) or 0)
     last_dom = _calendar.monthrange(ny, nm)[1]
     return date(ny, nm, min(base_day, last_dom))
 
@@ -65,6 +66,32 @@ def _rule_occurrences(r: RecurringExpense, until: date, today: date | None = Non
     while d <= until and (not r.end_date or d <= r.end_date):
         yield d
         d = _rule_next_date(r, d, today)
+
+
+def _split_schedule(r: RecurringExpense, values: dict, split_start: date, today: date) -> tuple:
+    """(start date, anchor day) for the rule a split creates from ``split_start``.
+
+    With its start date left as it was, the new rule carries on the old schedule (its new frequency counted
+    from the old start): a weekly rule keeps its weekday and a monthly one its day of the month, even when its
+    first date from ``split_start`` is a shortened month end (a 31st rule split in November starts on Nov 30
+    and still bills Dec 31). A new start date sets its own day, as before.
+    """
+    chosen = values.get('start_date')
+    if chosen and chosen > split_start:
+        return chosen, None
+    origin = chosen or split_start
+    anchor = getattr(r, 'anchor_day', None) if origin == r.start_date else None
+    schedule = RecurringExpense(frequency=values.get('frequency'), monthly_mode=values.get('monthly_mode'),
+                                start_date=origin, anchor_day=anchor)
+    # Every frequency has a date within the next two months
+    first = next((d for d in _rule_occurrences(schedule, split_start + timedelta(days=62), today)
+                  if d >= split_start), None)
+    end = values.get('end_date')
+    if first is None or (end and first > end):
+        return split_start, None
+    day = max(origin.day, anchor or 0)
+    monthly = schedule.frequency == 'monthly' and (schedule.monthly_mode or 'day_of_month') == 'day_of_month'
+    return first, (day if monthly and day > first.day else None)
 
 
 def _rule_occurs_on(r: RecurringExpense, target: date) -> bool:
@@ -815,7 +842,9 @@ def _preview_rule_edit(r: RecurringExpense, edit: dict, today: date) -> dict:
                 changed.append(e)
     else:
         if strategy == 'split_rule':
-            target.start_date = max(target.start_date or effective_from, effective_from)
+            target.start_date, target.anchor_day = _split_schedule(r, values, effective_from, today)
+        elif values['start_date'] == r.start_date:
+            target.anchor_day = r.anchor_day
         scheduled = {d for d in _rule_occurrences(target, today, today) if d >= effective_from}
         existing_dates = set()
         for e in entries:
@@ -839,6 +868,7 @@ def _preview_rule_edit(r: RecurringExpense, edit: dict, today: date) -> dict:
         'hand_edited': sum(1 for e in touched if _is_hand_edited(e, r)),
         'past': sum(1 for d in dates if d < today),
         'first_date': min(dates) if dates else None,
+        'new_start': target.start_date if strategy == 'split_rule' else None,
     }
 
 
@@ -864,7 +894,8 @@ def _preview_messages(preview: dict) -> tuple[str, list]:
                                     preview['hand_edited']))
     if preview['strategy'] == 'split_rule':
         details.append(_('The current rule will end on %(end)s and a new rule will start on %(start)s.',
-                         end=preview['effective_from'] - timedelta(days=1), start=preview['effective_from']))
+                         end=preview['effective_from'] - timedelta(days=1),
+                         start=preview.get('new_start') or preview['effective_from']))
     return summary, details
 
 
@@ -927,7 +958,7 @@ def preview_recurring_expense_edit(rid):
     preview = _preview_rule_edit(r, edit, today)
     summary, details = _preview_messages(preview)
     preview.update(ok=True, summary=summary, details=details)
-    for key in ('effective_from', 'first_date'):
+    for key in ('effective_from', 'first_date', 'new_start'):
         preview[key] = preview[key].strftime('%Y-%m-%d') if preview[key] else None
     return jsonify(preview)
 
@@ -949,6 +980,9 @@ def edit_recurring_expense(rid):
     snapshot = _rule_snapshot(r)
 
     if strategy == 'rewrite_all':
+        if values['start_date'] != r.start_date:
+            # A new start date sets its own day of the month
+            r.anchor_day = None
         for name in _RULE_FIELDS:
             setattr(r, name, values[name])
         r.effective_from = r.start_date
@@ -992,7 +1026,7 @@ def edit_recurring_expense(rid):
         ExpenseEntry.query.filter(ExpenseEntry.recurring_id == r.id, ExpenseEntry.date > old_end).delete()
 
         new_rule = RecurringExpense(creator=r.creator, last_generated_date=None, effective_from=split_start, **values)
-        new_rule.start_date = max(values['start_date'] or split_start, split_start)
+        new_rule.start_date, new_rule.anchor_day = _split_schedule(r, values, split_start, today)
         # So a day deleted before the split knows the new rule may have billed it again
         new_rule.previous_uid = r.uid
         db.session.add(new_rule)
@@ -1011,6 +1045,9 @@ def edit_recurring_expense(rid):
             ExpenseEntry.date < effective_from
         ).count()
 
+        if values['start_date'] != r.start_date:
+            # A new start date sets its own day of the month
+            r.anchor_day = None
         for name in _RULE_FIELDS:
             setattr(r, name, values[name])
         r.effective_from = effective_from

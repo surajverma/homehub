@@ -39,6 +39,12 @@ class Operation:
     idempotent: bool = False
     destructive: bool = False      # needs Allow deleting
     success_status: int = 200
+    # For an operation that is not one tool's (tool None): shown only to tokens that reach one of these
+    # tools at its level, and with needs_delete, may move items to the trash in one of them. The handler
+    # checks the tool of each record itself.
+    any_tool: tuple = ()
+    needs_delete: bool = False
+    tag: str | None = None         # OpenAPI tag, for an operation that is not one tool's
 
     @property
     def is_write(self) -> bool:
@@ -71,7 +77,7 @@ _BY_NAME: dict[str, Operation] = {}
 
 
 def operation(name, *, tool, level, method, path, title, description, properties=None, required=(),
-              idempotent=False, destructive=False, success_status=200):
+              idempotent=False, destructive=False, success_status=200, any_tool=(), needs_delete=False, tag=None):
     """Decorator that adds a handler to the registry."""
     def register(handler):
         if name in _BY_NAME:
@@ -79,7 +85,8 @@ def operation(name, *, tool, level, method, path, title, description, properties
         op = Operation(name=name, tool=tool, level=level, method=method.upper(), path=path, title=title,
                        description=description, handler=handler, properties=properties or {},
                        required=tuple(required), idempotent=idempotent, destructive=destructive,
-                       success_status=success_status)
+                       success_status=success_status, any_tool=tuple(any_tool), needs_delete=needs_delete,
+                       tag=tag)
         OPERATIONS.append(op)
         _BY_NAME[name] = op
         return handler

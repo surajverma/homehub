@@ -44,11 +44,11 @@ def _operation_doc(op) -> dict:
         'operationId': op.name,
         'summary': op.title,
         'description': op.description,
-        'tags': [TAG_NAMES.get(op.tool, op.tool)],
+        'tags': [op.tag or TAG_NAMES.get(op.tool, op.tool)],
         'x-homehub-tool': op.tool,
         'x-homehub-level': op.level,
     }
-    if op.destructive:
+    if op.destructive or op.needs_delete:
         doc['x-homehub-needs-allow-delete'] = True
     params = []
     for name, prop in op.all_properties().items():
@@ -76,7 +76,7 @@ def _operation_doc(op) -> dict:
     }}
     for code, text in _ERROR_RESPONSES.items():
         responses[code] = {'description': text, 'content': {'application/json': {'schema': {'$ref': '#/components/schemas/Error'}}}}
-    if op.destructive or (op.tool == 'expenses' and op.is_write):
+    if op.destructive or op.needs_delete or (op.tool == 'expenses' and op.is_write):
         responses['409'] = {'description': 'That cannot be done right now; the message says why.',
                             'content': {'application/json': {'schema': {'$ref': '#/components/schemas/Error'}}}}
     if op.tool == 'weather':
@@ -123,7 +123,7 @@ def build_openapi(operations=None, server_url: str = '/api/v1') -> dict:
         },
         'servers': [{'url': server_url}],
         'security': [{'bearerAuth': []}],
-        'tags': [{'name': name} for name in TAG_NAMES.values()],
+        'tags': [{'name': name} for name in dict.fromkeys([*TAG_NAMES.values(), *(op.tag for op in operations if op.tag)])],
         'paths': paths,
         'components': {
             'securitySchemes': {'bearerAuth': {'type': 'http', 'scheme': 'bearer', 'description': 'A HomeHub API token (hh_...).'}},

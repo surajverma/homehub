@@ -19,6 +19,10 @@ def visible_operations(token, config=None) -> list:
     out = []
     for op in registry.OPERATIONS:
         if op.tool is None:
+            if op.any_tool and not any(tokens.level_allows(allowed.get(t), op.level) for t in op.any_tool):
+                continue
+            if op.needs_delete and not any(t in allowed for t in tokens.delete_tools(token)):
+                continue
             out.append(op)
         elif tokens.level_allows(allowed.get(op.tool), op.level):
             if op.destructive and op.tool not in tokens.delete_tools(token):

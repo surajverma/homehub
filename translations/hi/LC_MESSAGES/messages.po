@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-10 19:35+0530\n"
+"POT-Creation-Date: 2026-11-23 12:03+0530\n"
 "PO-Revision-Date: 2026-10-07 20:49+0530\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: hi\n"
@@ -63,7 +63,7 @@ msgstr "HomeHub जिस सेवा पर निर्भर है, उस�
 msgid "This token can read %(tool)s but not change it."
 msgstr "यह टोकन %(tool)s पढ़ सकता है, लेकिन बदल नहीं सकता।"
 
-#: app/api/core.py
+#: app/api/core.py app/api/trash.py
 #, python-format
 msgid "This token has no access to %(tool)s."
 msgstr "इस टोकन को %(tool)s की अनुमति नहीं है।"
@@ -657,6 +657,26 @@ msgstr "पढ़ने और बदलने वाले %(tool)s के ल�
 #: app/api/tokens.py
 msgid "Revoke the token before deleting it."
 msgstr "हटाने से पहले टोकन रद्द करें।"
+
+#: app/api/trash.py
+#, python-format
+msgid "Nothing in the trash has the reference %(ref)s."
+msgstr ""
+
+#: app/api/trash.py
+#, python-format
+msgid "More than one entry has the reference %(ref)s. Restore it on the Trash page instead."
+msgstr ""
+
+#: app/api/trash.py
+#, python-format
+msgid "Restoring from %(tool)s needs a token with Allow deleting and Read & write on %(tool)s."
+msgstr ""
+
+#: app/api/trash.py
+#, python-format
+msgid "%(name)s cannot restore %(item)s."
+msgstr ""
 
 #: app/api/weather.py
 msgid "Weather has no latitude and longitude in config.yml, so only a browser can look it up for its own location."
@@ -1549,7 +1569,7 @@ msgstr "%(name)s को वापस लाने की अनुमति न�
 msgid "Could not restore %(name)s."
 msgstr "%(name)s को वापस नहीं लाया जा सका।"
 
-#: app/trash.py
+#: app/api/trash.py app/trash.py
 #, python-format
 msgid "%(name)s restored."
 msgstr "%(name)s वापस लाया गया।"

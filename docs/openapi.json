@@ -51,6 +51,9 @@
     },
     {
       "name": "Expenses"
+    },
+    {
+      "name": "Trash"
     }
   ],
   "paths": {
@@ -3551,6 +3554,195 @@
             "description": "The entry id from GET /expenses.",
             "schema": {
               "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "The family member this change is made for: the name of the person who asked. Only accepted when the token may act as family members. Without it the token name is used."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The result as JSON. Changes include a short \"summary\" sentence to confirm back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That cannot be done right now; the message says why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trash": {
+      "get": {
+        "operationId": "trash_list",
+        "summary": "List the trash",
+        "description": "Everything deleted in HomeHub in the last 7 days, newest first, from the tools this token can read: what it was, which tool it came from, who added it, who deleted it and how many days are left before it is gone for good. Restore an entry with trash_restore and its ref.",
+        "tags": [
+          "Trash"
+        ],
+        "x-homehub-tool": null,
+        "x-homehub-level": "read",
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": false,
+            "description": "Only entries from this tool.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "notes",
+                "shopping",
+                "reminders",
+                "chores",
+                "recipes",
+                "expiry",
+                "expenses"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The result as JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid (unknown field, wrong type, bad date, ...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token has no access to this tool or level, or may not act as that person.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the tool is switched off in config.yml.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trash/{ref}/restore": {
+      "post": {
+        "operationId": "trash_restore",
+        "summary": "Restore from the trash",
+        "description": "Put back something from the trash, by the ref that trash_list gives it (such as t-0a1b2c3d4e). Needs a token with Allow deleting and Read & write on the tool it came from. Only whoever added it may restore it.",
+        "tags": [
+          "Trash"
+        ],
+        "x-homehub-tool": null,
+        "x-homehub-level": "write",
+        "x-homehub-needs-allow-delete": true,
+        "parameters": [
+          {
+            "name": "ref",
+            "in": "path",
+            "required": true,
+            "description": "The reference from trash_list, such as t-0a1b2c3d4e.",
+            "schema": {
+              "type": "string",
+              "maxLength": 32
             }
           }
         ],

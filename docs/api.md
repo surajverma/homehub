@@ -99,7 +99,7 @@ A tool whose feature is switched off in `config.yml` (under `feature_toggles`) d
 
 Edits follow the web app: only shopping items, one-off chores, one-off reminders and recipes can be edited, and only by whoever added them. Notes and the expiry tracker can't be edited in HomeHub either, so the API only adds them.
 
-Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, backups, settings, budgets, changes to recurring rules (and to chores and reminders made by them), and bulk actions. Deletes only move items to the trash, where they can be restored from HomeHub's Trash page for 7 days; nothing is deleted for good through the API.
+Not in the API: Shared Cloud, the media downloader, the URL shortener, the PDF compressor, the QR generator, backups, settings, budgets, changes to recurring rules (and to chores and reminders made by them), and bulk actions. Deletes only move items to the trash, where they can be restored for 7 days (on HomeHub's Trash page, or through the API with [Trash](#trash)); nothing is deleted for good through the API.
 
 ## Making requests
 
@@ -196,6 +196,8 @@ All paths are below `/api/v1`. **R** needs Read, **W** needs Read & write.
 | `PATCH /expenses/rules/{id}/days/{date}` | expenses W | Change a recurring day's quantity |
 | `POST /expenses` | expenses W | Add a one-off expense |
 | `DELETE /expenses/{id}` | expenses W + Allow deleting | Move a one-off expense to the trash |
+| `GET /trash` | R on the tool | What was deleted in the last 7 days, from the tools the token can read |
+| `POST /trash/{ref}/restore` | W on the tool + Allow deleting | Restore something from the trash |
 
 To keep the examples short, they assume the token is in a shell variable:
 
@@ -434,6 +436,33 @@ curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"title": "Vegetab
 - A recurring day that was deleted in HomeHub answers `409`: add it back on the Expenses page first.
 - Expenses added through the API aren't split. Rules, settlements and budgets stay in HomeHub.
 - With Allow deleting, `DELETE /expenses/{id}` moves a one-off expense or a settlement to the trash. A day of a recurring expense answers `409`: skip it instead.
+
+### Trash
+
+The same list as HomeHub's Trash page: everything deleted in the last 7 days, newest first. A token sees the entries of the tools it can read; add `?module=shopping` (or `reminders`, `chores`, `notes`, `recipes`, `expiry`, `expenses`) for one tool.
+
+```bash
+curl -H "$HH" http://homehub.local:5000/api/v1/trash
+```
+
+```json
+{"count": 1, "entries": [{"ref": "t-3f9a0c41d2", "module": "shopping", "label": "Bread", "owner": "Priya", "deleted_by": "Priya (via Hermes)", "deleted_at": "2026-11-23T08:14:02", "expires_at": "2026-11-30T08:14:02", "days_left": 7}]}
+```
+
+`ref` is the same reference `flask trash list` prints. Restore an entry with it:
+
+```bash
+curl -X POST -H "$HH" -H "Content-Type: application/json" -d '{"by": "Priya"}' http://homehub.local:5000/api/v1/trash/t-3f9a0c41d2/restore
+```
+
+```json
+{"ref": "t-3f9a0c41d2", "module": "shopping", "label": "Bread", "restored": true, "summary": "Bread restored."}
+```
+
+- Restoring needs what moving to the trash needs: Read & write on the tool the entry came from, and Allow deleting covering that tool. A token made before Allow deleting covered every tool restores reminders only.
+- Only whoever added the item may restore it (`owner`); the admin restores anything on the Trash page. An entry without an owner can only be restored there.
+- A ref the token can't see (unknown, already restored, expired, or from a tool it can't read) answers `404`. A restore that can't be done answers `409` with the reason, for example an expense day that the rule has billed again.
+- Deleting for good stays on the Trash page; the API never does it.
 
 ## Errors
 

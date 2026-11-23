@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  HomeHub\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-10 19:35+0530\n"
+"POT-Creation-Date: 2026-11-23 12:03+0530\n"
 "PO-Revision-Date: 2026-10-12 18:40+0300\n"
 "Last-Translator: qwist1233-cpu\n"
 "Language: tr\n"
@@ -63,7 +63,7 @@ msgstr ""
 msgid "This token can read %(tool)s but not change it."
 msgstr ""
 
-#: app/api/core.py
+#: app/api/core.py app/api/trash.py
 #, python-format
 msgid "This token has no access to %(tool)s."
 msgstr ""
@@ -656,6 +656,26 @@ msgstr ""
 
 #: app/api/tokens.py
 msgid "Revoke the token before deleting it."
+msgstr ""
+
+#: app/api/trash.py
+#, python-format
+msgid "Nothing in the trash has the reference %(ref)s."
+msgstr ""
+
+#: app/api/trash.py
+#, python-format
+msgid "More than one entry has the reference %(ref)s. Restore it on the Trash page instead."
+msgstr ""
+
+#: app/api/trash.py
+#, python-format
+msgid "Restoring from %(tool)s needs a token with Allow deleting and Read & write on %(tool)s."
+msgstr ""
+
+#: app/api/trash.py
+#, python-format
+msgid "%(name)s cannot restore %(item)s."
 msgstr ""
 
 #: app/api/weather.py
@@ -1534,7 +1554,7 @@ msgstr ""
 msgid "Could not restore %(name)s."
 msgstr ""
 
-#: app/trash.py
+#: app/api/trash.py app/trash.py
 #, python-format
 msgid "%(name)s restored."
 msgstr ""

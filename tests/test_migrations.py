@@ -67,6 +67,18 @@ def test_old_database_is_upgraded_in_place(tmp_path):
     conn.close()
 
 
+def test_recurring_expenses_get_an_empty_anchor_day(tmp_path):
+    """Existing rules keep counting from their start date's own day: the new column starts empty."""
+    path = str(tmp_path / 'app.db')
+    make_old_db(path)
+    assert migrations.run(path) is True
+    assert migrations.run(path) is True
+    conn = sqlite3.connect(path)
+    assert 'anchor_day' in columns(conn, 'recurring_expense')
+    assert conn.execute("SELECT title, anchor_day FROM recurring_expense").fetchall() == [('Milk', None)]
+    conn.close()
+
+
 def test_running_twice_is_harmless(tmp_path):
     path = str(tmp_path / 'app.db')
     make_old_db(path)

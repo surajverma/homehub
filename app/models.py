@@ -215,6 +215,9 @@ class RecurringExpense(db.Model):
     end_date = db.Column(db.Date)
     last_generated_date = db.Column(db.Date)
     effective_from = db.Column(db.Date)  # apply changes from this date forward
+    # Day of the month to aim for when start_date itself landed on a shortened month end,
+    # e.g. 31 for a rule split from a 31st rule that now starts on Nov 30
+    anchor_day = db.Column(db.Integer)
     creator = db.Column(db.String(64))
     # JSON-encoded split, see parse_split (copied onto generated entries)
     split_with = db.Column(db.Text)

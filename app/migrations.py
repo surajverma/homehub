@@ -118,6 +118,8 @@ LATE_COLUMNS = [
     ('recurring_expense', 'split_with', 'TEXT', None),
     ('recurring_expense', 'uid', 'VARCHAR(32)', None),
     ('recurring_expense', 'previous_uid', 'VARCHAR(32)', None),
+    # Empty on existing rules, which keep counting from their start date's own day
+    ('recurring_expense', 'anchor_day', 'INTEGER', None),
     ('expense_entry', 'skipped', 'INTEGER DEFAULT 0', 0),
     ('expense_entry', 'split_with', 'TEXT', None),
     ('expense_entry', 'is_settlement', 'INTEGER DEFAULT 0', 0),

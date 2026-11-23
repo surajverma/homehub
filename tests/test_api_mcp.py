@@ -71,7 +71,9 @@ def test_ping(home):
 def test_tools_list_is_filtered_by_permissions(home):
     secret = home.token('Hermes', act_as=True, presence='write', notice='read', shopping='read')
     tools = {t['name']: t for t in rpc(home, secret, 'tools/list', version='2025-06-18').get_json()['result']['tools']}
-    assert set(tools) == {'homehub_overview', 'presence_list', 'presence_set', 'notice_get', 'shopping_list'}
+    assert set(tools) == {'homehub_overview', 'presence_list', 'presence_set', 'notice_get', 'shopping_list',
+                          # It can read the shopping list, so it can see what of it is in the trash
+                          'trash_list'}
     assert tools['notice_get']['annotations']['readOnlyHint'] is True
     ps = tools['presence_set']
     assert ps['annotations'] == {'title': 'Set who is home', 'readOnlyHint': False, 'openWorldHint': False,
